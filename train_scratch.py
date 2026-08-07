@@ -20,6 +20,7 @@ SIZES = {  # name -> (n_layer, d_model, n_head, lr)
     "10m": (8, 320, 8, 3e-3),
     "30m": (10, 512, 8, 1.5e-3),
     "100m": (12, 768, 12, 6e-4),
+    "300m": (24, 1024, 16, 3e-4),
 }
 
 
@@ -146,7 +147,10 @@ def main():
                              "mps" if torch.backends.mps.is_available() else
                              "cpu")
     L, d, h, lr = SIZES[args.size]
-    mb = args.micro_batch or {"10m": 16, "30m": 8, "100m": 4}[args.size]
+    cuda = torch.cuda.is_available() and (args.device or "cuda") == "cuda"
+    mb = args.micro_batch or (
+        {"10m": 32, "30m": 24, "100m": 16, "300m": 8} if cuda else
+        {"10m": 16, "30m": 8, "100m": 4, "300m": 2})[args.size]
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
 
@@ -157,7 +161,8 @@ def main():
     if args.max_train_bytes:
         train = train[:args.max_train_bytes]
 
-    model = ByteGPT(L, d, h, args.ctx).to(device)
+    model = ByteGPT(L, d, h, args.ctx,
+                    grad_ckpt=(device == "mps")).to(device)
     n_params = sum(p.numel() for p in model.parameters())
     run = f"scratch-{args.size}-{args.lang}-s{args.seed}{args.out_tag}"
     print(f"[{run}] params={n_params/1e6:.1f}M train={len(train)/1e6:.1f}MB "

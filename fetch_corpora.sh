@@ -37,5 +37,12 @@ clone yt       https://github.com/yt-project/yt &
 clone lean4    https://github.com/leanprover/lean4 &
 wait
 
+# Wave 3 — python-physics pool wideners (python was the binding budget).
+clone scipy    https://github.com/scipy/scipy &
+clone sunpy    https://github.com/sunpy/sunpy &
+clone pymatgen https://github.com/materialsproject/pymatgen &
+clone ase      https://gitlab.com/ase/ase &
+wait
+
 echo "ALL CLONES DONE"
 du -sh "$BASE"/corpora/* 2>/dev/null

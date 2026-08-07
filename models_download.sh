@@ -17,6 +17,13 @@ MODELS=(
   Qwen/Qwen3.5-2B-Base
   Qwen/Qwen3.5-4B-Base
   bigcode/starcoder2-3b
+  Qwen/Qwen2.5-Coder-14B
+  Qwen/Qwen2.5-Coder-32B
+  Qwen/Qwen3-8B-Base
+  Qwen/Qwen3-14B-Base
+  Qwen/Qwen3-32B-Base
+  Qwen/Qwen3.5-9B-Base
+  deepseek-ai/DeepSeek-Coder-V2-Lite-Base
 )
 
 "$BASE/.venv/bin/python" - "${MODELS[@]}" <<'EOF'
