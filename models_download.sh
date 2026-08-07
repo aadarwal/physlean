@@ -39,6 +39,13 @@ EOF
 
 for m in "${MODELS[@]}"; do
   echo "=== downloading $m ==="
-  "$BASE/.venv/bin/hf" download "$m" --quiet || echo "[FAIL] $m"
+  # python API, not the hub CLI: `hf`/`huggingface-cli` entrypoints vary by
+  # hub version and a missing binary silently no-ops the whole ladder
+  "$BASE/.venv/bin/python" - "$m" <<'PYEOF' || echo "[FAIL] $m"
+import sys
+from huggingface_hub import snapshot_download
+snapshot_download(sys.argv[1], max_workers=8)
+print("[ok]", sys.argv[1], flush=True)
+PYEOF
 done
 echo "ALL MODEL DOWNLOADS DONE"
