@@ -2,6 +2,7 @@
 # Full-history clones. History (not shallow) is required: contamination splits
 # need per-file first-add dates via `git log --diff-filter=A --follow`.
 set -uo pipefail
+export GIT_TERMINAL_PROMPT=0   # a 404'd fallback URL must fail, not prompt
 BASE="$(cd "$(dirname "$0")" && pwd)"
 mkdir -p "$BASE/corpora" "$BASE/logs"
 cd "$BASE/corpora"
