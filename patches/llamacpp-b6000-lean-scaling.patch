@@ -1,0 +1,98 @@
+diff --git a/examples/training/finetune.cpp b/examples/training/finetune.cpp
+index 23bede4..64b5055 100644
+--- a/examples/training/finetune.cpp
++++ b/examples/training/finetune.cpp
+@@ -55,13 +55,15 @@ int main(int argc, char ** argv) {
+         LOG_INF("%s\n", common_params_get_system_info(params).c_str());
+     }
+ 
+-    constexpr float val_split = 0.05f;
++    const float val_split = getenv("FT_VAL") ? atof(getenv("FT_VAL")) : 0.05f;
+ 
+     std::vector<llama_token> tokens = common_tokenize(ctx.get(), params.prompt, true);
+-    ggml_opt_dataset_t dataset = common_opt_dataset_init(ctx.get(), tokens, llama_n_ctx(ctx.get())/2);
++    int64_t ft_stride = llama_n_ctx(ctx.get())/2;
++    if (const char * e = getenv("FT_STRIDE")) { ft_stride = atoll(e); }
++    ggml_opt_dataset_t dataset = common_opt_dataset_init(ctx.get(), tokens, ft_stride);
+ 
+     struct ggml_opt_optimizer_params optimizer_params = ggml_opt_get_default_optimizer_params(nullptr);
+-    optimizer_params.adamw.alpha = 1e-7f; // learning rate
++    optimizer_params.adamw.alpha = getenv("FT_LR") ? atof(getenv("FT_LR")) : 1e-7f; // learning rate
+ 
+     struct llama_opt_params lopt_params {
+         /*n_ctx_train     =*/ 0,
+@@ -77,7 +79,8 @@ int main(int argc, char ** argv) {
+     ggml_opt_result_t result_train = ggml_opt_result_init();
+     ggml_opt_result_t result_eval  = ggml_opt_result_init();
+ 
+-    for (int epoch = 0; epoch < 2; ++epoch) {
++    const int ft_epochs = getenv("FT_EPOCHS") ? atoi(getenv("FT_EPOCHS")) : 2;
++    for (int epoch = 0; epoch < ft_epochs; ++epoch) {
+         llama_opt_epoch(ctx.get(), dataset, result_train, result_eval, idata_split,
+             ggml_opt_epoch_callback_progress_bar, ggml_opt_epoch_callback_progress_bar);
+         fprintf(stderr, "\n");
+@@ -88,7 +91,7 @@ int main(int argc, char ** argv) {
+     ggml_opt_result_free(result_train);
+     ggml_opt_result_free(result_eval);
+ 
+-    llama_model_save_to_file(model.get(), "finetuned-model.gguf");
++    llama_model_save_to_file(model.get(), getenv("FT_OUT") ? getenv("FT_OUT") : "finetuned-model.gguf");
+ 
+     llama_backend_free();
+ 
+diff --git a/src/llama-vocab.cpp b/src/llama-vocab.cpp
+index e8bae64..9ed4f5c 100644
+--- a/src/llama-vocab.cpp
++++ b/src/llama-vocab.cpp
+@@ -1717,10 +1717,10 @@ void llama_vocab::impl::load(llama_model_loader & ml, const LLM_KV & kv) {
+             // read bpe merges and populate bpe ranks
+             const int merges_keyidx = gguf_find_key(ctx, kv(LLM_KV_TOKENIZER_MERGES).c_str());
+             if (merges_keyidx == -1) {
+-                throw std::runtime_error("cannot find tokenizer merges in model file\n");
++                LLAMA_LOG_WARN("%s: no tokenizer merges in model file, proceeding with byte-level-only BPE\n", __func__);
+             }
+ 
+-            const int n_merges = gguf_get_arr_n(ctx, merges_keyidx);
++            const int n_merges = merges_keyidx == -1 ? 0 : gguf_get_arr_n(ctx, merges_keyidx);
+             for (int i = 0; i < n_merges; i++) {
+                 const std::string word = gguf_get_arr_str(ctx, merges_keyidx, i);
+                 //GGML_ASSERT(unicode_cpts_from_utf8(word).size() > 0);
+diff --git a/tools/perplexity/perplexity.cpp b/tools/perplexity/perplexity.cpp
+index 189dcb3..956ad11 100644
+--- a/tools/perplexity/perplexity.cpp
++++ b/tools/perplexity/perplexity.cpp
+@@ -536,7 +536,8 @@ static results_perplexity perplexity(llama_context * ctx, const common_params &
+     // Example, we have a context window of 512, we will compute perplexity for each of the
+     // last 256 tokens.  Then, we split the input up into context window size chunks to
+     // process the entire prompt.
+-    const int first = n_ctx/2;
++    int first = n_ctx/2;
++    if (const char * e = getenv("PPL_FIRST")) { first = std::max(0, atoi(e)); }
+ 
+     for (int i = 0; i < n_chunk; i += n_seq) {
+         const int start =     i * n_ctx;
+@@ -642,6 +643,24 @@ static results_perplexity perplexity(llama_context * ctx, const common_params &
+     }
+     LOG("\n");
+ 
++    if (const char * dump_path = getenv("PPL_DUMP")) {
++        FILE * fd = fopen(dump_path, "w");
++        if (fd) {
++            fprintf(fd, "chunk,ctx_len,token_id,nll\n");
++            for (int c = 0; c < n_chunk; ++c) {
++                const int cs = c * n_ctx;
++                for (int g = cs + first; g <= cs + n_ctx - 2; ++g) {
++                    const float p = prob_history[g];
++                    if (p > 0.0f) {
++                        fprintf(fd, "%d,%d,%d,%.6f\n", c, g + 1 - cs, tokens[g + 1], -logf(p));
++                    }
++                }
++            }
++            fclose(fd);
++            LOG_INF("dumped per-position NLL to %s\n", dump_path);
++        }
++    }
++
+     nll2 /= count;
+     nll /= count;
+     const double ppl = exp(nll);
