@@ -90,7 +90,46 @@ def fetch_source(aid):
     return text if len(text.encode("utf-8")) >= 4096 else None
 
 
+def refetch_from_manifest(pin_path):
+    """Reproduce the exact pinned corpus (paper ids are pinned; API listing
+    queries are not deterministic over time)."""
+    pinned = json.load(open(pin_path))
+    os.makedirs(OUT, exist_ok=True)
+    man_path = os.path.join(OUT, "manifest.json")
+    for safe, m in pinned.items():
+        if m.get("skipped"):
+            continue
+        era = m["era"]
+        os.makedirs(os.path.join(OUT, era), exist_ok=True)
+        dst = os.path.join(OUT, era, f"{safe}.tex")
+        if os.path.exists(dst):
+            continue
+        try:
+            text = fetch_source(m["id"])
+        except Exception as ex:
+            print(f"[err] {m['id']}: {ex}", flush=True)
+            text = None
+        time.sleep(3)
+        if text is None:
+            print(f"[warn] pinned {m['id']} no longer fetchable", flush=True)
+            continue
+        with open(dst, "w", encoding="utf-8") as f:
+            f.write(text)
+        print(f"[ok] {era}/{m['id']}", flush=True)
+    with open(man_path, "w") as f:
+        json.dump(pinned, f, indent=1)
+
+
 def main():
+    pin = os.path.join(BASE, "arxiv_manifest.json")
+    if "--from-manifest" in sys.argv or (
+            os.path.exists(pin) and not os.path.exists(
+                os.path.join(OUT, "manifest.json"))):
+        refetch_from_manifest(sys.argv[sys.argv.index("--from-manifest") + 1]
+                              if "--from-manifest" in sys.argv
+                              and len(sys.argv) > sys.argv.index("--from-manifest") + 1
+                              else pin)
+        return
     os.makedirs(OUT, exist_ok=True)
     man_path = os.path.join(OUT, "manifest.json")
     manifest = json.load(open(man_path)) if os.path.exists(man_path) else {}

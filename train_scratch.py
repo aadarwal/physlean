@@ -54,7 +54,7 @@ class Block(nn.Module):
 
 
 class ByteGPT(nn.Module):
-    def __init__(self, n_layer, d, h, ctx, vocab=256):
+    def __init__(self, n_layer, d, h, ctx, vocab=256, grad_ckpt=True):
         super().__init__()
         self.tok = nn.Embedding(vocab, d)
         self.pos = nn.Embedding(ctx, d)
@@ -63,6 +63,9 @@ class ByteGPT(nn.Module):
         self.head = nn.Linear(d, vocab, bias=False)
         self.head.weight = self.tok.weight
         self.ctx = ctx
+        # MPS SDPA training backward materializes S per layer; checkpointing
+        # keeps only one layer's S live at a time (observed 28GB -> fits)
+        self.grad_ckpt = grad_ckpt
         self.apply(self._init)
         for name, p in self.named_parameters():  # GPT-2 residual scaling
             if name.endswith("mlp.2.weight") or "out_proj.weight" in name:
@@ -79,19 +82,21 @@ class ByteGPT(nn.Module):
         T = idx.shape[1]
         x = self.tok(idx) + self.pos(torch.arange(T, device=idx.device))
         for b in self.blocks:
-            x = b(x)
+            if self.grad_ckpt and self.training and torch.is_grad_enabled():
+                x = torch.utils.checkpoint.checkpoint(b, x, use_reentrant=False)
+            else:
+                x = b(x)
         return self.head(self.lnf(x))
 
 
 def batches(data, ctx, mb, seed, device):
     n_win = (len(data) - 1) // ctx
     order = np.random.default_rng(seed).permutation(n_win)
+    offs = np.arange(ctx + 1)
     for i in range(0, n_win - mb + 1, mb):
-        idx = order[i:i + mb]
-        x = np.stack([data[j * ctx:(j + 1) * ctx] for j in idx])
-        y = np.stack([data[j * ctx + 1:(j + 1) * ctx + 1] for j in idx])
-        yield (torch.from_numpy(x.astype(np.int64)).to(device),
-               torch.from_numpy(y.astype(np.int64)).to(device))
+        starts = order[i:i + mb][:, None] * ctx
+        xy = torch.from_numpy(data[starts + offs].astype(np.int64)).to(device)
+        yield xy[:, :-1], xy[:, 1:]
 
 
 @torch.no_grad()
@@ -130,16 +135,18 @@ def main():
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--ctx", type=int, default=2048)
     ap.add_argument("--micro-batch", type=int, default=0)
-    ap.add_argument("--step-tokens", type=int, default=32768)
+    ap.add_argument("--step-tokens", type=int, default=49152)
     ap.add_argument("--epochs", type=float, default=1.0)
     ap.add_argument("--max-train-bytes", type=int, default=0)
     ap.add_argument("--device", default=None)
     ap.add_argument("--out-tag", default="")
     args = ap.parse_args()
 
-    device = args.device or ("mps" if torch.backends.mps.is_available() else "cpu")
+    device = args.device or ("cuda" if torch.cuda.is_available() else
+                             "mps" if torch.backends.mps.is_available() else
+                             "cpu")
     L, d, h, lr = SIZES[args.size]
-    mb = args.micro_batch or {"10m": 8, "30m": 4, "100m": 2}[args.size]
+    mb = args.micro_batch or {"10m": 16, "30m": 8, "100m": 4}[args.size]
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
 

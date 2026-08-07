@@ -26,7 +26,11 @@ POOLS = {
                ("qutip", ["qutip"], [".py"]),
                ("astropy", ["astropy"], [".py"]),
                ("plasmapy", ["src"], [".py"]),
-               ("yt", ["yt"], [".py"])],
+               ("yt", ["yt"], [".py"]),
+               ("scipy", ["scipy"], [".py"]),
+               ("sunpy", ["sunpy"], [".py"]),
+               ("pymatgen", ["src"], [".py"]),
+               ("ase", ["ase"], [".py"])],
     "cpp": [("geant4", ["source"], [".cc", ".hh", ".icc"])],
     "latex": [("arxiv", ["old", "new"], [".tex"])],
 }

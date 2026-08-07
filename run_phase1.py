@@ -93,8 +93,11 @@ def main():
         t0 = time.time()
         print(f"[{k+1}/{len(todo)}] P{prio} {short} {corpus} {kind} {flags}",
               flush=True)
+        env = dict(os.environ)
+        if big:  # 7B needs ~20.5GB working set; lift the MPS watermark
+            env["PYTORCH_MPS_HIGH_WATERMARK_RATIO"] = "0.0"
         r = subprocess.run(cmd, stdout=subprocess.DEVNULL,
-                           stderr=subprocess.PIPE, text=True)
+                           stderr=subprocess.PIPE, text=True, env=env)
         tail = "\n".join(r.stderr.splitlines()[-2:])
         print(f"    -> exit={r.returncode} {time.time()-t0:.0f}s | {tail}",
               flush=True)

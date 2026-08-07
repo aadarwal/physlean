@@ -28,23 +28,34 @@ LOG = lambda *a: print(*a, file=sys.stderr, flush=True)
 
 
 def load_model(name, dtype, device, random_init=False):
-    kw = {}
-    try:
-        cfg = AutoConfig.from_pretrained(name)
-        if random_init:
-            model = AutoModelForCausalLM.from_config(cfg)
-        else:
-            try:
-                model = AutoModelForCausalLM.from_pretrained(name, dtype=dtype, **kw)
-            except TypeError:
-                model = AutoModelForCausalLM.from_pretrained(name, torch_dtype=dtype, **kw)
-    except Exception:
-        raise
+    cfg = AutoConfig.from_pretrained(name)
+    loaders = [AutoModelForCausalLM]
+    try:  # multimodal "base" families (e.g. Qwen3.5) expose text under a VLM
+        from transformers import AutoModelForImageTextToText
+        loaders.append(AutoModelForImageTextToText)
+    except ImportError:
+        pass
+    model = err = None
+    for loader in loaders:
+        try:
+            if random_init:
+                model = loader.from_config(cfg)
+            else:
+                try:
+                    model = loader.from_pretrained(name, dtype=dtype)
+                except TypeError:
+                    model = loader.from_pretrained(name, torch_dtype=dtype)
+            break
+        except (ValueError, KeyError, OSError) as e:
+            err = e
+    if model is None:
+        raise RuntimeError(f"no loader accepted {name}: {err}")
     model = model.to(device=device, dtype=dtype)
     model.eval()
     for p in model.parameters():
         p.requires_grad_(False)
-    return model, cfg
+    return model, (cfg.get_text_config() if hasattr(cfg, "get_text_config")
+                   else cfg)
 
 
 def token_byte_lens(text, offsets):
@@ -138,7 +149,9 @@ def main():
         LOG(f"[skip] {args.out} already complete")
         return
 
-    device = args.device or ("mps" if torch.backends.mps.is_available() else "cpu")
+    device = args.device or ("cuda" if torch.cuda.is_available() else
+                             "mps" if torch.backends.mps.is_available() else
+                             "cpu")
     dtype = getattr(torch, args.dtype)
 
     text = open(args.stream, encoding="utf-8").read()
