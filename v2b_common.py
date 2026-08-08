@@ -18,6 +18,7 @@ NEARDUP_SCHEMA = "v2b_neardup_v1"
 SAMPLE_SCHEMA = "v2b_sample_v1"
 K7_ORDER_SCHEMA = "v2b_k7_order_v1"
 LEAN_KEYWORD_FREEZE_SCHEMA = "v2b_lean_keyword_freeze_v1"
+A6_AUDIT_PACKET_SCHEMA = "v2b_a6_audit_packet_v1"
 ASSEMBLY_SCHEMA = "v2b_assembly_manifest_v1"
 
 
