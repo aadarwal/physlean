@@ -18,15 +18,20 @@ from collections import Counter
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from finalize_v2b_a6 import EXPECTED
-from prepare_v2b_assembly import (B_STAR, BM25_B, BM25_K1, K6_TIE_LABEL,
-                                  build_assembly, materialize)
+from prepare_v2b_assembly import (B_STAR, K7_ORDER_RULE, build_assembly,
+                                  materialize)
+from v2b_assemble import normalize_payload
 from v2b_common import (ASSEMBLY_SCHEMA, BOUND_SAMPLE_SCHEMA,
-                        CANDIDATES_SCHEMA, LEAN_KEYWORD_FREEZE_SCHEMA,
-                        NEARDUP_SCHEMA, V2BError, canonical_json_bytes,
-                        identity_key, seeded_hash, sha256_json)
+                        CANDIDATES_SCHEMA, K7_ORDER_SCHEMA,
+                        LEAN_KEYWORD_FREEZE_SCHEMA, NEARDUP_SCHEMA,
+                        V2BError, canonical_json_bytes, identity_key,
+                        seeded_hash, sha256_json)
 from v2b_neardup import (lean_keyword_provenance_hash, lex_unit,
                          lexical_records, load_lean_keyword_freeze,
                          verbatim_hash)
+
+BM25_K1, BM25_B = 1.2, 0.75
+K6_TIE_LABEL = "k6tie:v2b:20260808"
 
 
 def _sha(data):
@@ -87,7 +92,23 @@ def _lexed(language, text):
     return verbatim_hash(lex_unit(language, text))
 
 
-def _lean_chain(td, jaccard="0.80", big_dep=False):
+def _k7_artifact(td, repo, language, entries):
+    """Committed-order fixture: entries = ordered [(relpath, abs path)]."""
+    rows = []
+    for rel, path in entries:
+        raw = open(path, "rb").read()
+        normalized, _ = normalize_payload(raw)
+        rows.append([rel, len(normalized), _sha(raw), rel])
+    value = dict(schema=K7_ORDER_SCHEMA, repo=repo, language=language,
+                 corpus_git_sha=EXPECTED[repo][1],
+                 order_rule=K7_ORDER_RULE, n_edges=0, n_cycle_nodes=0,
+                 files=rows)
+    path = os.path.join(td, "k7.json")
+    json.dump(value, open(path, "w"))
+    return path
+
+
+def _lean_chain(td, jaccard="0.80", big_dep=False, external=True):
     repo = "mathlib4"
     corpus_sha = EXPECTED[repo][1]
     root = os.path.join(td, "corpus")
@@ -110,6 +131,11 @@ def _lean_chain(td, jaccard="0.80", big_dep=False):
     a_path, b_path = (os.path.join(root, "A.lean"),
                       os.path.join(root, "B.lean"))
     a_sha, b_sha = _write(a_path, a_text), _write(b_path, b_text)
+    # C has no extracted units and two terminal LFs: exercises the k7
+    # normalize tripwire and unit-free file admission.
+    c_text = "-- corpus preamble\n-- shared header\n\n"
+    c_path = os.path.join(root, "C.lean")
+    _write(c_path, c_text)
 
     def span(lines, first, count):
         start = sum(len(line) for line in lines[:first])
@@ -145,6 +171,10 @@ def _lean_chain(td, jaccard="0.80", big_dep=False):
     if big_dep:
         b_decls["M.B.big"] = decl(b_spans, "M.B.big", len("def big : Nat "))
         edges.append(["M.A", "M.A.t", "M.B", "M.B.big"])
+    graph = dict(edges=edges)
+    if external:
+        # nested Lean shape frozen by the §14.3 amendment
+        graph["external_ref_counts_by_target"] = {"M.A": {"M.A.t": 5}}
     extraction = dict(
         schema="v2a_lean_extract_v3", repo=repo,
         files=[
@@ -160,7 +190,7 @@ def _lean_chain(td, jaccard="0.80", big_dep=False):
                                         len("def local1 : Nat "))}),
             dict(module="M.B", source=b_path, rel="B.lean",
                  source_sha256=b_sha, decls=b_decls)],
-        graph=dict(edges=edges))
+        graph=graph)
     extraction_path = os.path.join(td, "extraction.json")
     json.dump(extraction, open(extraction_path, "w"))
     extraction_sha = _sha(open(extraction_path, "rb").read())
@@ -211,17 +241,21 @@ def _lean_chain(td, jaccard="0.80", big_dep=False):
                                         identity=["M.A", "M.A.t"])])})
     sample_path = os.path.join(td, "sample.json")
     json.dump(sample, open(sample_path, "w"))
+    k7_path = _k7_artifact(td, repo, "lean",
+                           [("C.lean", c_path), ("B.lean", b_path),
+                            ("A.lean", a_path)])
     return dict(sample=sample_path, repo=repo, candidates=candidates_path,
                 extraction=extraction_path, neardup=neardup_path,
-                outcome=outcome_path, freeze=freeze_path,
-                a_spans=a_spans, b_spans=b_spans, texts=texts)
+                outcome=outcome_path, freeze=freeze_path, k7=k7_path,
+                a_spans=a_spans, b_spans=b_spans, texts=texts,
+                c_text=c_text)
 
 
 def _build(chain):
     return build_assembly(chain["sample"], chain["repo"],
                           chain["candidates"], chain["extraction"],
                           chain["neardup"], chain["outcome"],
-                          chain["freeze"])
+                          chain["freeze"], chain["k7"])
 
 
 def test_lean_manifest_end_to_end():
@@ -230,7 +264,7 @@ def test_lean_manifest_end_to_end():
         manifest = _build(chain)
         assert manifest["schema"] == ASSEMBLY_SCHEMA
         assert manifest["arms_included"] == \
-            ["k1", "k2", "k3", "k4", "k3s", "k4s", "k5", "k6"]
+            ["k1", "k2", "k3", "k4", "k3s", "k4s", "k5", "k6", "k7"]
         assert manifest["arms_deferred"]                    # never silent
         assert manifest["n_targets"] == 1
         row = manifest["targets"][0]
@@ -284,11 +318,29 @@ def test_lean_manifest_end_to_end():
         unsplit_row = [r for r in cell["selected_units"]
                        if tuple(r["identity"]) == ("M.B", "M.B.dep2")][0]
         assert cell["n_unsplit_bytes"] == unsplit_row["included_bytes"]
-        # external mass: counts unavailable in this extraction -> null,
-        # bytes null with explicit unbound-source reason, never fabricated
-        assert row["external"]["n_external"] is None
+        # external mass: nested Lean counts pass through; bytes stay null
+        # with the explicit unbound-source reason, never fabricated
+        assert row["external"]["n_external"] == 5
         assert row["external"]["bytes"] is None
         assert "unbound" in row["external"]["reason"]
+        # k7: committed order [C, B, A]; target file A and near-dup/
+        # reverse docs (both point at B for ndup/rev, A for the twin)
+        # removed; only the unit-free C admitted, normalize tripwire on
+        k7arm = row["arms"]["k7"]
+        assert k7arm["n_order_files"] == 3
+        assert k7arm["removed"]["target_file"]["n"] == 1
+        assert k7arm["removed"]["near_dup_docs"]["n"] == 2  # A twin + B
+        assert k7arm["removed"]["reverse_closure_docs"]["n"] == 1
+        assert k7arm["removed"]["cycle_mate_docs"]["n"] == 0
+        assert k7arm["removed"]["total"]["n"] == 2          # union {A, B}
+        assert k7arm["n_admitted_files"] == 1
+        normalized_c = len(chain["c_text"].encode("utf-8")) - 1
+        assert k7arm["n_admitted_normalized_bytes"] == normalized_c
+        k7_cell = k7arm["cells"][str(65536)]
+        assert [r["identity"] for r in k7_cell["selected_units"]] == \
+            [["C.lean"]]
+        assert k7_cell["context_bytes"] == \
+            len("-- ctx: C.lean\n") + normalized_c + 1
         # determinism
         assert manifest["targets_sha256"] == \
             _build(chain)["targets_sha256"]
@@ -349,8 +401,19 @@ def test_binding_drift_fails_closed():
         try:
             build_assembly(chain["sample"], chain["repo"],
                            chain["candidates"], chain["extraction"],
-                           chain["neardup"], chain["outcome"], None)
+                           chain["neardup"], chain["outcome"], None,
+                           chain["k7"])
             assert False, "lean assembly without keyword freeze accepted"
+        except V2BError:
+            pass
+    with tempfile.TemporaryDirectory() as td:
+        chain = _lean_chain(td)
+        try:
+            build_assembly(chain["sample"], chain["repo"],
+                           chain["candidates"], chain["extraction"],
+                           chain["neardup"], chain["outcome"],
+                           chain["freeze"], None)
+            assert False, "assembly without the k7 order accepted"
         except V2BError:
             pass
 
@@ -394,6 +457,53 @@ def test_neardup_universe_and_relex_fail_closed():
             assert False, "BM25 re-lex hash drift accepted"
         except V2BError as err:
             assert "re-lex" in str(err)
+
+
+def test_k7_filters_and_fails_closed():
+    # target file absent from the committed order is a hard error
+    with tempfile.TemporaryDirectory() as td:
+        chain = _lean_chain(td)
+        value = json.load(open(chain["k7"]))
+        value["files"] = [row for row in value["files"]
+                          if row[0] != "A.lean"]
+        json.dump(value, open(chain["k7"], "w"))
+        try:
+            _build(chain)
+            assert False, "target file missing from k7 order accepted"
+        except V2BError as err:
+            assert "absent from the k7 order" in str(err)
+    # normalized byte accounting must match the committed artifact
+    with tempfile.TemporaryDirectory() as td:
+        chain = _lean_chain(td)
+        value = json.load(open(chain["k7"]))
+        for row in value["files"]:
+            if row[0] == "C.lean":
+                row[1] += 1
+        json.dump(value, open(chain["k7"], "w"))
+        try:
+            _build(chain)
+            assert False, "k7 normalized byte drift accepted"
+        except V2BError as err:
+            assert "normalized byte drift" in str(err)
+    # admitted file content drift against the committed source hash
+    with tempfile.TemporaryDirectory() as td:
+        chain = _lean_chain(td)
+        with open(os.path.join(td, "corpus", "C.lean"), "a") as fh:
+            fh.write("-- drift\n")
+        try:
+            _build(chain)
+            assert False, "k7 source hash drift accepted"
+        except V2BError as err:
+            assert "k7 source hash drift" in str(err)
+
+
+def test_external_counts_absent_stay_null():
+    with tempfile.TemporaryDirectory() as td:
+        chain = _lean_chain(td, external=False)
+        row = _build(chain)["targets"][0]
+        assert row["external"]["n_external"] is None
+        assert row["external"]["bytes"] is None
+        assert "unbound" in row["external"]["reason"]
 
 
 def test_k5_seeded_orders_and_seed_budgets():
@@ -519,7 +629,7 @@ def test_materialize_round_trip():
         blobs = materialize(manifest_path, chain["sample"], chain["repo"],
                             chain["candidates"], chain["extraction"],
                             chain["neardup"], chain["outcome"],
-                            chain["freeze"])
+                            chain["freeze"], chain["k7"])
         target_key = identity_key("lean", ["M.A", "M.A.t"])
         row = manifest["targets"][0]
         blob = blobs[target_key]
@@ -534,6 +644,8 @@ def test_materialize_round_trip():
             row["arms"]["k5"]["0"]["cells"][str(B_STAR)]["context_sha256"]
         assert _sha(blob[f"k6:{B_STAR}"]) == \
             row["arms"]["k6"]["cells"][str(B_STAR)]["context_sha256"]
+        assert _sha(blob[f"k7:{B_STAR}"]) == \
+            row["arms"]["k7"]["cells"][str(B_STAR)]["context_sha256"]
         assert _sha(blob["k3s"]) == row["arms"]["k3s"]["context_sha256"]
         assert _sha(blob["k4s"]) == row["arms"]["k4s"]["context_sha256"]
         # a manifest this chain did not produce is refused
@@ -544,7 +656,7 @@ def test_materialize_round_trip():
             materialize(tampered_path, chain["sample"], chain["repo"],
                         chain["candidates"], chain["extraction"],
                         chain["neardup"], chain["outcome"],
-                        chain["freeze"])
+                        chain["freeze"], chain["k7"])
             assert False, "tampered manifest materialized"
         except V2BError:
             pass
@@ -567,14 +679,18 @@ def test_python_manifest_end_to_end():
                      source_sha256=a_sha,
                      targets=[dict(identity=["pkg.a", "f", 0], start_byte=0,
                                    end_byte=len(a_text),
-                                   header_bytes=len("def f(x):"),
-                                   n_external=3)]),
+                                   header_bytes=len("def f(x):"))]),
                 dict(module="pkg.b", source=b_path, rel="pkg_b.py",
                      source_sha256=b_sha,
                      targets=[dict(identity=["pkg.b", "g", 0], start_byte=0,
                                    end_byte=len(b_text),
                                    header_bytes=len("def g(x):"))])],
-            graph=dict(edges=[["pkg.a", "f", 0, "pkg.b", "g", 0]]))
+            graph=dict(
+                edges=[["pkg.a", "f", 0, "pkg.b", "g", 0]],
+                # identity-keyed python shape frozen by the §14.3 amendment
+                target_coverage=[
+                    dict(identity=["pkg.a", "f", 0], n_external=3),
+                    dict(identity=["pkg.b", "g", 0], n_external=0)]))
         extraction_path = os.path.join(td, "extraction.json")
         json.dump(extraction, open(extraction_path, "w"))
         extraction_sha = _sha(open(extraction_path, "rb").read())
@@ -611,9 +727,11 @@ def test_python_manifest_end_to_end():
                           targets=[dict(identity=["pkg.a", "f", 0])])})
         sample_path = os.path.join(td, "sample.json")
         json.dump(sample, open(sample_path, "w"))
+        k7_path = _k7_artifact(td, repo, "python",
+                               [("pkg_b.py", b_path), ("pkg_a.py", a_path)])
         manifest = build_assembly(sample_path, repo, candidates_path,
                                   extraction_path, neardup_path,
-                                  outcome_path)
+                                  outcome_path, None, k7_path)
         row = manifest["targets"][0]
         assert manifest["language"] == "python"
         assert row["n_k4_units"] == 1
@@ -630,6 +748,14 @@ def test_python_manifest_end_to_end():
         assert row["arms"]["k5"]["0"]["n_units"] == 0
         assert row["arms"]["k5"]["0"]["cells"] == {}
         assert row["arms"]["k6"]["n_docs"] == 1
+        # k7 admits only the non-target file, python comment banner
+        k7arm = row["arms"]["k7"]
+        assert k7arm["n_admitted_files"] == 1
+        k7_cell = k7arm["cells"][str(4096)]
+        assert [r["identity"] for r in k7_cell["selected_units"]] == \
+            [["pkg_b.py"]]
+        assert k7_cell["context_bytes"] == \
+            len("# ctx: pkg_b.py\n") + len(b_text) + 1
 
 
 def test_source_drift_fails_closed():

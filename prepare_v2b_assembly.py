@@ -11,16 +11,19 @@ reverse closure), the §15.A4 canonical dependency order, and the
 §15.A4b maximal renderings with byte-suffix budget cells.
 
 SLICE SCOPE (recorded in the manifest, never silent): arms k1, k2, k3,
-k4, k5 (seeds 0-2 per §14.21, seeds 1-2 at B* only), k6 (§14.8/§15.A11
-exact BM25 with the re-lex-and-verify term source: every document is
-re-lexed with the frozen A6 lexer and its verbatim hash must equal the
-sealed near-dup table's), and the §15.A10 k3s/k4s same-dependency-set
-sensitivities. k7 (order-artifact stream), k4x (physlib combined
-graph), and the §14.26 k6-realistic variant are DEFERRED. Token-level
-assertions (§14.13/T*) belong to the scoring side per the frozen B6
-decision. Exclusion sets are bound as counts + byte masses + set
-hashes; k5/k6 orders over the full universe are bound by order/score
-hashes with every in-budget identity recorded explicitly.
+k4, k5 (frozen k5_unit_order, seeds 0-2 per §14.21, seeds 1-2 at B*
+only), k6 (frozen bm25_scores/k6_unit_order with the B5
+re-lex-and-verify term source: every document is re-lexed with the
+frozen A6 lexer and its verbatim hash must equal the sealed near-dup
+table's), k7 (the committed §15.A8 order artifact, per-target filtered
+by target file / near-dup docs / reverse-closure docs / unit-level
+cycle-mate docs, one path-banner chunk per admitted FILE), and the
+§15.A10 k3s/k4s same-dependency-set sensitivities. k4x (physlib
+combined graph) and the §14.26 k6-realistic variant are DEFERRED.
+Token-level assertions (§14.13/T*) belong to the scoring side per the
+frozen B6 decision. Exclusion sets are bound as counts + byte masses +
+set hashes; k5/k6 orders over the full universe are bound by
+order/score hashes with every in-budget identity recorded explicitly.
 
 Hard property checks (assembly failures, never warnings): smaller
 budgets are literal byte suffixes of larger ones per arm; at most one
@@ -28,21 +31,20 @@ partial unit per cell; no context banner names the target's source
 path; prefix + body round-trip byte-exactly against the live source.
 """
 import argparse
-import math
 import sys
-from collections import Counter
 
 from finalize_v2b_a6 import EXPECTED
 from finalize_v2b_sample import N_PER_CORPUS
 from provenance import head_commit, source_clean, source_tree_hash
-from v2b_assemble import (canonical_dependency_order, interface_payload,
-                          render_chunks, splice_local_prefix,
-                          utf8_budget_suffix)
+from v2b_assemble import (bm25_scores, canonical_dependency_order,
+                          interface_payload, k5_unit_order, k6_unit_order,
+                          normalize_payload, render_chunks,
+                          splice_local_prefix, utf8_budget_suffix)
 from v2b_common import (ASSEMBLY_SCHEMA, BOUND_SAMPLE_SCHEMA,
-                        CANDIDATES_SCHEMA, NEARDUP_SCHEMA, V2BError,
-                        artifact_binding, canonical_json_bytes, identity_key,
-                        seeded_hash, sha256_bytes, sha256_json,
-                        validate_identity, write_new_json)
+                        CANDIDATES_SCHEMA, K7_ORDER_SCHEMA, NEARDUP_SCHEMA,
+                        V2BError, artifact_binding, identity_key,
+                        sha256_bytes, sha256_json, validate_identity,
+                        write_new_json)
 from v2b_neardup import (LEAN_EXTRACT_SCHEMA, PYTHON_EXTRACT_SCHEMA,
                          lex_unit, lexical_records, load_lean_keyword_freeze,
                          meets, verbatim_hash)
@@ -50,10 +52,9 @@ from v2b_neardup import (LEAN_EXTRACT_SCHEMA, PYTHON_EXTRACT_SCHEMA,
 BUDGET_GRID = (4096, 16384, 65536)        # §14.12/§1: {4,16,64} KiB
 B_STAR = 16384                            # §1: B* primary budget
 K5_SEEDS = (0, 1, 2)                      # §14.21: primary 0; 1-2 NLL @ B*
-K6_TIE_LABEL = "k6tie:v2b:20260808"       # §15.A4b frozen tie key
-BM25_K1, BM25_B = 1.2, 0.75              # §15.A11 frozen, untuned
-SLICE_ARMS = ("k1", "k2", "k3", "k4", "k3s", "k4s", "k5", "k6")
-DEFERRED_ARMS = ("k7", "k4x", "k6-realistic")
+K7_ORDER_RULE = "g3_full_topo_kahn_minheap_v1"
+SLICE_ARMS = ("k1", "k2", "k3", "k4", "k3s", "k4s", "k5", "k6", "k7")
+DEFERRED_ARMS = ("k4x", "k6-realistic")
 JACCARD_THRESHOLDS = {"0.70": (7, 10), "0.80": (4, 5), "0.90": (9, 10)}
 
 
@@ -64,8 +65,35 @@ def _hex(value, length=64):
 
 # ------------------------------------------------------------ bindings
 
+def _load_k7_order(k7_path, repo, language, corpus_sha):
+    if not k7_path:
+        raise V2BError("assembly requires the committed k7 order artifact")
+    binding, k7 = artifact_binding(k7_path, K7_ORDER_SCHEMA)
+    files = k7.get("files")
+    if k7.get("repo") != repo or k7.get("language") != language \
+            or k7.get("corpus_git_sha") != corpus_sha \
+            or k7.get("order_rule") != K7_ORDER_RULE \
+            or not isinstance(files, list) or not files:
+        raise V2BError("k7 order artifact binding drift")
+    rows = []
+    seen = set()
+    for index, row in enumerate(files):
+        if not isinstance(row, list) or len(row) != 4 \
+                or not isinstance(row[0], str) or not row[0] \
+                or not isinstance(row[1], int) or isinstance(row[1], bool) \
+                or row[1] <= 0 or not _hex(row[2]) \
+                or not isinstance(row[3], str) or not row[3]:
+            raise V2BError(f"malformed k7 order file row[{index}]")
+        if row[0] in seen:
+            raise V2BError(f"duplicate k7 order relpath {row[0]}")
+        seen.add(row[0])
+        rows.append(row)
+    return binding, rows
+
+
 def _load_chain(sample_path, repo, candidates_path, extraction_path,
-                neardup_path, outcome_path, keyword_freeze_path):
+                neardup_path, outcome_path, keyword_freeze_path,
+                k7_order_path):
     if repo not in EXPECTED:
         raise V2BError(f"unexpected assembly corpus {repo!r}")
     language, corpus_sha = EXPECTED[repo]
@@ -119,14 +147,16 @@ def _load_chain(sample_path, repo, candidates_path, extraction_path,
         _, freeze_binding = load_lean_keyword_freeze(keyword_freeze_path)
         if neardup.get("keyword_evidence") != freeze_binding:
             raise V2BError("near-dup table keyword freeze binding drift")
+    k7_binding, k7_rows = _load_k7_order(k7_order_path, repo, language,
+                                         corpus_sha)
     return dict(language=language, corpus_git_sha=corpus_sha,
                 sample=sample_binding, plan=plan,
                 candidates=cand_binding,
                 extraction=dict(extraction_binding,
                                 schema=extraction.get("schema")),
                 neardup=neardup_binding, outcome=outcome_binding,
-                keyword_freeze=freeze_binding), \
-        sample, candidates, extraction, neardup, outcome
+                keyword_freeze=freeze_binding, k7_order=k7_binding), \
+        sample, candidates, extraction, neardup, outcome, k7_rows
 
 
 # --------------------------------------------------------- corpus index
@@ -158,10 +188,26 @@ def _unit_index(extraction, language):
                 start=d.get("start_byte"), end=d.get("end_byte"),
                 header_bytes=d.get("header_bytes"),
                 split_kind=d.get("split_kind"),
-                shell=d.get("shell") if language == "lean" else None,
-                n_external=d.get("n_external")
-                if language == "python" else None)
+                shell=d.get("shell") if language == "lean" else None)
     return units, sources
+
+
+def _corpus_root(extraction):
+    """One consistent corpus root derived from source/rel agreement."""
+    root = None
+    for f in extraction.get("files", []):
+        source, rel = f.get("source"), f.get("rel")
+        if not isinstance(source, str) or not isinstance(rel, str) \
+                or not rel or not source.endswith(rel):
+            raise V2BError("extraction file source/rel are inconsistent")
+        head = source[:len(source) - len(rel)]
+        if root is None:
+            root = head
+        elif root != head:
+            raise V2BError("extraction files disagree on the corpus root")
+    if root is None:
+        raise V2BError("extraction exposes no corpus root")
+    return root
 
 
 def _span_bytes(unit):
@@ -181,30 +227,65 @@ def _set_mass(units, keys):
                 sha256=sha256_json(ordered))
 
 
-# §14.3 external mass: the extraction exposes external reference COUNTS
-# only (Lean: graph.external_reference_edges + external_ref_counts_by_target;
-# Python: per-target n_external). No external source span is bound, so byte
-# mass is NOT definable until a separately pinned external snapshot exists
-# (e.g. physlib k4x): bytes stays null with an explicit reason, never
-# fabricated. Pre-score §14.3 amendment pending.
+# §14.3 external mass (amended pre-score): the extraction exposes external
+# reference COUNTS only (Lean: nested graph.external_ref_counts_by_target
+# {module: {decl: count}}; Python: graph.target_coverage rows keyed by full
+# identity). No external source span is bound, so byte mass is NOT
+# definable until a separately pinned external snapshot exists (e.g.
+# physlib k4x): bytes stays null with an explicit reason, never fabricated.
 _EXTERNAL_REASON = ("external-source-unbound: counts only; bytes definable "
                     "only under a separately pinned external snapshot "
-                    "(pre-score §14.3 amendment pending)")
+                    "(§14.3)")
 
 
-def _external_counts(extraction, language, target, target_key):
-    if language == "python":
-        n = target.get("n_external")
-    else:
-        counts = extraction.get("graph", {}).get(
-            "external_ref_counts_by_target")
-        if isinstance(counts, dict):
-            n = counts.get(target_key, counts.get(target["identity"][1]))
-        else:
-            n = None
+def _valid_count(n, context):
     if not isinstance(n, int) or isinstance(n, bool) or n < 0:
-        n = None
-    return dict(n_external=n, bytes=None, reason=_EXTERNAL_REASON)
+        raise V2BError(f"invalid external reference count for {context}: "
+                       f"{n!r}")
+    return n
+
+
+def _external_index(extraction, language):
+    """Validated per-identity-key external counts from the graph; empty
+    when the extraction does not expose them (recorded as null)."""
+    graph = extraction.get("graph", {})
+    out = {}
+    if language == "lean":
+        counts = graph.get("external_ref_counts_by_target")
+        if counts is None:
+            return out
+        if not isinstance(counts, dict):
+            raise V2BError("lean external_ref_counts_by_target is not an "
+                           "object")
+        for module, decls in counts.items():
+            if not isinstance(decls, dict):
+                raise V2BError(f"lean external counts for module {module!r} "
+                               f"are not an object")
+            for decl, n in decls.items():
+                key = identity_key(language, [module, decl])
+                out[key] = _valid_count(n, key)
+    else:
+        coverage = graph.get("target_coverage")
+        if coverage is None:
+            return out
+        if not isinstance(coverage, list):
+            raise V2BError("python target_coverage is not a list")
+        for row in coverage:
+            if not isinstance(row, dict):
+                raise V2BError("python target_coverage row is not an object")
+            key = identity_key(language, validate_identity(
+                language, row.get("identity")))
+            if key in out:
+                raise V2BError(f"duplicate target_coverage identity {key}")
+            n = row.get("n_external")
+            if n is not None:
+                out[key] = _valid_count(n, key)
+    return out
+
+
+def _external_row(external_index, target_key):
+    return dict(n_external=external_index.get(target_key), bytes=None,
+                reason=_EXTERNAL_REASON)
 
 
 def _edges(extraction, language):
@@ -397,18 +478,18 @@ def _annotate_cells(cells, language, field, value_by_key):
 
 # ---------------------------------------------------------------- BM25
 
-def _bm25_corpus_index(language, units, verbatim_by_key, cache):
-    """§14.8/§15.A11 frozen index over the FULL same-corpus unit universe.
+def _bm25_corpus_documents(language, units, verbatim_by_key, cache):
+    """§14.8/§15.A11 document universe: EVERY same-corpus declaration unit,
+    so df/avgdl are frozen corpus-wide, never per target.
 
     B5 term source, re-lex-and-verify: every declaration unit is re-lexed
     with the exact frozen A6 lexer and the resulting verbatim hash must
     equal the sealed near-dup table's row — the BM25 term stream is
     thereby bound to the A6 evidence, fail-closed. Terms are the lexical
-    typed records (layout sentinels excluded); df and avgdl are frozen
-    over ALL corpus units, never per target."""
-    index = {}
-    df = {}
-    total_dl = 0
+    typed records (layout sentinels excluded); scoring itself is the
+    frozen v2b_assemble.bm25_scores."""
+    documents = []
+    total_terms = 0
     for key in sorted(units):
         unit = units[key]
         payload = _unit_payload(unit, cache)
@@ -421,17 +502,13 @@ def _bm25_corpus_index(language, units, verbatim_by_key, cache):
         if verbatim_hash(records) != verbatim_by_key.get(key):
             raise V2BError(f"BM25 re-lex verbatim hash drift against the "
                            f"sealed near-dup table: {key}")
-        terms = Counter(tuple(record) for record in
-                        lexical_records(records))
-        index[key] = (terms, sum(terms.values()))
-        total_dl += sum(terms.values())
-        for term in terms:
-            df[term] = df.get(term, 0) + 1
-    n_docs = len(index)
-    if n_docs == 0 or total_dl == 0:
+        terms = [list(record) for record in lexical_records(records)]
+        total_terms += len(terms)
+        documents.append(dict(identity=unit["identity"], terms=terms))
+    if not documents or total_terms == 0:
         raise V2BError("BM25 universe is empty or has no lexical terms")
-    return dict(index=index, df=df, n_docs=n_docs,
-                avgdl=total_dl / n_docs)
+    return dict(documents=documents, n_docs=len(documents),
+                avgdl=total_terms / len(documents))
 
 
 def _bm25_query_terms(language, prefix):
@@ -439,31 +516,12 @@ def _bm25_query_terms(language, prefix):
         text = prefix.decode("utf-8")
     except UnicodeDecodeError as err:
         raise V2BError(f"k6 query prefix is not UTF-8: {err}") from err
-    return Counter(tuple(record) for record in
-                   lexical_records(lex_unit(language, text)))
-
-
-def _bm25_score(query_terms, doc_terms, doc_len, corpus):
-    """Exact §15.A11 sum over DISTINCT query terms, raw linear qtf.
-
-    IEEE-754 double summation in ascending canonical-JSON term order —
-    the one summation-order choice A11 leaves open, frozen here."""
-    df, n_docs, avgdl = corpus["df"], corpus["n_docs"], corpus["avgdl"]
-    score = 0.0
-    for term in sorted(query_terms,
-                       key=lambda t: canonical_json_bytes(list(t))):
-        tf = doc_terms.get(term, 0)
-        if tf == 0:
-            continue
-        idf = math.log(1 + (n_docs - df.get(term, 0) + 0.5)
-                       / (df.get(term, 0) + 0.5))
-        score += query_terms[term] * idf * tf * (BM25_K1 + 1) \
-            / (tf + BM25_K1 * (1 - BM25_B + BM25_B * doc_len / avgdl))
-    return score
+    return [list(record) for record in
+            lexical_records(lex_unit(language, text))]
 
 
 def _assemble_target(language, repo, target_identity, units, edges,
-                     adjacency, cache, budgets, extraction, bm25,
+                     adjacency, cache, budgets, external_index, bm25, k7,
                      collect=None):
     target_key = identity_key(language, target_identity)
     if target_key not in units:
@@ -563,6 +621,8 @@ def _assemble_target(language, repo, target_identity, units, edges,
     arms["k6"] = _k6_arm(language, repo, target_identity, target, units,
                          universe, closure_keys, prefix, cache, budgets,
                          bm25, collect)
+    arms["k7"] = _k7_arm(language, target, target_key, units, near_dups,
+                         reverse, order["target_scc"], k7, budgets, collect)
     return dict(
         identity=list(target_identity), key=target_key,
         prefix_sha256=sha256_bytes(prefix), prefix_bytes=len(prefix),
@@ -583,7 +643,7 @@ def _assemble_target(language, repo, target_identity, units, edges,
             universe=_set_mass(units, universe),
             k4_same_file_excluded=_set_mass(units, excluded_same_file),
             k4_near_dup_excluded=_set_mass(units, excluded_near_dup)),
-        external=_external_counts(extraction, language, target, target_key),
+        external=_external_row(external_index, target_key),
         target_scc=order["target_scc"],
         arms=arms)
 
@@ -638,19 +698,18 @@ def _sensitivity_arms(language, k4_cells, units, cache,
 
 def _k5_arm(language, repo, target_identity, target, units, universe,
             closure_keys, cache, budgets, collect=None):
-    """§14.21/§15.A4b k5: U(t) minus the forward closure, ranked by the
-    frozen per-(target, seed) hash, rendered top-to-bottom DESCENDING so
-    the lowest hash is query-nearest and every suffix reproduces the
-    frozen draw. Seed 0 renders the full grid; seeds 1-2 (NLL-only
-    sensitivity) render B* only. The seed label is decimal: "k5:0"."""
-    pool = sorted(universe - closure_keys)
+    """§14.21/§15.A4b k5: U(t) minus the forward closure under the FROZEN
+    v2b_assemble.k5_unit_order (descending priority hash; the lowest hash
+    is query-nearest and every suffix reproduces the frozen draw). Seed 0
+    renders the full grid; seeds 1-2 (NLL-only sensitivity) render B*
+    only."""
+    pool = universe - closure_keys
     seeds = {}
     for seed in K5_SEEDS:
-        label = f"k5:{seed}"
-        priority = {key: seeded_hash(label, repo, *target_identity,
-                                     *units[key]["identity"])
-                    for key in pool}
-        ordered = sorted(pool, key=priority.__getitem__, reverse=True)
+        ordered = [identity_key(language, row["identity"])
+                   for row in k5_unit_order(
+                       language, repo, target_identity,
+                       [units[key]["identity"] for key in pool], seed)]
         seed_budgets = budgets if seed == 0 else (B_STAR,)
         cells = {}
         if ordered:
@@ -672,23 +731,24 @@ def _k5_arm(language, repo, target_identity, target, units, universe,
 
 def _k6_arm(language, repo, target_identity, target, units, universe,
             closure_keys, prefix, cache, budgets, bm25, collect=None):
-    """§14.8/§15.A4b/§15.A11 k6: BM25 over U(t) (forward deps allowed),
-    query = the exact common unscored prefix under the same A6 lexer,
-    ordered score-ascending with the frozen k6tie hash DESCENDING within
-    equal scores (lower hash nearer the query). Selected rows carry
-    full-precision scores; the full ordered (key, score) vector is bound
-    by scores_sha256. Forward-closure overlap is recorded per cell."""
+    """§14.8/§15.A4b/§15.A11 k6 over U(t) (forward deps allowed): the
+    FROZEN v2b_assemble.bm25_scores over the full corpus document
+    universe (df/avgdl corpus-wide) and the FROZEN k6_unit_order (score
+    ascending, k6tie hash descending; highest score nearest the query).
+    Selected rows carry full-precision scores; the full ordered
+    (key, score) vector is bound by scores_sha256; forward-closure
+    overlap is recorded per cell."""
     query_terms = _bm25_query_terms(language, prefix)
+    result = bm25_scores(language, query_terms, bm25["documents"])
+    score_by_key = {identity_key(language, row["identity"]): row["score"]
+                    for row in result["scores"]}
     docs = sorted(universe)
-    scores = {}
-    for key in docs:
-        doc_terms, doc_len = bm25["index"][key]
-        scores[key] = _bm25_score(query_terms, doc_terms, doc_len, bm25)
-    tie = {key: seeded_hash(K6_TIE_LABEL, repo, *target_identity,
-                            *units[key]["identity"])
-           for key in docs}
-    ordered = sorted(docs, key=tie.__getitem__, reverse=True)
-    ordered.sort(key=scores.__getitem__)      # stable: score asc, tie desc
+    ordered = [identity_key(language, row["identity"])
+               for row in k6_unit_order(
+                   language, repo, target_identity,
+                   [dict(identity=units[key]["identity"],
+                         score=score_by_key[key]) for key in docs])]
+    scores = {key: score_by_key[key] for key in docs}
     cells = {}
     if ordered:
         cells = _render_unit_arm(
@@ -704,8 +764,85 @@ def _k6_arm(language, repo, target_identity, target, units, universe,
                         {key: True for key in closure_keys})
     return dict(
         n_docs=len(docs),
-        n_query_terms=len(query_terms),
+        n_query_terms=result["n_query_terms"],
+        n_distinct_query_terms=result["n_distinct_query_terms"],
         scores_sha256=sha256_json([[key, scores[key]] for key in ordered]),
+        cells=cells)
+
+
+def _k7_payload(root, rel, expected_bytes, expected_sha, k7_cache):
+    """Read, hash-verify, and §15.A4-normalize one admitted k7 file."""
+    if rel not in k7_cache:
+        path = root + rel
+        try:
+            raw = open(path, "rb").read()
+        except OSError as err:
+            raise V2BError(f"cannot read k7 admitted file {path}: {err}") \
+                from err
+        if sha256_bytes(raw) != expected_sha:
+            raise V2BError(f"k7 source hash drift: {rel}")
+        normalized, _ = normalize_payload(raw)
+        if len(normalized) != expected_bytes:
+            raise V2BError(f"k7 normalized byte drift: {rel}")
+        k7_cache[rel] = normalized
+    return k7_cache[rel]
+
+
+def _k7_arm(language, target, target_key, units, near_dups, reverse,
+            target_scc, k7, budgets, collect=None):
+    """§14.7/§15.A8/§15.A11 k7: the committed full-corpus topo order,
+    filtered per target — the target's file, files containing a
+    near-duplicate of the target, files containing >= 1 unit of the
+    target's transitive reverse closure, and files containing any
+    non-target unit-level cycle-mate (the extraction's target SCC mapped
+    to source files; the artifact's file_scc_id is diagnostic only and
+    never used for selection). Each admitted FILE renders as one chunk
+    with its repo-relative-path comment banner under the identical
+    §14.17 join/separator machinery. Removed files/bytes are recorded
+    per reason (sets may overlap); a target file absent from the order
+    is a hard error."""
+    row_by_rel = {row[0]: row for row in k7["rows"]}
+    target_rel = target["source_rel"]
+    if target_rel not in row_by_rel:
+        raise V2BError(f"target file absent from the k7 order: "
+                       f"{target_rel}")
+
+    def files_of(keys):
+        return {units[key]["source_rel"] for key in keys} & set(row_by_rel)
+
+    cycle_mates = {identity_key(language, identity)
+                   for identity in target_scc} - {target_key}
+    removed_sets = dict(
+        target_file={target_rel},
+        near_dup_docs=files_of(near_dups),
+        reverse_closure_docs=files_of(reverse),
+        cycle_mate_docs=files_of(cycle_mates))
+    removed_union = set().union(*removed_sets.values())
+    admitted = [row[0] for row in k7["rows"] if row[0] not in removed_union]
+
+    def rel_mass(rels):
+        ordered = sorted(rels)
+        return dict(n=len(ordered),
+                    bytes=sum(row_by_rel[rel][1] for rel in ordered),
+                    sha256=sha256_json(ordered))
+
+    cells = {}
+    if admitted:
+        cells = _render_unit_arm(
+            language,
+            [dict(identity=[rel], relpath=rel,
+                  payload=_k7_payload(k7["root"], rel, row_by_rel[rel][1],
+                                      row_by_rel[rel][2], k7["cache"]))
+             for rel in admitted],
+            target_rel, budgets, collect=collect, collect_key="k7")
+    return dict(
+        n_order_files=len(k7["rows"]),
+        n_admitted_files=len(admitted),
+        n_admitted_normalized_bytes=sum(row_by_rel[rel][1]
+                                        for rel in admitted),
+        removed=dict(
+            {name: rel_mass(rels) for name, rels in removed_sets.items()},
+            total=rel_mass(removed_union)),
         cells=cells)
 
 
@@ -713,19 +850,22 @@ def _k6_arm(language, repo, target_identity, target, units, universe,
 
 def build_assembly(sample_path, repo, candidates_path, extraction_path,
                    neardup_path, outcome_path, keyword_freeze_path=None,
-                   budgets=BUDGET_GRID, collect=None):
-    bindings, sample, candidates, extraction, neardup, outcome = \
+                   k7_order_path=None, budgets=BUDGET_GRID, collect=None):
+    bindings, sample, candidates, extraction, neardup, outcome, k7_rows = \
         _load_chain(sample_path, repo, candidates_path, extraction_path,
-                    neardup_path, outcome_path, keyword_freeze_path)
+                    neardup_path, outcome_path, keyword_freeze_path,
+                    k7_order_path)
     language = bindings["language"]
     units, _ = _unit_index(extraction, language)
     edges = _edges(extraction, language)
     adjacency = _a6_exclusion_sets(neardup, outcome, language, set(units))
+    external_index = _external_index(extraction, language)
     cache = {}
-    bm25 = _bm25_corpus_index(
+    bm25 = _bm25_corpus_documents(
         language, units,
         {unit["key"]: unit["verbatim_sha256"]
          for unit in neardup.get("units", [])}, cache)
+    k7 = dict(rows=k7_rows, root=_corpus_root(extraction), cache={})
     targets = []
     for row in bindings["plan"].get("targets", []):
         identity = validate_identity(language, row.get("identity"))
@@ -735,7 +875,7 @@ def build_assembly(sample_path, repo, candidates_path, extraction_path,
                 identity_key(language, identity), {})
         targets.append(_assemble_target(language, repo, list(identity),
                                         units, edges, adjacency, cache,
-                                        budgets, extraction, bm25,
+                                        budgets, external_index, bm25, k7,
                                         collect=target_collect))
     if not targets:
         raise V2BError("bound sample plan has no targets for this corpus")
@@ -745,7 +885,7 @@ def build_assembly(sample_path, repo, candidates_path, extraction_path,
         corpus_git_sha=bindings["corpus_git_sha"],
         budgets=list(budgets), b_star=B_STAR,
         k5_seeds=list(K5_SEEDS),
-        bm25=dict(k1=BM25_K1, b=BM25_B, n_corpus_units=bm25["n_docs"],
+        bm25=dict(k1=1.2, b=0.75, n_corpus_units=bm25["n_docs"],
                   avgdl=bm25["avgdl"]),
         arms_included=list(SLICE_ARMS),
         arms_deferred=list(DEFERRED_ARMS),
@@ -754,14 +894,15 @@ def build_assembly(sample_path, repo, candidates_path, extraction_path,
                       extraction=bindings["extraction"],
                       neardup=bindings["neardup"],
                       a6_outcome=bindings["outcome"],
-                      keyword_freeze=bindings["keyword_freeze"]),
+                      keyword_freeze=bindings["keyword_freeze"],
+                      k7_order=bindings["k7_order"]),
         n_targets=len(targets), targets=targets,
         targets_sha256=sha256_json(targets))
 
 
 def materialize(manifest_path, sample_path, repo, candidates_path,
                 extraction_path, neardup_path, outcome_path,
-                keyword_freeze_path=None):
+                keyword_freeze_path=None, k7_order_path=None):
     """Deterministic evaluator materialization API (§15.A9 handoff).
 
     Re-runs the exact assembly construction from the same bound
@@ -781,7 +922,7 @@ def materialize(manifest_path, sample_path, repo, candidates_path,
     collect = {}
     rebuilt = build_assembly(sample_path, repo, candidates_path,
                              extraction_path, neardup_path, outcome_path,
-                             keyword_freeze_path,
+                             keyword_freeze_path, k7_order_path,
                              budgets=tuple(budgets), collect=collect)
     def _paths_stripped(bindings):
         if not isinstance(bindings, dict):
@@ -802,13 +943,14 @@ def materialize(manifest_path, sample_path, repo, candidates_path,
 
 
 def prepare(sample_path, repo, candidates_path, extraction_path,
-            neardup_path, outcome_path, keyword_freeze_path=None):
+            neardup_path, outcome_path, keyword_freeze_path=None,
+            k7_order_path=None):
     if not source_clean():
         raise V2BError("measurement source tree is dirty outside results_v2")
     commit_start, tree_start = head_commit(), source_tree_hash()
     manifest = build_assembly(sample_path, repo, candidates_path,
                               extraction_path, neardup_path, outcome_path,
-                              keyword_freeze_path)
+                              keyword_freeze_path, k7_order_path)
     if not source_clean() or head_commit() != commit_start \
             or source_tree_hash() != tree_start:
         raise V2BError("measurement source drifted during assembly")
@@ -827,11 +969,12 @@ def main():
     ap.add_argument("--neardup", required=True)
     ap.add_argument("--a6-outcome", required=True)
     ap.add_argument("--lean-keyword-freeze")
+    ap.add_argument("--k7-order", required=True)
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     manifest = prepare(args.sample, args.repo, args.candidates,
                        args.extraction, args.neardup, args.a6_outcome,
-                       args.lean_keyword_freeze)
+                       args.lean_keyword_freeze, args.k7_order)
     digest = write_new_json(args.out, manifest)
     print(f"[v2b-assembly] {args.repo}: {manifest['n_targets']} targets, "
           f"arms {'/'.join(manifest['arms_included'])} "
