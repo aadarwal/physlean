@@ -233,11 +233,24 @@ def test_cell_done_trust_boundary():
                     dump_sha256=hashlib.sha256(blob).hexdigest(),
                     dump_file_bytes=len(blob),
                     harness_hash=harness_hash(),
-                    env_fingerprint=env_fingerprint())
+                    env_fingerprint=env_fingerprint(),
+                    # Informational whole-tree provenance is deliberately
+                    # not a cell-resume identity.  Analysis/V2-only source
+                    # additions may move it while the frozen measurement
+                    # harness and software environment remain identical.
+                    source_tree_hash="1" * 64)
         json.dump(meta, open(out + ".meta.json", "w"))
         mj = {"M": {"sha": "r"}}
         args = (out, "M", 32768, [], stream, mj)
         assert cell_done(*args) is True, "valid artifact must be accepted"
+        # A V2/source-only commit after measurement changes the current
+        # whole-tree hash.  The recorded hash remains evidence of what ran,
+        # but must not invalidate an otherwise identical G3 cell; the strict
+        # current-source battery is the separate pre-G3b forcing function.
+        meta_old_source = dict(meta, source_tree_hash="0" * 64)
+        json.dump(meta_old_source, open(out + ".meta.json", "w"))
+        assert cell_done(*args) is True, "informational source hash was gated"
+        json.dump(meta, open(out + ".meta.json", "w"))
         # (a) one-byte tamper in the dump body
         bad = bytearray(blob)
         bad[-1] ^= 0x01
