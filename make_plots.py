@@ -78,8 +78,12 @@ def fig_curves(cells):
         ax.set_xscale("log")
         ax.set_xlabel("in-context bytes c (window-relative)")
         ax.set_ylabel("bits per byte")
-        ax.set_title(f"{short} — {kind} (descriptive curves; sample size = "
-                     "windows/docs)", loc="left", fontsize=9)
+        # Keep the condition identity on its own line.  Long sentinel tags
+        # such as ``full_topo__perdoc`` and ``full_shuffled`` otherwise push
+        # a left-aligned title outside the tight bounding box.
+        ax.set_title(f"{short} — {kind}\n"
+                     "descriptive curves; sample size = windows/docs",
+                     loc="left", fontsize=9)
         ax.grid(True, alpha=.5)
         ax.legend(fontsize=6.5)
         fig.tight_layout()

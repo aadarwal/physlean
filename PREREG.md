@@ -538,6 +538,44 @@ arxiv_manifest) must be committed before measurement.
 
 ## 13. Disagreement log
 
+- ADOPTED (post-G3a boundary, evidence commit 570c433; first grid
+  outcomes): the Qwen2.5-Coder-0.5B sentinel is an INSTRUMENT PASS but
+  provides NO POWER-LAW SUPPORT. Slurm 19904528 completed all 44/44
+  frozen cells with production identity and no gaps in 00:32:48;
+  dependent job 19904915 passed `sentinel-post` (44 verified cells, all
+  15 phase variants, 88 raw artifacts, zero quarantine), analyzed 44
+  cells with zero errors, paired five base streams with zero problems,
+  and rendered the descriptive plots. Every headline base clears the
+  quantitative floors (windows/docs: geant4 21/342, mathlib 25/220,
+  physlib 25/170, qutip 21/183, sympy 23/139). The paired SAME-GROUP
+  phase probe is positive under every phase and corpus: document-
+  bootstrap 95% intervals exclude zero, with byte-weighted gains across
+  phases of 0.0155--0.0160 (geant4), 0.0372--0.0394 (mathlib),
+  0.0511--0.0586 (physlib), 0.0244--0.0351 (qutip), and
+  0.0128--0.0158 (sympy) b/B. Thus the evaluator detects a real
+  same-content benefit from more preceding context. However, all five
+  headline `A*c^(-beta)+Linf` fits FAIL the frozen holdout gate; only
+  2/64 quantitative strata accept, neither a headline base. Rejected
+  fits emit no reportable exponents. The supported statement is
+  nonparametric context gain and instrument viability, NEVER a universal
+  scaling law, Lean advantage, or cross-language numeric ordering.
+  Sensitivity floors are material: shuffled-minus-base BPB ranges
+  +0.0038 to +0.0308; per-doc-reset-minus-base -0.0034 to +0.0440;
+  second-selection-seed-minus-base -0.0365 to -0.0029. Physlib's order
+  contrast retains the standing lexicographic-order caveat. Decision:
+  proceed to the already-frozen G3.5 fixed-target extraction/pilot,
+  whose within-target contrasts remove stream sample composition as a
+  first-order confound. Its measurement implementation lands in new
+  standalone files: `eval_incontext.py` and `layout.py` stay untouched,
+  no Python dependency is added, and the V2-a commit must add the
+  deferred `cell_done` regression in which a differing recorded
+  source-tree hash remains acceptable when the current harness and
+  environment identities match. G3b remains optional and
+  human-approved; its ROI must be argued as descriptive within-family
+  robustness, not exponent estimation. This signoff commit itself moves
+  the source-tree identity, so the frozen short battery rerun remains
+  mandatory before any G3b launch. No disagreement remains between the
+  two agent reviews.
 - ADOPTED (pre-launch, at acquisition boundary 132fb5a): measurement
   identity package — MEASUREMENT_SCHEMA_VERSION 3->4 (harness hash over
   eval_incontext.py+layout.py; canonical all-distribution software
