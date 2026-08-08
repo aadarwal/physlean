@@ -34,6 +34,15 @@ def test_every_cache_and_toolchain_is_pool_only():
     assert "~/." not in src
 
 
+def test_old_glibc_nodes_use_the_system_c_compiler():
+    src = source()
+    assert 'export LEAN_CC="/bin/cc"' in src
+    assert '[[ -x "$LEAN_CC" ]]' in src
+    assert "lean_cc_version" in src
+    # The compiler override must not alter or update a pinned Lean toolchain.
+    assert '"$ELAN_HOME/bin/elan" toolchain install' in src
+
+
 def test_elan_bootstrap_bytes_are_frozen_and_verified():
     src = source()
     assert 'V2_ELAN_VERSION="4.2.3"' in src
