@@ -15,6 +15,7 @@ import sys
 import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import v2b_n_governance as governance
 from finalize_v2a import EVIDENCE_SOURCE_COMMIT
 from finalize_v2b_a6 import EXPECTED
 from v2b_common import (BOUND_SAMPLE_SCHEMA, CANDIDATES_SCHEMA,
@@ -23,9 +24,12 @@ from v2b_common import (BOUND_SAMPLE_SCHEMA, CANDIDATES_SCHEMA,
 from v2b_metadata import (COHORT_CUTOFF, SAMPLING_SEED, build_sample_plan,
                           cohort_of, seeded_hash, tercile,
                           tercile_cutpoints)
-from v2b_n_governance import (HALFWIDTH_TARGET, N_MAX, N_MIN, T_0975_BY_DF,
-                              analyze, family_governance,
-                              projected_halfwidth, variance_components)
+from v2b_n_governance import (HALFWIDTH_TARGET, N_MAX, N_MIN,
+                              PAIRED_COMPLETE_SCHEMA,
+                              SALT_COMMITMENT_SCHEMA, T_0975_BY_DF,
+                              _require_provenance, analyze,
+                              family_governance, projected_halfwidth,
+                              variance_components)
 
 PRE = "2023-05-01T00:00:00+00:00"
 FIDS = tuple("fam-" + hashlib.sha256(str(i).encode()).hexdigest()[:16]
@@ -196,23 +200,68 @@ def _gov_chain(td, deltas_fn, n_targets=430, fids=FIDS):
         open(sample_path, "rb").read()).hexdigest()
     rows = [[identity_key("lean", t["identity"]),
              deltas_fn(index, t)] for index, t in enumerate(pilot_rows)]
-    masked = dict(schema=MASKED_DELTAS_SCHEMA, repo=value["repo"],
-                  metric="bpb", budget_bytes=16384,
-                  bindings=dict(sample=dict(sha256=sample_sha),
-                                candidates=dict(sha256=candidates_sha)),
-                  families={fid: rows for fid in fids})
+    assembly_sha = "a" * 64
+    run_identity = dict(paired_schema_version=1,
+                        manifest_sha256=assembly_sha, model="m",
+                        revision="1" * 40, dtype="bfloat16")
+    run_sha = sha256_json(run_identity)
+    scored_generator = dict(source_commit="d" * 40,
+                            source_tree_hash="e" * 64,
+                            program="eval_paired.py")
+    complete = dict(schema=PAIRED_COMPLETE_SCHEMA, repo=value["repo"],
+                    language=value["language"],
+                    corpus_git_sha=value["corpus_git_sha"],
+                    assembly_manifest=dict(sha256=assembly_sha),
+                    run_identity=run_identity,
+                    run_identity_sha256=run_sha,
+                    generator=scored_generator)
+    complete_path = os.path.join(td, "complete.json")
+    json.dump(complete, open(complete_path, "w"))
+    complete_sha = hashlib.sha256(
+        open(complete_path, "rb").read()).hexdigest()
+    commitment_path = os.path.join(td, "commitment.json")
+    salt_sha = "3" * 64
+    json.dump(dict(schema=SALT_COMMITMENT_SCHEMA,
+                   state="committed-pre-score", salt_sha256=salt_sha),
+              open(commitment_path, "w"))
+    commitment_sha = hashlib.sha256(
+        open(commitment_path, "rb").read()).hexdigest()
+    families = {fid: rows for fid in fids}
+    masked = dict(
+        schema=MASKED_DELTAS_SCHEMA, repo=value["repo"],
+        language=value["language"],
+        corpus_git_sha=value["corpus_git_sha"],
+        metric="bpb", budget_bytes=16384,
+        run_identity=run_identity,
+        bindings=dict(
+            sample=dict(sha256=sample_sha),
+            candidates=dict(sha256=candidates_sha),
+            assembly=dict(sha256=assembly_sha, schema="v2b_assembly_"
+                          "manifest_v1"),
+            completion=dict(sha256=complete_sha,
+                            schema=PAIRED_COMPLETE_SCHEMA),
+            run_identity_sha256=run_sha,
+            salt_commitment=dict(path=commitment_path,
+                                 sha256=commitment_sha,
+                                 schema=SALT_COMMITMENT_SCHEMA,
+                                 salt_sha256=salt_sha)),
+        n_rows_by_family={fid: len(rows) for fid in fids},
+        families=families,
+        generator=dict(source_commit=scored_generator["source_commit"],
+                       source_tree_hash=scored_generator["source_tree_hash"],
+                       program="prepare_v2b_masked_deltas.py"))
     masked_path = os.path.join(td, "masked.json")
     json.dump(masked, open(masked_path, "w"))
-    return masked_path, candidates_path, sample_path
+    return masked_path, candidates_path, sample_path, complete_path
 
 
 def test_analyze_end_to_end_blind_and_deterministic():
     with tempfile.TemporaryDirectory() as td:
         # identical deltas: zero variance, feasible at N_MIN
         secret = 0.123456789
-        masked, candidates, sample = _gov_chain(
+        masked, candidates, sample, complete = _gov_chain(
             td, lambda index, t: secret)
-        artifact = analyze(masked, candidates, sample)
+        artifact = analyze(masked, candidates, sample, complete)
         assert artifact["verdict"] == "feasible"
         assert artifact["repo_n"] == N_MIN
         assert artifact["pilot_exclusion"]["n_excluded"] == 20
@@ -226,27 +275,27 @@ def test_analyze_end_to_end_blind_and_deterministic():
             assert banned not in dumped
         # determinism
         assert sha256_json(artifact) == \
-            sha256_json(analyze(masked, candidates, sample))
+            sha256_json(analyze(masked, candidates, sample, complete))
 
 
 def test_analyze_infeasible_and_mixed_verdicts():
     with tempfile.TemporaryDirectory() as td:
         # enormous between-module spread: no N in range reaches 0.02
-        masked, candidates, sample = _gov_chain(
+        masked, candidates, sample, complete = _gov_chain(
             td, lambda index, t: 1000.0 * (index % 4))
-        artifact = analyze(masked, candidates, sample)
+        artifact = analyze(masked, candidates, sample, complete)
         assert artifact["verdict"] == "infeasible"
         assert artifact["repo_n"] is None
         assert artifact["families"][FIDS[0]]["verdict"] == "infeasible"
     with tempfile.TemporaryDirectory() as td:
         # one infeasible family among three: repo stays infeasible
-        masked, candidates, sample = _gov_chain(td, lambda index, t: 0.0)
+        masked, candidates, sample, complete = _gov_chain(td, lambda index, t: 0.0)
         value = json.load(open(masked))
         value["families"][FIDS[2]] = [
             [row[0], 1000.0 * (index % 4)] for index, row in
             enumerate(value["families"][FIDS[2]])]
         json.dump(value, open(masked, "w"))
-        artifact = analyze(masked, candidates, sample)
+        artifact = analyze(masked, candidates, sample, complete)
         assert artifact["families"][FIDS[0]]["verdict"] == "feasible"
         assert artifact["families"][FIDS[2]]["verdict"] == "infeasible"
         assert artifact["verdict"] == "infeasible"
@@ -257,9 +306,9 @@ def test_analyze_underfilled_pool_is_infeasible():
     with tempfile.TemporaryDirectory() as td:
         # 60 candidates - 20 pilot = 40 < N_MIN: every N underfills, the
         # projection never returns requested N over a smaller denominator
-        masked, candidates, sample = _gov_chain(
+        masked, candidates, sample, complete = _gov_chain(
             td, lambda index, t: 0.0, n_targets=60)
-        artifact = analyze(masked, candidates, sample)
+        artifact = analyze(masked, candidates, sample, complete)
         assert artifact["verdict"] == "infeasible"
         family = artifact["families"][FIDS[0]]
         assert family["chosen_n"] is None
@@ -269,12 +318,12 @@ def test_analyze_underfilled_pool_is_infeasible():
 
 def test_analyze_hardened_contract_refusals():
     def tamper(td, mutate, expect):
-        masked, candidates, sample = _gov_chain(td, lambda index, t: 0.0)
+        masked, candidates, sample, complete = _gov_chain(td, lambda index, t: 0.0)
         value = json.load(open(masked))
         mutate(value)
         json.dump(value, open(masked, "w"))
         try:
-            analyze(masked, candidates, sample)
+            analyze(masked, candidates, sample, complete)
             assert False, expect
         except V2BError as err:
             assert expect in str(err)
@@ -293,20 +342,20 @@ def test_analyze_hardened_contract_refusals():
             sha256="0" * 64), "bound to this exact")
     # non-pilot delta target refuses
     with tempfile.TemporaryDirectory() as td:
-        masked, candidates, sample = _gov_chain(td, lambda index, t: 0.0)
+        masked, candidates, sample, complete = _gov_chain(td, lambda index, t: 0.0)
         value = json.load(open(masked))
         value["families"][FIDS[0]].append(
             [identity_key("lean", ["Ghost", "Ghost.x"]), 0.5])
         json.dump(value, open(masked, "w"))
         try:
-            analyze(masked, candidates, sample)
+            analyze(masked, candidates, sample, complete)
             assert False, "non-pilot delta target accepted"
         except V2BError as err:
             assert "non-pilot" in str(err)
     # a tampered sample plan is NOT the frozen deterministic pilot draw,
     # even when the caller re-stamps every hash consistently
     with tempfile.TemporaryDirectory() as td:
-        masked, candidates, sample = _gov_chain(td, lambda index, t: 0.0)
+        masked, candidates, sample, complete = _gov_chain(td, lambda index, t: 0.0)
         value = json.load(open(sample))
         value["plans"]["mathlib4"]["targets"] = \
             value["plans"]["mathlib4"]["targets"][:19]
@@ -320,10 +369,122 @@ def test_analyze_hardened_contract_refusals():
             open(sample, "rb").read()).hexdigest()
         json.dump(masked_value, open(masked, "w"))
         try:
-            analyze(masked, candidates, sample)
+            analyze(masked, candidates, sample, complete)
             assert False, "self-consistent tampered pilot plan accepted"
         except V2BError as err:
             assert "frozen deterministic pilot draw" in str(err)
+
+
+def test_analyze_b3_chain_refusals():
+    def masked_tamper(td, mutate, expect):
+        masked, candidates, sample, complete = _gov_chain(
+            td, lambda index, t: 0.0)
+        value = json.load(open(masked))
+        mutate(value)
+        json.dump(value, open(masked, "w"))
+        try:
+            analyze(masked, candidates, sample, complete)
+            assert False, expect
+        except V2BError as err:
+            assert expect in str(err)
+
+    # forged completion binding: tampered completion no longer matches
+    with tempfile.TemporaryDirectory() as td:
+        masked, candidates, sample, complete = _gov_chain(
+            td, lambda index, t: 0.0)
+        value = json.load(open(complete))
+        value["n_targets"] = 99
+        json.dump(value, open(complete, "w"))
+        try:
+            analyze(masked, candidates, sample, complete)
+            assert False, "unbound completion accepted"
+        except V2BError as err:
+            assert "does not match" in str(err)
+    # run identity restamped consistently in masked only: the completion
+    # cross-check still refuses
+    with tempfile.TemporaryDirectory() as td:
+        masked, candidates, sample, complete = _gov_chain(
+            td, lambda index, t: 0.0)
+        value = json.load(open(masked))
+        value["run_identity"]["model"] = "forged"
+        value["bindings"]["run_identity_sha256"] = sha256_json(
+            value["run_identity"])
+        json.dump(value, open(masked, "w"))
+        try:
+            analyze(masked, candidates, sample, complete)
+            assert False, "forged run identity accepted"
+        except V2BError as err:
+            assert "does not match" in str(err)
+    # internal chain: run identity must name the assembly binding
+    with tempfile.TemporaryDirectory() as td:
+        def broken_manifest(value):
+            value["run_identity"]["manifest_sha256"] = "9" * 64
+            value["bindings"]["run_identity_sha256"] = sha256_json(
+                value["run_identity"])
+        masked_tamper(td, broken_manifest, "binding chain")
+    with tempfile.TemporaryDirectory() as td:
+        masked_tamper(td, lambda v: v["n_rows_by_family"].update(
+            {FIDS[0]: 7}), "n_rows_by_family")
+    with tempfile.TemporaryDirectory() as td:
+        masked_tamper(td, lambda v: v["generator"].update(
+            program="other.py"), "masked generator")
+    with tempfile.TemporaryDirectory() as td:
+        masked_tamper(td, lambda v: v["generator"].update(
+            source_commit="9" * 40), "source identities")
+    with tempfile.TemporaryDirectory() as td:
+        masked_tamper(td, lambda v: v.update(language="python"),
+                      "language/corpus")
+    # completion generator drift, with the masked binding re-stamped
+    with tempfile.TemporaryDirectory() as td:
+        masked, candidates, sample, complete = _gov_chain(
+            td, lambda index, t: 0.0)
+        value = json.load(open(complete))
+        value["generator"]["program"] = "other.py"
+        json.dump(value, open(complete, "w"))
+        masked_value = json.load(open(masked))
+        masked_value["bindings"]["completion"]["sha256"] = hashlib.sha256(
+            open(complete, "rb").read()).hexdigest()
+        json.dump(masked_value, open(masked, "w"))
+        try:
+            analyze(masked, candidates, sample, complete)
+            assert False, "completion generator drift accepted"
+        except V2BError as err:
+            assert "completion generator" in str(err)
+    # the committed salt bytes/digest must equal the public masked binding,
+    # not merely occupy some committed-looking path
+    with tempfile.TemporaryDirectory() as td:
+        masked, candidates, sample, complete = _gov_chain(
+            td, lambda index, t: 0.0)
+        masked_value = json.load(open(masked))
+        saved_require = governance.require_committed
+        saved_tree = governance.source_tree_hash
+        governance.require_committed = lambda path: None
+        governance.source_tree_hash = lambda: "e" * 64
+        try:
+            _require_provenance(masked, masked_value)
+            salt_path = masked_value["bindings"]["salt_commitment"]["path"]
+            salt_value = json.load(open(salt_path))
+            salt_value["salt_sha256"] = "8" * 64
+            json.dump(salt_value, open(salt_path, "w"))
+            try:
+                _require_provenance(masked, masked_value)
+                assert False, "drifted committed salt bytes accepted"
+            except V2BError as err:
+                assert "salt artifact" in str(err)
+        finally:
+            governance.require_committed = saved_require
+            governance.source_tree_hash = saved_tree
+    # committed-boundary seam: an uncommitted masked artifact refuses in
+    # the production provenance gate
+    with tempfile.TemporaryDirectory() as td:
+        masked, candidates, sample, complete = _gov_chain(
+            td, lambda index, t: 0.0)
+        masked_value = json.load(open(masked))
+        try:
+            _require_provenance(masked, masked_value)
+            assert False, "uncommitted masked artifact accepted"
+        except V2BError as err:
+            assert "commit" in str(err).lower()
 
 
 if __name__ == "__main__":

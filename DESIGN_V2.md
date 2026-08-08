@@ -1512,6 +1512,54 @@ masked pilot data, never an analyst choice.
   boundary of this subsection, not an implicit follow-up — no model
   score may be taken while it is missing.
 
+  GOVERNANCE ANTI-FORGERY CHAIN (final adversarial adoption, same
+  boundary). A schema-correct masked JSON must not bypass B3: the
+  analyzer additionally takes the paired COMPLETION artifact as a
+  fourth non-unblinding input (it carries no arm-level information)
+  and verifies, fail-closed — the completion file hash equals the
+  masked completion binding; completion run_identity and run-identity
+  hash equal the masked artifact's; completion language/corpus and
+  assembly binding agree, and its eval_paired.py generator shares the
+  masking generator's source commit/tree; the masked run_identity internally
+  names the assembly binding (manifest_sha256 equality); assembly/
+  completion/salt-commitment bindings are schema- and hash-well-formed;
+  masked language/corpus equal the candidate table's;
+  n_rows_by_family equals the family rows; the masked generator is a
+  well-formed prepare_v2b_masked_deltas.py stamp. The production gate
+  further requires the masked artifact AND the salt-commitment path it
+  names to be exact committed HEAD blobs whose bytes/hash and salt
+  digest equal the masked binding, and the masked generator's
+  source tree to equal the CURRENT source tree (HEAD itself may differ
+  by the evidence-only commit landing the masked artifact). Forgery is
+  thereby a committed, auditable act with a fully consistent fabricated
+  chain — and the salt reveal remains the structural backstop, since
+  published residuals must reconstruct from the hash-bound target
+  artifacts.
+
+  B3 MASKED-DELTA PRODUCER (same boundary; pre-score code only, no
+  model execution). prepare_v2b_masked_deltas.py reconstructs every
+  target artifact from one hash-bound paired complete.json, verifying
+  completion/target/manifest/sample/candidates hashes, the run
+  identity, each target's manifest-row rebinding (assembly_target
+  sha + prefix/body hashes), and every used cell's
+  cell_manifest_sha256. Frozen orientations and complete-case
+  eligibility at B*, primary bpb only: E1a = k1 - k4 (eligible k4);
+  E1b = k3 - k4 (eligible k3 AND k4); E2 = k5:0 - k4 (eligible k5
+  seed-0 AND k4). A family emptied by eligibility is emitted with zero
+  rows and becomes the recorded governance verdict
+  "no-eligible-targets" (repo infeasible), never a crash. MASKING: one
+  32-byte private salt generated pre-score (write-once, mode 0600,
+  POOL storage, never committed or printed) with a write-once public
+  SHA256 commitment artifact that is committed before scoring; opaque
+  ids and a private +/- sign derive from
+  domain-separated HMAC-SHA256(salt, contrast), so the mapping is
+  unrecomputable until the salt is revealed after governance. Public
+  rows are sign * (delta - family mean): published family means are
+  zero to ulp-scale floating residue and the MoM components are
+  invariant up to floating roundoff (property-tested).
+  No private sidecar exists — after salt reveal, raw deltas and means
+  reconstruct deterministically from the hash-bound target artifacts.
+
   BLINDNESS AND EXCLUSION. The governance artifact records variance
   components, cluster counts, per-N halfwidths, chosen N, and verdicts
   ONLY — no means, signs, or per-target deltas; family ids stay opaque

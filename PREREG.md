@@ -1377,7 +1377,28 @@ arxiv_manifest) must be committed before measurement.
   the sealed arm-to-id mapping live solely in the masked-delta
   generator (B3) — a MANDATORY pre-score implementation boundary, not
   an implicit follow-up; no model score may be taken while it is
-  missing. Recorded limitations: V2-c eligibility attrition unmodeled;
+  missing. B3 (adopted, same boundary): frozen orientations E1a=k1-k4,
+  E1b=k3-k4, E2=k5:0-k4 at B* primary bpb with §14.2 complete-case
+  eligibility; empty families emit zero rows and become the recorded
+  "no-eligible-targets" verdict; masking via one pre-score 32-byte
+  private salt (write-once 0600, never committed/printed; public SHA256
+  commitment artifact committed before scoring) with HMAC-derived
+  opaque ids and a private sign; public rows are sign*(delta - family
+  mean) — centered to ulp-scale floating residue, with MoM components
+  invariant up to roundoff (property-tested); no private sidecar, since raw
+  values reconstruct from hash-bound target artifacts after salt
+  reveal. Governance anti-forgery (final adoption, same boundary): the
+  analyzer takes the paired completion as a fourth non-unblinding input
+  and verifies the full B3 binding chain (completion
+  hash/run-identity/generator, shared scoring/masking source identity,
+  and completion language/corpus/assembly; masked run-identity naming the assembly
+  binding; assembly/completion/salt-commitment binding well-formedness;
+  language/corpus vs candidates; n_rows_by_family; producer generator);
+  the production gate requires the masked artifact and its named
+  salt-commitment path to be committed HEAD blobs whose exact binding
+  hashes/digest agree, and the producer tree
+  to equal the current source tree. Salt reveal remains the structural
+  backstop. Recorded limitations: V2-c eligibility attrition unmodeled;
   variance-component uncertainty only partially covered by t(G-1).
   Full detail: DESIGN_V2 §15.A14.
 
