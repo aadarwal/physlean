@@ -7,9 +7,9 @@ import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from prepare_v2b_lean_setups import (
-    SETUP_INDEX_SCHEMA, _safe_module_relpath, extraction_modules,
-    parse_lake_environment, parse_query_stdout, setup_artifact_roles,
-    validate_setup)
+    SETUP_INDEX_SCHEMA, _artifact_rows, _safe_module_relpath,
+    extraction_modules, parse_lake_environment, parse_query_stdout,
+    runtime_search_closure, setup_artifact_roles, validate_setup)
 from v2b_common import V2BError, sha256_file
 
 
@@ -97,7 +97,7 @@ def test_lake_environment_projection_is_exact_and_nul_terminated():
 
 def test_extraction_module_map_binds_unique_live_sources():
     with tempfile.TemporaryDirectory() as td:
-        corpus = os.path.join(td, "corpus")
+        corpus = os.path.realpath(os.path.join(td, "corpus"))
         os.makedirs(os.path.join(corpus, "M"))
         a = os.path.join(corpus, "M", "A.lean")
         b = os.path.join(corpus, "M", "B.lean")
@@ -131,7 +131,7 @@ def test_module_setup_output_paths_cannot_escape():
                 "Bad\\Name", "Bad\x00Name"):
         _expect_failure(lambda value=bad: _safe_module_relpath(value),
                         "module name")
-    assert SETUP_INDEX_SCHEMA == "v2b_lean_setup_index_v1"
+    assert SETUP_INDEX_SCHEMA == "v2b_lean_setup_index_v2"
 
 
 def test_setup_artifact_closure_covers_imports_plugins_and_dynlibs():
@@ -167,6 +167,63 @@ def test_setup_artifact_closure_covers_imports_plugins_and_dynlibs():
     relative["dynlibs"] = ["relative.so"]
     _expect_failure(lambda: setup_artifact_roles(relative, "relative"),
                     "relative dynamic-library")
+    assert setup_artifact_roles(_setup("M.Empty"), "empty") == {}
+    assert _artifact_rows({}) == []
+
+
+def test_runtime_search_closure_binds_files_directories_missing_and_links():
+    with tempfile.TemporaryDirectory() as td:
+        td = os.path.realpath(td)
+        corpus = os.path.realpath(os.path.join(td, "corpus"))
+        corpus_lake = os.path.join(corpus, ".lake")
+        lean_root = os.path.join(corpus_lake, "build", "lib", "lean")
+        dynamic_root = os.path.join(corpus_lake, "build", "lib")
+        toolchain = os.path.realpath(os.path.join(td, "toolchain"))
+        lean = os.path.join(toolchain, "bin", "lean")
+        tool_lean = os.path.join(toolchain, "lib", "lean")
+        tool_lib = os.path.join(toolchain, "lib")
+        for path in (lean_root, tool_lean, os.path.dirname(lean)):
+            os.makedirs(path, exist_ok=True)
+        def _write(path, text):
+            with open(path, "w", encoding="utf-8") as handle:
+                handle.write(text)
+        _write(lean, "lean")
+        _write(os.path.join(lean_root, "A.olean"), "a")
+        _write(os.path.join(lean_root, "A.olean.private"), "private")
+        _write(os.path.join(lean_root, "ignored.c"), "ignored")
+        _write(os.path.join(tool_lean, "Init.ir"), "ir")
+        runtime = os.path.join(tool_lib, "libLeanRuntime.so.1")
+        _write(runtime, "runtime")
+        link = os.path.join(tool_lib, "libLeanRuntime.so")
+        os.symlink("libLeanRuntime.so.1", link)
+        missing = os.path.join(corpus_lake, "packages", "Missing",
+                               ".lake", "build", "lib", "lean")
+        environment = dict(
+            LEAN_PATH=os.pathsep.join((lean_root, missing, tool_lean)),
+            LEAN_SRC_PATH=os.path.join(corpus, "src"),
+            LD_LIBRARY_PATH=os.pathsep.join((dynamic_root, tool_lib)),
+            DYLD_LIBRARY_PATH=None, PATH="/usr/bin")
+        closure = runtime_search_closure(
+            environment, corpus, lean, "fixture")
+        assert [row["state"] for row in closure["roots"]].count(
+            "missing") == 1
+        assert lean_root in closure["directories"]
+        assert os.path.join(lean_root, "ignored.c") not in \
+            closure["artifact_roles"]
+        assert closure["artifact_roles"][
+            os.path.join(lean_root, "A.olean.private")] == {
+                "lean-search-artifact"}
+        assert closure["artifact_roles"][runtime] == {
+            "dynamic-search-artifact"}
+        assert closure["artifact_roles"][link] == {
+            "dynamic-search-artifact"}
+        assert closure["symlinks"] == [dict(
+            path=link, target="libLeanRuntime.so.1",
+            roles=["dynamic-search-artifact"])]
+        escaped = dict(environment, LEAN_PATH="/tmp/foreign")
+        _expect_failure(
+            lambda: runtime_search_closure(
+                escaped, corpus, lean, "escaped"), "escapes")
 
 
 if __name__ == "__main__":

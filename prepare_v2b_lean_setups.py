@@ -7,6 +7,9 @@ Lake module ``setup`` facet is nevertheless queryable.  This producer queries
 that facet in deterministic batches, validates one exact ModuleSetup object
 per extraction module, writes canonical new-only setup files under POOL, and
 publishes a source->setup index consumed by ``v2b_lean_boundaries.py``.
+Because explicit ``importArts`` is not the pinned frontend's complete runtime
+read set, setup-index v2 also content-binds the loadable artifact classes and
+directory membership under Lake's exact Lean/dynamic-library search roots.
 
 No model, salt, sample, or outcome is read.  This is CPU-only prospective
 measurement infrastructure.
@@ -26,7 +29,7 @@ from v2b_common import (V2BError, artifact_binding, relative_source_path,
 from v2b_neardup import LEAN_EXTRACT_SCHEMA
 
 
-SETUP_INDEX_SCHEMA = "v2b_lean_setup_index_v1"
+SETUP_INDEX_SCHEMA = "v2b_lean_setup_index_v2"
 LAKE_ENV_KEYS = (
     "LEAN_PATH", "LEAN_SRC_PATH", "LD_LIBRARY_PATH",
     "DYLD_LIBRARY_PATH", "PATH")
@@ -39,6 +42,10 @@ SETUP_INDEX_KEYS = frozenset((
     "corpus_root", "toolchain", "lean_toolchain_sha256", "lake", "lean",
     "environment_probe",
     "lake_environment", "lake_environment_sha256",
+    "n_search_roots", "search_roots", "search_roots_sha256",
+    "n_search_directories", "search_directories",
+    "search_directories_sha256", "n_search_symlinks",
+    "search_symlinks", "search_symlinks_sha256",
     "n_modules", "n_batches", "batch_size", "setups", "setups_sha256",
     "rows", "rows_sha256", "batches", "batches_sha256", "n_artifacts",
     "artifacts", "artifacts_sha256"))
@@ -53,8 +60,14 @@ EXTRACTION_BINDING_KEYS = frozenset(("path", "sha256", "schema"))
 EXECUTABLE_KEYS = frozenset(("path", "sha256", "version"))
 GENERATOR_KEYS = frozenset(("source_commit", "source_tree_hash", "program"))
 ARTIFACT_ROW_KEYS = frozenset(("path", "sha256", "roles"))
-ARTIFACT_ROLES = frozenset(("import-artifact", "dynamic-library", "plugin"))
+ARTIFACT_ROLES = frozenset((
+    "import-artifact", "dynamic-library", "plugin",
+    "lean-search-artifact", "dynamic-search-artifact"))
 FILE_BINDING_KEYS = frozenset(("path", "sha256"))
+SEARCH_ROOT_KEYS = frozenset(("path", "roles", "state"))
+SEARCH_ROOT_ROLES = frozenset(("lean-search-root", "dynamic-search-root"))
+SEARCH_ROOT_STATES = frozenset(("directory", "missing"))
+SEARCH_SYMLINK_KEYS = frozenset(("path", "target", "roles"))
 
 
 def _hex(value, length=64):
@@ -214,12 +227,149 @@ def setup_artifact_roles(value, where):
     return roles
 
 
+def _path_entries(value, label):
+    """Parse one Lake path list without silently accepting cwd entries."""
+    if value is None:
+        return []
+    if not isinstance(value, str) or not value:
+        raise V2BError(f"Lake {label} is not a nonempty path list")
+    entries = value.split(os.pathsep)
+    if any(not entry or not os.path.isabs(entry)
+           or os.path.normpath(entry) != entry for entry in entries):
+        raise V2BError(f"Lake {label} contains an empty/noncanonical path")
+    return entries
+
+
+def _inside(path, root):
+    try:
+        return os.path.commonpath((path, root)) == root
+    except ValueError:
+        return False
+
+
+def _lean_search_artifact(path):
+    name = os.path.basename(path)
+    return ".olean" in name or name.endswith((
+        ".ir", ".ilean", ".bc"))
+
+
+def _dynamic_search_artifact(path):
+    name = os.path.basename(path)
+    return ".so" in name or name.endswith((".dylib", ".dll"))
+
+
+def runtime_search_closure(lake_environment, corpus_root, lean_path,
+                           where="Lake runtime search closure"):
+    """Bind every file class Lean may resolve outside ``ModuleSetup``.
+
+    ``ModuleSetup.importArts`` is not a complete read set: a traced pinned
+    PhysLib invocation opened thousands of transitive ``*.olean*``/``*.ir``
+    files through ``LEAN_PATH``.  Prefix validation also depends on directory
+    membership.  This closure therefore records every Lean import/IR artifact
+    and dynamic library under Lake's exact search roots, plus every directory
+    and relevant symlink.  Missing Lake roots are semantic state and remain
+    explicit rather than being dropped.
+    """
+    if not isinstance(lake_environment, dict) \
+            or set(lake_environment) != set(LAKE_ENV_KEYS):
+        raise V2BError(f"{where}: malformed Lake environment")
+    corpus_root = os.path.realpath(corpus_root)
+    lean_path = os.path.realpath(lean_path)
+    toolchain_root = os.path.dirname(os.path.dirname(lean_path))
+    corpus_lake = os.path.join(corpus_root, ".lake")
+    allowed_roots = (corpus_lake, toolchain_root)
+    root_roles = {}
+    for name, role in (("LEAN_PATH", "lean-search-root"),
+                       ("LD_LIBRARY_PATH", "dynamic-search-root"),
+                       ("DYLD_LIBRARY_PATH", "dynamic-search-root")):
+        for root in _path_entries(lake_environment[name], name):
+            canonical_root = os.path.realpath(root)
+            if not any(_inside(canonical_root, allowed)
+                       for allowed in allowed_roots):
+                raise V2BError(
+                    f"{where}: {name} root escapes corpus/toolchain: {root}")
+            root_roles.setdefault(canonical_root, set()).add(role)
+    implicit_toolchain_lib = os.path.join(toolchain_root, "lib")
+    if os.path.islink(implicit_toolchain_lib) \
+            or not os.path.isdir(implicit_toolchain_lib):
+        raise V2BError(f"{where}: resolved toolchain lib is not a real "
+                       f"directory: {implicit_toolchain_lib}")
+    root_roles.setdefault(implicit_toolchain_lib, set()).update((
+        "lean-search-root", "dynamic-search-root"))
+
+    roots = []
+    directories = set()
+    symlinks = {}
+    artifact_roles = {}
+    for root in sorted(root_roles):
+        roles = root_roles[root]
+        if not os.path.lexists(root):
+            state = "missing"
+        else:
+            if os.path.islink(root) or not os.path.isdir(root):
+                raise V2BError(f"{where}: search root is not a real directory: "
+                               f"{root}")
+            state = "directory"
+            for dirpath, dirnames, filenames in os.walk(
+                    root, topdown=True, followlinks=False):
+                dirnames.sort()
+                filenames.sort()
+                directories.add(dirpath)
+                for dirname in dirnames:
+                    candidate = os.path.join(dirpath, dirname)
+                    if os.path.islink(candidate):
+                        raise V2BError(
+                            f"{where}: directory symlink is unsupported: "
+                            f"{candidate}")
+                for filename in filenames:
+                    candidate = os.path.join(dirpath, filename)
+                    candidate_roles = set()
+                    if "lean-search-root" in roles \
+                            and _lean_search_artifact(candidate):
+                        candidate_roles.add("lean-search-artifact")
+                    if "dynamic-search-root" in roles \
+                            and _dynamic_search_artifact(candidate):
+                        candidate_roles.add("dynamic-search-artifact")
+                    if not candidate_roles:
+                        continue
+                    if not os.path.isfile(candidate):
+                        raise V2BError(f"{where}: relevant search artifact "
+                                       f"is not a file: {candidate}")
+                    artifact_roles.setdefault(candidate, set()).update(
+                        candidate_roles)
+                    if os.path.islink(candidate):
+                        try:
+                            target = os.readlink(candidate)
+                        except OSError as err:
+                            raise V2BError(
+                                f"{where}: cannot read symlink {candidate}: "
+                                f"{err}") from err
+                        existing = symlinks.get(candidate)
+                        if existing is not None \
+                                and existing["target"] != target:
+                            raise V2BError(
+                                f"{where}: symlink target drift while "
+                                f"walking overlapping roots: {candidate}")
+                        merged_roles = set(existing["roles"]) \
+                            if existing is not None else set()
+                        merged_roles.update(candidate_roles)
+                        symlinks[candidate] = dict(
+                            path=candidate, target=target,
+                            roles=sorted(merged_roles))
+        roots.append(dict(path=root, roles=sorted(roles), state=state))
+    return dict(
+        roots=roots,
+        directories=sorted(directories),
+        symlinks=[symlinks[path] for path in sorted(symlinks)],
+        artifact_roles=artifact_roles)
+
+
 def _artifact_rows(roles, workers=16):
     if type(workers) is not int or workers < 1:
         raise V2BError("artifact hash worker count must be positive")
     paths = sorted(roles)
     if not paths:
-        raise V2BError("ModuleSetup closure contains no external artifacts")
+        return []
     with concurrent.futures.ThreadPoolExecutor(
             max_workers=min(workers, len(paths))) as executor:
         digests = list(executor.map(sha256_file, paths))
@@ -397,6 +547,75 @@ def validate_setup_index(value, live_files=True, require_generator=False):
             or any(not lake_environment[name] for name in (
                 "LEAN_PATH", "LEAN_SRC_PATH", "PATH")):
         raise V2BError("setup index Lake environment binding drift")
+    search_roots = value.get("search_roots")
+    search_directories = value.get("search_directories")
+    search_symlinks = value.get("search_symlinks")
+    if not isinstance(search_roots, list) or not search_roots \
+            or type(value.get("n_search_roots")) is not int \
+            or value.get("n_search_roots") != len(search_roots) \
+            or value.get("search_roots_sha256") != \
+            sha256_sorted_json(search_roots) \
+            or not isinstance(search_directories, list) \
+            or type(value.get("n_search_directories")) is not int \
+            or value.get("n_search_directories") != \
+            len(search_directories) \
+            or value.get("search_directories_sha256") != \
+            sha256_sorted_json(search_directories) \
+            or search_directories != sorted(search_directories) \
+            or len(search_directories) != len(set(search_directories)) \
+            or any(not isinstance(path, str) or not path
+                   or not os.path.isabs(path)
+                   for path in search_directories) \
+            or not isinstance(search_symlinks, list) \
+            or type(value.get("n_search_symlinks")) is not int \
+            or value.get("n_search_symlinks") != len(search_symlinks) \
+            or value.get("search_symlinks_sha256") != \
+            sha256_sorted_json(search_symlinks):
+        raise V2BError("setup index runtime-search table/hash drift")
+    root_paths = []
+    for index, row in enumerate(search_roots):
+        if not isinstance(row, dict) or set(row) != SEARCH_ROOT_KEYS \
+                or not isinstance(row.get("path"), str) or not row["path"] \
+                or not os.path.isabs(row["path"]) \
+                or not isinstance(row.get("roles"), list) \
+                or not row["roles"] or row["roles"] != sorted(row["roles"]) \
+                or len(row["roles"]) != len(set(row["roles"])) \
+                or any(role not in SEARCH_ROOT_ROLES
+                       for role in row["roles"]) \
+                or row.get("state") not in SEARCH_ROOT_STATES:
+            raise V2BError(f"setup search root[{index}] drift")
+        root_paths.append(row["path"])
+    if root_paths != sorted(root_paths) \
+            or len(root_paths) != len(set(root_paths)):
+        raise V2BError("setup search root order/membership drift")
+    symlink_paths = []
+    for index, row in enumerate(search_symlinks):
+        if not isinstance(row, dict) or set(row) != SEARCH_SYMLINK_KEYS \
+                or not isinstance(row.get("path"), str) or not row["path"] \
+                or not os.path.isabs(row["path"]) \
+                or not isinstance(row.get("target"), str) \
+                or not row["target"] \
+                or not isinstance(row.get("roles"), list) \
+                or not row["roles"] or row["roles"] != sorted(row["roles"]) \
+                or len(row["roles"]) != len(set(row["roles"])) \
+                or any(role not in ARTIFACT_ROLES
+                       or role not in ("lean-search-artifact",
+                                       "dynamic-search-artifact")
+                       for role in row["roles"]):
+            raise V2BError(f"setup search symlink[{index}] drift")
+        symlink_paths.append(row["path"])
+    if symlink_paths != sorted(symlink_paths) \
+            or len(symlink_paths) != len(set(symlink_paths)):
+        raise V2BError("setup search symlink order/membership drift")
+    live_search = None
+    if live_files:
+        live_search = runtime_search_closure(
+            lake_environment, value["corpus_root"], value["lean"]["path"],
+            "setup index live runtime search closure")
+        if live_search["roots"] != search_roots \
+                or live_search["directories"] != search_directories \
+                or live_search["symlinks"] != search_symlinks:
+            raise V2BError("setup index runtime-search membership drift")
     setups, rows, batches, artifacts = (
         value.get("setups"), value.get("rows"), value.get("batches"),
         value.get("artifacts"))
@@ -406,7 +625,7 @@ def validate_setup_index(value, live_files=True, require_generator=False):
             or value.get("rows_sha256") != sha256_sorted_json(rows) \
             or not isinstance(batches, list) or not batches \
             or value.get("batches_sha256") != sha256_sorted_json(batches) \
-            or not isinstance(artifacts, list) or not artifacts \
+            or not isinstance(artifacts, list) \
             or value.get("artifacts_sha256") != \
             sha256_sorted_json(artifacts) \
             or type(value.get("n_artifacts")) is not int \
@@ -445,6 +664,9 @@ def validate_setup_index(value, live_files=True, require_generator=False):
     sources = []
     projected_setups = {}
     projected_artifact_roles = {}
+    if live_search is not None:
+        for path, roles in live_search["artifact_roles"].items():
+            projected_artifact_roles.setdefault(path, set()).update(roles)
     for index, row in enumerate(rows):
         if not isinstance(row, dict) or set(row) != SETUP_ROW_KEYS \
                 or not isinstance(row.get("module"), str) or not row["module"] \
@@ -619,6 +841,11 @@ def build_setup_index(extraction_path, corpus_root, expected_corpus_sha,
             or end_modules != modules:
         raise V2BError("extraction/source inputs drifted during setup query")
     rows.sort(key=lambda row: row["module"])
+    search = runtime_search_closure(
+        lake_environment, corpus_root, lean,
+        "setup producer runtime search closure")
+    for path, roles in search["artifact_roles"].items():
+        artifact_roles.setdefault(path, set()).update(roles)
     artifacts = _artifact_rows(artifact_roles, workers=artifact_workers)
     return dict(
         schema=SETUP_INDEX_SCHEMA, repo=repo, language="lean",
@@ -635,6 +862,16 @@ def build_setup_index(extraction_path, corpus_root, expected_corpus_sha,
             path=environment_probe, sha256=sha256_file(environment_probe)),
         lake_environment=lake_environment,
         lake_environment_sha256=sha256_sorted_json(lake_environment),
+        n_search_roots=len(search["roots"]),
+        search_roots=search["roots"],
+        search_roots_sha256=sha256_sorted_json(search["roots"]),
+        n_search_directories=len(search["directories"]),
+        search_directories=search["directories"],
+        search_directories_sha256=sha256_sorted_json(
+            search["directories"]),
+        n_search_symlinks=len(search["symlinks"]),
+        search_symlinks=search["symlinks"],
+        search_symlinks_sha256=sha256_sorted_json(search["symlinks"]),
         n_modules=len(rows), n_batches=len(batches), batch_size=batch_size,
         setups=setups, setups_sha256=sha256_sorted_json(setups),
         rows=rows, rows_sha256=sha256_sorted_json(rows),

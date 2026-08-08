@@ -2065,6 +2065,32 @@ exact setup decoder recognizes the pinned frontend's
 versioned `importArts` encodings—flat file arrays in Lean 4.32 and grouped file
 arrays in Lean 4.33—and flattens either only after rejecting mixed shapes.
 
+  `importArts` is not itself the complete runtime read set. A PRE-OUTCOME
+`strace -ff -e trace=%file` diagnostic of the successful exact-environment
+PhysLib probe observed 14,235 relevant Lean/runtime files opened (9,084 under
+the pinned toolchain, 5,145 under the corpus `.lake` tree, and six system
+runtime files); only one was present in the three-path explicit setup table,
+leaving 14,234 outside it. Therefore setup-index v2
+additionally freezes Lake's complete semantic search closure plus the resolved
+toolchain `lib` root: every existing
+or missing `LEAN_PATH`/`LD_LIBRARY_PATH`/`DYLD_LIBRARY_PATH` root; every
+directory reachable below any existing search root; every relevant file
+symlink and link target; every `*.olean*`, `*.ir`, `*.ilean`, and `*.bc` file
+below Lean search roots; and every shared library below dynamic-library search
+roots. The toolchain `lib` root is always both a Lean-artifact and dynamic-
+library root, even if a future Lake projection omits it. Other roots must be
+normalized absolute paths contained by the corpus `.lake`
+tree or the one resolved Elan toolchain. Directory symlinks are rejected;
+missing roots are recorded rather than dropped. The recursively sorted
+root/directory/symlink tables and the merged explicit-plus-search file table
+are content-hashed and re-enumerated/rehashed before and after the corpus run,
+so new/deleted prefix directories and new/deleted/changed loadable artifacts
+fail closed. Empty explicit `importArts`/plugin/dynlib closures remain valid
+(for example `Batteries.Util.Panic`) because implicit `Init` state is supplied
+by the independently bound toolchain search closure. The six traced system
+loader inputs under `/lib64` and `/etc` are an explicit same-cluster execution
+assumption rather than being misrepresented as corpus-controlled bytes.
+
   A V2-a declaration span nested inside a larger top-level wrapper command
 (for example a scoped `set_option ... in theorem`) is not silently promoted:
 it receives `not-exact-command-span`, remains a verbatim context unit, and is

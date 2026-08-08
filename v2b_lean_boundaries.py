@@ -44,6 +44,7 @@ import os
 import sys
 
 from provenance import head_commit, source_clean, source_tree_hash
+from prepare_v2b_lean_setups import SETUP_INDEX_SCHEMA
 from v2b_common import (V2BError, artifact_binding, identity_key,
                         load_json, sha256_bytes, sha256_file, sha256_json,
                         sha256_sorted_json, validate_identity,
@@ -692,8 +693,7 @@ def _validate_result(result, manifest_file_sha256, driver_sha256,
             or not isinstance(setup_binding.get("path"), str) \
             or not setup_binding["path"] \
             or not _hex(setup_binding.get("sha256")) \
-            or setup_binding.get("schema") != \
-            "v2b_lean_setup_index_v1" \
+            or setup_binding.get("schema") != SETUP_INDEX_SCHEMA \
             or not isinstance(lean, dict) or set(lean) != RUNTIME_LEAN_KEYS \
             or not isinstance(lean.get("path"), str) or not lean["path"] \
             or not _hex(lean.get("sha256")) \

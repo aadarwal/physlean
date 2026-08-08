@@ -122,7 +122,7 @@ def _runtime(td, driver_path, driver_sha, toolchain):
     return dict(
         setup_index=dict(path=os.path.join(td, "setup-index.json"),
                          sha256="e" * 64,
-                         schema="v2b_lean_setup_index_v1"),
+                         schema="v2b_lean_setup_index_v2"),
         corpus_root=td, corpus_git_sha="f" * 40, toolchain=toolchain,
         lean=dict(path=os.path.join(td, "lean"), sha256="1" * 64,
                   version="Lean fixture"),

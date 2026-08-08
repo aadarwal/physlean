@@ -8,7 +8,9 @@ import sys
 import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from prepare_v2b_lean_setups import SETUP_INDEX_SCHEMA
+from prepare_v2b_lean_setups import (
+    SETUP_INDEX_SCHEMA, _artifact_rows, runtime_search_closure,
+    setup_artifact_roles)
 from run_v2b_lean_boundary_audit import run_audit
 from v2b_common import (V2BError, artifact_binding, sha256_file,
                         sha256_sorted_json, write_new_json)
@@ -25,10 +27,11 @@ if sys.argv[1:] == ["--version"]:
     print("Lean fixture 4.32")
     raise SystemExit(0)
 if sys.argv[1:] == ["env", "/usr/bin/env", "-0"]:
+    root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     rows = [
-        ("LEAN_PATH", "/fixture/lean"),
-        ("LEAN_SRC_PATH", "/fixture/src"),
-        ("LD_LIBRARY_PATH", "/fixture/lib"),
+        ("LEAN_PATH", os.path.join(root, "lib", "lean")),
+        ("LEAN_SRC_PATH", os.path.join(root, "src")),
+        ("LD_LIBRARY_PATH", os.path.join(root, "lib")),
         ("PATH", os.environ["PATH"]),
     ]
     sys.stdout.write("".join(f"{key}={value}\0" for key, value in rows))
@@ -115,6 +118,13 @@ def _fixture(td):
     lean = os.path.join(td, "bin", "lean")
     _write(lean, FAKE_LEAN)
     os.chmod(lean, os.stat(lean).st_mode | stat.S_IXUSR)
+    fixture_root = os.path.realpath(td)
+    search_lean = os.path.join(fixture_root, "lib", "lean")
+    os.makedirs(search_lean)
+    implicit_olean = os.path.join(search_lean, "Init.olean")
+    runtime_library = os.path.join(fixture_root, "lib", "libfixture.so")
+    _write(implicit_olean, "implicit fixture olean\n")
+    _write(runtime_library, "fixture runtime\n")
     driver = os.path.join(td, "Driver.lean")
     _write(driver, "-- fixture driver bytes\n")
     setups = {source: setup}
@@ -130,13 +140,21 @@ def _fixture(td):
         targets_sha256=sha256_sorted_json(["+A:setup"]),
         stdout_sha256="4" * 64, stderr_sha256="5" * 64,
         setup_rows_sha256=sha256_sorted_json([["A", setup_sha]]))]
-    artifacts = [dict(
-        path=source, sha256=sha256_file(source),
-        roles=["import-artifact"])]
     lake_environment = dict(
-        LEAN_PATH="/fixture/lean", LEAN_SRC_PATH="/fixture/src",
-        LD_LIBRARY_PATH="/fixture/lib", DYLD_LIBRARY_PATH=None,
+        LEAN_PATH=search_lean,
+        LEAN_SRC_PATH=os.path.join(fixture_root, "src"),
+        LD_LIBRARY_PATH=os.path.join(fixture_root, "lib"),
+        DYLD_LIBRARY_PATH=None,
         PATH=os.environ["PATH"])
+    search = runtime_search_closure(
+        lake_environment, corpus, lean, "fixture")
+    artifact_roles = {
+        path: set(roles)
+        for path, roles in search["artifact_roles"].items()}
+    for path, roles in setup_artifact_roles(
+            setup_value, "fixture setup").items():
+        artifact_roles.setdefault(path, set()).update(roles)
+    artifacts = _artifact_rows(artifact_roles)
     setup_index = dict(
         schema=SETUP_INDEX_SCHEMA, repo="fixture", language="lean",
         corpus_git_sha=corpus_sha,
@@ -152,11 +170,21 @@ def _fixture(td):
             path="/usr/bin/env", sha256=sha256_file("/usr/bin/env")),
         lake_environment=lake_environment,
         lake_environment_sha256=sha256_sorted_json(lake_environment),
+        n_search_roots=len(search["roots"]),
+        search_roots=search["roots"],
+        search_roots_sha256=sha256_sorted_json(search["roots"]),
+        n_search_directories=len(search["directories"]),
+        search_directories=search["directories"],
+        search_directories_sha256=sha256_sorted_json(
+            search["directories"]),
+        n_search_symlinks=len(search["symlinks"]),
+        search_symlinks=search["symlinks"],
+        search_symlinks_sha256=sha256_sorted_json(search["symlinks"]),
         n_modules=1, n_batches=1, batch_size=1,
         setups=setups, setups_sha256=sha256_sorted_json(setups),
         rows=rows, rows_sha256=sha256_sorted_json(rows),
         batches=batches, batches_sha256=sha256_sorted_json(batches),
-        n_artifacts=1, artifacts=artifacts,
+        n_artifacts=len(artifacts), artifacts=artifacts,
         artifacts_sha256=sha256_sorted_json(artifacts),
         generator=dict(
             source_commit="6" * 40, source_tree_hash="7" * 64,

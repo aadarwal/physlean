@@ -1490,6 +1490,29 @@ arxiv_manifest) must be committed before measurement.
   pinned version distinction—flat `importArts` arrays under Lean 4.32 and
   grouped arrays under Lean 4.33—but rejects mixed shapes.
 
+- ADOPTED/CLARIFIED (2026-08-08, exact Lean runtime-search closure;
+  PRE-A6-LABEL/PRE-SAMPLE/PRE-SCORE/PRE-OUTCOME): the explicit Lake
+  `ModuleSetup` artifact list is not treated as the complete semantic read
+  set. In a successful exact-environment PhysLib probe, a source-blind
+  `strace -ff -e trace=%file` diagnostic observed 14,235 relevant opened
+  Lean/runtime files (9,084 in the pinned toolchain, 5,145 in corpus `.lake`,
+  six system-loader inputs); only one overlapped the module's three explicit
+  setup paths, leaving 14,234 outside that table. Before the corpus-wide
+  boundary array, setup-index v2 must therefore bind Lake's normalized
+  absolute existing/missing Lean and dynamic-library search roots plus the
+  resolved toolchain `lib` root (always classified as both); every
+  directory below any existing search root; relevant file symlinks and targets;
+  every `*.olean*`/`*.ir`/`*.ilean`/`*.bc` below Lean roots; and every shared
+  library below dynamic roots. Roots outside the corpus `.lake` tree or the
+  one resolved Elan toolchain and all directory symlinks fail closed. The
+  sorted root/directory/symlink tables and merged explicit-plus-search file
+  hashes are recomputed before and after execution. Missing roots and a
+  legitimately empty explicit closure are states, not errors. The six traced
+  `/lib64`/`/etc` loader inputs remain an explicit same-cluster environmental
+  assumption. This amendment reads no model, target draw, label, salt, score,
+  or verifier outcome and invalidates no production evidence because the
+  boundary array has not been submitted.
+
 - ADOPTED (2026-08-08, new-artifact self-hash encoding; PRE-A6-LABEL/
   PRE-SAMPLE/PRE-SCORE/PRE-OUTCOME): review found that legacy `sha256_json`
   preserves mapping insertion order while `write_new_json` serializes mapping
