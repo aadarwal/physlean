@@ -538,6 +538,24 @@ arxiv_manifest) must be committed before measurement.
 
 ## 13. Disagreement log
 
+- ADOPTED (V2-b pre-sample hardening, 2026-08-08, PRE-OUTCOME — the first
+  candidate array had begun producing metadata only and was never finalized;
+  no sample, near-duplicate corpus artifact/label, assembly, score, or
+  behavioral outcome existed): SymPy job 19919207_3 failed closed because a
+  tracked file had no ordinary `--follow --diff-filter=A` record despite a
+  full checkout and direct 2021 history. DESIGN_V2 §15.A12 now permits only a
+  recorded, one-sided PRE witness fallback: an unfiltered history timestamp
+  on/before the frozen cutoff can conservatively demote the file to PRE; no
+  witness or a post-cutoff-only witness still hard-fails, and the rule can
+  never create a clean/post target. The incomplete first array is quarantined
+  and all five tables are rerun under one amended generator. Independent
+  synthetic review simultaneously found that extraction `code_mask` masks
+  strings as well as comments, making the draft A6 STR branch unreachable;
+  no real A6 artifact had run. A6 is hardened to a sequential nested-comment
+  lexer retaining ordinary/raw/char literals, flat-spliced canonical identity
+  seeds, exact packet-bound label application, and the literal eight-label
+  collision cap. These are adverse implementation counterexamples, not
+  responses to model or behavioral data.
 - ADOPTED (V2-b implementation-blocker resolution, 2026-08-08,
   PRE-OUTCOME — no near-duplicate label, target sample, assembly artifact,
   model score, or behavioral result exists): implementation of the frozen

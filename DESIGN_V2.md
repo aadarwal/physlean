@@ -852,8 +852,8 @@ cells recorded.
 15.A2 FIRST-ADD DATE (a CONSERVATIVE PROXY for content age, not
 target-creation time). Per file:
 git log --follow --find-renames=50% --diff-filter=A
---format=%H|%aI|%cI -- <path>; parse EVERY add record (>= 1 required;
-zero is a hard error); first_add = the MINIMUM over every author AND
+--format=%H|%aI|%cI -- <path>; parse EVERY add record. With >= 1 record,
+first_add = the MINIMUM over every author AND
 committer timestamp of ALL records; timestamp ties choose the
 lexicographically smallest commit hash as recorded provenance. If any
 author date precedes the repository's first commit, set
@@ -867,6 +867,8 @@ the vendor-excluding clean-cohort sensitivity predeclared. Cutoff:
 post/clean requires first_add STRICTLY LATER than 2024-11-12T23:59:59Z
 (boundary day = PRE); raw dates stored so other family cutoffs
 recompute at analysis. Shallow clones refused; git version recorded.
+The zero-add merge-topology case uses ONLY the conservative PRE witness
+rule in §15.A12; it can never mint a post/clean target.
 
 15.A3 CENTRALITY (per §2, MODULE-level). centrality(target) =
 in-degree of the target's module in the same-repo module import graph
@@ -948,8 +950,11 @@ TYPED TOKEN STREAMS: Python stdlib tokenize retains ordinary lexical
 tokens {NAME, OP, NUMBER, STRING, FSTRING_*} AND maps INDENT, DEDENT,
 and logical NEWLINE to canonical typed sentinel records, dropping
 ONLY COMMENT, NL, ENCODING, ENDMARKER (block layout is semantic —
-dropping it would let different nestings collide); Lean: comments
-removed via code_mask, identifier characters per the pinned
+dropping it would let different nestings collide); Lean: one sequential
+scanner skips `--` and nested `/- -/` comments while RETAINING ordinary,
+raw, and character literals as typed records (the extraction code_mask
+also masks strings and therefore is not the A6 lexer), identifier
+characters per the pinned
 toolchain's isIdFirst/isIdRest (isLetterLike + isSubScriptAlnum)
 transcribed verbatim and cited, «...» single tokens, numeric/string
 literals, any other non-space char a token, plus a typed LAYOUT
@@ -1186,3 +1191,39 @@ older sentence.
   the full straddling-group NLL and uses the full exact body denominator.
   Because prefix tail and body bytes are arm-identical and equality is hard
   asserted, neither convention can introduce an arm-specific boundary rule.
+
+15.A12 PRE-SAMPLE HARDENING (adopted after the first metadata-only candidate
+array began, but before any target sample, near-duplicate corpus artifact or
+label, assembly artifact, model score, or behavioral outcome). This resolves
+two fail-closed implementation discoveries; neither uses outcome information.
+
+  ZERO-ADD MERGE TOPOLOGY. The exact §15.A2 all-add rule remains primary. If
+  and only if it returns zero records for a tracked file in a full, clean
+  checkout, run the same single-path `git log --follow --find-renames=50%`
+  WITHOUT a diff filter and parse every `%H|%aI|%cI` history record. Let the
+  history witness be the minimum author-or-committer timestamp, with the same
+  commit/source tie rule. The file is accepted ONLY when that witness is at or
+  before the frozen cutoff, and is assigned PRE; otherwise generation fails.
+  Record `provenance_mode=no-add-pre-witness`, `n_add_records=0`, the raw
+  witness dates/commit/source and history-record count,
+  `exact_add_unresolved=true`, and `vendor_unknown=true`; vendor_flagged is
+  conservatively true. This is a one-sided age bound: a truly post file may be
+  demoted to PRE, but an unobserved old add can never be promoted to POST.
+  Counts and file paths are reported. For any alternate cutoff earlier than
+  the witness, the file is unresolved and excluded rather than reclassified.
+
+  A6 LEXER AND LABEL BINDING. The Lean scanner rule in §15.A6 supersedes the
+  earlier literal use of extraction `code_mask`; ordinary strings, raw strings
+  `r#*"..."#*`, and character literals (including escapes and embedded comment
+  markers) each emit one literal record, and their internal newlines emit no
+  layout sentinel. Unterminated comments/literals fail. Required fixtures make
+  distinct literal contents hash differently and pin numeric bases,
+  underscores, fractions, and exponents. Calibration-pair order is the two
+  validated identities sorted by canonical compact-JSON bytes; the seeded
+  `a6cal` and `a6calshow` arrays flat-splice the first identity then the second,
+  per §15's global convention—never two pre-serialized identity strings.
+  Mechanical label application is bound to the exact deterministic packet:
+  unknown, duplicate, omitted, or altered packet entries fail. Collision
+  activation accepts exactly the capped eight labels and requires 8/8 clones;
+  >8 is invalid rather than a way around the cap. Jaccard outcomes likewise
+  reject labels not forming the packet's exact selected set.
