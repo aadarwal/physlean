@@ -1,0 +1,11 @@
+{
+ "algorithm": "commitment = SHA256(salt-32-bytes); arm_id = 'arm-' + first-16-hex(HMAC-SHA256(key=salt, message=canonical_json(['v2bbehavior-arm:v1', named_arm]))) for exact arms k1/k3/k4/k5/k6",
+ "generator": {
+  "program": "prepare_v2b_behavior_salt.py",
+  "source_commit": "2b2bbefa0e2764648f03479abaeae71b069f1f7b",
+  "source_tree_hash": "72f06ed7c3bfeb34e47b20ffd08af21e203f38208fcea7269bebf312bf223e85"
+ },
+ "salt_sha256": "7f9774ca838a8907bf6a88ae43de1da5a21b8c84fd5d2582ab9b02227e0f8497",
+ "schema": "v2b_behavior_salt_commitment_v1",
+ "state": "committed-pre-generation"
+}
