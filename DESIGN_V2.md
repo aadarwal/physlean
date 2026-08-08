@@ -1109,3 +1109,80 @@ truncation, NO reselection; both byte lengths recorded and
 deliberately unequal. k4s is a distinct sibling of the k4 cell and
 never conflated with it. Both are budget-UNMATCHED labeled
 sensitivities; the equal-budget E1b primary is untouched.
+
+15.A11 IMPLEMENTATION-BLOCKER RESOLUTIONS (adopted pre-artifact,
+pre-label, pre-sample, and pre-score). This subsection resolves choices
+that A1-A10 left operationally underdetermined; it governs any conflicting
+older sentence.
+
+  BANNERS, k2, AND UNIT UNIVERSE. k2 is NOT unit-rendered: its maximal
+  core is the target file's raw bytes strictly above the target span after
+  merging and excising all wholly-earlier near-duplicate spans; retained
+  intervals are concatenated byte-exactly and every splice is recorded.
+  It has no banner (a path banner would reveal the target file). The
+  identical banner/chunk machinery in §14.17 therefore applies to k3-k7,
+  not k2. A k3-k7 banner is the rendered unit's own repo-relative path;
+  equality with the target path is a hard failure. The overbroad older
+  prohibition on a target module/declaration-name SUBSTRING in another
+  unit's path is retracted: generic short names make that rule undefined
+  and false-positive prone; banners never synthesize a target identity.
+  The declaration-unit universe is every current-corpus declaration with a
+  source span (Lean: after v3 foreign-DeclInfo removal; Python: every direct
+  module-body unit), independent of TARGET eligibility, kind, selection
+  containment, or split availability. Closure traversal includes same-file
+  nodes so their cross-file dependencies remain reachable, then filters
+  every target-file unit only at rendering and records same_file_mass. A k3
+  unit with split_kind=null is rendered verbatim—no boundary is invented—and
+  n_unsplit_units/bytes is recorded per cell; k3/k4 retain the same unit set.
+
+  BM25 (frozen, untuned). Terms are §15.A6 lexical typed records [kind,
+  value], excluding layout sentinels; query and documents use that same
+  lexer, never a third tokenizer. A document is one declaration unit,
+  |u| is its lexical-record count, and avgdl and document frequencies are
+  frozen over the full same-corpus unit universe, never recomputed per
+  target. For N documents,
+  IDF(x)=ln(1+(N-df(x)+0.5)/(df(x)+0.5)); k1=1.2 and b=0.75. The score is
+  the IEEE-754-double evaluation of the sum over DISTINCT query terms of
+  qtf*IDF*tf*(k1+1)/(tf+k1*(1-b+b*|u|/avgdl)), with raw linear qtf. Query
+  is the exact common unscored prefix. Scores are recorded at full JSON
+  float precision; equal scores use §15.A4b's frozen k6tie direction.
+
+  k7 ADMITTED FILES AND CYCLES. "ALL" in §15.A8 means the exact audited
+  prep_streams collector universe at the locked revision: configured
+  roots/extensions/exclusions, UTF-8-decodable files of at least 64 bytes,
+  with the collector's one-terminal-LF emission normalization. Walked but
+  excluded counts/bytes are recorded by reason. Ordering calls the existing
+  topo_order verbatim: Kahn min-heap followed by cyclic residue in file-index
+  order. The artifact field is n_cycle_nodes (not the inaccurate
+  n_cycle_break_events—no forced-pop event exists). file_scc_id is
+  diagnostic, computed on the same resolved edge set and named by the SCC's
+  lexicographically smallest relpath; it never changes topo_order. Every
+  admitted file must be a zero-change input to §15.A4 normalize(), asserted
+  as a cross-implementation tripwire.
+
+  FINAL SEPARATOR AND k1. For every nonempty arm, ONE separator LF is
+  appended to the arm's core maximal rendering BEFORE any byte/token suffix
+  is taken; it counts toward B and belongs to the final context span. Thus a
+  normalized unit arm has one empty line before the common query prefix.
+  This overrides §15.A4's statement that the last chunk owns no join byte
+  only for this final context-to-query separator. k2 receives the same one
+  separator LF after its raw spliced core. k1 has exactly b"" context, SHA256
+  of the empty byte string, zero units, and separator_bytes=0; it has one
+  manifest cell per target with budget_bytes=null and is reused by every
+  contrast rather than duplicated as three pseudo-observations. Prompt bytes
+  are context + prefix + body with no unrecorded delimiter.
+
+  BODY TOKEN BOUNDARY (primary plus sensitivity). Tokenize the exact prompt
+  once with no special tokens and reuse layout.token_spans' overlap groups
+  and charged-byte ledger. PRIMARY body NLL includes a token-overlap group
+  iff its entire charged source-byte interval lies inside the scored body;
+  the single group straddling prefix/body, if any, is unscored, and its
+  body-side bytes/codepoints are removed from the primary BPB/BPC
+  denominator. Record the group, n_boundary_straddle_tokens,
+  straddled_body_bytes/codepoints, and assert
+  scored_body_bytes+straddled_body_bytes=exact_body_bytes. The boundary
+  ledger/signature must be identical across arms for one target x tokenizer
+  or every such cell is invalid. A predeclared descriptive sensitivity adds
+  the full straddling-group NLL and uses the full exact body denominator.
+  Because prefix tail and body bytes are arm-identical and equality is hard
+  asserted, neither convention can introduce an arm-specific boundary rule.

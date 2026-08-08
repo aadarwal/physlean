@@ -538,6 +538,25 @@ arxiv_manifest) must be committed before measurement.
 
 ## 13. Disagreement log
 
+- ADOPTED (V2-b implementation-blocker resolution, 2026-08-08,
+  PRE-OUTCOME — no near-duplicate label, target sample, assembly artifact,
+  model score, or behavioral result exists): implementation of the frozen
+  A1-A10 contract exposed two genuinely outcome-selectable omissions and six
+  representation ambiguities, resolved in DESIGN_V2 §15.A11 before binding
+  any study artifact. BM25 is now a fully specified, untuned typed-token
+  formula (positive Robertson IDF, k1=1.2, b=0.75, linear qtf, full-universe
+  avgdl/df); body-boundary scoring now uses the existing charged-byte overlap
+  groups, excludes the straddling group and its body-side bytes from the
+  primary, hard-asserts an arm-invariant boundary ledger, and reports the
+  full-body/straddling-group-inclusive sensitivity. The other resolutions
+  make k2 raw and banner-free; traverse same-file dependency nodes before
+  render-time exclusion; retain every source-spanned declaration as context
+  while target eligibility remains separate; pass split-null k3 units
+  verbatim and record them; bind k7 to the exact audited prep_streams admitted
+  universe/cycle semantics (n_cycle_nodes); and specify the final separator
+  plus a single canonical empty k1 cell. These are measurement definitions,
+  not responses to data. Their triggering counterexamples and byte/graph
+  properties enter tests before candidate or assembly generation.
 - ADOPTED (V2-b implementation-freeze consolidation, 2026-08-08,
   PRE-OUTCOME — no pilot sample drawn, no paired cell scored, no
   calibration or collision label collected): DESIGN_V2 gains §15, the
