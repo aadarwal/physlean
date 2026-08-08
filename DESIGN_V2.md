@@ -393,9 +393,14 @@ and the pairwise overlap matrix are always reported; cross-estimand
 comparisons carry a population label.
 
 14.3 Closures are SAME-REPO, CROSS-FILE elaborated (Lean) / static
-(Python) dependency context for both languages; excluded same-file and
-external-package dependency mass are RECORDED per target
-(same_file_mass, external_package_mass: bytes + counts).
+(Python) dependency context for both languages; excluded same-file mass is
+RECORDED per target as bytes + counts. External-package reference mass is
+recorded as exact extracted occurrence counts, but its byte mass is `null`
+with an explicit unbound-source reason unless that arm binds a separately
+pinned external source snapshot (physlib k4x does; same-repo k3/k4 do not).
+Inventing bytes from an installed or corpus-HEAD package would silently bind
+the wrong external version; this supersedes the earlier blanket
+`external_package_mass: bytes + counts` requirement.
 Imported-package context is a later sensitivity — and for physlib,
 whose mathematical spine is mathlib (external), that sensitivity is
 expected to be LOAD-BEARING for any physlib-vs-mathlib E1b reading;
@@ -1176,6 +1181,19 @@ older sentence.
   every target-file unit only at rendering and records same_file_mass. A k3
   unit with split_kind=null is rendered verbatim—no boundary is invented—and
   n_unsplit_units/bytes is recorded per cell; k3/k4 retain the same unit set.
+
+  COMMON LEAN PREFIX + EXTERNAL MASS. The Lean common-prefix byte encoding is
+  `UTF8("".join(command + "\n" for command in shell)) + declaration[:header_bytes]`:
+  extraction stores active shell commands without terminal LFs and in active
+  outer-to-inner/source order; zero shell commands contribute zero bytes.
+  The round-trip assertion removes that synthetic shell prefix, then requires
+  the exact header suffix plus scored body to equal the live declaration span.
+  For external-package mass, the Lean extraction's nested
+  `external_ref_counts_by_target[module][decl]` and the Python extraction's
+  identity-keyed `graph.target_coverage[].n_external` are the binding sources.
+  Neither extraction binds external source spans. Therefore their byte field
+  remains `null` with an explicit reason until a separately pinned external
+  snapshot supplies the bytes; no ambient installed package is consulted.
 
   BM25 (frozen, untuned). Terms are §15.A6 lexical typed records [kind,
   value], excluding layout sentinels; query and documents use that same

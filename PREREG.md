@@ -538,6 +538,25 @@ arxiv_manifest) must be committed before measurement.
 
 ## 13. Disagreement log
 
+- ADOPTED (V2-b assembly prefix/external-mass implementation-blocker
+  resolution, 2026-08-08, PRE-LABEL/PRE-SAMPLE/PRE-SCORE — the final
+  source-consistent token/freeze chain and four small-corpus diagnostic A6
+  tables existed, and the full mathlib table was running; no exact-five A6
+  packet, label, target sample, assembly artifact, model score, or behavioral
+  result existed): B1 implementation exposed two representation omissions in
+  the frozen contract, neither selectable from an outcome. First, the exact
+  Lean common-query-prefix serialization is now the active shell commands in
+  stored outer-to-inner/source order, each followed by one synthetic LF, then
+  the declaration header bytes; shell strings themselves carry no terminal LF,
+  and stripping the synthetic shell prefix must round-trip header + scored body
+  to the live declaration span. Second, the current Lean and Python extraction
+  artifacts bind exact external-reference occurrence counts but do not bind
+  external source spans, so external byte mass is `null` with an explicit
+  unbound-source reason for same-repo k3/k4. Byte mass may be populated only by
+  an arm that separately pins the corresponding external source snapshot
+  (physlib k4x); ambient installed-package bytes are forbidden. DESIGN_V2
+  §14.3/§15.A11 records the binding fields, and positive synthetic fixtures
+  pin the nested Lean and identity-keyed Python count lookups before assembly.
 - ADOPTED (V2-b A6 notation-prime correction, 2026-08-08, PRE-OUTCOME —
   no A6 corpus artifact, packet, label, sample, assembly, model score, or
   behavioral outcome existed): corrected token array `19924314` and keyword
