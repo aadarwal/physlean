@@ -1347,6 +1347,40 @@ arxiv_manifest) must be committed before measurement.
   bytes definable for this arm only (§14.3). Full detail: DESIGN_V2
   §15.A13.
 
+- ADOPTED (2026-08-08, blind N governance; PRE-SCORE — no model score,
+  masked delta, or governance artifact exists): V2-c per-repo N in
+  [200, 400] is computed by the frozen v2b_n_governance analyzer from
+  masked B* paired-delta families, never chosen by an analyst. One-way
+  module random-effects MoM on unequal clusters
+  (n0 = (n - sum n_g^2/n)/(G-1); sigma_w^2 = MSW;
+  sigma_b^2 = max(0,(MSB-MSW)/n0)); all-singleton fallback sigma_b^2 =
+  sample variance with sigma_w^2 = 0; NO upper ICC clamp (infeasibility
+  must be representable); G < 2 fails closed as insufficient-clusters.
+  Per integer N in [200,400] the projected module sizes are the exact
+  frozen-plan selection over the sealed candidate table with the 20
+  pilot identities excluded (original cutpoints validated on the full
+  table); Var(mean) = sigma_b^2*sum m_g^2/N^2 + sigma_w^2/N; halfwidth
+  = t(0.975, G_pilot-1) from the frozen df 1..19 table; family N =
+  smallest N with halfwidth <= 0.02 b/B; repo N = max over E1a/E1b/E2,
+  else infeasible. Output carries no means, signs, or deltas; family
+  ids stay opaque until sealed unblinding. The 20 pilot identities are
+  excluded from every V2-c draw through the same exclude_keys path.
+  Hardened input contract (same boundary): masked deltas declare
+  metric=bpb at budget 16384, hash-bind the exact sample/candidates
+  pair, carry exactly three canonical opaque families (fam-<16 hex>)
+  whose rows are all pilot targets; the sample plan must be drawn from
+  that same table; the pilot is exactly 20 identities of the correct
+  arity; an N whose pilot-excluded plan underfills is null, never
+  chosen; the analyzer recomputes the frozen deterministic 20-target
+  pilot draw and requires the bound sample plan to equal it. Delta
+  computation, eligibility filtering, paired-completion provenance, and
+  the sealed arm-to-id mapping live solely in the masked-delta
+  generator (B3) — a MANDATORY pre-score implementation boundary, not
+  an implicit follow-up; no model score may be taken while it is
+  missing. Recorded limitations: V2-c eligibility attrition unmodeled;
+  variance-component uncertainty only partially covered by t(G-1).
+  Full detail: DESIGN_V2 §15.A14.
+
 ## 14. Known limitations (standing list)
 
 Model-relative estimand; single repo per cell (until G4+); proofs-vs-

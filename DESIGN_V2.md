@@ -1454,3 +1454,71 @@ after the cluster lake-manifest read).
   units and their byte mass are recorded per target. This closes the
   recorded cross-repo duplication threat FOR k4x; the full cross-corpus
   duplication diagnostic remains a separate pre-interpretation boundary.
+
+15.A14 BLIND N GOVERNANCE (§14.22 operationalized; adopted PRE-SCORE — no
+model score, masked delta, or governance artifact exists). The V2-c
+per-repo sample size N in [200, 400] is a DETERMINISTIC function of
+masked pilot data, never an analyst choice.
+
+  ESTIMATOR. Input = per-target paired B* deltas for each masked contrast
+  family (opaque family ids; arm names never enter). Cluster = the
+  target's source MODULE (identity[0]). One-way random-effects
+  method-of-moments on unequal clusters: MSW = within mean square (df
+  n-G), MSB = between mean square (df G-1),
+  n0 = (n - sum n_g^2 / n)/(G - 1); sigma_w^2 = MSW;
+  sigma_b^2 = max(0, (MSB - MSW)/n0). All-singleton pilots (every
+  n_g = 1) use the conservative fallback sigma_b^2 = sample variance
+  (ddof=1), sigma_w^2 = 0. NO upper ICC clamp: extreme clustering may
+  correctly render every N in range infeasible, and that verdict must be
+  representable. G < 2 (or n < 2) is the fail-closed verdict
+  "insufficient-clusters" — never a silent default.
+
+  PROJECTION. For every integer N in [200, 400], the projected V2-c
+  module sizes m_g are the EXACT realized sizes of the frozen §15.A1
+  plan machinery run at n = N over the sealed candidate table with the
+  20 pilot identities EXCLUDED (build_sample_plan exclude_keys: original
+  cutpoints/strata still validated against the FULL sealed table; quotas
+  and per-cell priority selection over the excluded pool; every excluded
+  key must exist). Var(mean) = sigma_b^2 * sum m_g^2 / N^2 +
+  sigma_w^2 / N; halfwidth = t(0.975, G_pilot - 1) * sqrt(Var), with the
+  Student-t quantile taken from the FROZEN df 1..19 table embedded in
+  v2b_n_governance.py (no runtime quantile computation; df > 19 is
+  impossible under a 20-target pilot and refuses). Family N = smallest
+  integer N with halfwidth <= 0.02 (paired-delta bits/byte); repo
+  N = max over the E1a/E1b/E2 families; any infeasible or
+  insufficient-clusters family makes the repo verdict infeasible.
+
+  HARDENED INPUT CONTRACT (adversarial-review adoption, same boundary).
+  The masked-deltas artifact must declare metric="bpb" at
+  budget_bytes=16384 (B* is the only governed budget), hash-bind the
+  EXACT bound-sample and candidate-table artifacts the analyzer
+  receives, and carry EXACTLY three canonical opaque families
+  (fam-<16 hex>); the bound sample plan must itself have been drawn
+  from that same candidate table (candidates_sha256 equality), the
+  pilot must contain exactly 20 identities whose arity matches the
+  candidate language, and every family row must be a pilot target. A
+  projected N whose pilot-excluded plan does NOT fill to exactly N is
+  recorded as null and can never be chosen — the projection never
+  returns a requested N over a smaller realized denominator. The
+  analyzer additionally RECOMPUTES the frozen deterministic pilot draw
+  (build_sample_plan at n=20 over the bound candidate table, with the
+  sampler's candidates_sha256 stamp) and requires the bound sample's
+  plan to EQUAL it — the 20 exclusions bind to the frozen draw itself,
+  never to a merely self-consistent 20-row JSON. Delta computation,
+  per-family eligibility filtering, paired-completion provenance, and
+  the sealed arm-to-opaque-id mapping live SOLELY in the masked-delta
+  generator (B3), which requires arm identities this analyzer must
+  never see: that generator is a MANDATORY PRE-SCORE implementation
+  boundary of this subsection, not an implicit follow-up — no model
+  score may be taken while it is missing.
+
+  BLINDNESS AND EXCLUSION. The governance artifact records variance
+  components, cluster counts, per-N halfwidths, chosen N, and verdicts
+  ONLY — no means, signs, or per-target deltas; family ids stay opaque
+  until the sealed unblinding. The 20 pilot identities are excluded from
+  EVERY V2-c draw via the same exclude_keys path the projection uses.
+  RECORDED LIMITATIONS: V2-c eligibility attrition is not modeled (the
+  projection assumes all N targets contribute to each family), and pilot
+  variance-component uncertainty is only partially covered by the
+  t(G-1) quantile; both are governance conservatism trade-offs frozen
+  here, not tunable knobs.

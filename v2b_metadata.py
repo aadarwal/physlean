@@ -23,8 +23,8 @@ from datetime import datetime, timezone
 from prep_streams import VENDOR_RE
 from v2b_common import (CANDIDATES_SCHEMA, SAMPLE_SCHEMA, V2BError,
                         artifact_binding, identity_key, load_json,
-                        relative_source_path, seeded_hash, validate_identity,
-                        sha256_file, write_new_json)
+                        relative_source_path, seeded_hash, sha256_json,
+                        validate_identity, sha256_file, write_new_json)
 
 LEAN_EXTRACT_SCHEMA = "v2a_lean_extract_v3"
 PYTHON_EXTRACT_SCHEMA = "v2a_python_extract_v3"
@@ -363,9 +363,15 @@ def allocate_quotas(populations, n):
     return quotas
 
 
-def build_sample_plan(candidates, n):
+def build_sample_plan(candidates, n, exclude_keys=frozenset()):
     """Deterministic §15.A1 plan from a candidates artifact VALUE. Pure:
-    the caller decides whether writing it is a real draw."""
+    the caller decides whether writing it is a real draw.
+
+    exclude_keys (§15.A14): identity keys removed from the SELECTION pool
+    only — the V2-c pilot-exclusion path. Cutpoints, strata, priorities,
+    and per-target validation still run over the FULL sealed table, so
+    the frozen strata never shift; quotas and per-cell fills see the
+    excluded pool. Every excluded key must exist in the table."""
     if candidates.get("schema") != CANDIDATES_SCHEMA:
         raise V2BError(f"not a candidates artifact: "
                        f"{candidates.get('schema')!r}")
@@ -444,6 +450,8 @@ def build_sample_plan(candidates, n):
         expected_priority = seeded_hash(SAMPLING_SEED, repo, *identity)
         if t.get("priority") != expected_priority:
             raise V2BError(f"candidate priority drift for {identity!r}")
+        if key in exclude_keys:
+            continue                     # §15.A14: validated, never selected
         by_cell[cell].append(t)
     expected_mode_counts = {"exact-add": 0, "no-add-pre-witness": 0}
     for provenance in provenance_by_file.values():
@@ -456,6 +464,10 @@ def build_sample_plan(candidates, n):
             or candidates.get("no_add_pre_witness_files") != \
             expected_fallback_files:
         raise V2BError("candidate first-add provenance summary drift")
+    missing_exclusions = set(exclude_keys) - seen
+    if missing_exclusions:
+        raise V2BError(f"excluded identity keys absent from the candidate "
+                       f"table: {sorted(missing_exclusions)[:3]}")
     populations = {label: len(rows) for label, rows in by_cell.items()}
     quotas = allocate_quotas(populations, n)
     chosen, fills, shortfalls = [], {}, {}
@@ -469,6 +481,8 @@ def build_sample_plan(candidates, n):
                            priority=t["priority"]) for t in rows[:take])
     return dict(schema=SAMPLE_SCHEMA, repo=repo,
                 language=language, n_requested=n,
+                n_excluded=len(exclude_keys),
+                excluded_keys_sha256=sha256_json(sorted(exclude_keys)),
                 n_selected=len(chosen), quota_table=quotas,
                 cell_populations=populations, cell_fills=fills,
                 shortfalls=shortfalls,
