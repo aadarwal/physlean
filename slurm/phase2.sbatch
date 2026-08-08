@@ -8,10 +8,14 @@
 #   --export=ALL,PLANG=<lean|python|cpp|latex> slurm/phase2.sbatch
 # (PLANG, not LANG: LANG is the locale.) Finished runs are skipped by their
 # results json -> resubmit is safe.
+set -euo pipefail
+echo "PHASE 2 IS HARD-DISABLED pending the G6 redesign gate (PREREG §10:"
+echo "fixed-D budgets cannot estimate L(N,D); 300m dropped)."
+exit 1
 cd "$SLURM_SUBMIT_DIR"
 export HF_HOME=/orcd/pool/008/$USER/hf
 LANG_ARG=${PLANG:-lean}
-nvidia-smi -L || true
+nvidia-smi -L || { echo "NO GPU VISIBLE"; exit 1; }
 for ss in 10m:1 10m:2 10m:3 30m:1 30m:2 30m:3 100m:1 100m:2 300m:1; do
   size=${ss%%:*}; seed=${ss##*:}
   out="results_v2/scratch/scratch-${size}-${LANG_ARG}-s${seed}.json"

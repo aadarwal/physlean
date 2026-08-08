@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import os, sys
+if os.environ.get("PHYSLEAN_LEGACY") != "1": sys.exit("legacy pilot script: set PHYSLEAN_LEGACY=1 (see legacy/README.md)")
 """Prepare matched corpora for the physlean pilot.
 
 2x2 design: {physics, math} x {Lean 4, Python}

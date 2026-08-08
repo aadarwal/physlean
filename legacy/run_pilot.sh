@@ -1,4 +1,5 @@
 #!/bin/bash
+[ "${PHYSLEAN_LEGACY:-0}" = "1" ] || { echo "legacy pilot script: set PHYSLEAN_LEGACY=1 (see legacy/README.md)"; exit 1; }
 # physlean pilot: train a tiny byte-LM from scratch on each corpus (matched
 # data budgets), then measure held-out per-position NLL = predictability as a
 # function of in-context codebase size. See README.md.

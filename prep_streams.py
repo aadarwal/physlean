@@ -7,12 +7,15 @@ Per corpus:
   - recover each file's first-add date from git history (rename-aware,
     one pass over `git log -M --diff-filter=AR --name-status`); for arXiv
     corpora the submission date plays that role,
-  - emit byte-budget-matched streams:
-      full_topo       all files, topo order          (headline, contaminated)
-      full_shuffled   same file set, shuffled order  (ablation: does
-                      dependency-ordered context matter?)
+  - emit byte-budget-matched streams (ONE corpus-independent selection
+    policy: seeded per-file priorities + greedy whole-document fill,
+    PREREG §2; the corpus-size-dependent stride sampler is gone):
+      full_topo       selected files, topo order     (headline, contaminated)
+      full_shuffled   SAME selected set, shuffled    (order ablation)
+      full_topo_s2    same rule, second seed         (sampling sensitivity)
+      full_topo_xl    nested superset                (window-count suppl.)
       clean_cYYYY_MM  only files first added AFTER the cutoff (per model
-                      family release date) -> contamination-controlled
+                      family release date) -> secondary contamination arm
   - manifest JSONL per stream with byte spans + dates per doc, so the eval
     can bootstrap by document and reset context at doc boundaries.
 
@@ -28,13 +31,17 @@ ROOT = os.path.join(BASE, "corpora")
 OUT = os.path.join(BASE, "data", "streams")
 
 CAP = 2_400_000          # bytes per stream (QuTiP-bound, matches pilot scale)
+XL_CAP = 12_000_000      # supplementary unmatched streams: window count for
+                         # curve stability (2.4MB @ 32k-tok windows is only
+                         # ~20 independent context episodes)
 MIN_MATCHED = 150_000    # below this a corpus can't join a matched comparison
 SHUFFLE_SEED = 20260807
 
 CUTOFFS = {              # model-family release dates (conservative cutoffs)
     "c2024_11": "2024-11-12",   # Qwen2.5-Coder family (+ StarCoder2, extra-safe)
     "c2025_04": "2025-04-29",   # Qwen3 family
-    "c2026_02": "2026-02-27",   # Qwen3.5 family
+    "c2026_02": "2026-03-01",   # Qwen3.5 family: uploads span Feb 27-28;
+                                # boundary set strictly AFTER the family max
 }
 
 CORPORA = {
@@ -73,8 +80,13 @@ def collect_files(cfg):
                     continue
                 if len(b) < 64:
                     continue
+                # normalize HERE (review fix): emission appends a final
+                # newline to files lacking one, so the canonical `bytes`
+                # must be the EMITTED size or budgets/caps drift
+                if not text.endswith("\n"):
+                    text += "\n"
                 files.append(dict(rel=os.path.relpath(p, repo), text=text,
-                                  bytes=len(b)))
+                                  bytes=len(text.encode("utf-8"))))
     files.sort(key=lambda r: r["rel"])
     return files
 
@@ -91,6 +103,8 @@ def git_add_dates(repo_dir):
            "--name-status", "--reverse", "--date-order",
            "--format=\x01%aI\x02%cI"]
     p = subprocess.run(cmd, capture_output=True, text=True, errors="replace")
+    if p.returncode != 0:  # empty output must never masquerade as "no dates"
+        raise RuntimeError(f"git log failed in {repo_dir}: {p.stderr[:200]}")
     dates = {}
     a = c = None
     for line in p.stdout.splitlines():
@@ -139,15 +153,26 @@ def load_corpus(name, cfg):
 EARLIEST_CUTOFF = min(CUTOFFS.values())
 
 
+VENDOR_RE = re.compile(r"\b(vendor|port(ed|ing)?\b|import(ed)? from|copied"
+                       r"|migrat(e|ed|ion)|upstream)\b", re.I)
+
+
 def follow_first_add(repo, rel):
+    """Earliest add date AND a provenance flag when the adding commit's
+    subject suggests pre-existing content (vendor/port/copy — PREREG §5:
+    git dates bound only in-repo publication)."""
     p = subprocess.run(["git", "-C", repo, "log", "--follow",
-                        "--diff-filter=A", "--format=%aI%x02%cI", "--", rel],
+                        "--diff-filter=A", "--format=%aI%x02%cI%x02%s",
+                        "--", rel],
                        capture_output=True, text=True, errors="replace")
+    if p.returncode != 0:
+        raise RuntimeError(f"git log --follow failed for {rel}: "
+                           f"{p.stderr[:200]}")
     lines = [l for l in p.stdout.splitlines() if l.strip()]
     if not lines:
-        return None
-    a, c = lines[-1].split("\x02")  # last line = earliest add
-    return min(a, c)
+        return None, False
+    a, c, subj = (lines[-1].split("\x02") + ["", ""])[:3]
+    return min(a, c), bool(VENDOR_RE.search(subj))
 
 
 def refine_candidate_clean_dates(name, repo, files):
@@ -160,15 +185,19 @@ def refine_candidate_clean_dates(name, repo, files):
     if not cand:
         return
     from concurrent.futures import ThreadPoolExecutor
-    moved = 0
+    moved = flagged = 0
     with ThreadPoolExecutor(max_workers=8) as ex:
-        for f, fd in zip(cand, ex.map(
+        for f, (fd, vflag) in zip(cand, ex.map(
                 lambda f: follow_first_add(repo, f["rel"]), cand)):
             if fd and fd < f["date"]:
                 f["date"] = fd
                 moved += 1
+            if vflag:
+                f["provenance_flag"] = True  # vendor/port/copy suspicion
+                flagged += 1
     print(f"[refine] {name}: {len(cand)} candidate-clean files re-dated via "
-          f"--follow; {moved} moved earlier", file=sys.stderr)
+          f"--follow; {moved} moved earlier; {flagged} vendor/port-flagged",
+          file=sys.stderr)
 
 
 def module_name(rel, cfg):
@@ -234,21 +263,47 @@ def topo_order(files, cfg):
     return order, len(cyc)
 
 
-def thin_to_cap(idxs, files, cap):
-    total = sum(files[i]["bytes"] for i in idxs)
-    if total <= cap:
-        return idxs
-    keep, s = [], 0
-    step = max(1, int(round(total / cap)))
-    for k, i in enumerate(idxs):
-        if k % step == 0 and s < cap:
-            keep.append(i)
+SELECT_SEED = 20260808
+
+
+def doc_priority(rel, seed):
+    """Deterministic per-file priority from content-independent identity:
+    stable across corpora sizes, reruns, and file-set growth."""
+    import hashlib
+    return hashlib.sha256(f"{seed}:{rel}".encode()).hexdigest()
+
+
+def select_docs(files, order, cap, seed=SELECT_SEED, base=None):
+    """ONE corpus-independent sampling policy (review fix: every-kth
+    stride made the policy a function of corpus size — mathlib sampled
+    ~1/40 while QuTiP kept nearly everything): seeded whole-document
+    priorities, greedy fill to the nominal cap (never padding), then
+    topo-order the selected set. `base` (a previously selected set)
+    guarantees nesting for XL: base docs first, then greedy-extend."""
+    pos = {i: k for k, i in enumerate(order)}
+    chosen = list(base or [])
+    s = sum(files[i]["bytes"] for i in chosen)
+    taken = set(chosen)
+    ranked = sorted((i for i in range(len(files)) if i not in taken),
+                    key=lambda i: doc_priority(files[i]["rel"], seed))
+    for i in ranked:
+        if i in pos and s + files[i]["bytes"] <= cap:
+            chosen.append(i)
             s += files[i]["bytes"]
-    return keep
+    return sorted((i for i in chosen if i in pos), key=lambda i: pos[i])
 
 
-def emit_stream(name, kind, files, idxs, cap):
-    idxs = thin_to_cap(idxs, files, cap)
+def doc_hashes(files, idxs):
+    import hashlib
+    return sorted(hashlib.sha256(files[i]["text"].encode()).hexdigest()
+                  for i in idxs)
+
+
+def emit_stream(name, kind, files, idxs):
+    """Emits idxs verbatim — ALL selection happens in select_docs (one
+    uniform policy; the corpus-size-dependent stride sampler is gone).
+    Returns stats incl. an order-independent document-set hash."""
+    import hashlib
     d = os.path.join(OUT, name)
     os.makedirs(d, exist_ok=True)
     txt_path = os.path.join(d, f"{kind}.txt")
@@ -257,16 +312,18 @@ def emit_stream(name, kind, files, idxs, cap):
     with open(txt_path, "w", encoding="utf-8") as ftxt, \
          open(man_path, "w", encoding="utf-8") as fman:
         for doc_id, i in enumerate(idxs):
-            t = files[i]["text"]
-            if not t.endswith("\n"):
-                t += "\n"
-            nb = len(t.encode("utf-8"))
+            t = files[i]["text"]  # already newline-normalized at collect
+            nb = files[i]["bytes"]
+            assert nb == len(t.encode("utf-8"))  # one bytes definition
             ftxt.write(t)
             fman.write(json.dumps(dict(
                 doc_id=doc_id, rel=files[i]["rel"], start=pos, end=pos + nb,
-                date=files[i]["date"])) + "\n")
+                date=files[i]["date"],
+                provenance_flag=files[i].get("provenance_flag", False)))
+                + "\n")
             pos += nb
-    return dict(files=len(idxs), bytes=pos)
+    dset = hashlib.sha256("".join(doc_hashes(files, idxs)).encode()).hexdigest()
+    return dict(files=len(idxs), bytes=pos, doc_set_sha256=dset)
 
 
 def build(name, cfg, files, targets):
@@ -275,21 +332,55 @@ def build(name, cfg, files, targets):
                  total_bytes=sum(f["bytes"] for f in files), cycles=n_cyc,
                  streams={})
     if name != "arxiv_new":   # full streams (contaminated arm)
-        stats["streams"]["full_topo"] = emit_stream(
-            name, "full_topo", files, order, targets["full"])
-        sh = list(order)
+        # canonical subset chosen ONCE by the uniform seeded selection
+        # rule; the shuffle ablation permutes EXACTLY these files
+        canon = select_docs(files, order, targets["full"])
+        st_topo = emit_stream(name, "full_topo", files, canon)
+        st_topo["target_bytes"] = targets["full"]
+        st_topo["target_delta"] = st_topo["bytes"] - targets["full"]
+        st_topo["selection"] = dict(method="seeded-priority-greedy",
+                                    seed=SELECT_SEED)
+        sh = list(canon)
         random.Random(SHUFFLE_SEED).shuffle(sh)
-        stats["streams"]["full_shuffled"] = emit_stream(
-            name, "full_shuffled", files, sh, targets["full"])
+        st_shuf = emit_stream(name, "full_shuffled", files, sh)
+        assert st_topo["doc_set_sha256"] == st_shuf["doc_set_sha256"] \
+            and st_topo["bytes"] == st_shuf["bytes"], \
+            f"{name}: shuffle ablation content diverged"
+        stats["streams"]["full_topo"] = st_topo
+        stats["streams"]["full_shuffled"] = st_shuf
+        # sampling-sensitivity stream (sentinel item): SAME rule, second
+        # seed — quantifies selection-policy sensitivity before expansion
+        s2 = select_docs(files, order, targets["full"],
+                         seed=SELECT_SEED + 1)
+        st_s2 = emit_stream(name, "full_topo_s2", files, s2)
+        st_s2["target_bytes"] = targets["full"]
+        st_s2["target_delta"] = st_s2["bytes"] - targets["full"]
+        st_s2["selection"] = dict(method="seeded-priority-greedy",
+                                  seed=SELECT_SEED + 1)
+        stats["streams"]["full_topo_s2"] = st_s2
+        # NESTED XL: same priority order greedy-extended past the
+        # canonical set — stability statements extend the same content
+        xl_idxs = select_docs(files, order, XL_CAP, base=canon)
+        xl = emit_stream(name, "full_topo_xl", files, xl_idxs)
+        xl["matched"] = False  # window-count supplement, never compared
+        xl["nested_superset_of_canonical"] = True
+        xl["selection"] = dict(method="seeded-priority-greedy",
+                               seed=SELECT_SEED, base="full_topo")
+        stats["streams"]["full_topo_xl"] = xl
     if name != "arxiv_old":   # clean streams (post-cutoff files only)
         for tag, cut in CUTOFFS.items():
             if targets[tag] <= 0:
                 continue
-            idxs = [i for i in order if files[i]["date"] and files[i]["date"] > cut]
-            avail = sum(files[i]["bytes"] for i in idxs)
-            st = emit_stream(name, f"clean_{tag}", files, idxs, targets[tag])
+            pool = [i for i in order if files[i]["date"] and files[i]["date"] > cut]
+            avail = sum(files[i]["bytes"] for i in pool)
+            sub_order = pool  # topo-ordered already (filtered from order)
+            idxs = select_docs(files, sub_order, targets[tag])
+            st = emit_stream(name, f"clean_{tag}", files, idxs)
             st["available_bytes"] = avail
             st["unmatched"] = avail < MIN_MATCHED
+            if not st["unmatched"]:  # PREREG: matched within EVERY kind
+                st["target_bytes"] = targets[tag]
+                st["target_delta"] = st["bytes"] - targets[tag]
             stats["streams"][f"clean_{tag}"] = st
     return stats
 
@@ -318,7 +409,23 @@ if __name__ == "__main__":
               file=sys.stderr)
     print("targets:", targets, file=sys.stderr)
 
-    all_stats = dict(targets=targets, clean_available=clean_avail, corpora={})
+    # provenance: exact corpus states measured (PREREG §2). arxiv is not a
+    # git repo — its universe is pinned by the manifest's SHA256 instead.
+    shas = {}
+    for name, cfg in CORPORA.items():
+        if cfg.get("dated_by") == "manifest":
+            continue
+        p = subprocess.run(["git", "-C", os.path.join(ROOT, cfg["repo"]),
+                            "rev-parse", "HEAD"], capture_output=True,
+                           text=True)
+        shas[cfg["repo"]] = p.stdout.strip() or None
+    import hashlib
+    man_p = os.path.join(ROOT, "arxiv", "manifest.json")
+    arxiv_sha = (hashlib.sha256(open(man_p, "rb").read()).hexdigest()
+                 if os.path.exists(man_p) else None)
+    all_stats = dict(targets=targets, clean_available=clean_avail,
+                     corpus_shas=shas, arxiv_manifest_sha256=arxiv_sha,
+                     corpora={})
     for name, cfg in CORPORA.items():
         all_stats["corpora"][name] = build(name, cfg, corpora_files[name],
                                            targets)

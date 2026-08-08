@@ -1,4 +1,5 @@
 #!/bin/bash
+[ "${PHYSLEAN_LEGACY:-0}" = "1" ] || { echo "legacy pilot script: set PHYSLEAN_LEGACY=1 (see legacy/README.md)"; exit 1; }
 # One-time setup: clone + patch + build llama.cpp (pinned to b6000), clone corpora.
 set -eu
 BASE=${PHYSLEAN_BASE:-$(cd "$(dirname "$0")" && pwd)}

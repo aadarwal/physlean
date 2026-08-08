@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import os, sys
+if os.environ.get("PHYSLEAN_LEGACY") != "1": sys.exit("legacy pilot script: set PHYSLEAN_LEGACY=1 (see legacy/README.md)")
 """Fit predictability scaling curves from per-position NLL dumps.
 
 Model: BPB(c) = A * c^(-beta) + Linf   (c = in-context bytes of codebase)

@@ -1,13 +1,11 @@
 #!/bin/bash
-#SBATCH -J physlean-p1
+#SBATCH -J physlean-battery
 #SBATCH -o logs/slurm-%x-%j.out
 #SBATCH -c 8
-#SBATCH --mem=80G
-#SBATCH -t 08:00:00
-#SBATCH --requeue
-# Submit with:  sbatch -p <part> --gres=gpu:<type>:1 \
-#   --export=ALL,MODELS=<short,short,...> slurm/phase1.sbatch
-# Cells are skipped once their .meta.json exists -> requeue/resubmit is safe.
+#SBATCH --mem=48G
+#SBATCH -t 01:30:00
+# Validity battery (PREREG §7). Submit:
+#   sbatch -p mit_normal_gpu --gres=gpu:l40s:1 slurm/battery.sbatch
 set -euo pipefail
 cd "$SLURM_SUBMIT_DIR"
 POOL_BASE="/orcd/pool/008/$USER"   # HOME is file-quota-starved: all
@@ -23,5 +21,4 @@ export CUDA_CACHE_PATH="$POOL_BASE/cuda-cache"
 export ELAN_HOME="$POOL_BASE/elan"
 mkdir -p "$CUDA_CACHE_PATH" "$ELAN_HOME"
 nvidia-smi -L || { echo "NO GPU VISIBLE"; exit 1; }
-.venv/bin/python run_phase1.py ${MODELS:+--models "$MODELS"}
-echo "SHARD-DONE ${MODELS:-all}"
+.venv/bin/python validity_battery.py

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import os, sys
+if os.environ.get("PHYSLEAN_LEGACY") != "1": sys.exit("legacy pilot script: set PHYSLEAN_LEGACY=1 (see legacy/README.md)")
 """Generate a random-initialized tiny llama-arch GGUF with a byte-level BPE vocab.
 
 Vocab: 256 byte tokens (GPT-2 byte-level alphabet) + <|endoftext|> = 257.

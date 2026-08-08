@@ -1,3 +1,8 @@
+> **HISTORICAL DOCUMENT (2026-08-07).** Superseded by `PREREG.md` (estimand,
+> gates, analysis plan) and `DESIGN_V2.md`. Kept verbatim for provenance;
+> claims herein about beta/"predictability"/ETAs/watcher automation are NOT
+> the campaign's current position. Where this conflicts with PREREG, PREREG wins.
+
 # HANDOFF — physlean: full-scale execution brief for a local agent
 
 You are inheriting a research project mid-flight. Read this whole file before
