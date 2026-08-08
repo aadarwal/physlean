@@ -16,6 +16,8 @@ import argparse
 import os
 import subprocess
 import sys
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 from prep_streams import VENDOR_RE
@@ -84,20 +86,31 @@ def corpus_git_identity(corpus_root, expected_sha=None):
                 first_commit=min(roots))
 
 
-def _commit_signals(corpus_root, commit, cache):
-    if commit not in cache:
+def _commit_signals(corpus_root, commit, cache, cache_lock=None):
+    def load():
         out = _git(corpus_root, "diff-tree", "--no-commit-id",
                    "--name-only", "--diff-filter=A", "-r", "--root", commit)
         subject = _git(corpus_root, "show", "-s", "--format=%s",
                        commit).rstrip("\n")
         n_added = sum(1 for line in out.splitlines() if line.strip())
-        cache[commit] = dict(subject=subject, n_files_added=n_added,
-                             subject_vendor=bool(VENDOR_RE.search(subject)),
-                             bulk_import=n_added >= BULK_IMPORT_FILES)
-    return cache[commit]
+        return dict(subject=subject, n_files_added=n_added,
+                    subject_vendor=bool(VENDOR_RE.search(subject)),
+                    bulk_import=n_added >= BULK_IMPORT_FILES)
+    if cache_lock is None:
+        if commit not in cache:
+            cache[commit] = load()
+        return cache[commit]
+    # Holding this lock across the two short commit-level git reads avoids a
+    # thundering herd when many files share one bulk-add commit. Per-file
+    # --follow histories still run concurrently, which is the expensive part.
+    with cache_lock:
+        if commit not in cache:
+            cache[commit] = load()
+        return cache[commit]
 
 
-def first_add_record(corpus_root, rel, first_commit, commit_cache):
+def first_add_record(corpus_root, rel, first_commit, commit_cache,
+                     cache_lock=None):
     """§15.A2: ALL add records; min over every author+committer timestamp;
     ties -> lexicographically smallest commit; anomaly RECORD-ONLY; vendor
     signals OR'd across every add commit."""
@@ -137,7 +150,8 @@ def first_add_record(corpus_root, rel, first_commit, commit_cache):
                      & set(p.lower() for p in rel.split("/")))
     per_commit = []
     for r in records:
-        signals = _commit_signals(corpus_root, r["commit"], commit_cache)
+        signals = _commit_signals(corpus_root, r["commit"], commit_cache,
+                                  cache_lock=cache_lock)
         per_commit.append(dict(commit=r["commit"],
                                author_date=r["author_date"],
                                committer_date=r["committer_date"],
@@ -387,7 +401,7 @@ def build_sample_plan(candidates, n):
 # ------------------------------------------------------------ assembly
 
 def build_candidate_table(extraction_path, corpus_root, repo,
-                          expected_corpus_sha=None):
+                          expected_corpus_sha=None, workers=1):
     binding, extraction = artifact_binding(extraction_path)
     schema = extraction.get("schema")
     if schema == LEAN_EXTRACT_SCHEMA:
@@ -426,13 +440,28 @@ def build_candidate_table(extraction_path, corpus_root, repo,
     if not rows:
         raise V2BError("no eligible candidates in extraction")
 
+    if not isinstance(workers, int) or isinstance(workers, bool) \
+            or not 1 <= workers <= 64:
+        raise V2BError(f"invalid first-add worker count {workers!r}")
     ident = corpus_git_identity(corpus_root, expected_corpus_sha)
-    bulk_cache, first_add_cache = {}, {}
+    commit_cache, first_add_cache = {}, {}
+    rel_by_source = {row["source"]: relative_source_path(
+        corpus_root, row["source"]) for row in rows}
+    unique_rels = sorted(set(rel_by_source.values()))
+    cache_lock = threading.Lock()
+
+    def read_first_add(rel):
+        return rel, first_add_record(corpus_root, rel,
+                                     ident["first_commit"], commit_cache,
+                                     cache_lock=cache_lock)
+
+    if workers == 1:
+        first_add_cache.update(read_first_add(rel) for rel in unique_rels)
+    else:
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            first_add_cache.update(executor.map(read_first_add, unique_rels))
     for row in rows:
-        rel = relative_source_path(corpus_root, row["source"])
-        if rel not in first_add_cache:
-            first_add_cache[rel] = first_add_record(
-                corpus_root, rel, ident["first_commit"], bulk_cache)
+        rel = rel_by_source[row["source"]]
         row["source_rel"] = rel
         row["first_add"] = first_add_cache[rel]
         row["cohort"] = cohort_of(first_add_cache[rel])
@@ -452,6 +481,7 @@ def build_candidate_table(extraction_path, corpus_root, repo,
                 extraction=binding,
                 corpus_git_sha=ident["corpus_git_sha"],
                 git_version=ident["git_version"],
+                first_add_workers=workers,
                 repository_first_commit_utc=(
                     ident["first_commit"].astimezone(timezone.utc).isoformat()),
                 cohort_cutoff=COHORT_CUTOFF.isoformat(),
@@ -468,19 +498,29 @@ def main():
     c.add_argument("--corpus-root", required=True)
     c.add_argument("--repo", required=True)
     c.add_argument("--expected-corpus-sha", required=True)
+    c.add_argument("--workers", type=int, default=8)
+    c.add_argument("--allow-unbound-dev", action="store_true")
     c.add_argument("--out", required=True)
     s = sub.add_parser("sample")
     s.add_argument("--candidates", required=True)
     s.add_argument("--n", type=int, default=20)
     s.add_argument("--out", required=True)
+    s.add_argument("--allow-unbound-dev", action="store_true")
     args = ap.parse_args()
     if args.cmd == "candidates":
+        if not args.allow_unbound_dev:
+            raise SystemExit("FATAL: unbound candidates CLI is synthetic/dev "
+                             "only; production uses prepare_v2b_candidates.py")
         table = build_candidate_table(args.extraction, args.corpus_root,
-                                      args.repo, args.expected_corpus_sha)
+                                      args.repo, args.expected_corpus_sha,
+                                      workers=args.workers)
         digest = write_new_json(args.out, table)
         print(f"[v2b-candidates] {args.repo}: {table['n_candidates']} "
               f"candidates -> {args.out} ({digest[:12]})")
     else:
+        if not args.allow_unbound_dev:
+            raise SystemExit("FATAL: sample draw requires the future bound "
+                             "V2-b sampler; unbound CLI is synthetic/dev only")
         value, digest = load_json(args.candidates,
                                   schema=CANDIDATES_SCHEMA)
         plan = build_sample_plan(value, args.n)
