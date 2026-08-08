@@ -1868,8 +1868,96 @@ ordinary extraction failure. No text is normalized.
   Python executable/version, extractor source tree, and contract hash under
   v2b_behavior_extracted_v1. target_kind/name come from the committed V2-a
   extraction row (which already distinguishes FunctionDef, AsyncFunctionDef,
-  and ClassDef), never a post-generation reclassification. Lean still requires
-  the separate pinned-toolchain
-  real-file-context parse-one-command driver; it is explicitly not
-  approximated by this Python rule. S5 verification, behavioral masking, and
-  all GPU generation remain unrun.
+  and ClassDef), never a post-generation reclassification. Lean uses the
+  separate pinned-toolchain rule in §15.A20; it is not approximated by this
+  Python rule. S5 verification, behavioral masking, and all GPU generation
+  remain unrun.
+
+15.A20 LEAN BEHAVIORAL BODY EXTRACTION (pinned-toolchain parser rule frozen
+PRE-GENERATION; no generated token, extracted body, or verifier outcome
+exists). Lean S4 is prepared from the FULL ORIGINAL MODULE, not from G or the
+assembly shell as a standalone snippet. One exact-keyed batch manifest
+supplies the original file, Lake ModuleSetup file, module and V2-a target
+identity/kind, committed target [start,end), body/header boundary H, original
+body delimiter in {`:=`,`where`,`|`}, bound command-line option overrides, and
+one spliced-file path plus generated end E for every sample. All positions are
+raw UTF-8 byte offsets and must be valid string boundaries. The producer must
+duplicate-key-reject and hash-bind this manifest and every source/setup/sample
+file before invoking the driver; Lean's derived JSON decoder is not itself the
+duplicate-key gate.
+
+  TRUSTED PREPARATION. Under the repository's pinned Lake/toolchain, the
+driver loads the exact ModuleSetup package, resolved imports/artifacts,
+plugins, dynamic libraries, and package options, applies and reparses the
+bound CLI option overrides after imports, and forces `Elab.async=false` before
+every command even if source text attempted to set it true. It then repeatedly
+parses and ELABORATES only commands strictly before the target, with trusted
+stdout/stderr isolated. This reconstructs file-local parser extensions,
+namespaces, open declarations, scopes, options, and notation without allowing
+a prior `run_cmd` to spoof marked records. Any setup/import, prior-command
+elaboration, parser-recovery, missing-node, terminal-before-target, or range
+error is trusted provenance failure, never a model zero. At the committed
+target start it parses the original command ONCE WITHOUT ELABORATING it and
+requires its canonical range to equal [start,end). It retains the outer syntax
+kind plus an exact pre-H syntax projection containing node kind, child index,
+token spelling/resolved identifier, and raw token range. No original token may
+cross H. Outer kind supports imported custom commands such as `lemma`; the
+manifest separately binds the exact V2-a identity and source kind.
+
+  EXACT SPLICE AND LAZY BOUNDARY. For each sample, bytes [0,H) in the spliced
+module must equal original [0,H), and spliced [E,EOF) must equal original
+[target_end,EOF). Thus only the original body has been replaced at the byte
+level. G must begin with the exact frozen original body delimiter, preventing
+extra header/type tokens; any generated canonical token crossing H also fails.
+Reusing the original pre-target states, the driver first parses exactly one
+command from input TRUNCATED AT E, so the immutable suffix is unavailable, and
+NEVER elaborates it. Success requires zero parser diagnostics/recovery/missing
+nodes, a nonterminal command, exact start and outer kind, exact agreement with
+the original pre-H syntax projection, and H < canonical_tail <= E. Lean's
+top-level parser may lex trailing trivia/lookahead before returning: a second
+well-separated command can be discarded, but an unterminated block comment
+after the canonical tail is a frozen parse failure rather than being claimed
+unseen. No byte after E is visible.
+
+  The retained body is [H,canonical_tail). The driver constructs a second
+module from the prefix through canonical_tail plus the ORIGINAL post-target
+suffix, thereby discarding all later G, and parses the target again without
+elaboration. Its range, outer kind, and pre-H projection must exactly match the
+truncated parse with no diagnostics/recovery/missing nodes. This prevents EOF
+layout closure or token completion from borrowing the suffix and validates the
+actual source S5 will receive. Empty G and delimiter/token/header/reconstructed-
+module drift use one frozen finite reason enum; every trusted setup/range/
+splice invariant is a hard error.
+
+  DRIVER EVIDENCE SURFACE. Trusted prior commands may print unrelated text, so
+only lines beginning with the frozen marker are records. They contain compact
+JSON under exact prevalidation/sample whitelists, manifest-order membership,
+parser diagnostics/recovery/missing flags, the header projection, and explicit
+`generated_target_elaborated=false`. The Python consumer requires the exact
+manifest—not merely sample IDs—duplicate-key-rejects marked JSON, binds module,
+identity, kind, ranges, delimiter, and per-sample E, rejects missing/extra/
+duplicate records, enforces byte arithmetic and a reason-specific flag truth
+table, and fails on any unfrozen field. The contract binds both schemas,
+marker, driver source, Lake preparation, splice, boundary, projection, safety,
+and failure surface. Adversarial 4.32 tests cover UTF-8 offsets, attributes/doc
+comments, no-whitespace `Foo:=` header continuation, syntax introduced earlier
+in the file, a prior marker-printing `run_cmd`, source attempts to enable async,
+malformed/incomplete/empty bodies, trailing commands/trivia, reconstructed-
+suffix parity, and a valid `run_tac` body that deliberately errors if
+elaborated; the latter succeeds, directly testing the parse-only boundary.
+
+  EXECUTION BOUNDARY. The driver and pure transcript consumer write no S4
+artifact and prove no behavioral result. The future file-based producer must
+construct and exact-key-check the batch manifest; bind the behavior plan,
+V2-a identity/kind/name/ranges, original source SHA, assembly prefix,
+generation samples, model/tokenizer, pinned Lean/lake/toolchain and repository
+identities, driver source tree, and contract hash; extract/hash the exact body
+bytes; and publish under `v2b_behavior_extracted_v1`. It must run corpus
+integration tests under both the mathlib and physlib frozen toolchains before
+generation. The production wrapper must additionally check zero exit status,
+bind stderr and exact invocation, enforce bounded batches with deterministic
+split/isolation of a pathological sample, and freeze timeout/process-resource
+failures rather than hanging or aborting the study. S5 must elaborate the
+retained reconstruction and verify the exact declaration name and statement/
+type against the original before its ordinary baseline/forbidden-escape tests.
+S5, masking, behavioral governance, and all GPU generation remain unrun.

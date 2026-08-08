@@ -8,12 +8,14 @@ is never tokenized or parsed; malformed text before it is an ordinary
 extraction failure.  Contract violations in trusted inputs fail closed with
 ``V2BError``.
 
-The Lean parser driver is deliberately not approximated here.  It requires a
-pinned-toolchain, real-file-context command parser and will be a separate
-producer under the same artifact schema.
+Lean uses the separate pinned-toolchain driver in
+``lean_drivers/V2BParseCommand.lean``.  This module freezes and validates that
+driver's exact manifest-bound transcript surface; the future file producer
+will bind both language paths under the same artifact schema.
 """
 import ast
 import io
+import json
 import tokenize
 
 from v2b_common import (BEHAVIOR_EXTRACTED_SCHEMA, V2BError, sha256_bytes,
@@ -63,6 +65,289 @@ PYTHON_EXTRACTION_CONTRACT = dict(
 )
 PYTHON_EXTRACTION_CONTRACT_SHA256 = sha256_json(
     PYTHON_EXTRACTION_CONTRACT)
+
+
+LEAN_DRIVER_MANIFEST_SCHEMA = "v2b_lean_parse_manifest_v1"
+LEAN_DRIVER_OUTPUT_SCHEMA = "v2b_lean_parse_result_v1"
+LEAN_DRIVER_OUTPUT_MARKER = "@@V2B_LEAN_PARSE@@"
+LEAN_EXTRACTION_FAILURE_REASONS = (
+    "parse-error-in-target",
+    "has-missing",
+    "terminal-command",
+    "missing-source-range",
+    "target-start-drift",
+    "syntax-kind-drift",
+    "body-delimiter-drift",
+    "token-crosses-header-boundary",
+    "header-syntax-drift",
+    "reconstructed-module-parse-drift",
+    "empty-body",
+    "end-beyond-generated-region",
+)
+LEAN_EXTRACTION_CONTRACT = dict(
+    schema="v2b_lean_body_extraction_contract_v1",
+    artifact_schema=BEHAVIOR_EXTRACTED_SCHEMA,
+    manifest_schema=LEAN_DRIVER_MANIFEST_SCHEMA,
+    driver_output_schema=LEAN_DRIVER_OUTPUT_SCHEMA,
+    driver_output_marker=LEAN_DRIVER_OUTPUT_MARKER,
+    driver_source="lean_drivers/V2BParseCommand.lean",
+    position_units="raw UTF-8 byte offsets",
+    preparation=("load an exact Lake ModuleSetup (package, imports, import "
+                 "artifacts, plugins, dynamic libraries, and options), "
+                 "reparse imported/CLI option overrides, then parse and "
+                 "elaborate only commands strictly before the exact frozen "
+                 "target range with Elab.async forced false after every "
+                 "command and all trusted command streams isolated"),
+    generated_safety=("reuse the resulting parser/scope state to parse one "
+                      "target command first in input truncated exactly at "
+                      "the generated end and then in the reconstructed module "
+                      "containing only the retained body plus the immutable "
+                      "original suffix; never elaborate generated target "
+                      "syntax"),
+    splice_proof=("spliced bytes through the original header boundary and "
+                  "after the generated region must equal the corresponding "
+                  "original prefix and post-target suffix"),
+    boundary=("generation must begin with the frozen original body delimiter; "
+              "retain from that boundary through the canonical tail of the "
+              "first complete command in input truncated at generated end; "
+              "Lean may lex trailing trivia/lookahead before returning, so a "
+              "lexical error after the canonical tail is still a failure, but "
+              "no byte after the generated end or in the suffix is visible"),
+    validation=("reject any canonical syntax token crossing the header/body "
+                "boundary; exact pre-boundary syntax projections (node kind, "
+                "child index, token spelling/value, and byte range), command "
+                "start, and outer syntax kind must match the unelaborated "
+                "original; the retained-body reconstruction must reproduce "
+                "the truncated range/kind/projection; recovery, diagnostics, "
+                "missing nodes, terminal commands, and boundary crossing "
+                "fail"),
+    stdout=("only marker-prefixed compact JSON is evidence; unrelated "
+            "process output is ignored, while malformed, duplicate, missing, "
+            "or extra marked records fail closed; the consumer requires the "
+            "exact manifest and enforces a reason-field truth table"),
+    ordinary_failure_reasons=list(LEAN_EXTRACTION_FAILURE_REASONS),
+)
+LEAN_EXTRACTION_CONTRACT_SHA256 = sha256_json(LEAN_EXTRACTION_CONTRACT)
+
+
+_LEAN_MANIFEST_KEYS = {
+    "schema", "originalFile", "moduleSetupFile", "moduleName",
+    "targetIdentity", "targetKind", "targetStartByte", "targetEndByte",
+    "headerEndByte", "bodyDelimiter", "optionOverrides", "samples",
+}
+_LEAN_MANIFEST_SAMPLE_KEYS = {"id", "splicedFile", "generatedEndByte"}
+_LEAN_MANIFEST_OPTION_KEYS = {"name", "value"}
+_LEAN_PREVALIDATION_KEYS = {
+    "schema", "record_type", "module_name", "target_identity",
+    "target_kind", "target_start_byte", "target_end_byte",
+    "header_end_byte", "body_delimiter", "syntax_kind",
+    "header_syntax_projection", "n_prior_commands",
+    "generated_target_elaborated",
+}
+_LEAN_SUCCESS_KEYS = {
+    "schema", "record_type", "sample_id", "status", "start_byte",
+    "end_byte", "body_start_byte", "body_bytes", "syntax_kind",
+    "n_parse_messages", "recovering", "has_missing",
+    "generated_target_elaborated",
+}
+_LEAN_FAILURE_KEYS = {
+    "schema", "record_type", "sample_id", "status", "reason",
+    "n_parse_messages", "recovering", "has_missing",
+    "generated_target_elaborated",
+}
+
+
+def _lean_output_int(value, label):
+    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+        raise V2BError(f"Lean driver {label} is not a nonnegative integer")
+    return value
+
+
+def _validate_lean_manifest(manifest):
+    if not isinstance(manifest, dict) or set(manifest) != _LEAN_MANIFEST_KEYS:
+        raise V2BError("Lean driver manifest has schema/key drift")
+    if manifest.get("schema") != LEAN_DRIVER_MANIFEST_SCHEMA:
+        raise V2BError("Lean driver manifest schema drift")
+    for key in ("originalFile", "moduleSetupFile", "moduleName",
+                "targetIdentity"):
+        if not isinstance(manifest.get(key), str) or not manifest[key]:
+            raise V2BError(f"Lean driver manifest {key} is empty")
+    if manifest.get("targetKind") not in ("theorem", "lemma", "def"):
+        raise V2BError("Lean driver manifest targetKind is unsupported")
+    if manifest.get("bodyDelimiter") not in (":=", "where", "|"):
+        raise V2BError("Lean driver manifest bodyDelimiter is unsupported")
+    start = _lean_output_int(manifest.get("targetStartByte"),
+                             "manifest targetStartByte")
+    header = _lean_output_int(manifest.get("headerEndByte"),
+                              "manifest headerEndByte")
+    end = _lean_output_int(manifest.get("targetEndByte"),
+                           "manifest targetEndByte")
+    if not start < header < end:
+        raise V2BError("Lean driver manifest byte order is invalid")
+    options = manifest.get("optionOverrides")
+    if not isinstance(options, list):
+        raise V2BError("Lean driver optionOverrides is not a list")
+    option_names = []
+    for option in options:
+        if not isinstance(option, dict) \
+                or set(option) != _LEAN_MANIFEST_OPTION_KEYS \
+                or not isinstance(option.get("name"), str) \
+                or not option["name"] \
+                or not isinstance(option.get("value"), str) \
+                or not option["value"] \
+                or option["name"] == "Elab.async":
+            raise V2BError("Lean driver option override is malformed")
+        option_names.append(option["name"])
+    if len(set(option_names)) != len(option_names):
+        raise V2BError("Lean driver option overrides are duplicated")
+    samples = manifest.get("samples")
+    if not isinstance(samples, list) or not samples:
+        raise V2BError("Lean driver manifest samples are empty/non-list")
+    ids = []
+    generated_ends = {}
+    for sample in samples:
+        if not isinstance(sample, dict) \
+                or set(sample) != _LEAN_MANIFEST_SAMPLE_KEYS \
+                or not isinstance(sample.get("id"), str) or not sample["id"] \
+                or not isinstance(sample.get("splicedFile"), str) \
+                or not sample["splicedFile"]:
+            raise V2BError("Lean driver manifest sample is malformed")
+        generated_end = _lean_output_int(sample.get("generatedEndByte"),
+                                         "manifest generatedEndByte")
+        if generated_end < header:
+            raise V2BError("Lean generated end precedes header boundary")
+        ids.append(sample["id"])
+        generated_ends[sample["id"]] = generated_end
+    if len(set(ids)) != len(ids):
+        raise V2BError("Lean driver manifest sample ids are duplicated")
+    return ids, generated_ends, start, header, end
+
+
+def parse_lean_driver_stdout(stdout, manifest):
+    """Validate and return one complete marked Lean-driver transcript.
+
+    Output from elaborated trusted prefix commands is deliberately ignored.
+    Every marker-prefixed line, however, is evidence and must decode under an
+    exact whitelist and must bind the exact already duplicate-key-validated
+    manifest.  The returned object has ``prevalidation`` and ``samples`` in
+    manifest order.
+    """
+    if not isinstance(stdout, str):
+        raise V2BError("Lean driver stdout must be text")
+    expected, generated_ends, manifest_start, manifest_header, manifest_end = \
+        _validate_lean_manifest(manifest)
+
+    def object_no_duplicates(pairs):
+        value = {}
+        for key, item in pairs:
+            if key in value:
+                raise V2BError(f"duplicate Lean driver JSON key {key!r}")
+            value[key] = item
+        return value
+
+    def reject_nonfinite(value):
+        raise V2BError(f"non-finite Lean driver number {value}")
+
+    records = []
+    for line in stdout.splitlines():
+        if not line.startswith(LEAN_DRIVER_OUTPUT_MARKER):
+            continue
+        payload = line[len(LEAN_DRIVER_OUTPUT_MARKER):]
+        try:
+            value = json.loads(payload, object_pairs_hook=object_no_duplicates,
+                               parse_constant=reject_nonfinite)
+        except (json.JSONDecodeError, UnicodeError, V2BError) as err:
+            raise V2BError(f"malformed marked Lean driver record: {err}") \
+                from err
+        if not isinstance(value, dict):
+            raise V2BError("marked Lean driver record is not an object")
+        records.append(value)
+    if len(records) != len(expected) + 1:
+        raise V2BError("Lean driver marked record count does not match manifest")
+
+    prevalidation = records[0]
+    if set(prevalidation) != _LEAN_PREVALIDATION_KEYS \
+            or prevalidation.get("schema") != LEAN_DRIVER_OUTPUT_SCHEMA \
+            or prevalidation.get("record_type") != "prevalidation":
+        raise V2BError("Lean driver prevalidation schema/key drift")
+    if not isinstance(prevalidation["syntax_kind"], str) \
+            or not prevalidation["syntax_kind"] \
+            or not isinstance(prevalidation["header_syntax_projection"], str) \
+            or not prevalidation["header_syntax_projection"]:
+        raise V2BError("Lean driver prevalidation string field is empty")
+    start = _lean_output_int(prevalidation["target_start_byte"],
+                             "target_start_byte")
+    header = _lean_output_int(prevalidation["header_end_byte"],
+                              "header_end_byte")
+    end = _lean_output_int(prevalidation["target_end_byte"],
+                           "target_end_byte")
+    _lean_output_int(prevalidation["n_prior_commands"], "n_prior_commands")
+    if not start < header < end:
+        raise V2BError("Lean driver prevalidation byte order is invalid")
+    expected_prevalidation = {
+        "module_name": manifest["moduleName"],
+        "target_identity": manifest["targetIdentity"],
+        "target_kind": manifest["targetKind"],
+        "target_start_byte": manifest_start,
+        "target_end_byte": manifest_end,
+        "header_end_byte": manifest_header,
+        "body_delimiter": manifest["bodyDelimiter"],
+    }
+    for key, value in expected_prevalidation.items():
+        if prevalidation[key] != value:
+            raise V2BError(f"Lean prevalidation {key} is not manifest-bound")
+    if prevalidation["generated_target_elaborated"] is not False:
+        raise V2BError("Lean driver claims generated target elaboration")
+
+    sample_records = records[1:]
+    if [row.get("sample_id") for row in sample_records] != expected:
+        raise V2BError("Lean driver sample id membership/order drift")
+    for row in sample_records:
+        if row.get("schema") != LEAN_DRIVER_OUTPUT_SCHEMA \
+                or row.get("record_type") != "sample" \
+                or row.get("generated_target_elaborated") is not False:
+            raise V2BError("Lean driver sample schema/safety drift")
+        if not isinstance(row.get("has_missing"), bool) \
+                or not isinstance(row.get("recovering"), bool):
+            raise V2BError("Lean driver parser-state flags are not boolean")
+        n_messages = _lean_output_int(row.get("n_parse_messages"),
+                                      "n_parse_messages")
+        if row.get("status") == "extracted":
+            if set(row) != _LEAN_SUCCESS_KEYS:
+                raise V2BError("Lean driver success key drift")
+            row_start = _lean_output_int(row["start_byte"], "start_byte")
+            row_end = _lean_output_int(row["end_byte"], "end_byte")
+            body_start = _lean_output_int(row["body_start_byte"],
+                                          "body_start_byte")
+            body_bytes = _lean_output_int(row["body_bytes"], "body_bytes")
+            if row_start != start or body_start != header \
+                    or not body_start < row_end \
+                    or body_bytes != row_end - body_start \
+                    or row_end > generated_ends[row["sample_id"]] \
+                    or row["syntax_kind"] != prevalidation["syntax_kind"] \
+                    or n_messages != 0 or row["recovering"] is not False \
+                    or row["has_missing"] is not False:
+                raise V2BError("Lean driver success invariant drift")
+        elif row.get("status") == "extraction-failure":
+            if set(row) != _LEAN_FAILURE_KEYS:
+                raise V2BError("Lean driver failure key drift")
+            if row.get("reason") not in LEAN_EXTRACTION_FAILURE_REASONS:
+                raise V2BError("unfrozen Lean extraction failure reason")
+            reason = row["reason"]
+            if reason == "parse-error-in-target":
+                if n_messages == 0 and row["recovering"] is not True:
+                    raise V2BError("Lean parse-error lacks diagnostics/recovery")
+            elif reason == "has-missing":
+                if n_messages != 0 or row["recovering"] is not False \
+                        or row["has_missing"] is not True:
+                    raise V2BError("Lean has-missing failure field drift")
+            elif reason != "reconstructed-module-parse-drift":
+                if n_messages != 0 or row["recovering"] is not False \
+                        or row["has_missing"] is not False:
+                    raise V2BError("Lean clean failure carries parser errors")
+        else:
+            raise V2BError("Lean driver sample status is unfrozen")
+    return {"prevalidation": prevalidation, "samples": sample_records}
 
 
 def _failure(reason):

@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
 """Adversarial boundary tests for behavioral Python body extraction."""
 import os
+import json
+import shutil
+import subprocess
 import sys
+import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import v2b_behavior_extract as behavior_extract
 from v2b_behavior_extract import (
+    LEAN_DRIVER_MANIFEST_SCHEMA, LEAN_DRIVER_OUTPUT_MARKER,
+    LEAN_DRIVER_OUTPUT_SCHEMA, LEAN_EXTRACTION_CONTRACT,
+    LEAN_EXTRACTION_CONTRACT_SHA256, LEAN_EXTRACTION_FAILURE_REASONS,
     PYTHON_EXTRACTION_CONTRACT, PYTHON_EXTRACTION_CONTRACT_SHA256,
-    PYTHON_EXTRACTION_FAILURE_REASONS, extract_python_body)
+    PYTHON_EXTRACTION_FAILURE_REASONS, extract_python_body,
+    parse_lean_driver_stdout)
 from v2b_common import (BEHAVIOR_EXTRACTED_SCHEMA, V2BError, sha256_bytes,
                         sha256_json)
 
@@ -18,6 +26,8 @@ SUCCESS_KEYS = {
     "n_discarded_chars", "node_kind",
 }
 FAILURE_KEYS = {"status", "reason"}
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LEAN_DRIVER = os.path.join(ROOT, "lean_drivers", "V2BParseCommand.lean")
 
 
 def _success(prefix, generation, kind="FunctionDef", name="f"):
@@ -209,6 +219,207 @@ def test_contract_and_failure_surface_are_hash_frozen():
         list(PYTHON_EXTRACTION_FAILURE_REASONS)
     assert len(set(PYTHON_EXTRACTION_FAILURE_REASONS)) == \
         len(PYTHON_EXTRACTION_FAILURE_REASONS)
+    assert LEAN_DRIVER_MANIFEST_SCHEMA == "v2b_lean_parse_manifest_v1"
+    assert LEAN_DRIVER_OUTPUT_SCHEMA == "v2b_lean_parse_result_v1"
+    assert LEAN_EXTRACTION_CONTRACT["artifact_schema"] == \
+        BEHAVIOR_EXTRACTED_SCHEMA
+    assert LEAN_EXTRACTION_CONTRACT_SHA256 == \
+        sha256_json(LEAN_EXTRACTION_CONTRACT)
+    assert LEAN_EXTRACTION_CONTRACT["ordinary_failure_reasons"] == \
+        list(LEAN_EXTRACTION_FAILURE_REASONS)
+    assert len(set(LEAN_EXTRACTION_FAILURE_REASONS)) == \
+        len(LEAN_EXTRACTION_FAILURE_REASONS)
+
+
+def _marked(value):
+    return LEAN_DRIVER_OUTPUT_MARKER + json.dumps(
+        value, ensure_ascii=False, separators=(",", ":"))
+
+
+def _synthetic_lean_transcript():
+    manifest = dict(
+        schema=LEAN_DRIVER_MANIFEST_SCHEMA, originalFile="/original.lean",
+        moduleSetupFile="/setup.json", moduleName="T",
+        targetIdentity="T.target", targetKind="theorem",
+        targetStartByte=10, targetEndByte=30, headerEndByte=20,
+        bodyDelimiter=":=", optionOverrides=[],
+        samples=[
+            dict(id="a", splicedFile="/a.lean", generatedEndByte=25),
+            dict(id="b", splicedFile="/b.lean", generatedEndByte=25),
+        ])
+    pre = dict(
+        schema=LEAN_DRIVER_OUTPUT_SCHEMA, record_type="prevalidation",
+        module_name="T", target_identity="T.target", target_kind="theorem",
+        target_start_byte=10, target_end_byte=30, header_end_byte=20,
+        body_delimiter=":=", syntax_kind="Lean.Parser.Command.declaration",
+        header_syntax_projection="[\"frozen\"]",
+        n_prior_commands=2, generated_target_elaborated=False)
+    success = dict(
+        schema=LEAN_DRIVER_OUTPUT_SCHEMA, record_type="sample",
+        sample_id="a", status="extracted", start_byte=10, end_byte=25,
+        body_start_byte=20, body_bytes=5,
+        syntax_kind="Lean.Parser.Command.declaration", n_parse_messages=0,
+        recovering=False, has_missing=False,
+        generated_target_elaborated=False)
+    failure = dict(
+        schema=LEAN_DRIVER_OUTPUT_SCHEMA, record_type="sample",
+        sample_id="b", status="extraction-failure", reason="has-missing",
+        n_parse_messages=0, recovering=False, has_missing=True,
+        generated_target_elaborated=False)
+    return manifest, pre, success, failure
+
+
+def test_lean_stdout_consumer_is_exact_and_ignores_only_unmarked_noise():
+    manifest, pre, success, failure = _synthetic_lean_transcript()
+    stdout = "trusted #check noise\n" + "\n".join(
+        _marked(row) for row in (pre, success, failure)) + "\n"
+    value = parse_lean_driver_stdout(stdout, manifest)
+    assert value["prevalidation"] == pre
+    assert value["samples"] == [success, failure]
+
+    mutations = []
+    leaked = dict(success, named_arm="k4")
+    mutations.append((pre, leaked, failure))
+    elaborated = dict(success, generated_target_elaborated=True)
+    mutations.append((pre, elaborated, failure))
+    alien_reason = dict(failure, reason="looks-bad")
+    mutations.append((pre, success, alien_reason))
+    bad_math = dict(success, body_bytes=4)
+    mutations.append((pre, bad_math, failure))
+    wrong_module = dict(pre, module_name="WRONG")
+    mutations.append((wrong_module, success, failure))
+    impossible = dict(failure, reason="terminal-command",
+                      n_parse_messages=99, recovering=False,
+                      has_missing=True)
+    mutations.append((pre, success, impossible))
+    for rows in mutations:
+        try:
+            parse_lean_driver_stdout(
+                "\n".join(_marked(row) for row in rows), manifest)
+            assert False, "drifted Lean driver record accepted"
+        except V2BError:
+            pass
+
+    duplicate_key = (LEAN_DRIVER_OUTPUT_MARKER +
+                     '{"schema":"x","schema":"y"}')
+    try:
+        parse_lean_driver_stdout(duplicate_key, manifest)
+        assert False, "duplicate marked JSON key accepted"
+    except V2BError:
+        pass
+
+    bad_manifests = (
+        dict(manifest, named_arm="k4"),
+        dict(manifest, moduleName="WRONG"),
+        dict(manifest, samples=[dict(
+            manifest["samples"][0], generatedEndByte=24),
+            manifest["samples"][1]]),
+    )
+    transcript = "\n".join(_marked(row) for row in (pre, success, failure))
+    for bad_manifest in bad_manifests:
+        try:
+            parse_lean_driver_stdout(transcript, bad_manifest)
+            assert False, "drifted Lean driver manifest accepted"
+        except V2BError:
+            pass
+
+
+def test_real_lean_driver_reconstructs_prefix_and_never_elaborates_target():
+    elan = shutil.which("elan")
+    if elan is None:
+        print("    [skip] elan is not installed")
+        return
+    listed = subprocess.run([elan, "toolchain", "list"],
+                            capture_output=True, text=True, check=False)
+    if "leanprover/lean4:v4.32.0" not in listed.stdout:
+        print("    [skip] pinned Lean 4.32 toolchain is not installed")
+        return
+    original = (
+        "import Lean\n"
+        "namespace 𝔸\n"
+        "syntax \"v2btwice \" term : term\n"
+        "macro_rules | `(v2btwice $x) => `($x + $x)\n"
+        "set_option Elab.async true\n"
+        "def prior (x : Nat) : Nat := v2btwice x\n"
+        "run_cmd IO.println \"@@V2B_LEAN_PARSE@@{spoof}\"\n"
+        "/-- target documentation -/\n"
+        "@[simp] theorem target (x : Nat) : x = x:= by\n"
+        "  rfl\n"
+        "def after : Nat := 7\n"
+        "end 𝔸\n"
+    ).encode("utf-8")
+    target_start = original.index(b"/-- target documentation")
+    header_end = original.index(b":=", target_start)
+    target_end = original.index(b"\ndef after", header_end)
+    generations = {
+        "good": b":= by\n  rfl",
+        "elab_bomb": (
+            b":= by\n"
+            b"  run_tac\n"
+            b"    throwError \"GENERATED_TARGET_WAS_ELABORATED\"\n"
+            b"  rfl"),
+        "lazy": b":= by\n  rfl\n#eval 123\nthis is trailing junk '''",
+        "unterminated_tail": b":= by\n  rfl\n/- unterminated",
+        "header_merge": b"Bar := by\n  rfl",
+        "malformed": b":= by\n  exact",
+        "empty": b"",
+    }
+    with tempfile.TemporaryDirectory() as td:
+        original_path = os.path.join(td, "Original.lean")
+        open(original_path, "wb").write(original)
+        setup_path = os.path.join(td, "setup.json")
+        json.dump(dict(
+            dynlibs=[], importArts={}, isModule=False, name="V2BFixture",
+            options={}, plugins=[]),
+            open(setup_path, "w", encoding="utf-8"))
+        samples = []
+        for sample_id, generation in generations.items():
+            spliced = (original[:header_end] + generation +
+                       original[target_end:])
+            path = os.path.join(td, sample_id + ".lean")
+            open(path, "wb").write(spliced)
+            samples.append(dict(
+                id=sample_id, splicedFile=path,
+                generatedEndByte=header_end + len(generation)))
+        manifest = dict(
+            schema=LEAN_DRIVER_MANIFEST_SCHEMA,
+            originalFile=original_path, moduleSetupFile=setup_path,
+            moduleName="V2BFixture", targetIdentity="𝔸.target",
+            targetKind="theorem",
+            targetStartByte=target_start, targetEndByte=target_end,
+            headerEndByte=header_end, bodyDelimiter=":=",
+            optionOverrides=[], samples=samples)
+        manifest_path = os.path.join(td, "manifest.json")
+        json.dump(manifest, open(manifest_path, "w", encoding="utf-8"),
+                  ensure_ascii=False)
+        result = subprocess.run(
+            [elan, "run", "leanprover/lean4:v4.32.0", "lean", "--run",
+             LEAN_DRIVER, manifest_path], cwd=ROOT, capture_output=True,
+            text=True, timeout=180, check=False)
+        assert result.returncode == 0, (result.stdout, result.stderr)
+        parsed = parse_lean_driver_stdout(result.stdout, manifest)
+    rows = {row["sample_id"]: row for row in parsed["samples"]}
+    assert parsed["prevalidation"]["generated_target_elaborated"] is False
+    assert parsed["prevalidation"]["header_syntax_projection"]
+    assert parsed["prevalidation"]["n_prior_commands"] >= 3
+    assert rows["good"]["status"] == "extracted"
+    assert rows["good"]["end_byte"] == header_end + len(generations["good"])
+    assert rows["elab_bomb"]["status"] == "extracted"
+    assert rows["elab_bomb"]["generated_target_elaborated"] is False
+    assert rows["lazy"]["status"] == "extracted"
+    assert rows["lazy"]["end_byte"] == rows["good"]["end_byte"]
+    assert rows["lazy"]["end_byte"] < header_end + len(generations["lazy"])
+    # Lean's top-level command parser lexes trailing trivia while selecting a
+    # command, so an unterminated block comment is prospectively a failure even
+    # though the canonical command tail precedes it.
+    assert rows["unterminated_tail"]["status"] == "extraction-failure"
+    assert rows["unterminated_tail"]["reason"] == "parse-error-in-target"
+    assert rows["header_merge"]["status"] == "extraction-failure"
+    assert rows["header_merge"]["reason"] == "body-delimiter-drift"
+    assert rows["malformed"]["status"] == "extraction-failure"
+    assert rows["malformed"]["reason"] in LEAN_EXTRACTION_FAILURE_REASONS
+    assert rows["empty"]["status"] == "extraction-failure"
+    assert rows["empty"]["reason"] == "empty-body"
 
 
 if __name__ == "__main__":

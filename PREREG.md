@@ -1439,6 +1439,30 @@ arxiv_manifest) must be committed before measurement.
   real-file-context command parser remains a separate missing gate. Full
   detail: DESIGN_V2 §15.A19.
 
+- ADOPTED (2026-08-08, Lean behavioral extraction rule; PRE-GENERATION and
+  PRE-OUTCOME — no generated token or extracted body exists): Lean S4 uses a
+  pinned-toolchain full-original-module driver with an exact Lake ModuleSetup
+  and bound option overrides. It loads package/import/plugin/dynamic-library
+  context, forces async off before every command, isolates trusted command
+  streams, parses and elaborates only commands strictly before the frozen
+  target, and parses the original target once without elaboration to bind its
+  canonical range, outer kind, and exact pre-body syntax projection. Every
+  sample must be an exact body-only byte splice and begin with the original
+  body delimiter; no token may cross the header boundary. The boundary is
+  derived by parsing one command in input truncated exactly at generated end,
+  so the suffix cannot help. Lean may still lex trailing generated trivia, so
+  malformed trailing comments are failures rather than being called unseen.
+  The retained body plus original suffix is reparsed and must reproduce the
+  same range/kind/header projection, still without elaboration. A
+  marker-delimited exact-schema consumer binds the exact manifest/module/
+  identity/kind/ranges/delimiter/per-sample ends and enforces a reason-specific
+  parser-flag truth table. Trusted setup/prior-command/range/splice drift is a
+  hard error, never a model zero. The future S4 producer still must hash-bind
+  plans, V2-a rows, setup/source/sample files, invocations, runtimes, driver
+  tree, and contract; enforce process/time/resource isolation; and pass both
+  frozen Lean toolchains. S5 must verify the elaborated declaration name and
+  original statement/type. Full detail: DESIGN_V2 §15.A20.
+
 ## 14. Known limitations (standing list)
 
 Model-relative estimand; single repo per cell (until G4+); proofs-vs-
