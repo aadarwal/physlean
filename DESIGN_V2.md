@@ -1820,3 +1820,56 @@ other-arm statistic enters the artifact.
   source tree, and exact verifier-file SHA; recheck sample membership; and
   publish an exact-keyed write-once artifact before its output can select the
   final model used by §15.A17.
+
+15.A19 PYTHON BEHAVIORAL BODY EXTRACTION (pure rule frozen
+PRE-GENERATION; no generated token, extracted body, or verifier outcome
+exists). This prospectively operationalizes §14.24 for Python only. Model
+output G is a BODY CONTINUATION of the exact assembly prefix P, whose final
+character is the target suite colon; G is never parsed as a standalone
+declaration. The pure extractor consumes (P, G, target_kind, expected_name)
+and tokenizes D=P+G lazily with the pinned Python stdlib tokenizer. P is
+trusted LF-only UTF-8; an empty G, CR in G, or non-UTF-8-encodable G is an
+ordinary extraction failure. No text is normalized.
+
+  BOUNDARY. Token row/Unicode-column positions are mapped to character
+  offsets with the same virtual-EOF rules as the source-token ledger, while
+  all hashes use exact UTF-8 bytes. Any tokenizer token with
+  start < len(P) < end fails: generation must not merge with the final prefix
+  token (notably ':' plus a generated '=' becoming ':='). Starting at len(P),
+  COMMENT and non-logical NL tokens are skipped only for suite dispatch. If
+  the first remaining token is NEWLINE, this is a compound suite: require the
+  following INDENT (ignoring intervening COMMENT/NL) and cut at the START of
+  the matching DEDENT that returns the target suite depth to zero. The
+  tokenizer's implicit EOF DEDENT closes an otherwise complete suite. If the
+  first remaining token is not NEWLINE, this is a simple-statement suite: cut
+  at the END of its first logical NEWLINE. Thus semicolon-separated small
+  statements stay together, and bracket/backslash continuations may cross
+  physical lines.
+
+  LAZY STOP AND VALIDATION. Iteration stops immediately when that boundary is
+  found. A second declaration or even un-tokenizable junk after the boundary
+  is discarded without inspection; the same junk before the boundary is a
+  frozen extraction failure. Before inspecting G, parse P plus a dummy pass
+  suite and require exactly one module-level FunctionDef, AsyncFunctionDef, or
+  ClassDef of the committed target kind and name. Any mismatch is trusted
+  provenance drift and raises V2BError; it can never become a model failure.
+  Then parse exactly P plus the retained body and assert the same invariant;
+  decorators and multiline signatures inside P are permitted, and the suite
+  must be nonempty. Success exposes the
+  retained body, UTF-8 hash, suite form, generation-relative character
+  boundary, discarded-character count, and node kind. Ordinary model-output
+  failures expose only a frozen reason enum; malformed trusted inputs raise
+  V2BError rather than becoming model failures. The complete rule and failure
+  surface have a canonical contract hash.
+
+  EXECUTION BOUNDARY. This helper has no artifact writer and proves no result.
+  The future file-based S4 producer must bind the exact behavior plan,
+  assembly prefix and generation-sample hashes, model/tokenizer identity,
+  Python executable/version, extractor source tree, and contract hash under
+  v2b_behavior_extracted_v1. target_kind/name come from the committed V2-a
+  extraction row (which already distinguishes FunctionDef, AsyncFunctionDef,
+  and ClassDef), never a post-generation reclassification. Lean still requires
+  the separate pinned-toolchain
+  real-file-context parse-one-command driver; it is explicitly not
+  approximated by this Python rule. S5 verification, behavioral masking, and
+  all GPU generation remain unrun.

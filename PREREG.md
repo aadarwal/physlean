@@ -1421,6 +1421,24 @@ arxiv_manifest) must be committed before measurement.
   changing thresholds, outcome classes, or the blind reliability estimator.
   Full detail: DESIGN_V2 §15.A17-A18.
 
+- ADOPTED (2026-08-08, Python behavioral extraction rule; PRE-GENERATION and
+  PRE-OUTCOME — no generated token or extracted body exists): Python model
+  output is frozen as a continuation of the exact prefix ending at the suite
+  colon, never a standalone declaration. Lazy stdlib tokenization dispatches
+  to simple-statement (first logical NEWLINE) or compound-suite (matching
+  DEDENT/EOF) boundaries; a token crossing the prefix/generation boundary
+  fails. Iteration stops at the chosen boundary, so malformed trailing junk
+  is discarded while identical junk before completion is a recorded failure.
+  Before G is inspected, prefix plus a dummy pass suite must parse to exactly
+  one committed target kind/name; mismatch is a hard provenance error, never
+  an outcome failure. The retained prefix+body must preserve that invariant.
+  UTF-8 hashing, virtual-EOF offsets, a finite failure enum, exact
+  success/failure key sets, and the contract hash are frozen in code. This is
+  Python S4 only: the future producer must bind exact plan/assembly/generation
+  files and Python runtime identity, and Lean's pinned-toolchain
+  real-file-context command parser remains a separate missing gate. Full
+  detail: DESIGN_V2 §15.A19.
+
 ## 14. Known limitations (standing list)
 
 Model-relative estimand; single repo per cell (until G4+); proofs-vs-
