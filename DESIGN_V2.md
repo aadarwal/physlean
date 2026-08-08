@@ -300,6 +300,10 @@ standalone; closures verified against elaborator output);
 `finalize_v2a.py` hash-verifies the job envelope and combines the otherwise
 independent extraction, raw-closure, and boundary-compile reports; no
 individual validator may set this gate complete by itself.
+The combiner also hard-binds the frozen extraction-code commit, corpus
+revisions, Lean artifact report, Python interpreter binary, and the
+PhysLib-manifest-pinned mathlib revision; merely well-formed or mutually
+self-consistent revision claims are insufficient.
 V2-b pilot (20 targets, q25c-1.5b, all conditions) reviewed against §8
 metric definitions — pilot data NEVER pools into confirmatory tests;
 V2-c full run (human approves scale);

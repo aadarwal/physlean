@@ -565,7 +565,16 @@ arxiv_manifest) must be committed before measurement.
   `finalize_v2a.py` is the sole combiner: it verifies the completion-envelope
   hashes and all independent input bindings before emitting a new-only
   `v2a_structural_gate_v1` verdict. The extraction validator itself always
-  remains `gate_complete=false`.
+  remains `gate_complete=false`. The combiner hard-binds the frozen evidence
+  source commit, all five corpus revisions, the Lean artifact-report hash,
+  the Python interpreter binary, and PhysLib's manifest-pinned mathlib
+  revision; format-valid or mutually self-consistent substitute identities
+  fail closed. This evidence cohort is explicitly job commit
+  `1791909cd8a5c08ac5a5a352799afb16306db1f1`; PhysLib's derived nested
+  mathlib revision is
+  `81a5d257c8e410db227a6665ed08f64fea08e997`. These identify the older
+  structural jobs, not the newer finalizer commit. Any future rerun requires
+  a logged, reviewed rebind rather than a quiet constant edit.
 - ADOPTED (V2-a Lean source-renderability amendment, 2026-08-08,
   PRE-OUTCOME — compiler-core machinery audit only, no study-corpus or
   model outcome): the first module-qualified live sweep left 123,621

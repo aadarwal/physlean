@@ -19,14 +19,29 @@ LEAN_SCHEMA = "v2a_lean_extract_v3"
 PYTHON_SCHEMA = "v2a_python_extract_v3"
 PAIR_SCHEMA = "v2a_ilean_pairs_v2"
 GATE_SCHEMA = "v2a_structural_gate_v1"
+# These identify the jobs being finalized, not this newer combiner's own
+# commit.  A future structural rerun requires an explicit reviewed rebind;
+# silently replacing any value would destroy the evidence boundary.
+EVIDENCE_SOURCE_COMMIT = \
+    "1791909cd8a5c08ac5a5a352799afb16306db1f1"
 LEAN_ARTIFACT_REPORT_SHA = \
     "ec2279ef1b8c171996f020f6acf5b5d9847ad2e910e538b3142686909bb9bbc6"
+PYTHON_BINARY_SHA = \
+    "9544d2a29138833e6177d45dbc57468d37710b5080c901fbb579d53f251cdd6f"
+PHYSLIB_MATHLIB_REVISION = \
+    "81a5d257c8e410db227a6665ed08f64fea08e997"
+CORPUS_REVISIONS = {
+    "mathlib4": "87adeaebd370a3b6a41ac4f044fddd4bf81803ad",
+    "batteries": "76e1c118b0700b4ceafe99532e887d6431625e1a",
+    "physlib": "e882411d1b6bcbdfdd336d4c509c6cc72e96842d",
+    "sympy": "c0a595d78fb2a2c4b0dfa7f2ee720fde84918c6c",
+    "astropy": "440fe546589c4e496235d712bc29783ecf5a5fec",
+}
 CORPORA_BY_LANGUAGE = {
     "lean": frozenset(("mathlib4", "batteries", "physlib")),
     "python": frozenset(("sympy", "astropy")),
 }
 SHA_RE = re.compile(r"^[0-9a-f]{64}$")
-GIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 
 
 class GateError(RuntimeError):
@@ -97,10 +112,11 @@ def finalize(run_dir, language, expected_n=20):
           complete.get("status"))
     check("completion-repo", isinstance(repo, str) and bool(repo), repo)
     check("completion-repo-tag", repo in CORPORA_BY_LANGUAGE[language], repo)
-    check("source-commit", bool(GIT_SHA_RE.fullmatch(
-        complete.get("source_commit", ""))), complete.get("source_commit"))
-    check("repo-sha", bool(GIT_SHA_RE.fullmatch(
-        complete.get("repo_sha", ""))), complete.get("repo_sha"))
+    check("source-commit",
+          complete.get("source_commit") == EVIDENCE_SOURCE_COMMIT,
+          complete.get("source_commit"))
+    check("repo-sha", complete.get("repo_sha") ==
+          CORPUS_REVISIONS.get(repo), complete.get("repo_sha"))
 
     paths = {
         "extraction": os.path.join(run_dir, "extraction.json"),
@@ -200,7 +216,7 @@ def finalize(run_dir, language, expected_n=20):
               compile_summary.get("closure_check") == closure_status,
               compile_summary.get("closure_check"))
         check("python-binary-identity",
-              bool(SHA_RE.fullmatch(complete.get("python_sha256", "")))
+              complete.get("python_sha256") == PYTHON_BINARY_SHA
               and compile_audit.get("python_sha256") ==
               complete.get("python_sha256"),
               complete.get("python_sha256"))
@@ -210,7 +226,9 @@ def finalize(run_dir, language, expected_n=20):
         closure_summary = closure.get("summary", {})
         check("pairs-schema", pairs.get("schema") == PAIR_SCHEMA,
               pairs.get("schema"))
-        check("pairs-repo-sha", pairs.get("repo_git_sha") ==
+        check("pairs-repo-sha",
+              pairs.get("repo_git_sha") == complete.get("repo_sha")
+              and pairs.get("expected_repo_git_sha") ==
               complete.get("repo_sha"), pairs.get("repo_git_sha"))
         check("lean-artifact-build-report",
               complete.get("artifact_build_report_sha256") ==
@@ -275,8 +293,8 @@ def finalize(run_dir, language, expected_n=20):
                       pin_pairs.get("schema") == PAIR_SCHEMA
                       and pin_ex.get("schema") == LEAN_SCHEMA)
                 check("pinned-mathlib-revision",
-                      bool(GIT_SHA_RE.fullmatch(
-                          complete.get("pinned_mathlib_repo_sha", "")))
+                      complete.get("pinned_mathlib_repo_sha") ==
+                      PHYSLIB_MATHLIB_REVISION
                       and pin_pairs.get("repo_git_sha") ==
                       complete.get("pinned_mathlib_repo_sha")
                       and pin_pairs.get("expected_repo_git_sha") ==
