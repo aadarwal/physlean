@@ -1259,7 +1259,16 @@ implementation discoveries recorded below; none uses outcome information.
   markers) each emit one literal record, and their internal newlines emit no
   layout sentinel. Unterminated comments/literals fail. Required fixtures make
   distinct literal contents hash differently and pin numeric bases,
-  underscores, fractions, and exponents. Calibration-pair order is the two
+  underscores, fractions, and exponents. Because this deliberately table-free
+  scanner emits every other non-space symbol one character at a time, a prime
+  embedded in a registered multi-character notation atom (`]'`, `∑'`, `×'`)
+  reaches the apostrophe branch alone: the strict character-literal grammar
+  wins when it matches; otherwise ONLY its exact missing-close failure after a
+  non-whitespace symbol emits a retained `OP("'")`. Other malformed escapes
+  and unterminated/standalone character literals still fail. Thus the
+  synthetically ambiguous `xs[i]'h'` is deterministically classified with
+  `'h'` as a character literal rather than parser-table maximal-munch; this is
+  a recorded hash-consistent lexer limitation. Calibration-pair order is the two
   validated identities sorted by canonical compact-JSON bytes; the seeded
   `a6cal` and `a6calshow` arrays flat-splice the first identity then the second,
   per §15's global convention—never two pre-serialized identity strings.
@@ -1287,6 +1296,17 @@ implementation discoveries recorded below; none uses outcome information.
   between dump and union. Token-array job 19921330 and failed freeze job
   19921335 are quarantined; the cancelled dependent A6 array 19921337 produced
   no corpus artifact.
+
+  A6 NOTATION-PRIME CORRECTION. The corrected token/freeze chain
+  `19924314`/`19924365` completed and sealed the intended 950-token vocabulary.
+  The first dependent A6 scale array `19924368` then failed closed before any
+  artifact write: Batteries task 1 and PhysLib task 2 encountered legal primes
+  inside the registered notation atoms `]'` and `∑'`, respectively, which the
+  table-free per-character symbol scanner had mistaken for malformed character
+  literals; Python tasks 3/4 were cancelled without artifacts. The exact narrow
+  fallback above was adopted before any packet, label, sample, assembly, model
+  score, or behavioral outcome. The incomplete array is quarantined and the
+  exact five corpora rerun under one amended generator commit.
 
   A6 BLIND LABEL BOUNDARY. Before any packet or label existed, the operational
   label handoff was fixed as one interleaved presentation across both audit

@@ -57,6 +57,10 @@ PYTHON_KEYWORDS = frozenset(keyword.kwlist) | frozenset(keyword.softkwlist)
 
 # ------------------------------------------------------------- lexers
 
+class _LeanCharMissingClose(V2BError):
+    """Strict char-shape miss, distinct from escape/termination failures."""
+
+
 def _lean_is_letter_like(cp):
     return ((0x3b1 <= cp <= 0x3c9 and cp != 0x3bb)
             or (0x391 <= cp <= 0x3A9 and cp not in (0x3A0, 0x3A3))
@@ -154,7 +158,7 @@ def _scan_lean_char(text, start):
         else:
             raise V2BError("invalid Lean char escape")
     if index >= n or text[index] != "'":
-        raise V2BError("malformed lean char literal")
+        raise _LeanCharMissingClose("malformed lean char literal")
     return index + 1
 
 
@@ -325,6 +329,13 @@ def lex_lean(text):
         if ch == "'":
             # Lean invokes the char parser only if the next character is not
             # another apostrophe; otherwise apostrophe is ordinary syntax.
+            # This table-free scanner splits every other symbol character,
+            # including multi-character notation atoms such as `]'`, `∑'`,
+            # and `×'`.  In those atoms the prime therefore arrives here on
+            # its own.  Retain it as punctuation only for the exact
+            # missing-close failure after a non-whitespace symbol; malformed
+            # escapes and genuinely unterminated/standalone literals remain
+            # fail-closed.  A valid character literal wins the tie.
             if i + 1 < n and text[i + 1] == "'":
                 j = i
                 while j < n and text[j] == "'":
@@ -332,7 +343,14 @@ def lex_lean(text):
                     j += 1
                 i = j
                 continue
-            j = _scan_lean_char(text, i)
+            try:
+                j = _scan_lean_char(text, i)
+            except _LeanCharMissingClose:
+                if i > 0 and not text[i - 1].isspace():
+                    emit("OP", "'", start)
+                    i += 1
+                    continue
+                raise
             emit("CHAR", text[i:j], start)
             i = j
             continue

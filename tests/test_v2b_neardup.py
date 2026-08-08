@@ -99,6 +99,38 @@ def test_lean_string_literals_survive_and_distinguish_units():
     assert ("CHAR", "'\\u03bb'") in lex_lean("def uni := '\\u03bb'")
 
 
+def test_lean_notation_atom_primes_are_retained_as_punctuation():
+    """The table-free scanner splits registered atoms such as `]'` and
+    `×'`; their prime must not be mistaken for a malformed char literal."""
+    get_elem = lex_lean("def x := xs[i]'h")
+    assert ("OP", "'") in get_elem
+    assert not any(kind == "CHAR" for kind, _ in get_elem)
+    assert ("IDENT", "h") in get_elem
+
+    for source in ("def p := (a : α) ×' β a", "def s := Σ' x, p x",
+                   "def t := ∑' x, f x"):
+        records = lex_lean(source)
+        assert ("OP", "'") in records
+        assert not any(kind == "CHAR" for kind, _ in records)
+
+    assert verbatim_hash(lex_lean("def p := ×' β")) != \
+        verbatim_hash(lex_lean("def p := × β"))
+
+    # Frozen deterministic tie-break: the strict char grammar wins when it
+    # matches, even after a symbol that could begin a registered notation
+    # atom.  This is hash-consistent, not a claim of parser maximal-munch.
+    assert ("CHAR", "'h'") in lex_lean("def x := xs[i]'h'")
+
+    # The narrow punctuation fallback must not swallow other literal errors.
+    for bad in ("def c := 'ab'", "def c := '\\q'", "def c := 'a",
+                "def c := f 'x", "def c := ('\\q')"):
+        try:
+            lex_lean(bad)
+            assert False, bad
+        except V2BError:
+            pass
+
+
 def test_lean_normalization_uses_explicit_frozen_parser_tokens():
     simp = lex_lean("example : True := by simp")
     omega = lex_lean("example : True := by omega")

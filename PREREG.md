@@ -538,6 +538,22 @@ arxiv_manifest) must be committed before measurement.
 
 ## 13. Disagreement log
 
+- ADOPTED (V2-b A6 notation-prime correction, 2026-08-08, PRE-OUTCOME —
+  no A6 corpus artifact, packet, label, sample, assembly, model score, or
+  behavioral outcome existed): corrected token array `19924314` and keyword
+  freeze `19924365` completed, after which A6 array `19924368` failed closed on
+  legal apostrophes embedded in Lean notation atoms: Batteries encountered
+  bounds-proof indexing `xs[i]'h` (registered atom `]'`) and PhysLib encountered
+  primed big-operator notation such as `∑'`. The deliberately table-free A6
+  scanner splits other symbols character-by-character, so it had sent those
+  primes to the strict character-literal parser. The frozen correction retains
+  a prime as `OP` only when that parser reports its exact missing-close failure
+  and the prime follows a non-whitespace symbol; valid character literals win,
+  while invalid escapes and genuinely unterminated/standalone literals still
+  fail. Required fixtures pin `]'`, `×'`, `Σ'`/`∑'`, hash distinctness, literal
+  preservation, and the deterministic valid-char tie-break. Tasks 1/2 failed
+  before writing; tasks 3/4 were cancelled before writing. Array `19924368` is
+  quarantined and all five corpora rerun under one amended source cohort.
 - ADOPTED (V2-b pre-sample hardening, 2026-08-08, PRE-OUTCOME — the first
   candidate array had begun producing metadata only and was never finalized;
   no sample, near-duplicate corpus artifact/label, assembly, score, or
