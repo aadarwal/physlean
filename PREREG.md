@@ -1402,6 +1402,25 @@ arxiv_manifest) must be committed before measurement.
   variance-component uncertainty only partially covered by t(G-1).
   Full detail: DESIGN_V2 §15.A14.
 
+- ADOPTED (2026-08-08, behavioral exclusion representation; PRE-GENERATION
+  and PRE-OUTCOME — no completion, verifier outcome, pass rate, or behavioral
+  masked artifact exists): the committed pilot universe remains exactly 20
+  identities in every opaque arm, but §14.15(c)/§14.23 exclusions are explicit
+  rather than silently dropped or encoded as failures. Each row carries the
+  identical arm-independent booleans reference_body_le_448_tokens,
+  baseline_pass, and class_verifier_feasible. Their conjunction defines
+  behavioral eligibility. Eligible rows alone carry 32 integer binary
+  outcomes and enter tier/reliability calculations; excluded rows carry JSON
+  null outcomes and never contribute trials. Cross-arm drift in identity,
+  class, eligibility, or eligible/null status fails closed. The k4 tier helper
+  additionally takes the exact committed 20-key set and rejects alien but
+  canonical identities. The directional rule makes at most one adjacent move
+  from the supplied tier; a destination tier is final and cannot trigger a
+  second tier decision. This resolves the previously inconsistent combination
+  of "exactly 20 rows" with mandatory baseline/model-cap exclusions without
+  changing thresholds, outcome classes, or the blind reliability estimator.
+  Full detail: DESIGN_V2 §15.A17-A18.
+
 ## 14. Known limitations (standing list)
 
 Model-relative estimand; single repo per cell (until G4+); proofs-vs-

@@ -8,6 +8,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from v2b_behavioral_governance import (
+    BEHAVIOR_ELIGIBILITY_FIELDS, BEHAVIOR_ELIGIBILITY_RULE,
     BEHAVIOR_BASELINE_COVERAGE_SCHEMA, BEHAVIOR_EVIDENCE_SCHEMA,
     BEHAVIOR_GOVERNANCE_SCHEMA, BEHAVIOR_MASKED_SCHEMA,
     BEHAVIOR_MASKED_STATE, BEHAVIOR_PLAN_SCHEMA,
@@ -50,6 +51,9 @@ def _masked(n_targets=N_PILOT_TARGETS, n_governing=10, constant=False):
                              f"decl{target:02d}"]),
                 outcome_class=(CLASSES[0] if target < n_governing
                                else CLASSES[1]),
+                eligibility={
+                    field: True for field in BEHAVIOR_ELIGIBILITY_FIELDS
+                },
                 passes=passes))
         arms[arm] = rows
     return dict(
@@ -109,12 +113,17 @@ def test_governance_is_deterministic_arm_anonymous_and_mean_free():
     assert first["candidate_n"] == list(CANDIDATE_N)
     assert first["n_resplits"] == N_RESPLITS
     assert first["n_opaque_arms"] == N_ARMS
+    assert first["n_targets"] == N_PILOT_TARGETS
+    assert first["n_eligible_targets"] == N_PILOT_TARGETS
+    assert first["n_excluded_targets"] == 0
     assert first["semantic_f1_verdict"] == "feasible"
     assert first["semantic_f1_chosen_n"] == 16
     assert first["model_binding"] == MODEL_BINDINGS[1]
     assert first["governing_outcome_class"] == CLASSES[0]
     assert first["diagnostic_outcome_classes"] == [CLASSES[1]]
     assert first["governance_contract"] == GOVERNANCE_CONTRACT
+    assert first["governance_contract"]["eligibility_rule"] == \
+        BEHAVIOR_ELIGIBILITY_RULE
     assert first["governance_contract_sha256"] == \
         GOVERNANCE_CONTRACT_SHA256
     assert first["bindings"]["nll_masked_deltas"]["sha256"] == "c" * 64
@@ -165,6 +174,43 @@ def test_thin_diagnostic_class_does_not_kill_semantic_gate():
             assert diagnostic["verdict"] == "insufficient-targets"
 
 
+def test_arm_independent_exclusions_are_null_and_never_imputed():
+    masked = _masked()
+    exclusions = (
+        (0, "baseline_pass"),
+        (10, "reference_body_le_448_tokens"),
+        (11, "class_verifier_feasible"),
+    )
+    for rows in masked["arms"].values():
+        for target, field in exclusions:
+            rows[target]["eligibility"][field] = False
+            rows[target]["passes"] = None
+    value = analyze(masked)
+    assert value["n_targets"] == N_PILOT_TARGETS
+    assert value["n_eligible_targets"] == 17
+    assert value["n_excluded_targets"] == 3
+    for by_n in value["by_n"].values():
+        for arm in ARMS:
+            assert by_n["arms"][arm][CLASSES[0]]["n_targets"] == 9
+            assert by_n["arms"][arm][CLASSES[1]]["n_targets"] == 8
+
+
+def test_class_present_only_in_excluded_rows_stays_visible_but_infeasible():
+    masked = _masked(n_governing=1)
+    for rows in masked["arms"].values():
+        rows[0]["eligibility"]["baseline_pass"] = False
+        rows[0]["passes"] = None
+    value = analyze(masked)
+    assert CLASSES[0] in value["outcome_classes"]
+    assert value["semantic_f1_verdict"] == "infeasible"
+    for by_n in value["by_n"].values():
+        assert by_n["semantic_f1_gate_minimum_median"] is None
+        for arm in ARMS:
+            cell = by_n["arms"][arm][CLASSES[0]]
+            assert cell["n_targets"] == 0
+            assert cell["verdict"] == "insufficient-targets"
+
+
 def test_missing_python_semantic_class_is_f1_infeasible():
     value = analyze(_python_compile_only())
     assert value["governing_outcome_class"] == "python-semantic-covered"
@@ -185,6 +231,10 @@ def test_cross_arm_target_or_class_drift_fails_closed():
                 0, 2),
             lambda value: value["arms"][ARMS[0]][0]["passes"].__setitem__(
                 0, 1.0),
+            lambda value: value["arms"][ARMS[0]][0]["eligibility"].update(
+                baseline_pass=False),
+            lambda value: value["arms"][ARMS[0]][0]["eligibility"].update(
+                baseline_pass=1),
             lambda value: value.update(n_targets=True),
             lambda value: value["n_rows_by_arm"].__setitem__(
                 ARMS[0], True)):
@@ -195,6 +245,28 @@ def test_cross_arm_target_or_class_drift_fails_closed():
             assert False, "malformed masked behavioral arm accepted"
         except V2BError:
             pass
+
+    for mutate in (
+            lambda row: row.update(passes=None),
+            lambda row: row["eligibility"].update(
+                baseline_pass=False)):
+        value = _masked()
+        mutate(value["arms"][ARMS[0]][0])
+        try:
+            analyze(value)
+            assert False, "eligibility/outcome inconsistency accepted"
+        except V2BError:
+            pass
+
+    value = _masked()
+    for rows in value["arms"].values():
+        rows[0]["eligibility"]["baseline_pass"] = False
+        # Exclusions must be null; 32 zeroes would silently impute failure.
+    try:
+        analyze(value)
+        assert False, "excluded rows with synthetic failures accepted"
+    except V2BError:
+        pass
 
 
 def test_named_or_duplicate_arm_labels_are_rejected():

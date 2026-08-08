@@ -728,7 +728,10 @@ figure under pilot-estimated nuisance; (b) completion n = the
 smallest of {8, 16, 32} whose ARM-ANONYMOUS target-level
 pass-probability reliability is >= 0.8 — made empirically
 IDENTIFIABLE by generating (or adaptively accumulating) UP TO 32
-pilot completions per (pilot target, arm) under masked labels;
+pilot completions per (behavior-eligible pilot target, arm) under
+masked labels; all 20 committed identities remain in the masked table,
+while a model-cap, baseline, or class-verifier exclusion carries null
+outcomes and never an imputed failure;
 reliability at each candidate n = REPEATED random half-splits (200
 resplits, seed 20260808) of n draws subsampled from those masked
 completions, computed SEPARATELY inside each anonymized arm and the
@@ -1714,20 +1717,26 @@ masking producer, or k4 tier revealer has run.
 
   The salt commitment is committed BEFORE generation; collisions fail, and
   the mapping plus the complete masked object must replay exactly at joint
-  reveal. Every opaque arm has the identical canonical target-key/outcome-
-  class table and exactly 32 INTEGER {0,1} verifier outcomes per target;
-  position i is both draw index and generation seed i. Target keys are the
-  exact keys in the committed 20-target sample/eligibility table (never
-  outcome-aware aliases), and class assignment is the arm-independent result
-  of the committed baseline/coverage gate. Missing, duplicate, float/bool,
-  unequal-length, unsorted, extra-field, or cross-arm target/class drift fails
-  closed. Exact top-level, binding, model, generator, and row key sets exclude
-  free-form metadata channels. Public bindings carry only frozen schemas and
-  hashes (no paths/notes) for behavior plan, sample, assembly, baseline-
-  coverage, completion/verifier evidence, behavioral salt commitment, and the
-  repo's NLL masked artifact. The output is constructed from validated fields;
-  it records only reliability nuisance quantities under opaque ids and never
-  a pass-rate mean or copied arbitrary metadata.
+  reveal. Every opaque arm has exactly the same 20 canonical target keys and
+  the same arm-independent outcome class plus three-boolean eligibility
+  projection: reference_body_le_448_tokens, baseline_pass, and
+  class_verifier_feasible. Eligibility is their conjunction. An eligible row
+  has exactly 32 INTEGER {0,1} verifier outcomes, with position i both draw
+  index and generation seed i; an excluded row has JSON null outcomes and is
+  never imputed or analyzed. Thus the committed pilot-set invariant survives
+  §14.15(c)/§14.23 exclusions without turning them into failures. Target keys
+  are the exact keys in the committed 20-target sample/eligibility table
+  (never outcome-aware aliases), and class/eligibility assignment comes from
+  the committed plan and baseline/coverage gates. Missing, duplicate,
+  float/bool, unequal-length, unsorted, extra-field, eligible/null mismatch,
+  or cross-arm target/class/eligibility drift fails closed. Exact top-level,
+  binding, model, generator, and row key sets exclude free-form metadata
+  channels. Public bindings carry only frozen schemas and hashes (no
+  paths/notes) for behavior plan, sample, assembly, baseline-coverage,
+  completion/verifier evidence, behavioral salt commitment, and the repo's
+  NLL masked artifact. The output is constructed from validated fields; it
+  records eligibility counts and reliability nuisance quantities under opaque
+  ids, never a pass-rate mean or copied arbitrary metadata.
 
   STRATUM SEMANTICS. Allowed Lean classes are {lean-theorem-proof,
   lean-def-typecheck}; allowed Python classes are {python-semantic-covered,
@@ -1753,13 +1762,14 @@ masking producer, or k4 tier revealer has run.
   split's raw correlation describes 16-draw halves; the correction is what
   projects it to n=32.
 
-  EDGE RULES (frozen because they change n). At least EIGHT independent pilot
-  targets are required in the governing semantic class; 200 resplits reduce
-  draw-split Monte Carlo noise but do not manufacture target replication, and
-  eight remains a pragmatic lower bound for a 20-target pilot. Fewer than
-  eight makes that repo-model semantic-F1 slot infeasible. Descriptive-only
-  cells require three targets to display a reliability number but never enter
-  the gate. Pearson with zero variance is defined as zero; nonpositive Pearson
+  EDGE RULES (frozen because they change n). At least EIGHT independent,
+  behavior-eligible targets are required in the governing semantic class; 200
+  resplits reduce draw-split Monte Carlo noise but do not manufacture target
+  replication, and eight remains a pragmatic lower bound for a 20-target
+  pilot. Fewer than eight makes that repo-model semantic-F1 slot infeasible.
+  Descriptive-only cells require three eligible targets to display a
+  reliability number but never enter the gate. Pearson with zero variance is
+  defined as zero; nonpositive Pearson
   maps to zero; Spearman-Brown is clamped to [0,1]. Each cell's 200 corrected
   values use the ordinary median (average of the middle pair). For candidate n
   the semantic-F1 gate is the MINIMUM cell median across the five opaque arms
@@ -1781,3 +1791,32 @@ masking producer, or k4 tier revealer has run.
   an exact file binding and is never sufficient by itself. §15.A15's
   production unblinder stays disabled until the producer binds the exact
   committed masked-outcomes file and deterministic recomputation succeeds.
+
+15.A18 SOLE EARLY k4 TIER AGGREGATE (decision helper frozen PRE-GENERATION;
+no completion, verifier outcome, or pass rate exists). One file-based future
+producer reconstructs ONLY the k4 rows for one exact repo/model slot from the
+hash-bound verifier evidence. The pure helper validates canonical form and
+exact membership in the supplied committed 20-key pilot set, the frozen
+arm-independent classes and eligibility projection, and outcomes. Eligible
+rows have 32 integers; excluded rows have null outcomes. It retains only
+behavior-eligible rows in the language's governing semantic class. Fewer than
+eight eligible governing targets makes the slot infeasible without exposing a
+rate. Otherwise it emits the sole §8/§14.22 permitted aggregate: semantic
+successes, trials, and pass rate under named arm k4; no target rows or
+other-arm statistic enters the artifact.
+
+  Threshold decisions use integer cross-products, never rounded floats:
+  successes*100 < trials*5 moves exactly one q25c tier UP;
+  successes*100 > trials*95 moves exactly one tier DOWN; equality at 0.05 or
+  0.95 STAYS. A required adjacent tier outside the pinned
+  {0.5B,1.5B,3B} ladder makes the slot infeasible. This is a single move from
+  the supplied tier, not an outcome-driven repeated search. If it moves, the
+  destination is final: the five arms are generated there for reliability,
+  but the tier revealer is not rerun and cannot make a second move. The helper
+  hashes the entire rule, supplied pilot target set, and normalized k4
+  projection. It is not a production gate: the missing wrapper must
+  re-materialize k4 from the exact committed/private verified-evidence chain;
+  explicitly bind the behavior plan, sample, baseline/coverage, verifier file,
+  source tree, and exact verifier-file SHA; recheck sample membership; and
+  publish an exact-keyed write-once artifact before its output can select the
+  final model used by §15.A17.

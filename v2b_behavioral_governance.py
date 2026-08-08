@@ -56,6 +56,19 @@ GOVERNING_CLASS_BY_LANGUAGE = {
     "lean": "lean-theorem-proof",
     "python": "python-semantic-covered",
 }
+BEHAVIOR_ELIGIBILITY_FIELDS = (
+    "reference_body_le_448_tokens",
+    "baseline_pass",
+    "class_verifier_feasible",
+)
+BEHAVIOR_ELIGIBILITY_RULE = dict(
+    pilot_rows="all 20 committed pilot identities remain present",
+    fields=list(BEHAVIOR_ELIGIBILITY_FIELDS),
+    eligible="all three arm-independent fields are true",
+    eligible_passes="exactly 32 integer binary verifier outcomes",
+    excluded_passes="JSON null; excluded rows are never imputed or analyzed",
+    cross_arm="target, outcome class, and eligibility fields are identical",
+)
 MODEL_BINDINGS = (
     {"name": "Qwen/Qwen2.5-Coder-0.5B",
      "revision": "8123ea2e9354afb7ffcc6c8641d1b2f5ecf18301"},
@@ -105,6 +118,7 @@ GOVERNANCE_CONTRACT = dict(
     allowed_classes_by_language={
         language: sorted(classes)
         for language, classes in OUTCOME_CLASSES_BY_LANGUAGE.items()},
+    eligibility_rule=BEHAVIOR_ELIGIBILITY_RULE,
     gating=("first candidate whose minimum median corrected reliability "
             "across five opaque arms in the language's governing semantic "
             "class is >=0.8; diagnostic classes never set n"),
@@ -177,6 +191,25 @@ def _rank(arm, outcome_class, n, resplit, target_key, draw_index):
     payload = ["v2brel:v1", RESPLIT_SEED, arm, outcome_class, n,
                resplit, target_key, draw_index]
     return hashlib.sha256(canonical_json_bytes(payload)).digest()
+
+
+def validate_behavior_eligibility(value):
+    """Return the exact arm-independent eligibility projection.
+
+    All 20 pilot identities stay in the masked table.  An excluded identity
+    carries null outcomes rather than 32 synthetic failures, so exclusions
+    cannot lower pass rates or manufacture reliability.
+    """
+    if not isinstance(value, dict) \
+            or set(value) != set(BEHAVIOR_ELIGIBILITY_FIELDS) \
+            or any(type(value[field]) is not bool
+                   for field in BEHAVIOR_ELIGIBILITY_FIELDS):
+        raise V2BError("malformed behavioral eligibility projection")
+    return {field: value[field] for field in BEHAVIOR_ELIGIBILITY_FIELDS}
+
+
+def behavior_is_eligible(value):
+    return all(value[field] for field in BEHAVIOR_ELIGIBILITY_FIELDS)
 
 
 def pearson_or_zero(left, right):
@@ -272,10 +305,12 @@ def _validate_masked(masked):
         for index, row in enumerate(rows):
             if not isinstance(row, dict) \
                     or set(row) != {"target_key", "outcome_class",
-                                   "passes"}:
+                                   "eligibility", "passes"}:
                 raise V2BError(f"malformed behavior row {arm}[{index}]")
             key = row.get("target_key")
             outcome_class = row.get("outcome_class")
+            eligibility = validate_behavior_eligibility(
+                row.get("eligibility"))
             passes = row.get("passes")
             try:
                 identity = json.loads(key)
@@ -288,22 +323,32 @@ def _validate_masked(masked):
                     or key in table \
                     or not isinstance(outcome_class, str) \
                     or outcome_class not in \
-                    OUTCOME_CLASSES_BY_LANGUAGE[language] \
-                    or not isinstance(passes, list) \
-                    or len(passes) != N_DRAWS \
-                    or any(type(value) is not int or value not in (0, 1)
-                           for value in passes):
+                    OUTCOME_CLASSES_BY_LANGUAGE[language]:
                 raise V2BError(f"malformed/duplicate behavior row "
                                f"{arm}[{index}]")
-            table[key] = (outcome_class, tuple(passes))
+            eligible = behavior_is_eligible(eligibility)
+            if eligible and (
+                    not isinstance(passes, list)
+                    or len(passes) != N_DRAWS
+                    or any(type(value) is not int or value not in (0, 1)
+                           for value in passes)):
+                raise V2BError(f"malformed eligible behavior outcomes "
+                               f"{arm}[{index}]")
+            if not eligible and passes is not None:
+                raise V2BError(f"excluded behavior row has outcomes "
+                               f"{arm}[{index}]")
+            flags = tuple(eligibility[field]
+                          for field in BEHAVIOR_ELIGIBILITY_FIELDS)
+            table[key] = (outcome_class, flags,
+                          tuple(passes) if eligible else None)
         if [row["target_key"] for row in rows] != sorted(table):
             raise V2BError(f"behavior rows are not target-sorted: {arm}")
-        target_classes = {key: value[0] for key, value in table.items()}
+        target_classes = {key: value[:2] for key, value in table.items()}
         if canonical_targets is None:
             canonical_targets = target_classes
         elif target_classes != canonical_targets:
             raise V2BError("opaque arms do not share the exact target/"
-                           "outcome-class table")
+                           "outcome-class/eligibility table")
         normalized[arm] = table
     if n_targets != len(canonical_targets):
         raise V2BError("behavioral masked counts do not match arm rows")
@@ -356,9 +401,9 @@ def _arm_stratum_reliability(arm, outcome_class, rows, n, minimum_targets,
 
 def analyze(masked):
     """Pure arm-anonymous n governance; emits no pass-rate means."""
-    arms, target_classes, masked_bindings, model_binding = \
+    arms, target_metadata, masked_bindings, model_binding = \
         _validate_masked(masked)
-    strata = sorted(set(target_classes.values()))
+    strata = sorted(set(value[0] for value in target_metadata.values()))
     language = masked["language"]
     governing_class = GOVERNING_CLASS_BY_LANGUAGE[language]
     diagnostic_classes = [value for value in strata
@@ -375,8 +420,12 @@ def analyze(masked):
                 is_governing = outcome_class == governing_class
                 minimum_targets = (MIN_GOVERNING_TARGETS if is_governing
                                    else MIN_DIAGNOSTIC_TARGETS)
-                rows = {key: passes for key, (row_class, passes)
-                        in table.items() if row_class == outcome_class}
+                rows = {
+                    key: passes
+                    for key, (row_class, eligibility, passes)
+                    in table.items()
+                    if row_class == outcome_class and all(eligibility)
+                }
                 result = _arm_stratum_reliability(
                     arm, outcome_class, rows, n, minimum_targets,
                     "semantic-f1-governing" if is_governing else
@@ -417,7 +466,13 @@ def analyze(masked):
         edge_rules=EDGE_RULES, edge_rules_sha256=EDGE_RULES_SHA256,
         governance_contract=GOVERNANCE_CONTRACT,
         governance_contract_sha256=GOVERNANCE_CONTRACT_SHA256,
-        n_opaque_arms=len(arms), n_targets=len(target_classes),
+        n_opaque_arms=len(arms), n_targets=len(target_metadata),
+        n_eligible_targets=sum(
+            all(eligibility)
+            for _, eligibility in target_metadata.values()),
+        n_excluded_targets=sum(
+            not all(eligibility)
+            for _, eligibility in target_metadata.values()),
         outcome_classes=strata,
         governing_outcome_class=governing_class,
         diagnostic_outcome_classes=diagnostic_classes,
