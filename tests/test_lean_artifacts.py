@@ -47,6 +47,14 @@ def test_old_glibc_nodes_use_the_system_c_compiler():
     assert '"$ELAN_HOME/bin/elan" toolchain install' in src
 
 
+def test_static_mathlib_curl_uses_engaging_ca_bundle():
+    src = source()
+    assert 'export CURL_CA_BUNDLE="/etc/pki/tls/cert.pem"' in src
+    assert '[[ -r "$CURL_CA_BUNDLE" ]]' in src
+    assert 'sha256sum "$CURL_CA_BUNDLE"' in src
+    assert "curl_ca_bundle_sha256" in src
+
+
 def test_toolchain_install_is_resume_safe():
     src = source()
     assert '"$ELAN_HOME/bin/elan" toolchain list' in src

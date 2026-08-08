@@ -23,6 +23,10 @@ export LEAN_NUM_THREADS="${SLURM_CPUS_PER_TASK:-16}"
 # LEAN_CC; use the node compiler for generated C while keeping Lean,
 # Lake, corpus revisions, and all elaboration artifacts unchanged.
 export LEAN_CC="/bin/cc"
+# mathlib downloads a pinned static curl whose compiled-in CA location is
+# absent on Engaging's RHEL image. This is the node's managed trust bundle;
+# without the override curl reports OpenSSL STORE "unregistered scheme".
+export CURL_CA_BUNDLE="/etc/pki/tls/cert.pem"
 export PATH="$ELAN_HOME/bin:$PATH"
 V2_BASE_LIBRARY_PATH="${LIBRARY_PATH-}"
 V2_BOOTSTRAP_DIR="$V2_POOL_BASE/bootstrap/elan-4.2.3"
@@ -60,7 +64,12 @@ esac
   echo "system C compiler is unavailable: $LEAN_CC" >&2
   exit 1
 }
+[[ -r "$CURL_CA_BUNDLE" ]] || {
+  echo "system CA bundle is unavailable: $CURL_CA_BUNDLE" >&2
+  exit 1
+}
 V2_CC_ACTUAL=$("$LEAN_CC" --version | head -n 1)
+V2_CA_SHA256=$(sha256sum "$CURL_CA_BUNDLE" | cut -d' ' -f1)
 
 V2_JOB_ID="${SLURM_JOB_ID:-manual}"
 V2_REPORT="results_v2/v2a/lean_artifacts_job${V2_JOB_ID}.tsv"
@@ -76,6 +85,8 @@ trap 'rm -f "$V2_REPORT_TMP"' EXIT
   printf 'elan_asset_sha256\t%s\n' "$V2_ELAN_SHA256"
   printf 'lean_cc\t%s\n' "$LEAN_CC"
   printf 'lean_cc_version\t%s\n' "$V2_CC_ACTUAL"
+  printf 'curl_ca_bundle\t%s\n' "$CURL_CA_BUNDLE"
+  printf 'curl_ca_bundle_sha256\t%s\n' "$V2_CA_SHA256"
 } > "$V2_REPORT_TMP"
 
 v2_require_clean() {
