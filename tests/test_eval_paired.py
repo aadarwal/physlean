@@ -1,13 +1,29 @@
 #!/usr/bin/env python3
-"""Pure ledger/harness tests for the paired evaluator (no model load)."""
+"""Pure ledger/harness/cell-spec tests for the paired evaluator (no model
+load, no GPU): boundary byte accounting, the frozen three-file harness
+hash, exact target-cell coverage against a real materialized synthetic
+manifest, materialization tamper refusal, and the fail-closed
+context-length gate."""
 import hashlib
 import json
+import math
 import os
 import sys
+import tempfile
+from types import SimpleNamespace
+
+import torch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from eval_paired import (body_token_ledger, nll_rows_for_token_indices,
-                         paired_harness_hash)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import eval_paired as paired
+from eval_paired import (_model_max_positions, body_token_ledger,
+                         empty_cell_arms, nll_rows_for_token_indices,
+                         paired_harness_hash, score_prompt,
+                         target_cell_specs)
+from prepare_v2b_assembly import build_assembly, materialize
+from test_prepare_v2b_assembly import _build, _lean_chain, _python_chain
+from v2b_common import V2BError, identity_key
 
 
 def test_boundary_group_is_excluded_and_byte_ledger_is_exact():
@@ -61,6 +77,188 @@ def test_paired_harness_hash_is_exact_canonical_three_file_binding():
     expected = hashlib.sha256(json.dumps(
         rows, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
     assert paired_harness_hash(root) == expected
+
+
+def test_nll_row_mapping_rejects_token_zero():
+    assert nll_rows_for_token_indices([3, 1]) == [2, 0]
+    for bad in ([0], [-1], [True]):
+        try:
+            nll_rows_for_token_indices(bad)
+            assert False, bad
+        except V2BError:
+            pass
+
+
+def test_ledger_rejects_uncovered_offsets():
+    try:
+        body_token_ledger("abcd", [[0, 2]], body_start_char=1)
+        assert False, "uncovered text accepted"
+    except V2BError as err:
+        assert "cover" in str(err)
+
+
+def test_empty_offset_token_at_boundary_charges_nothing():
+    # A zero-width token exactly at the boundary opens its own group with
+    # zero charged bytes: classified prefix, excluded from primary, and the
+    # byte ledger still conserves the exact body.
+    ledger = body_token_ledger("headBODY", [(0, 4), (4, 4), (4, 8)],
+                               body_start_char=4, token_ids=[1, 2, 3])
+    assert ledger["primary_token_indices"] == [2]
+    assert ledger["n_boundary_straddle_tokens"] == 0
+    assert ledger["scored_body_bytes"] == ledger["exact_body_bytes"]
+
+
+def test_model_max_positions_gate_is_fail_closed():
+    assert _model_max_positions(
+        SimpleNamespace(max_position_embeddings=4096)) == 4096
+    assert _model_max_positions(SimpleNamespace(n_positions=2048)) == 2048
+    assert _model_max_positions(SimpleNamespace(
+        text_config=SimpleNamespace(max_position_embeddings=8192))) == 8192
+    for config in (SimpleNamespace(),
+                   SimpleNamespace(max_position_embeddings=0),
+                   SimpleNamespace(max_position_embeddings=-1),
+                   SimpleNamespace(max_position_embeddings=True)):
+        try:
+            _model_max_positions(config)
+            assert False, config
+        except V2BError:
+            pass
+
+
+def test_score_prompt_maps_body_rows_and_denominators_exactly():
+    class CharacterTokenizer:
+        def __call__(self, text, **kwargs):
+            return {"input_ids": [1000 + ord(ch) for ch in text],
+                    "offset_mapping": [(i, i + 1)
+                                       for i in range(len(text))]}
+
+    original = paired.eval_window
+    paired.eval_window = lambda model, ids, device, chunk: torch.ones(
+        len(ids) - 1, dtype=torch.float32)
+    try:
+        result = score_prompt(None, CharacterTokenizer(), "cpu",
+                              b"ctx\n", b"head", b"BODY", 128)
+    finally:
+        paired.eval_window = original
+    assert result["primary"]["nll_nats"] == 4.0
+    assert result["primary"]["n_tokens"] == 4
+    assert result["boundary_inclusive_sensitivity"]["nll_nats"] == 4.0
+    assert result["boundary_ledger"]["exact_body_bytes"] == 4
+    assert result["boundary_ledger"]["scored_body_bytes"] == 4
+    assert result["boundary_ledger"]["straddled_body_bytes"] == 0
+    assert [row["start_char_relative_to_body"]
+            for row in result["raw_body_token_rows"]] == [0, 1, 2, 3]
+    expected = 1.0 / math.log(2)
+    assert abs(result["primary"]["bpb"] - expected) < 1e-12
+    assert result["primary"]["bpc"] == result["primary"]["bpb"]
+
+
+def _materialized_fixture(td):
+    chain = _lean_chain(td)
+    manifest = _build(chain)
+    manifest_path = os.path.join(td, "manifest.json")
+    json.dump(manifest, open(manifest_path, "w"))
+    blobs = materialize(manifest_path, chain["sample"], chain["repo"],
+                        chain["candidates"], chain["extraction"],
+                        chain["neardup"], chain["outcome"],
+                        chain["freeze"], chain["k7"])
+    target = manifest["targets"][0]
+    return target, blobs[identity_key("lean", ["M.A", "M.A.t"])]
+
+
+def test_target_cell_specs_exact_coverage_and_roles():
+    with tempfile.TemporaryDirectory() as td:
+        target, blob = _materialized_fixture(td)
+        specs = target_cell_specs(target, blob)
+        by_id = {spec["cell_id"]: spec for spec in specs}
+        grid = ["4096", "16384", "65536"]
+        expected = (["k1"]
+                    + [f"{arm}:{b}" for arm in ("k2", "k3", "k4")
+                       for b in grid]
+                    + [f"k5:0:{b}" for b in grid]
+                    + ["k5:1:16384", "k5:2:16384"]
+                    + [f"{arm}:{b}" for arm in ("k6", "k7") for b in grid]
+                    + ["k3s", "k4s"])
+        assert sorted(by_id) == sorted(expected)
+        assert len(specs) == 23
+        assert by_id["k1"]["estimand_role"] == "absence"
+        for cell_id in ("k5:1:16384", "k5:2:16384"):
+            assert by_id[cell_id]["estimand_role"] == "seed-sensitivity"
+        for cell_id in ("k3s", "k4s"):
+            assert by_id[cell_id]["estimand_role"] == \
+                "same-dependency-sensitivity"
+        assert by_id["k5:0:16384"]["estimand_role"] == "primary-grid"
+        for spec in specs:
+            assert spec["context_bytes"] == len(spec["context"])
+            assert hashlib.sha256(spec["context"]).hexdigest() == \
+                spec["context_sha256"]
+        assert by_id["k1"]["context"] == b""
+        # no arm of this fixture is cell-less
+        assert empty_cell_arms(target) == []
+
+
+def test_target_cell_specs_fails_on_missing_or_tampered_blob():
+    with tempfile.TemporaryDirectory() as td:
+        target, blob = _materialized_fixture(td)
+        short = dict(blob)
+        del short["k6:4096"]
+        try:
+            target_cell_specs(target, short)
+            assert False, "missing materialized cell accepted"
+        except V2BError as err:
+            assert "materialization lacks" in str(err)
+        tampered = dict(blob)
+        tampered["k4:16384"] = b"x" + tampered["k4:16384"][1:]
+        try:
+            target_cell_specs(target, tampered)
+            assert False, "tampered materialized cell accepted"
+        except V2BError as err:
+            assert "drift" in str(err)
+
+
+def test_target_cell_specs_includes_ineligible_empty_cells():
+    """The §3/§15.A4 empty-rendering representation reaches the evaluator:
+    empty arms contribute their full budget grid as eligible=false cells
+    with empty contexts, so they are scoreable-in-form but excluded from
+    complete-case contrasts by the eligibility flag, never absent."""
+    with tempfile.TemporaryDirectory() as td:
+        chain = _python_chain(td)
+        manifest = build_assembly(chain["sample"], chain["repo"],
+                                  chain["candidates"], chain["extraction"],
+                                  chain["neardup"], chain["outcome"],
+                                  None, chain["k7"])
+        manifest_path = os.path.join(td, "manifest.json")
+        json.dump(manifest, open(manifest_path, "w"))
+        blobs = materialize(manifest_path, chain["sample"], chain["repo"],
+                            chain["candidates"], chain["extraction"],
+                            chain["neardup"], chain["outcome"],
+                            None, chain["k7"])
+        target = manifest["targets"][0]
+        specs = target_cell_specs(
+            target, blobs[identity_key("python", ["pkg.a", "f", 0])])
+        by_id = {spec["cell_id"]: spec for spec in specs}
+        assert len(specs) == 23                 # full grid, nothing absent
+        for cell_id in ("k5:0:4096", "k5:0:16384", "k5:0:65536",
+                        "k5:1:16384", "k5:2:16384"):
+            spec = by_id[cell_id]
+            assert spec["eligible"] is False
+            assert spec["context"] == b""
+            assert spec["context_bytes"] == 0
+            assert spec["context_sha256"] == \
+                hashlib.sha256(b"").hexdigest()
+        # arms with content keep real cells alongside
+        assert by_id["k4:4096"]["context_bytes"] > 0
+        assert empty_cell_arms(target) == []    # grid never cell-less now
+
+
+def test_empty_cell_arms_recorded_not_silent():
+    target = dict(arms=dict(
+        k1=dict(context_sha256="0" * 64, context_bytes=0),
+        k2={}, k3={}, k4={},
+        k5={"0": dict(cells={}), "1": dict(cells={}), "2": dict(cells={})},
+        k6=dict(cells={}), k7=dict(cells={}), k3s={}, k4s={}))
+    assert empty_cell_arms(target) == \
+        ["k2", "k3", "k4", "k6", "k7", "k5:0", "k5:1", "k5:2", "k3s", "k4s"]
 
 
 if __name__ == "__main__":
