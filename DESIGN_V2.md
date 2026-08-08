@@ -1092,7 +1092,7 @@ Lean elaborated (supports the removal), Python static best-effort
 Python k7 caveat). Removed files/bytes recorded. Artifact
 {schema: "v2b_k7_order_v1", repo, corpus_git_sha, order_rule:
 "g3_full_topo_kahn_minheap_v1", n_edges, n_cycle_break_events,
-files: [[relpath, bytes, source_sha256, file_scc_id], ...]},
+files: [[relpath, normalized_bytes, source_sha256, file_scc_id], ...]},
 committed and hash-bound; assembly consumes only this artifact plus
 the extraction graph for the filter; a target file absent from the
 order is a hard error.

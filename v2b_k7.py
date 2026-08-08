@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the hash-bound full-file k7 order frozen in DESIGN_V2 §15.A8/A11."""
+"""Build the hash-bound full-file k7 order frozen in DESIGN_V2 §15.A8/A12."""
 import argparse
 import hashlib
 import os
