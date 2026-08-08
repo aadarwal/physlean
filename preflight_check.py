@@ -34,6 +34,108 @@ BIG = ["Qwen/Qwen2.5-Coder-14B", "Qwen/Qwen2.5-Coder-32B",
        "Qwen/Qwen3-8B-Base", "Qwen/Qwen3-14B-Base",
        "Qwen/Qwen3.5-9B-Base", "deepseek-ai/DeepSeek-Coder-V2-Lite-Base"]
 
+# ---- FROZEN arm-feasibility manifest (PREREG §5 amendment, adopted
+# before any battery/grid outcome at G1, from deterministic
+# streams_stats) ----
+# masking_viable: >= MASK_MIN_DOCS post-cutoff docs AND >= MASK_MIN_BYTES
+# post-cutoff bytes INSIDE the sampled full_topo stream (the arm operates
+# in-stream; big corpora dilute recent files — mathlib holds 5,000,507B
+# corpus-wide all-new at c2026_02 but only 167,496B landed in the 2.4MB
+# seeded sample). allnew_matched: >= MIN_MATCHED post-cutoff bytes
+# corpus-wide. FLOORS NEVER MOVE POST-HOC: geant4 c2026_02 all-new
+# (130,834B) and mathlib c2026_02 masking (167,496B) are recorded
+# near-misses, not grounds for adjustment. Every science gate verifies
+# the realized sets still equal these frozen sets EXACTLY (either
+# direction of drift fails); narrowness is SCOPED in PREREG §5/§6
+# (Qwen3.5 cross-language contamination claims barred), never gated away.
+CORE_STREAM_CORPORA = ("physlib", "mathlib", "qutip", "sympy", "geant4")
+MASK_MIN_DOCS = 20
+MASK_MIN_BYTES = 300_000
+ARM_FEASIBILITY = {
+    "c2024_11": dict(masking={"physlib", "mathlib"},
+                     allnew={"physlib", "mathlib", "sympy", "geant4"}),
+    "c2025_04": dict(masking={"physlib", "mathlib"},
+                     allnew={"physlib", "mathlib", "sympy", "geant4"}),
+    "c2026_02": dict(masking={"physlib"},
+                     allnew={"physlib", "mathlib"}),
+}
+
+
+def feasible_sets(clean_avail, masking):
+    """PURE frozen-floor classifier (testable): clean_avail[tag][corpus]
+    = post-cutoff corpus-wide bytes; masking[tag][corpus] = (docs,
+    in-stream post-cutoff bytes). Returns per-tag realized arm sets
+    under the FROZEN floors."""
+    from prep_streams import MIN_MATCHED
+    out = {}
+    for tag in ARM_FEASIBILITY:
+        out[tag] = dict(
+            allnew={c for c, v in (clean_avail.get(tag) or {}).items()
+                    if v >= MIN_MATCHED},
+            masking={c for c, db in (masking.get(tag) or {}).items()
+                     if db[0] >= MASK_MIN_DOCS and db[1] >= MASK_MIN_BYTES})
+    return out
+
+
+def masking_mass():
+    """(docs, bytes) of post-cutoff material INSIDE full_topo per
+    (tag, corpus) — the masking arm's realized in-stream mass, computed
+    from the stream manifests exactly as viability_check reports it."""
+    from prep_streams import CUTOFFS
+    out = {t: {} for t in CUTOFFS}
+    for corpus in CORE_STREAM_CORPORA:
+        mp = os.path.join(BASE, "data", "streams", corpus,
+                          "full_topo.manifest.jsonl")
+        if not os.path.exists(mp):
+            continue
+        docs = [json.loads(l) for l in open(mp)]
+        for tag, cut in CUTOFFS.items():
+            post = [d for d in docs if (d.get("date") or "") > cut]
+            out[tag][corpus] = (len(post),
+                                sum(d["end"] - d["start"] for d in post))
+    return out
+
+
+def arm_feasibility_check(tags=None, name="arm-feasibility-frozen"):
+    """Realized arm sets (from current streams_stats + manifests) must
+    EQUAL the frozen manifest for the given tags — fail-closed in both
+    directions, so feasibility can never drift silently under a
+    re-prep. G1/common gates verify all tags; g3a verifies only its own
+    family's row (a sentinel gate keyed to another family's feasibility
+    would be incoherent)."""
+    try:
+        sys.path.insert(0, BASE)
+        st = json.load(open(os.path.join(BASE, "data",
+                                         "streams_stats.json")))
+        avail = st.get("clean_available") or {}
+        mm = masking_mass()
+        derived = feasible_sets(avail, mm)
+        want = tags or list(ARM_FEASIBILITY)
+        bad = {}
+        for t in want:
+            for arm in ("masking", "allnew"):
+                if derived[t][arm] != ARM_FEASIBILITY[t][arm]:
+                    bad[f"{t}/{arm}"] = dict(
+                        realized=sorted(derived[t][arm]),
+                        frozen=sorted(ARM_FEASIBILITY[t][arm]))
+        # the committed preflight report carries the FULL numeric rows
+        # (audit fix: PREREG §5 references this report for the
+        # c2024_11/c2025_04 rows, so a passing gate must publish them,
+        # not just the set verdicts)
+        rows = {t: {c: dict(masking_docs=mm.get(t, {}).get(c, (0, 0))[0],
+                            masking_bytes=mm.get(t, {}).get(c, (0, 0))[1],
+                            allnew_bytes=(avail.get(t) or {}).get(c))
+                    for c in CORE_STREAM_CORPORA}
+                for t in want}
+        check(name, not bad,
+              dict(mismatches=bad or None,
+                   frozen={t: {a: sorted(ARM_FEASIBILITY[t][a])
+                               for a in ("masking", "allnew")}
+                           for t in want},
+                   realized_rows=rows))
+    except Exception as e:
+        check(name, False, repr(e))
+
 
 def arxiv_present():
     """ONE shared recursive presence definition (review fix: a shallow
@@ -219,12 +321,21 @@ def gate_g1():
                                  spread_rel=round(spread, 4))
         check("byte-match-tolerance", tol_ok and "full_topo" in tol
               and isinstance(tol["full_topo"], dict), tol)
-        clean_cells = {t: sum(1 for n, c in st["corpora"].items()
-                              if not c["streams"].get(f"clean_{t}", {})
-                              .get("unmatched", True))
-                       for t in ("c2024_11", "c2025_04", "c2026_02")}
-        check("clean-matched-cells", all(v >= 3 for v in clean_cells.values()),
-              clean_cells)
+        # exact-set per tag vs the FROZEN feasibility manifest
+        # (amendment: the old >=3 scalar could be silently satisfied by
+        # a single-language pair — c2026_02 matched cells are the Lean
+        # pair only; narrowness is scoped in PREREG §5/§6, never
+        # threshold-shopped)
+        clean_sets = {t: sorted(n for n, c in st["corpora"].items()
+                                if not c["streams"].get(f"clean_{t}", {})
+                                .get("unmatched", True))
+                      for t in ARM_FEASIBILITY}
+        check("clean-matched-cells",
+              all(clean_sets[t] == sorted(ARM_FEASIBILITY[t]["allnew"])
+                  for t in ARM_FEASIBILITY),
+              dict(realized=clean_sets,
+                   frozen={t: sorted(v["allnew"])
+                           for t, v in ARM_FEASIBILITY.items()}))
         gitless = [k for k, v in st.get("corpus_shas", {}).items() if not v]
         shas_keys = set(st.get("corpus_shas") or {})
         # tri-state consistency (amendment): streams_stats must carry
@@ -305,8 +416,19 @@ def gate_g1():
 
     try:
         import shutil
-        free = shutil.disk_usage("/orcd/pool/008").free / 1e9
-        check("disk-headroom", free > 100, f"{free:.0f}GB free on POOL")
+        # stat BASE, the ACTUAL work filesystem (review fix: the autofs
+        # parent /orcd/pool/008 0-stats before automount, so the check
+        # measured the automounter, not the volume); BASE forces the
+        # mount and is where dumps/streams/caches actually land. Inodes
+        # reported too — FILE quota, not bytes, was the HOME failure
+        # mode on this cluster.
+        du = shutil.disk_usage(BASE)
+        sv = os.statvfs(BASE)
+        free_gb = du.free / 1e9
+        check("disk-headroom", free_gb > 100,
+              dict(path=BASE, free_gb=round(free_gb),
+                   total_gb=round(du.total / 1e9),
+                   inodes_free=sv.f_favail))
     except Exception as e:
         check("disk-headroom", False, repr(e))
 
@@ -419,6 +541,10 @@ def gate_g1():
         check("streams-inputs-current", not probs, probs[:8] or "current")
     except Exception as e:
         check("streams-inputs-current", False, repr(e))
+
+    # frozen arm-feasibility manifest: realized sets must equal the
+    # PREREG §5 table exactly (all tags; g3a re-checks its own row)
+    arm_feasibility_check()
 
 
 SENTINEL = ["Qwen/Qwen2.5-Coder-0.5B"]
@@ -609,11 +735,13 @@ def expected_cells_check(shards, snap_name):
 
 def viability_check():
     # sample-size + clean-target-masking viability (PREREG §6): effective
-    # windows per corpus and post-cutoff target mass inside full_topo
+    # windows per corpus and post-cutoff target mass inside full_topo —
+    # shares masking_mass() and the FROZEN floors with the feasibility
+    # gate, so the report and the gate can never disagree
     try:
-        from prep_streams import CUTOFFS as cutoffs  # single cutoff source
+        mm = masking_mass()
         viability = {}
-        for corpus in ("physlib", "mathlib", "qutip", "sympy", "geant4"):
+        for corpus in CORE_STREAM_CORPORA:
             mp = os.path.join(BASE, "data", "streams", corpus,
                               "full_topo.manifest.jsonl")
             if not os.path.exists(mp):
@@ -621,14 +749,11 @@ def viability_check():
             docs = [json.loads(l) for l in open(mp)]
             total = sum(d["end"] - d["start"] for d in docs)
             ent = dict(est_windows=round(total / 105_000, 1))
-            for tag, cut in cutoffs.items():  # all core corpora mask
-                post = [d for d in docs if (d.get("date") or "") > cut]
-                ent[tag] = dict(
-                    docs=len(post),
-                    kbytes=round(sum(d["end"] - d["start"]
-                                     for d in post) / 1e3),
-                    ok=len(post) >= 20 and sum(
-                        d["end"] - d["start"] for d in post) >= 300_000)
+            for tag in mm:
+                d_n, d_b = mm[tag].get(corpus, (0, 0))
+                ent[tag] = dict(docs=d_n, kbytes=round(d_b / 1e3),
+                                ok=d_n >= MASK_MIN_DOCS
+                                and d_b >= MASK_MIN_BYTES)
             viability[corpus] = ent
         check("windows-and-masking-viability", bool(viability), viability)
     except Exception as e:
@@ -642,6 +767,11 @@ def gate_g3a():
     ok, det = models_cached(SENTINEL)
     check("models-sentinel-pinned", ok, det)
     expected_cells_check({"q25c-0.5b"}, "expected_cells_sentinel.json")
+    # the sentinel's OWN family arm row (c2024_11) must hold — the
+    # sentinel stop/go items evaluate c2024_11 arms only, and a
+    # sentinel gate keyed to another family's feasibility would be
+    # incoherent (amendment, PREREG §5)
+    arm_feasibility_check(tags=["c2024_11"], name="g3a-own-family-arms")
 
 
 def sentinel_completeness():

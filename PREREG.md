@@ -216,6 +216,48 @@ descriptive comparisons stay QUALITATIVE (no bits-per-codepoint field is
 emitted or inferred) until a schema revision adds per-group codepoint
 counts.
 
+**ARM-FEASIBILITY MANIFEST (frozen at G1, before any battery/grid
+outcome, from
+deterministic streams_stats — floors NEVER move post-hoc).** Floors:
+masking viable = >=20 post-cutoff docs AND >=300KB post-cutoff bytes
+INSIDE the sampled full_topo stream; all-new matched = >=150KB
+post-cutoff bytes corpus-wide (MIN_MATCHED). Frozen realized sets:
+
+| cutoff   | masking viable      | all-new matched                     |
+|----------|---------------------|-------------------------------------|
+| c2024_11 | physlib, mathlib    | physlib, mathlib, sympy, geant4     |
+| c2025_04 | physlib, mathlib    | physlib, mathlib, sympy, geant4     |
+| c2026_02 | physlib             | physlib, mathlib                    |
+
+Realized c2026_02 rows (cluster streams_stats at the adoption
+boundary): masking — physlib 47 docs / 632,246B (viable); mathlib
+25 / 167,496B (fails the 300KB floor); qutip 2 / 8,416B; sympy
+1 / 3,868B; geant4 1 / 7,975B. All-new corpus-wide — physlib
+1,498,325B, mathlib 5,000,507B, qutip 8,416B, sympy 54,843B, geant4
+130,834B. (c2024_11 and
+c2025_04 numeric rows are recorded in the committed G1 preflight
+report; the frozen SETS above are the gated content.) Near-misses
+recorded, floors unmoved: geant4 c2026_02 all-new at 130,834B and
+mathlib c2026_02 masking at 167,496B — the floors predate this G1
+feasibility inspection and are not adjusted after seeing which cells
+they admit.
+
+Three consequences, stated plainly. (1) The MASKING arm is LEAN-ONLY
+at every cutoff: qutip/sympy/geant4 never reach the in-stream floors.
+Mechanism, not accident: masking operates inside the fixed 2.4MB
+seeded full_topo sample, and seeded whole-corpus selection dilutes
+recent files proportionally for large corpora — mathlib holds 5.0MB
+of post-2026-03 code corpus-wide, but only 167KB landed in-stream.
+(A recency-stratified sample is a possible FUTURE sensitivity behind
+its own gate; not a change now.) (2) Cross-language contamination
+control for c2024_11/c2025_04 rests on the ALL-NEW arm (4 corpora,
+qutip below floor). (3) The Qwen3.5 family (c2026_02) has NO
+cross-language contamination-controlled arm in this corpus set — see
+the claim bar in §6. Preflight verifies realized sets equal this
+manifest EXACTLY at every science gate (arm-feasibility-frozen;
+g3a re-checks its own c2024_11 row), so feasibility cannot drift
+silently under a re-prep.
+
 ## 6. Analysis plan
 
 1. Nonparametric first: binned curves (log-spaced c bins, common byte
@@ -231,6 +273,24 @@ counts.
    Clean-target masking viability (post-cutoff doc count and byte mass per
    corpus per cutoff) is quantified in preflight before G3; corpora under
    floor (>= 20 docs, >= 300KB) are labeled descriptive for that protocol.
+   The realized per-cutoff arm sets are FROZEN in the §5 feasibility
+   manifest and exact-set-gated (the earlier >=3-matched-cells scalar is
+   superseded: it could be satisfied by a single-language pair).
+   **QWEN3.5 CLAIM BAR (frozen before any battery/grid outcome)**: the
+   c2026_02 family has
+   NO cross-language contamination-controlled arm in this corpus set —
+   masking is physlib-only and the matched all-new cells are the Lean
+   pair. Accordingly: no cross-language contamination-controlled claim
+   is made for Qwen3.5 at ANY cell count; in scope for that family are
+   (i) contaminated full-stream curves across all five corpora, labeled
+   uncontrolled, (ii) the physlib-only masking cohort gap, labeled
+   single-corpus, (iii) the physlib-mathlib all-new pair, descriptive,
+   within-Lean, with the §5 dilution note attached to mathlib. Lifting
+   this bar requires a corpus amendment (fast-moving Python/C++ repos)
+   through its own reviewed gate — never a threshold change. The
+   216/152/44 grid is unchanged: unmatched c2026_02 cells stay in the
+   grid flagged unmatched=True and are excluded from claims by the
+   existing fail-closed stream_unmatched machinery plus this bar.
 2. Primary summary statistics (descriptive, unpaired-curve): context gain =
    BPB over the first common decade (c in [16,256)) minus BPB at the top
    common bin (both gated by the >=8-window bin floor; the c<4 bin is too sparse and
@@ -449,6 +509,31 @@ arxiv_manifest) must be committed before measurement.
   external-mathlib (lake-manifest-pinned revision) hard interpretation
   gate. The k1-vs-k3 inconsistency in DESIGN_V2 §3/§8 is resolved to
   k4 (matching E1a and the §14.2 map).
+- ADOPTED (at the first G1 run on the cluster, before any battery/grid
+  outcome): arm-feasibility amendment. Realized feasibility
+  (deterministic dates/bytes; prior engineering smokes remain disclosed
+  in §1, but no battery/grid or model-comparison outcome was seen):
+  masking viable = {physlib, mathlib} at c2024_11 and
+  c2025_04, {physlib} at c2026_02; all-new matched = {physlib, mathlib,
+  sympy, geant4} at c2024_11/c2025_04, {physlib, mathlib} at c2026_02.
+  Decisions: (a) frozen §5 feasibility manifest + arm-feasibility-frozen
+  exact-set preflight check at every science gate (g3a re-checks its
+  own c2024_11 row); (b) clean-matched-cells becomes exact-set-per-tag
+  vs the manifest — the >=3 scalar is superseded, NOT lowered: two
+  same-language cells cannot support a cross-language claim at any
+  threshold, so narrowness is scoped, never gated away; (c) Qwen3.5
+  cross-language contamination-controlled claims BARRED (§6) pending a
+  corpus amendment through its own gate; (d) floors (150KB matched;
+  20 docs + 300KB masking) UNMOVED — geant4 c2026_02 all-new (131KB)
+  and mathlib c2026_02 masking (167,496B) recorded as near-misses;
+  (e) mathlib masking infeasibility explained as seeded-sample dilution
+  (5.0MB corpus-wide vs 167KB in-stream), logged as a limitation with
+  recency-stratified sampling as a future gated sensitivity;
+  (f) disk-headroom now stats BASE (the autofs parent 0-stats before
+  automount — the check measured the automounter) with inode detail;
+  (g) grid identity 216/152/44 and all expected-cells manifests
+  unchanged. G1 records feasibility without blocking the Qwen2.5
+  sentinel; G3a hard-requires its own family's row.
 - ADOPTED (pre-pilot, adversarial design review of V2-a): DESIGN_V2
   §14.21-14.28 — k5 per-(target,seed) hash priorities with seeds 1-2 as
   NLL-only sensitivity (reviewer's multi-seed-everywhere form DECLINED:

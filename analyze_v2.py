@@ -359,6 +359,14 @@ def doc_dates(corpus, kind):
 
 
 MASK_MIN_DOCS, MASK_MIN_BYTES = 20, 300_000  # PREREG §6 masking floors
+# single-source consistency (review fix): the preflight feasibility
+# gate applies the SAME floors — silent drift would let a cell pass the
+# gate and fail analysis (or vice versa), so divergence is an import-
+# time error here, plus a regression test in tests/test_feasibility.py
+from preflight_check import MASK_MIN_BYTES as _PF_MB
+from preflight_check import MASK_MIN_DOCS as _PF_MD
+assert (MASK_MIN_DOCS, MASK_MIN_BYTES) == (_PF_MD, _PF_MB), \
+    "masking floors diverged between analyzer and preflight"
 
 
 def analyze_cell(path, short, corpus, kind):
