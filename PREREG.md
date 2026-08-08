@@ -1439,25 +1439,65 @@ arxiv_manifest) must be committed before measurement.
   real-file-context command parser remains a separate missing gate. Full
   detail: DESIGN_V2 §15.A19.
 
-- ADOPTED (2026-08-08, Lean behavioral extraction rule; PRE-GENERATION and
-  PRE-OUTCOME — no generated token or extracted body exists): Lean S4 uses a
+- ADOPTED (2026-08-08, Lean body-slot correction; PRE-A6-LABEL/PRE-SAMPLE/
+  PRE-V2-B-SCORE — the V2-a structural cohort and unlabeled A6 packet exist,
+  but no V2-b target draw, assembly, NLL score, generation, or verifier outcome
+  exists): adversarial review found that `extract_lean.split_header_body` can
+  select a real depth-zero delimiter inside a declaration TYPE; for example,
+  it chooses the first `:=` in valid
+  `def f : let n := 1; Nat := 0`. Byte round-trip and boundary-marker
+  compilation do not identify the declaration-value slot. The existing V2-a
+  cohort remains admissible for full declaration spans, identities, graphs,
+  references, and full-declaration near-duplicate/A6 evidence, but raw v3 Lean
+  split fields are quarantined for every body-dependent use. Before any Lean
+  sample/assembly/score, a pinned-parser artifact must bind the extraction,
+  sources, exact Lake ModuleSetup state, and audit/correct every potentially
+  scored or rendered declaration boundary using an exact delimiter token plus
+  same-form complete sentinel reparse. Zero/ambiguous slots are explicit
+  unsplit units and ineligible targets. Assembly must reject raw unbound v3
+  splits. This corpus-wide gate is unrun and blocks launch; no GPU evidence is
+  invalidated because V2-b has not reached sampling or scoring. Full detail:
+  DESIGN_V2 §14.5 and §15.A20.
+
+- ADOPTED/AMENDED (2026-08-08, Lean behavioral extraction rule;
+  PRE-GENERATION and PRE-OUTCOME — no generated token or extracted body
+  exists): Lean S4 uses a
   pinned-toolchain full-original-module driver with an exact Lake ModuleSetup
-  and bound option overrides. It loads package/import/plugin/dynamic-library
-  context, forces async off before every command, isolates trusted command
-  streams, parses and elaborates only commands strictly before the frozen
+  and bound option overrides. Matching the pinned frontend, raw CLI options
+  precede the ModuleSetup merge and setup/file options win collisions before
+  post-import reparse. It loads package/import/plugin/dynamic-library context,
+  forces async off before every command, rejects any trusted command that
+  still leaves snapshot/asynchronous tasks (including scoped option commands),
+  isolates trusted command streams, and parses/elaborates only commands
+  strictly before the frozen
   target, and parses the original target once without elaboration to bind its
-  canonical range, outer kind, and exact pre-body syntax projection. Every
-  sample must be an exact body-only byte splice and begin with the original
-  body delimiter; no token may cross the header boundary. The boundary is
-  derived by parsing one command in input truncated exactly at generated end,
+  canonical range, outer kind, and exact pre-body syntax projection. The
+  original V2-a body boundary must start one exact canonical delimiter token,
+  rejecting mere byte-prefix matches, and a same-form minimal sentinel reparse
+  must prove that token is the declaration-value slot rather than a delimiter
+  nested in the statement/type. Every sample must be an exact
+  continuation-only byte splice; no generated token may cross the header
+  boundary. G may begin with trivia or use an alternate verifier-valid body
+  introducer, but its first canonical token after trivia must be exactly one of
+  {`:=`,`where`,`|`}; generated binders/type annotations are body-slot drift.
+  Requiring the original introducer would change kernel/typecheck success into
+  a stricter syntax-matching metric, while arbitrary type-preserving header
+  continuation would change the frozen body task. S5 additionally requires the
+  exact original declaration name and elaborated statement/type. The boundary
+  is derived by parsing one command in input truncated exactly at generated end,
   so the suffix cannot help. Lean may still lex trailing generated trivia, so
   malformed trailing comments are failures rather than being called unseen.
-  The retained body plus original suffix is reparsed and must reproduce the
-  same range/kind/header projection, still without elaboration. A
-  marker-delimited exact-schema consumer binds the exact manifest/module/
-  identity/kind/ranges/delimiter/per-sample ends and enforces a reason-specific
-  parser-flag truth table. Trusted setup/prior-command/range/splice drift is a
-  hard error, never a model zero. The future S4 producer still must hash-bind
+  The retained continuation plus original suffix is reparsed and must be
+  structurally/range-equal to the truncated target syntax, still without
+  elaboration. A marker-delimited exact-schema consumer binds the exact
+  manifest/module/
+  identity/kind/ranges/original delimiter/per-sample ends and enforces a
+  reason-specific parser-flag truth table. Trusted setup/prior-command/range/
+  splice drift is a
+  hard error, never a model zero. A canonical invocation SHA binds every exact
+  manifest field plus the original, ModuleSetup, and spliced-file hashes; the
+  driver echoes it and the consumer rehashes it. The future S4 producer still
+  must hash-bind
   plans, V2-a rows, setup/source/sample files, invocations, runtimes, driver
   tree, and contract; enforce process/time/resource isolation; and pass both
   frozen Lean toolchains. S5 must verify the elaborated declaration name and

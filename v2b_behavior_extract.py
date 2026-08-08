@@ -14,12 +14,13 @@ driver's exact manifest-bound transcript surface; the future file producer
 will bind both language paths under the same artifact schema.
 """
 import ast
+import copy
 import io
 import json
 import tokenize
 
 from v2b_common import (BEHAVIOR_EXTRACTED_SCHEMA, V2BError, sha256_bytes,
-                        sha256_json)
+                        sha256_file, sha256_json)
 from v2b_source_tokens import _line_data, _python_index
 
 
@@ -70,6 +71,8 @@ PYTHON_EXTRACTION_CONTRACT_SHA256 = sha256_json(
 LEAN_DRIVER_MANIFEST_SCHEMA = "v2b_lean_parse_manifest_v1"
 LEAN_DRIVER_OUTPUT_SCHEMA = "v2b_lean_parse_result_v1"
 LEAN_DRIVER_OUTPUT_MARKER = "@@V2B_LEAN_PARSE@@"
+LEAN_DRIVER_INVOCATION_BINDING_SCHEMA = \
+    "v2b_lean_driver_invocation_binding_v1"
 LEAN_EXTRACTION_FAILURE_REASONS = (
     "parse-error-in-target",
     "has-missing",
@@ -77,7 +80,7 @@ LEAN_EXTRACTION_FAILURE_REASONS = (
     "missing-source-range",
     "target-start-drift",
     "syntax-kind-drift",
-    "body-delimiter-drift",
+    "body-slot-drift",
     "token-crosses-header-boundary",
     "header-syntax-drift",
     "reconstructed-module-parse-drift",
@@ -97,7 +100,14 @@ LEAN_EXTRACTION_CONTRACT = dict(
                  "reparse imported/CLI option overrides, then parse and "
                  "elaborate only commands strictly before the exact frozen "
                  "target range with Elab.async forced false after every "
-                 "command and all trusted command streams isolated"),
+                 "command, rejecting any residual snapshot/asynchronous "
+                 "tasks, and all trusted command streams isolated"),
+    trusted_boundary=("the frozen original delimiter must be an exact token "
+                      "and replacing everything from its boundary with a "
+                      "same-form minimal sentinel must parse one complete "
+                      "declaration with the same start/kind/pre-boundary "
+                      "projection; this distinguishes the declaration-value "
+                      "slot from :=/|/where inside its statement/type"),
     generated_safety=("reuse the resulting parser/scope state to parse one "
                       "target command first in input truncated exactly at "
                       "the generated end and then in the reconstructed module "
@@ -107,20 +117,31 @@ LEAN_EXTRACTION_CONTRACT = dict(
     splice_proof=("spliced bytes through the original header boundary and "
                   "after the generated region must equal the corresponding "
                   "original prefix and post-target suffix"),
-    boundary=("generation must begin with the frozen original body delimiter; "
-              "retain from that boundary through the canonical tail of the "
-              "first complete command in input truncated at generated end; "
+    boundary=("the trusted original boundary must begin an exact canonical "
+              "token whose spelling is its frozen V2-a delimiter; generated "
+              "continuations may begin with parser-recognized trivia, after "
+              "which their first unique canonical token must be an exact "
+              "member of {:=, where, |}; this permits another verifier-valid "
+              "Lean body form but forbids generated binders/type annotations "
+              "from changing the frozen-header body task; retain from that boundary through "
+              "the canonical tail of the first complete command in input "
+              "truncated at generated end; "
               "Lean may lex trailing trivia/lookahead before returning, so a "
               "lexical error after the canonical tail is still a failure, but "
               "no byte after the generated end or in the suffix is visible"),
-    validation=("reject any canonical syntax token crossing the header/body "
+    validation=("reject any generated canonical syntax token crossing the "
+                "header/body "
                 "boundary; exact pre-boundary syntax projections (node kind, "
                 "child index, token spelling/value, and byte range), command "
                 "start, and outer syntax kind must match the unelaborated "
-                "original; the retained-body reconstruction must reproduce "
-                "the truncated range/kind/projection; recovery, diagnostics, "
+                "original; the retained-continuation reconstruction must be "
+                "structurally/range-equal to the truncated syntax; recovery, diagnostics, "
                 "missing nodes, terminal commands, and boundary crossing "
                 "fail"),
+    invocation_binding=("SHA256 of a canonical exact-manifest projection plus "
+                        "the SHA256 of the original, ModuleSetup, and every "
+                        "spliced file is echoed by the driver and recomputed "
+                        "by the consumer"),
     stdout=("only marker-prefixed compact JSON is evidence; unrelated "
             "process output is ignored, while malformed, duplicate, missing, "
             "or extra marked records fail closed; the consumer requires the "
@@ -134,7 +155,9 @@ _LEAN_MANIFEST_KEYS = {
     "schema", "originalFile", "moduleSetupFile", "moduleName",
     "targetIdentity", "targetKind", "targetStartByte", "targetEndByte",
     "headerEndByte", "bodyDelimiter", "optionOverrides", "samples",
+    "invocationBinding",
 }
+_LEAN_MANIFEST_UNBOUND_KEYS = _LEAN_MANIFEST_KEYS - {"invocationBinding"}
 _LEAN_MANIFEST_SAMPLE_KEYS = {"id", "splicedFile", "generatedEndByte"}
 _LEAN_MANIFEST_OPTION_KEYS = {"name", "value"}
 _LEAN_PREVALIDATION_KEYS = {
@@ -142,7 +165,8 @@ _LEAN_PREVALIDATION_KEYS = {
     "target_kind", "target_start_byte", "target_end_byte",
     "header_end_byte", "body_delimiter", "syntax_kind",
     "header_syntax_projection", "n_prior_commands",
-    "generated_target_elaborated",
+    "generated_target_elaborated", "invocation_binding",
+    "body_boundary_probe_validated",
 }
 _LEAN_SUCCESS_KEYS = {
     "schema", "record_type", "sample_id", "status", "start_byte",
@@ -163,11 +187,72 @@ def _lean_output_int(value, label):
     return value
 
 
+def _lean_binding_payload(manifest):
+    """Return the frozen exact-manifest/content invocation projection.
+
+    ``invocationBinding`` is deliberately excluded from its own preimage.
+    Paths remain in the manifest projection and each referenced file is also
+    content-addressed in role/sample order.  This makes changing a path,
+    option, byte boundary, sample, setup, or any referenced file change the
+    binding even when the visible target/sample IDs stay fixed.
+    """
+    if not isinstance(manifest, dict) or set(manifest) not in (
+            _LEAN_MANIFEST_UNBOUND_KEYS, _LEAN_MANIFEST_KEYS):
+        raise V2BError("Lean driver manifest has schema/key drift")
+    unbound = copy.deepcopy(manifest)
+    unbound.pop("invocationBinding", None)
+    for key in ("originalFile", "moduleSetupFile"):
+        if not isinstance(unbound.get(key), str) or not unbound[key]:
+            raise V2BError(f"Lean driver manifest {key} is empty")
+    samples = unbound.get("samples")
+    if not isinstance(samples, list) or not samples:
+        raise V2BError("Lean driver manifest samples are empty/non-list")
+    files = [
+        dict(role="original", path=unbound["originalFile"],
+             sha256=sha256_file(unbound["originalFile"])),
+        dict(role="module-setup", path=unbound["moduleSetupFile"],
+             sha256=sha256_file(unbound["moduleSetupFile"])),
+    ]
+    for sample in samples:
+        if not isinstance(sample, dict) \
+                or not isinstance(sample.get("id"), str) \
+                or not sample["id"] \
+                or not isinstance(sample.get("splicedFile"), str) \
+                or not sample["splicedFile"]:
+            raise V2BError("Lean driver manifest sample is malformed")
+        files.append(dict(role="sample", sample_id=sample["id"],
+                          path=sample["splicedFile"],
+                          sha256=sha256_file(sample["splicedFile"])))
+    return dict(schema=LEAN_DRIVER_INVOCATION_BINDING_SCHEMA,
+                manifest=unbound, files=files)
+
+
+def lean_driver_invocation_binding(manifest):
+    """Hash the exact semantic manifest and bytes it instructs Lean to read."""
+    return sha256_json(_lean_binding_payload(manifest))
+
+
+def bind_lean_driver_manifest(manifest):
+    """Return a copy with its prospective invocation binding filled in."""
+    if not isinstance(manifest, dict) \
+            or set(manifest) != _LEAN_MANIFEST_UNBOUND_KEYS:
+        raise V2BError("unbound Lean driver manifest has schema/key drift")
+    bound = copy.deepcopy(manifest)
+    bound["invocationBinding"] = lean_driver_invocation_binding(bound)
+    return bound
+
+
 def _validate_lean_manifest(manifest):
     if not isinstance(manifest, dict) or set(manifest) != _LEAN_MANIFEST_KEYS:
         raise V2BError("Lean driver manifest has schema/key drift")
     if manifest.get("schema") != LEAN_DRIVER_MANIFEST_SCHEMA:
         raise V2BError("Lean driver manifest schema drift")
+    binding = manifest.get("invocationBinding")
+    if not isinstance(binding, str) or len(binding) != 64 \
+            or any(char not in "0123456789abcdef" for char in binding):
+        raise V2BError("Lean driver invocation binding is malformed")
+    if binding != lean_driver_invocation_binding(manifest):
+        raise V2BError("Lean driver invocation binding/content drift")
     for key in ("originalFile", "moduleSetupFile", "moduleName",
                 "targetIdentity"):
         if not isinstance(manifest.get(key), str) or not manifest[key]:
@@ -292,12 +377,15 @@ def parse_lean_driver_stdout(stdout, manifest):
         "target_end_byte": manifest_end,
         "header_end_byte": manifest_header,
         "body_delimiter": manifest["bodyDelimiter"],
+        "invocation_binding": manifest["invocationBinding"],
     }
     for key, value in expected_prevalidation.items():
         if prevalidation[key] != value:
             raise V2BError(f"Lean prevalidation {key} is not manifest-bound")
     if prevalidation["generated_target_elaborated"] is not False:
         raise V2BError("Lean driver claims generated target elaboration")
+    if prevalidation["body_boundary_probe_validated"] is not True:
+        raise V2BError("Lean driver did not validate the original body slot")
 
     sample_records = records[1:]
     if [row.get("sample_id") for row in sample_records] != expected:

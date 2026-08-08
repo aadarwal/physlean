@@ -36,6 +36,7 @@ structure OptionOverride where
 
 structure Manifest where
   schema : String
+  invocationBinding : String
   originalFile : String
   moduleSetupFile : String
   moduleName : String
@@ -81,6 +82,60 @@ partial def tokenCrosses (stx : Syntax) (boundary : String.Pos.Raw) : Bool :=
       | some range => range.start < boundary && boundary < range.stop
       | none => false
   | .node _ _ args => args.any fun arg => tokenCrosses arg boundary
+
+partial def canonicalTokenRangesStartingAt (stx : Syntax)
+    (boundary : String.Pos.Raw) : Array (Nat × Nat) :=
+  match stx with
+  | .missing => #[]
+  | .atom info _ | .ident info _ _ _ =>
+      match info.getRange? (canonicalOnly := true) with
+      | some range =>
+          if range.start == boundary then
+            #[(range.start.byteIdx, range.stop.byteIdx)]
+          else
+            #[]
+      | none => #[]
+  | .node _ _ args => args.foldl (init := #[]) fun ranges arg =>
+      ranges ++ canonicalTokenRangesStartingAt arg boundary
+
+def hasExactCanonicalTokenAt (stx : Syntax) (source : String)
+    (boundary : Nat) (spelling : String) : Bool :=
+  let ranges := canonicalTokenRangesStartingAt stx (rawPos boundary)
+  let expectedEnd := boundary + spelling.utf8ByteSize
+  ranges == #[(boundary, expectedEnd)] &&
+    expectedEnd <= source.utf8ByteSize &&
+    slice source boundary expectedEnd == spelling
+
+partial def canonicalTokenRangesAtOrAfter (stx : Syntax)
+    (boundary : String.Pos.Raw) : Array (Nat × Nat) :=
+  match stx with
+  | .missing => #[]
+  | .atom info _ | .ident info _ _ _ =>
+      match info.getRange? (canonicalOnly := true) with
+      | some range =>
+          if boundary <= range.start then
+            #[(range.start.byteIdx, range.stop.byteIdx)]
+          else
+            #[]
+      | none => #[]
+  | .node _ _ args => args.foldl (init := #[]) fun ranges arg =>
+      ranges ++ canonicalTokenRangesAtOrAfter arg boundary
+
+def firstCanonicalTokenRangeAtOrAfter? (stx : Syntax)
+    (boundary : Nat) : Option (Nat × Nat) :=
+  (canonicalTokenRangesAtOrAfter stx (rawPos boundary)).foldl
+    (init := none) fun best range =>
+      match best with
+      | none => some range
+      | some current => if range.1 < current.1 then some range else best
+
+def hasAllowedBodyIntroducerAtOrAfter (stx : Syntax) (source : String)
+    (boundary : Nat) : Bool :=
+  match firstCanonicalTokenRangeAtOrAfter? stx boundary with
+  | none => false
+  | some (startByte, _) =>
+      [":=", "where", "|"].any fun spelling =>
+        hasExactCanonicalTokenAt stx source startByte spelling
 
 partial def headerProjection? (stx : Syntax)
     (boundary : String.Pos.Raw) : Option Json :=
@@ -160,11 +215,55 @@ def elaboratePriorCommand (inputCtx : Parser.InputContext)
   | Except.ok (_, nextState) =>
       if nextState.messages.hasErrors then
         hard "a trusted command before the target does not elaborate"
+      else if !nextState.snapshotTasks.isEmpty then
+        hard "a trusted command before the target spawned asynchronous tasks"
       else
         pure <| disableAsync { nextState with messages := {} }
 
+def lineIndentBefore (source : String) (byteIdx : Nat) : String :=
+  let before := slice source 0 byteIdx
+  let linePrefix := (before.splitOn "\n").getLastD ""
+  String.ofList <| linePrefix.toList.takeWhile fun char =>
+    char == ' ' || char == '\t'
+
+def bodyBoundaryProbeSuffix (source : String) (targetStart : Nat)
+    (bodyDelimiter : String) : IO String := do
+  match bodyDelimiter with
+  | ":=" => pure ":= _"
+  | "|" => pure "| _ => _"
+  | "where" =>
+      let indent := lineIndentBefore source targetStart
+      pure s!"where\n{indent}  __v2b_probe := _"
+  | other => hard s!"unsupported body-boundary probe delimiter {other}"
+
+def validateBodyBoundaryProbe (inputCtx : Parser.InputContext)
+    (targetStart headerEnd : Nat) (bodyDelimiter : String)
+    (parserState : Parser.ModuleParserState)
+    (commandState : Elab.Command.State) (originalStx : Syntax)
+    (originalHeaderProjection : String) : IO Unit := do
+  let suffix <- bodyBoundaryProbeSuffix inputCtx.inputString targetStart
+    bodyDelimiter
+  let probeSource := slice inputCtx.inputString 0 headerEnd ++ suffix
+  let probeCtx := Parser.mkInputContext probeSource inputCtx.fileName
+  let (probeStx, probeParserState, probeMessages) :=
+    Parser.parseCommand probeCtx (parserContext commandState) parserState {}
+  let nMessages := allMessageCount probeMessages
+  unless nMessages == 0 && !probeParserState.recovering &&
+      !probeStx.hasMissing && !Parser.isTerminalCommand probeStx do
+    hard "trusted V2-a boundary failed the declaration-body sentinel parse"
+  let some probeRange := probeStx.getRange? (canonicalOnly := true)
+    | hard "declaration-body sentinel has no canonical source range"
+  unless probeRange.start.byteIdx == targetStart &&
+      probeRange.stop.byteIdx == probeSource.utf8ByteSize &&
+      probeStx.getKind == originalStx.getKind &&
+      !tokenCrosses probeStx (rawPos headerEnd) &&
+      hasExactCanonicalTokenAt probeStx probeSource headerEnd bodyDelimiter &&
+      (headerProjection? probeStx (rawPos headerEnd)).map Json.compress ==
+        some originalHeaderProjection do
+    hard "trusted V2-a boundary is not the declaration body-value slot"
+
 partial def prepareAtTarget (inputCtx : Parser.InputContext)
-    (targetStart targetEnd headerEnd : Nat)
+    (targetStart targetEnd headerEnd : Nat) (bodyDelimiter : String)
     (parserState : Parser.ModuleParserState)
     (commandState : Elab.Command.State) (nPrior : Nat) : IO Prepared := do
   let commandState := disableAsync commandState
@@ -183,7 +282,12 @@ partial def prepareAtTarget (inputCtx : Parser.InputContext)
   if startByte == targetStart then
     if endByte != targetEnd then
       hard s!"original target end {endByte} != committed {targetEnd}"
+    unless hasExactCanonicalTokenAt stx inputCtx.inputString headerEnd
+        bodyDelimiter do
+      hard "trusted V2-a body boundary is not one exact canonical delimiter token"
     let originalHeaderProjection <- headerProjection stx headerEnd
+    validateBodyBoundaryProbe inputCtx targetStart headerEnd bodyDelimiter
+      parserState commandState stx originalHeaderProjection
     pure { parserState
            commandState
            originalKind := stx.getKind
@@ -195,8 +299,8 @@ partial def prepareAtTarget (inputCtx : Parser.InputContext)
         original command [{startByte},{endByte})"
     let nextCommandState <-
       elaboratePriorCommand inputCtx cmdPos stx commandState
-    prepareAtTarget inputCtx targetStart targetEnd headerEnd nextParserState
-      nextCommandState (nPrior + 1)
+    prepareAtTarget inputCtx targetStart targetEnd headerEnd bodyDelimiter
+      nextParserState nextCommandState (nPrior + 1)
 
 def emit (value : Json) : IO Unit :=
   IO.println s!"{OUTPUT_MARKER}{Json.compress value}"
@@ -205,6 +309,7 @@ def emitPrevalidation (manifest : Manifest) (prepared : Prepared) : IO Unit :=
   emit <| Json.mkObj [
     ("schema", toJson OUTPUT_SCHEMA),
     ("record_type", toJson "prevalidation"),
+    ("invocation_binding", toJson manifest.invocationBinding),
     ("module_name", toJson manifest.moduleName),
     ("target_identity", toJson manifest.targetIdentity),
     ("target_kind", toJson manifest.targetKind),
@@ -215,6 +320,7 @@ def emitPrevalidation (manifest : Manifest) (prepared : Prepared) : IO Unit :=
     ("syntax_kind", toJson prepared.originalKind.toString),
     ("header_syntax_projection", toJson
       prepared.originalHeaderProjection),
+    ("body_boundary_probe_validated", toJson true),
     ("n_prior_commands", toJson prepared.nPriorCommands),
     ("generated_target_elaborated", toJson false)
   ]
@@ -297,9 +403,6 @@ def parseSample (original : String) (manifest : Manifest)
   validateSplice original spliced manifest sample
   if sample.generatedEndByte == manifest.headerEndByte then
     return failureJson sample.id "empty-body"
-  unless startsWithAt spliced manifest.headerEndByte
-      manifest.bodyDelimiter do
-    return failureJson sample.id "body-delimiter-drift"
   let truncated := slice spliced 0 sample.generatedEndByte
   let parsed := parseOneCommand truncated sample.splicedFile prepared
   let stx := parsed.stx
@@ -322,6 +425,9 @@ def parseSample (original : String) (manifest : Manifest)
       pure <| failureJson sample.id "syntax-kind-drift" nMessages
     else if tokenCrosses stx (rawPos manifest.headerEndByte) then
       pure <| failureJson sample.id "token-crosses-header-boundary"
+    else if !hasAllowedBodyIntroducerAtOrAfter stx truncated
+        manifest.headerEndByte then
+      pure <| failureJson sample.id "body-slot-drift"
     else if (headerProjection? stx (rawPos manifest.headerEndByte)).map
         Json.compress != some prepared.originalHeaderProjection then
       pure <| failureJson sample.id "header-syntax-drift"
@@ -341,6 +447,7 @@ def parseSample (original : String) (manifest : Manifest)
       if fullMessages != 0 || full.parserState.recovering ||
           full.stx.hasMissing || Parser.isTerminalCommand full.stx ||
           full.stx.getKind != prepared.originalKind ||
+          !stx.structRangeEq full.stx ||
           tokenCrosses full.stx (rawPos manifest.headerEndByte) ||
           fullProjection? != some prepared.originalHeaderProjection ||
           fullRange?.map (fun fullRange =>
@@ -364,6 +471,8 @@ def run (manifestPath : String) : IO Unit := do
   let manifest <- readManifest manifestPath
   unless manifest.schema == MANIFEST_SCHEMA do
     hard s!"manifest schema {manifest.schema} != {MANIFEST_SCHEMA}"
+  if manifest.invocationBinding.length != 64 then
+    hard "invocationBinding is not a 64-character SHA256"
   if manifest.originalFile.isEmpty || manifest.moduleSetupFile.isEmpty ||
       manifest.moduleName.isEmpty || manifest.targetIdentity.isEmpty then
     hard "original/setup/module/target identity fields must be nonempty"
@@ -405,8 +514,16 @@ def run (manifestPath : String) : IO Unit := do
   let setup <- ModuleSetup.load manifest.moduleSetupFile
   unless setup.name == manifest.moduleName.toName do
     hard s!"module setup name {setup.name} != {manifest.moduleName}"
-  let baseOptions := Elab.async.set ({} : Options) false
-  let options := baseOptions.mergeBy (fun _ _ setupValue => setupValue)
+  -- Match Lean.runFrontend ordering: raw -D/CLI strings exist before the
+  -- ModuleSetup merge, and file/package setup options win on collisions.
+  let mut commandLineOptions : Options := {}
+  for option in manifest.optionOverrides do
+    commandLineOptions := commandLineOptions.set option.name.toName
+      option.value
+  commandLineOptions := Lean.internal.cmdlineSnapshots.setIfNotSet
+    commandLineOptions true
+  commandLineOptions := Elab.async.set commandLineOptions false
+  let options := commandLineOptions.mergeBy (fun _ _ setupValue => setupValue)
     setup.options.toOptions
   unsafe Lean.enableInitializersExecution
   let (_, (environment, importMessages)) <-
@@ -424,13 +541,11 @@ def run (manifestPath : String) : IO Unit := do
       IO.eprintln (← message.toString)
     hard "trusted original module imports did not load"
   let mut options <- Language.Lean.reparseOptions options
-  for option in manifest.optionOverrides do
-    options := options.set option.name.toName option.value
-  options <- Language.Lean.reparseOptions options
   options := Elab.async.set options false
   let commandState := Elab.Command.mkState environment {} options
   let prepared <- prepareAtTarget inputCtx manifest.targetStartByte
-    manifest.targetEndByte manifest.headerEndByte parserState commandState 0
+    manifest.targetEndByte manifest.headerEndByte manifest.bodyDelimiter
+    parserState commandState 0
   emitPrevalidation manifest prepared
   for sample in manifest.samples do
     emit (← parseSample original manifest prepared sample)

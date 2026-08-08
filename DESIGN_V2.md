@@ -483,6 +483,26 @@ the declaration); the §10 round-trip validation (prefix + body ==
 original span; standalone re-elaboration) is the check that this
 reconstruction is right.
 
+  BODY-SLOT CORRECTION (2026-08-08, PRE-A6-LABEL/PRE-SAMPLE/PRE-V2-B-SCORE):
+the v3 Python-side Lean splitter's earliest bracket-depth-zero
+`:=`/`where`/`|` is only a lexical CANDIDATE, not body-boundary evidence.
+Valid Lean such as `def f : let n := 1; Nat := 0` contains an exact
+depth-zero `:=` inside its TYPE, and the existing marker-compilation and byte
+round-trip gates do not distinguish it from the declaration-value slot. Thus
+the completed V2-a structural cohort remains valid for declaration spans,
+identities, graphs, references, and full-declaration near-duplicate/A6
+evidence, but its Lean `header_bytes`/`body_bytes`/`split_kind` fields are NOT
+admissible for V2-b scoring, target prompts, or k3 rendering by themselves.
+Before any Lean sample/assembly/score, a pinned-parser body-boundary artifact
+must audit every Lean declaration that can be a scored target or rendered
+unit, bind the v3 extraction and exact source/ModuleSetup inputs, and validate
+or correct H using §15.A20's exact-token plus same-form complete-sentinel rule.
+Zero/ambiguous body slots become explicit unsplit units (and cannot be scored
+targets); corrected boundaries must be source-byte exact and corpus-audited.
+The assembly producer must refuse unbound raw v3 Lean split fields. This gate
+is currently UNRUN and is a hard launch blocker; no GPU rerun is implied
+because no V2-b sample, assembly, or score exists.
+
 14.6 Near-duplicates: primary lexical token 5-gram Jaccard >= 0.80
 retaining identifiers/literals, plus the VERBATIM-TOKEN exact hash
 always (LAYOUT-PRESERVING typed token stream, comment-stripped,
@@ -1880,36 +1900,68 @@ assembly shell as a standalone snippet. One exact-keyed batch manifest
 supplies the original file, Lake ModuleSetup file, module and V2-a target
 identity/kind, committed target [start,end), body/header boundary H, original
 body delimiter in {`:=`,`where`,`|`}, bound command-line option overrides, and
-one spliced-file path plus generated end E for every sample. All positions are
+one spliced-file path plus generated end E for every sample. It also contains
+an invocation binding: SHA256 of a canonical projection of every exact
+manifest field (except the binding itself) plus the exact SHA256 of the
+original, ModuleSetup, and manifest-ordered spliced files. All positions are
 raw UTF-8 byte offsets and must be valid string boundaries. The producer must
-duplicate-key-reject and hash-bind this manifest and every source/setup/sample
-file before invoking the driver; Lean's derived JSON decoder is not itself the
-duplicate-key gate.
+duplicate-key-reject and compute this binding before invoking the driver;
+Lean's derived JSON decoder is not itself the duplicate-key gate. The consumer
+rehashes every referenced file, recomputes the binding, and requires the
+driver's prevalidation record to echo it.
 
   TRUSTED PREPARATION. Under the repository's pinned Lake/toolchain, the
 driver loads the exact ModuleSetup package, resolved imports/artifacts,
-plugins, dynamic libraries, and package options, applies and reparses the
-bound CLI option overrides after imports, and forces `Elab.async=false` before
-every command even if source text attempted to set it true. It then repeatedly
-parses and ELABORATES only commands strictly before the target, with trusted
+plugins, dynamic libraries, and package options. Matching Lean 4.32's
+`runFrontend`, raw bound CLI option strings are installed BEFORE the
+ModuleSetup merge, setup/file options win collisions, and the combined options
+are reparsed after imports register plugin options. The driver then forces
+`Elab.async=false` before every command even if setup, CLI, or source text
+attempted to set it true. Any trusted command (including scoped
+`set_option ... in`) that nevertheless leaves a snapshot/asynchronous task is
+rejected prospectively for that target; the driver never continues from a
+partially asynchronous prefix. It then repeatedly parses and ELABORATES only
+commands strictly before the target, with trusted
 stdout/stderr isolated. This reconstructs file-local parser extensions,
 namespaces, open declarations, scopes, options, and notation without allowing
 a prior `run_cmd` to spoof marked records. Any setup/import, prior-command
 elaboration, parser-recovery, missing-node, terminal-before-target, or range
 error is trusted provenance failure, never a model zero. At the committed
 target start it parses the original command ONCE WITHOUT ELABORATING it and
-requires its canonical range to equal [start,end). It retains the outer syntax
-kind plus an exact pre-H syntax projection containing node kind, child index,
-token spelling/resolved identifier, and raw token range. No original token may
-cross H. Outer kind supports imported custom commands such as `lemma`; the
-manifest separately binds the exact V2-a identity and source kind.
+requires its canonical range to equal [start,end). It additionally requires H
+to start exactly one canonical original token whose raw range and spelling
+equal the frozen V2-a delimiter; a byte prefix such as `wherever`, `|>`, `||`,
+or a longer imported token beginning `:=` cannot validate H. The driver then
+replaces [H,EOF) with a minimal SAME-FORM parser sentinel (`:= _`, `| _ => _`,
+or an indentation-safe `where` field), parses exactly one command from the
+same target parser state, and requires a complete nonterminal command with the
+same start, outer kind, and pre-H projection. This proves H is a
+declaration-value slot rather than an exact `:=`/`|`/`where` token nested in
+the declaration statement/type (for example `def f : let n := 1; Nat := 0`).
+Sentinel failure is arm-independent trusted target ineligibility/provenance
+failure, never a model zero. It retains the
+outer syntax kind plus an exact pre-H syntax projection containing node kind,
+child index, token spelling/resolved identifier, and raw token range. No
+original token may cross H. Outer kind supports imported custom commands such
+as `lemma`; the manifest separately binds the exact V2-a identity and source
+kind.
 
   EXACT SPLICE AND LAZY BOUNDARY. For each sample, bytes [0,H) in the spliced
 module must equal original [0,H), and spliced [E,EOF) must equal original
-[target_end,EOF). Thus only the original body has been replaced at the byte
-level. G must begin with the exact frozen original body delimiter, preventing
-extra header/type tokens; any generated canonical token crossing H also fails.
-Reusing the original pre-target states, the driver first parses exactly one
+[target_end,EOF). Thus only the continuation beginning at the frozen V2-a body
+boundary has been replaced at the byte level. G is NOT required to repeat the
+same body introducer: leading parser-recognized trivia and an alternate
+verifier-valid Lean body form are legitimate model completions. After trivia,
+however, G's first unique canonical token must be exactly one of
+{`:=`,`where`,`|`}; `:`, a binder, `wherever`, `|>`/`||`, or any longer token
+is body-slot drift. Together with the trusted same-form sentinel probe, this
+keeps the task a frozen-header BODY completion while permitting alternate Lean
+body grammar. Any generated canonical token crossing H still fails. S5 then
+proves the exact original declaration name and elaborated statement/type; the
+parser rule is not a semantic-equivalence claim. This avoids both silently
+redefining kernel/typecheck success as a stricter “same introducer” metric and
+letting type-preserving generated header syntax count as a body. Reusing the
+original pre-target states, the driver first parses exactly one
 command from input TRUNCATED AT E, so the immutable suffix is unavailable, and
 NEVER elaborates it. Success requires zero parser diagnostics/recovery/missing
 nodes, a nonterminal command, exact start and outer kind, exact agreement with
@@ -1919,14 +1971,15 @@ well-separated command can be discarded, but an unterminated block comment
 after the canonical tail is a frozen parse failure rather than being claimed
 unseen. No byte after E is visible.
 
-  The retained body is [H,canonical_tail). The driver constructs a second
-module from the prefix through canonical_tail plus the ORIGINAL post-target
+  The retained continuation is [H,canonical_tail). The driver constructs a
+second module from the prefix through canonical_tail plus the ORIGINAL post-target
 suffix, thereby discarding all later G, and parses the target again without
-elaboration. Its range, outer kind, and pre-H projection must exactly match the
-truncated parse with no diagnostics/recovery/missing nodes. This prevents EOF
-layout closure or token completion from borrowing the suffix and validates the
-actual source S5 will receive. Empty G and delimiter/token/header/reconstructed-
-module drift use one frozen finite reason enum; every trusted setup/range/
+elaboration. Its complete syntax tree and canonical ranges must be
+`structRangeEq` to the truncated parse, with no diagnostics/recovery/missing
+nodes. This prevents EOF layout closure or token completion from borrowing the
+suffix and validates the
+actual source S5 will receive. Empty G and token/header/reconstructed-module
+drift use one frozen finite reason enum; every trusted setup/range/
 splice invariant is a hard error.
 
   DRIVER EVIDENCE SURFACE. Trusted prior commands may print unrelated text, so
@@ -1935,8 +1988,9 @@ JSON under exact prevalidation/sample whitelists, manifest-order membership,
 parser diagnostics/recovery/missing flags, the header projection, and explicit
 `generated_target_elaborated=false`. The Python consumer requires the exact
 manifest—not merely sample IDs—duplicate-key-rejects marked JSON, binds module,
-identity, kind, ranges, delimiter, and per-sample E, rejects missing/extra/
-duplicate records, enforces byte arithmetic and a reason-specific flag truth
+identity, kind, ranges, original delimiter, invocation/content binding, and
+per-sample E, rejects missing/extra/duplicate records, enforces byte arithmetic
+and a reason-specific flag truth
 table, and fails on any unfrozen field. The contract binds both schemas,
 marker, driver source, Lake preparation, splice, boundary, projection, safety,
 and failure surface. Adversarial 4.32 tests cover UTF-8 offsets, attributes/doc
@@ -1951,9 +2005,9 @@ artifact and prove no behavioral result. The future file-based producer must
 construct and exact-key-check the batch manifest; bind the behavior plan,
 V2-a identity/kind/name/ranges, original source SHA, assembly prefix,
 generation samples, model/tokenizer, pinned Lean/lake/toolchain and repository
-identities, driver source tree, and contract hash; extract/hash the exact body
-bytes; and publish under `v2b_behavior_extracted_v1`. It must run corpus
-integration tests under both the mathlib and physlib frozen toolchains before
+identities, driver source tree, and contract hash; extract/hash the exact
+retained-continuation bytes; and publish under `v2b_behavior_extracted_v1`. It
+must run corpus integration tests under both the mathlib and physlib frozen toolchains before
 generation. The production wrapper must additionally check zero exit status,
 bind stderr and exact invocation, enforce bounded batches with deterministic
 split/isolation of a pathological sample, and freeze timeout/process-resource
