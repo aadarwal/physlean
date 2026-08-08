@@ -51,15 +51,18 @@ from v2b_assemble import (bm25_scores, canonical_dependency_order,
                           interface_payload, k5_unit_order, k6_unit_order,
                           normalize_payload, render_chunks,
                           splice_local_prefix, utf8_budget_suffix)
-from v2b_common import (ASSEMBLY_SCHEMA, BOUND_SAMPLE_SCHEMA,
+from v2b_common import (A6_OUTCOME_SCHEMA, ASSEMBLY_SCHEMA,
+                        BOUND_SAMPLE_SCHEMA,
                         CANDIDATES_SCHEMA, K4X_GRAPH_SCHEMA,
                         K7_ORDER_SCHEMA, NEARDUP_SCHEMA, V2BError,
                         artifact_binding, identity_key, sha256_bytes,
-                        sha256_json, validate_identity, write_new_json)
+                        sha256_json, sha256_sorted_json, validate_identity,
+                        write_new_json)
 from v2b_neardup import (LEAN_EXTRACT_SCHEMA, LEXICAL_FLOOR,
                          PYTHON_EXTRACT_SCHEMA, five_grams, lex_unit,
                          lexical_records, load_lean_keyword_freeze, meets,
                          normalized_hash, verbatim_hash)
+from v2b_lean_boundaries import BOUNDARIES_SCHEMA, load_boundary_overlay
 
 BUDGET_GRID = (4096, 16384, 65536)        # §14.12/§1: {4,16,64} KiB
 B_STAR = 16384                            # §1: B* primary budget
@@ -138,7 +141,8 @@ def _load_k4x(k4x_graph_path, external_extraction_path, repo,
 def _load_chain(sample_path, repo, candidates_path, extraction_path,
                 neardup_path, outcome_path, keyword_freeze_path,
                 k7_order_path, k4x_graph_path=None,
-                external_extraction_path=None):
+                external_extraction_path=None,
+                lean_boundaries_path=None):
     if repo not in EXPECTED:
         raise V2BError(f"unexpected assembly corpus {repo!r}")
     language, corpus_sha = EXPECTED[repo]
@@ -147,6 +151,8 @@ def _load_chain(sample_path, repo, candidates_path, extraction_path,
     if sample.get("sampling_state") != "drawn" \
             or sample.get("n_requested_per_corpus") != N_PER_CORPUS \
             or not isinstance(sample.get("plans"), dict) \
+            or sample.get("plans_sha256") != \
+            sha256_sorted_json(sample.get("plans")) \
             or repo not in sample["plans"]:
         raise V2BError("bound sample artifact is malformed or lacks corpus")
     plan = sample["plans"][repo]
@@ -157,6 +163,16 @@ def _load_chain(sample_path, repo, candidates_path, extraction_path,
             or candidates.get("repo") != repo \
             or candidates.get("corpus_git_sha") != corpus_sha:
         raise V2BError("candidate table is not the sample's sealed input")
+    sample_candidate_rows = sample.get("candidate_tables")
+    if not isinstance(sample_candidate_rows, list):
+        raise V2BError("bound sample lacks candidate-table bindings")
+    sample_candidate_matches = [
+        row for row in sample_candidate_rows
+        if isinstance(row, dict) and row.get("repo") == repo]
+    if len(sample_candidate_matches) != 1 \
+            or sample_candidate_matches[0].get("sha256") != \
+            cand_binding["sha256"]:
+        raise V2BError("sample candidate-table row binding drift")
 
     extraction_binding, extraction = artifact_binding(extraction_path)
     expected_schema = LEAN_EXTRACT_SCHEMA if language == "lean" \
@@ -169,6 +185,32 @@ def _load_chain(sample_path, repo, candidates_path, extraction_path,
             or cand_extraction.get("sha256") != extraction_binding["sha256"]:
         raise V2BError("extraction is not the candidates' sealed input")
 
+    boundary_binding = None
+    boundary_index = None
+    candidate_boundary = candidates.get("lean_boundaries")
+    structural = candidates.get("structural_evidence")
+    structural_boundary = structural.get("lean_boundaries") \
+        if isinstance(structural, dict) else None
+    sample_boundary = sample_candidate_matches[0].get("lean_boundaries")
+    if language == "lean":
+        if not lean_boundaries_path:
+            raise V2BError("Lean assembly requires the parser-backed "
+                           "boundary artifact")
+        boundary_binding, _boundary_artifact, boundary_index = \
+            load_boundary_overlay(lean_boundaries_path, extraction_path,
+                                  expected_repo=repo)
+        if candidate_boundary != boundary_binding \
+                or structural_boundary != boundary_binding \
+                or sample_boundary != boundary_binding \
+                or boundary_binding.get("schema") != BOUNDARIES_SCHEMA:
+            raise V2BError("Lean boundary artifact is not the exact "
+                           "candidate/sample sealed input")
+    elif lean_boundaries_path is not None \
+            or candidate_boundary is not None \
+            or structural_boundary is not None \
+            or sample_boundary is not None:
+        raise V2BError("Python assembly forbids a Lean boundary artifact")
+
     neardup_binding, neardup = artifact_binding(neardup_path,
                                                 NEARDUP_SCHEMA)
     if neardup.get("repo") != repo or neardup.get("language") != language \
@@ -176,13 +218,15 @@ def _load_chain(sample_path, repo, candidates_path, extraction_path,
             extraction_binding["sha256"]:
         raise V2BError("near-dup table is not bound to this extraction")
 
-    outcome_binding, outcome = artifact_binding(outcome_path)
+    outcome_binding, outcome = artifact_binding(outcome_path,
+                                                A6_OUTCOME_SCHEMA)
     if sample.get("a6_outcome", {}).get("sha256") != \
             outcome_binding["sha256"]:
         raise V2BError("A6 outcome is not the sample's sealed input")
     outcomes = outcome.get("outcomes")
     if not isinstance(outcomes, dict) \
-            or outcome.get("outcomes_sha256") != sha256_json(outcomes):
+            or outcome.get("outcomes_sha256") != \
+            sha256_sorted_json(outcomes):
         raise V2BError("A6 outcome content hash drift at assembly")
 
     freeze_binding = None
@@ -203,19 +247,28 @@ def _load_chain(sample_path, repo, candidates_path, extraction_path,
                 candidates=cand_binding,
                 extraction=dict(extraction_binding,
                                 schema=extraction.get("schema")),
+                lean_boundaries=boundary_binding,
                 neardup=neardup_binding, outcome=outcome_binding,
                 keyword_freeze=freeze_binding, k7_order=k7_binding,
                 k4x_graph=k4x_bundle["binding"] if k4x_bundle else None,
                 k4x_external_extraction=k4x_bundle["external_binding"]
                 if k4x_bundle else None), \
         sample, candidates, extraction, neardup, outcome, k7_rows, \
-        lean_tokens, k4x_bundle
+        lean_tokens, k4x_bundle, boundary_index
 
 
 # --------------------------------------------------------- corpus index
 
-def _unit_index(extraction, language):
-    """identity_key -> unit record with source, span, and split fields."""
+def _unit_index(extraction, language, lean_boundaries=None):
+    """identity_key -> unit record with source, span, and split fields.
+
+    Main-corpus Lean assembly supplies the parser-backed overlay.  The
+    separately pinned k4x snapshot deliberately calls this without an
+    overlay because it is implementation-only context and is never
+    interface-rendered by the current k4x arm.
+    """
+    if language == "python" and lean_boundaries is not None:
+        raise V2BError("Python unit index received Lean boundaries")
     units = {}
     sources = {}
     for f in extraction.get("files", []):
@@ -235,13 +288,27 @@ def _unit_index(extraction, language):
             key = identity_key(language, identity)
             if key in units:
                 raise V2BError(f"duplicate extraction identity {key}")
+            boundary = lean_boundaries.get(key) \
+                if lean_boundaries is not None else None
+            if lean_boundaries is not None and not isinstance(boundary, dict):
+                raise V2BError(f"Lean boundary overlay lacks unit {key}")
             units[key] = dict(
                 identity=list(identity), key=key, source=source,
                 source_rel=rel, source_sha256=source_sha,
                 start=d.get("start_byte"), end=d.get("end_byte"),
-                header_bytes=d.get("header_bytes"),
-                split_kind=d.get("split_kind"),
+                header_bytes=(boundary["header_bytes"] if boundary
+                              is not None else d.get("header_bytes")),
+                body_bytes=(boundary["body_bytes"] if boundary is not None
+                            else d.get("body_bytes")),
+                split_kind=(boundary["split_kind"] if boundary is not None
+                            else d.get("split_kind")),
+                boundary_status=(boundary["status"] if boundary is not None
+                                 else None),
+                span_id=(boundary["span_id"] if boundary is not None
+                         else None),
                 shell=d.get("shell") if language == "lean" else None)
+    if lean_boundaries is not None and set(units) != set(lean_boundaries):
+        raise V2BError("Lean boundary overlay is not the exact unit universe")
     return units, sources
 
 
@@ -455,20 +522,29 @@ def _unit_payload(unit, cache):
 def _interface_or_verbatim(language, unit, payload):
     header = unit.get("header_bytes")
     split = unit.get("split_kind")
-    if language == "lean" and split is None:
-        return payload, False                 # §15.A11: verbatim, recorded
+    if language == "lean":
+        status = unit.get("boundary_status")
+        if status == "unsplit" and split is None:
+            return payload, False             # §15.A11: verbatim, recorded
+        if status != "resolved" or split is None:
+            raise V2BError(f"Lean interface rendering lacks a resolved "
+                           f"parser boundary: {unit['key']}")
     if not isinstance(header, int) or isinstance(header, bool) \
             or not 0 < header < len(payload):
         raise V2BError(f"unit lacks a usable header boundary: {unit['key']}")
     return interface_payload(language, payload, header), True
 
 
-def _prefix_and_body(language, unit, cache):
+def _prefix_and_body(language, unit, cache, candidate=None,
+                     sampled=None):
     payload = _unit_payload(unit, cache)
     header = unit.get("header_bytes")
     if not isinstance(header, int) or isinstance(header, bool) \
             or not 0 < header < len(payload):
         raise V2BError(f"target lacks a header/body split: {unit['key']}")
+    if language == "lean" and unit.get("boundary_status") != "resolved":
+        raise V2BError(f"sampled Lean target is not boundary-resolved: "
+                       f"{unit['key']}")
     shell = unit.get("shell") or []
     if not isinstance(shell, list) \
             or any(not isinstance(cmd, str) for cmd in shell):
@@ -478,6 +554,14 @@ def _prefix_and_body(language, unit, cache):
     body = payload[header:]
     if prefix[len(shell_text):] + body != payload:
         raise AssertionError("prefix/body do not round-trip the target span")
+    if language == "lean":
+        if not isinstance(candidate, dict) or not isinstance(sampled, dict) \
+                or candidate.get("source_rel") != unit.get("source_rel") \
+                or candidate.get("body_bytes") != len(body) \
+                or candidate.get("span_id") != unit.get("span_id") \
+                or sampled.get("span_id") != unit.get("span_id"):
+            raise V2BError(f"sample/candidate/boundary target drift: "
+                           f"{unit['key']}")
     return prefix, body
 
 
@@ -575,13 +659,15 @@ def _bm25_query_terms(language, prefix):
 
 def _assemble_target(language, repo, target_identity, units, edges,
                      adjacency, cache, budgets, external_index, bm25, k7,
-                     k4x_ctx=None, collect=None):
+                     candidate=None, sampled=None, k4x_ctx=None,
+                     collect=None):
     target_key = identity_key(language, target_identity)
     if target_key not in units:
         raise V2BError(f"sampled target lacks an extraction unit: "
                        f"{target_key}")
     target = units[target_key]
-    prefix, body = _prefix_and_body(language, target, cache)
+    prefix, body = _prefix_and_body(language, target, cache,
+                                    candidate=candidate, sampled=sampled)
     if collect is not None:
         collect["prefix"], collect["body"] = prefix, body
     near_dups = set(adjacency.get(target_key, ()))
@@ -686,6 +772,7 @@ def _assemble_target(language, repo, target_identity, units, edges,
         prefix_sha256=sha256_bytes(prefix), prefix_bytes=len(prefix),
         body_sha256=sha256_bytes(body), body_bytes=len(body),
         source_rel=target["source_rel"],
+        span_id=target.get("span_id"),
         n_closure_units=len(order["unit_order"]),
         n_k4_units=len(k4_units),
         n_k3_unsplit_units=len(unsplit_bytes_by_key),
@@ -1035,16 +1122,17 @@ def unit_same_file(units, key, target):
 def build_assembly(sample_path, repo, candidates_path, extraction_path,
                    neardup_path, outcome_path, keyword_freeze_path=None,
                    k7_order_path=None, k4x_graph_path=None,
-                   external_extraction_path=None, budgets=BUDGET_GRID,
+                   external_extraction_path=None,
+                   lean_boundaries_path=None, budgets=BUDGET_GRID,
                    collect=None):
     bindings, sample, candidates, extraction, neardup, outcome, k7_rows, \
-        lean_tokens, k4x_bundle = \
+        lean_tokens, k4x_bundle, boundary_index = \
         _load_chain(sample_path, repo, candidates_path, extraction_path,
                     neardup_path, outcome_path, keyword_freeze_path,
                     k7_order_path, k4x_graph_path,
-                    external_extraction_path)
+                    external_extraction_path, lean_boundaries_path)
     language = bindings["language"]
-    units, _ = _unit_index(extraction, language)
+    units, _ = _unit_index(extraction, language, boundary_index)
     edges = _edges(extraction, language)
     adjacency = _a6_exclusion_sets(neardup, outcome, language, set(units))
     external_index = _external_index(extraction, language)
@@ -1058,16 +1146,31 @@ def build_assembly(sample_path, repo, candidates_path, extraction_path,
     if k4x_bundle is not None:
         k4x_ctx = _k4x_context(k4x_bundle, units, edges, outcome,
                                lean_tokens)
+    candidate_index = {}
+    for candidate in candidates.get("targets", []):
+        if not isinstance(candidate, dict):
+            raise V2BError("candidate table target is not an object")
+        key = identity_key(language, validate_identity(
+            language, candidate.get("identity")))
+        if key in candidate_index:
+            raise V2BError(f"duplicate candidate target {key}")
+        candidate_index[key] = candidate
     targets = []
     for row in bindings["plan"].get("targets", []):
         identity = validate_identity(language, row.get("identity"))
+        key = identity_key(language, identity)
+        candidate = candidate_index.get(key)
+        if candidate is None:
+            raise V2BError(f"sampled target absent from candidate table: "
+                           f"{key}")
         target_collect = None
         if collect is not None:
             target_collect = collect.setdefault(
-                identity_key(language, identity), {})
+                key, {})
         targets.append(_assemble_target(language, repo, list(identity),
                                         units, edges, adjacency, cache,
                                         budgets, external_index, bm25, k7,
+                                        candidate=candidate, sampled=row,
                                         k4x_ctx=k4x_ctx,
                                         collect=target_collect))
     if not targets:
@@ -1090,6 +1193,7 @@ def build_assembly(sample_path, repo, candidates_path, extraction_path,
         bindings=dict(sample=bindings["sample"],
                       candidates=bindings["candidates"],
                       extraction=bindings["extraction"],
+                      lean_boundaries=bindings["lean_boundaries"],
                       neardup=bindings["neardup"],
                       a6_outcome=bindings["outcome"],
                       keyword_freeze=bindings["keyword_freeze"],
@@ -1098,7 +1202,7 @@ def build_assembly(sample_path, repo, candidates_path, extraction_path,
                       k4x_external_extraction=bindings[
                           "k4x_external_extraction"]),
         n_targets=len(targets), targets=targets,
-        targets_sha256=sha256_json(targets))
+        targets_sha256=sha256_sorted_json(targets))
 
 
 def _k4x_context(k4x_bundle, units, edges, outcome, lean_tokens):
@@ -1145,7 +1249,8 @@ def _k4x_context(k4x_bundle, units, edges, outcome, lean_tokens):
 def materialize(manifest_path, sample_path, repo, candidates_path,
                 extraction_path, neardup_path, outcome_path,
                 keyword_freeze_path=None, k7_order_path=None,
-                k4x_graph_path=None, external_extraction_path=None):
+                k4x_graph_path=None, external_extraction_path=None,
+                lean_boundaries_path=None):
     """Deterministic evaluator materialization API (§15.A9 handoff).
 
     Re-runs the exact assembly construction from the same bound
@@ -1167,6 +1272,7 @@ def materialize(manifest_path, sample_path, repo, candidates_path,
                              extraction_path, neardup_path, outcome_path,
                              keyword_freeze_path, k7_order_path,
                              k4x_graph_path, external_extraction_path,
+                             lean_boundaries_path=lean_boundaries_path,
                              budgets=tuple(budgets), collect=collect)
     def _paths_stripped(bindings):
         if not isinstance(bindings, dict):
@@ -1189,14 +1295,15 @@ def materialize(manifest_path, sample_path, repo, candidates_path,
 def prepare(sample_path, repo, candidates_path, extraction_path,
             neardup_path, outcome_path, keyword_freeze_path=None,
             k7_order_path=None, k4x_graph_path=None,
-            external_extraction_path=None):
+            external_extraction_path=None, lean_boundaries_path=None):
     if not source_clean():
         raise V2BError("measurement source tree is dirty outside results_v2")
     commit_start, tree_start = head_commit(), source_tree_hash()
     manifest = build_assembly(sample_path, repo, candidates_path,
                               extraction_path, neardup_path, outcome_path,
                               keyword_freeze_path, k7_order_path,
-                              k4x_graph_path, external_extraction_path)
+                              k4x_graph_path, external_extraction_path,
+                              lean_boundaries_path=lean_boundaries_path)
     if not source_clean() or head_commit() != commit_start \
             or source_tree_hash() != tree_start:
         raise V2BError("measurement source drifted during assembly")
@@ -1212,6 +1319,7 @@ def main():
     ap.add_argument("--repo", required=True)
     ap.add_argument("--candidates", required=True)
     ap.add_argument("--extraction", required=True)
+    ap.add_argument("--lean-boundaries")
     ap.add_argument("--neardup", required=True)
     ap.add_argument("--a6-outcome", required=True)
     ap.add_argument("--lean-keyword-freeze")
@@ -1225,7 +1333,8 @@ def main():
     manifest = prepare(args.sample, args.repo, args.candidates,
                        args.extraction, args.neardup, args.a6_outcome,
                        args.lean_keyword_freeze, args.k7_order,
-                       args.k4x_graph, args.k4x_external_extraction)
+                       args.k4x_graph, args.k4x_external_extraction,
+                       args.lean_boundaries)
     digest = write_new_json(args.out, manifest)
     print(f"[v2b-assembly] {args.repo}: {manifest['n_targets']} targets, "
           f"arms {'/'.join(manifest['arms_included'])} "

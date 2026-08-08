@@ -34,12 +34,13 @@ from v2b_common import (ASSEMBLY_SCHEMA, BOUND_SAMPLE_SCHEMA,
                         CANDIDATES_SCHEMA, MASKED_DELTAS_SCHEMA,
                         N_GOVERNANCE_SCHEMA, SALT_COMMITMENT_SCHEMA,
                         V2BError, artifact_binding, identity_key,
-                        sha256_json, validate_identity, write_new_json)
+                        sha256_json, sha256_sorted_json, validate_identity,
+                        write_new_json)
 from v2b_metadata import build_sample_plan
 
 # eval_paired owns this constant, but importing it would drag torch into
 # the CPU-only governance path; any drift fails the binding checks anyway.
-PAIRED_COMPLETE_SCHEMA = "v2b_paired_nll_complete_v1"
+PAIRED_COMPLETE_SCHEMA = "v2b_paired_nll_complete_v2"
 
 HALFWIDTH_TARGET = 0.02                   # paired-delta bits/byte
 DELTA_METRIC = "bpb"                      # §15.A14: bits/byte, nothing else
@@ -239,7 +240,7 @@ def analyze(masked_path, candidates_path, sample_path, complete_path):
     completion_b = declared.get("completion")
     salt_b = declared.get("salt_commitment")
     if not isinstance(run_identity, dict) \
-            or sha256_json(run_identity) != \
+            or sha256_sorted_json(run_identity) != \
             declared.get("run_identity_sha256") \
             or not isinstance(assembly_b, dict) \
             or assembly_b.get("schema") != ASSEMBLY_SCHEMA \

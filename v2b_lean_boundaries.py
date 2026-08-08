@@ -116,6 +116,19 @@ GLOBAL_MANIFEST_SPAN_KEYS = frozenset((
     "setup_sha256", "start_byte", "end_byte", "old_split", "members"))
 OLD_SPLIT_KEYS = frozenset(("header_bytes", "body_bytes", "split_kind"))
 EXTRACTION_BINDING_KEYS = frozenset(("sha256", "schema"))
+BOUNDARY_ARTIFACT_KEYS = frozenset((
+    "schema", "marker", "repo", "extraction", "manifest", "result",
+    "driver_sha256", "invocation_sha256", "toolchain", "n_identities",
+    "n_spans", "n_resolved_spans", "n_unsplit_spans",
+    "n_changed_spans_vs_v3", "n_unchanged_spans_vs_v3", "boundaries",
+    "boundaries_sha256"))
+BOUNDARY_BINDING_KEYS = frozenset(("sha256", "schema"))
+BOUNDARY_ROW_KEYS = frozenset((
+    "identity", "span_id", "module", "source_sha256", "start_byte",
+    "end_byte", "header_bytes", "body_bytes", "split_kind", "status",
+    "reason", "syntax_kind", "n_candidate_starts_total", "n_tested",
+    "n_untested_after_choice", "rejected_starts", "old_split",
+    "changed_vs_v3"))
 
 
 def _hex(value, length=64):
@@ -877,6 +890,211 @@ def build_boundary_artifact(manifest_path, result_path, driver_path):
         n_unchanged_spans_vs_v3=manifest["n_spans"] - n_changed,
         boundaries=ordered,
         boundaries_sha256=sha256_sorted_json(ordered))
+
+
+def validate_boundary_artifact(artifact, extraction, extraction_sha256,
+                               expected_repo=None,
+                               require_generator=True,
+                               live_files=True):
+    """Validate a published boundary artifact against its exact extraction.
+
+    The planner/folder validation above proves how an artifact was produced;
+    downstream consumers additionally need a compact, fail-closed overlay
+    validator.  This function re-derives the complete extraction identity
+    universe and every old/effective split, so a well-shaped but partial or
+    cross-corpus artifact cannot affect candidate eligibility or assembly.
+    It returns the exact identity-key -> effective-boundary index.
+    """
+    allowed_keys = BOUNDARY_ARTIFACT_KEYS | {"generator"}
+    if not isinstance(artifact, dict) or set(artifact) not in (
+            BOUNDARY_ARTIFACT_KEYS, allowed_keys) \
+            or artifact.get("schema") != BOUNDARIES_SCHEMA \
+            or artifact.get("marker") != BOUNDARY_MARKER:
+        raise V2BError("Lean boundary artifact schema/key drift")
+    if require_generator and "generator" not in artifact:
+        raise V2BError("Lean boundary artifact lacks production generator")
+    if "generator" in artifact:
+        generator = artifact["generator"]
+        if not isinstance(generator, dict) \
+                or set(generator) != GENERATOR_KEYS \
+                or not _hex(generator.get("source_commit"), 40) \
+                or not _hex(generator.get("source_tree_hash")) \
+                or generator.get("program") != "v2b_lean_boundaries.py":
+            raise V2BError("Lean boundary generator binding drift")
+    repo = artifact.get("repo")
+    if not isinstance(repo, str) or not repo \
+            or expected_repo is not None and repo != expected_repo:
+        raise V2BError("Lean boundary artifact repo drift")
+    if not isinstance(extraction, dict) \
+            or extraction.get("schema") != LEAN_EXTRACT_SCHEMA \
+            or extraction.get("repo") != repo \
+            or not _hex(extraction_sha256):
+        raise V2BError("Lean boundary/extraction identity drift")
+    extraction_binding = artifact.get("extraction")
+    if not isinstance(extraction_binding, dict) \
+            or set(extraction_binding) != EXTRACTION_BINDING_KEYS \
+            or extraction_binding != dict(
+                sha256=extraction_sha256, schema=LEAN_EXTRACT_SCHEMA):
+        raise V2BError("Lean boundary extraction binding drift")
+    for name, schema in (("manifest", BOUNDARY_MANIFEST_SCHEMA),
+                         ("result", BOUNDARY_RESULT_SCHEMA)):
+        binding = artifact.get(name)
+        if not isinstance(binding, dict) \
+                or set(binding) != BOUNDARY_BINDING_KEYS \
+                or binding.get("schema") != schema \
+                or not _hex(binding.get("sha256")):
+            raise V2BError(f"Lean boundary {name} binding drift")
+    if not _hex(artifact.get("driver_sha256")) \
+            or not _hex(artifact.get("invocation_sha256")) \
+            or not isinstance(artifact.get("toolchain"), str) \
+            or not artifact["toolchain"].strip():
+        raise V2BError("Lean boundary execution binding drift")
+
+    expected = {}
+    files = extraction.get("files")
+    if not isinstance(files, list) or not files:
+        raise V2BError("Lean extraction has no source files")
+    seen_modules = set()
+    for file_index, file_row in enumerate(files):
+        if not isinstance(file_row, dict):
+            raise V2BError(f"Lean extraction file[{file_index}] malformed")
+        module = file_row.get("module")
+        source = file_row.get("source")
+        source_sha = file_row.get("source_sha256")
+        decls = file_row.get("decls")
+        if not isinstance(module, str) or not module \
+                or module in seen_modules \
+                or not isinstance(source, str) or not source \
+                or not _hex(source_sha) or not isinstance(decls, dict):
+            raise V2BError(f"Lean extraction source binding drift at "
+                           f"file[{file_index}]")
+        seen_modules.add(module)
+        if live_files and sha256_file(source) != source_sha:
+            raise V2BError(f"Lean boundary live source hash drift: {source}")
+        for name, decl in decls.items():
+            if not isinstance(decl, dict):
+                raise V2BError(f"Lean extraction declaration malformed: "
+                               f"{module}.{name}")
+            identity = validate_identity("lean", [module, name])
+            key = identity_key("lean", identity)
+            if key in expected:
+                raise V2BError(f"duplicate Lean extraction identity {key}")
+            start = _nonneg(decl.get("start_byte"), "start_byte")
+            end = _nonneg(decl.get("end_byte"), "end_byte")
+            header = _nonneg(decl.get("header_bytes"), "header_bytes")
+            body = _nonneg(decl.get("body_bytes"), "body_bytes")
+            kind = decl.get("split_kind")
+            if start >= end or header + body != end - start \
+                    or kind not in OLD_SPLIT_KINDS:
+                raise V2BError(f"Lean extraction split drift: {key}")
+            expected[key] = dict(
+                identity=list(identity), module=module,
+                source_sha256=source_sha, start_byte=start, end_byte=end,
+                source=source,
+                old_split=dict(header_bytes=header, body_bytes=body,
+                               split_kind=kind))
+
+    boundaries = artifact.get("boundaries")
+    if not isinstance(boundaries, dict) or not boundaries \
+            or list(boundaries) != sorted(boundaries) \
+            or artifact.get("boundaries_sha256") != \
+            sha256_sorted_json(boundaries) \
+            or set(boundaries) != set(expected):
+        raise V2BError("Lean boundary identity coverage/hash drift")
+    if type(artifact.get("n_identities")) is not int \
+            or artifact["n_identities"] != len(boundaries):
+        raise V2BError("Lean boundary identity count drift")
+
+    span_witnesses = {}
+    for key in sorted(boundaries):
+        row = boundaries[key]
+        old = expected[key]
+        if not isinstance(row, dict) or set(row) != BOUNDARY_ROW_KEYS \
+                or row.get("identity") != old["identity"] \
+                or identity_key("lean", row["identity"]) != key \
+                or row.get("module") != old["module"] \
+                or row.get("source_sha256") != old["source_sha256"] \
+                or row.get("start_byte") != old["start_byte"] \
+                or row.get("end_byte") != old["end_byte"] \
+                or row.get("old_split") != old["old_split"]:
+            raise V2BError(f"Lean boundary row/extraction drift: {key}")
+        start, end = old["start_byte"], old["end_byte"]
+        header = row.get("header_bytes")
+        body = row.get("body_bytes")
+        if type(header) is not int or header < 0 \
+                or type(body) is not int or body < 0 \
+                or header + body != end - start:
+            raise V2BError(f"Lean boundary effective split malformed: {key}")
+        status = row.get("status")
+        h_byte = start + header if status == "resolved" else None
+        _validate_truth_table(
+            status, row.get("reason"), row.get("split_kind"), h_byte,
+            row.get("syntax_kind"), row.get("n_candidate_starts_total"),
+            row.get("n_tested"), row.get("n_untested_after_choice"),
+            row.get("rejected_starts"), start, end,
+            f"boundary artifact {key}")
+        if status == "resolved":
+            if body <= 0 or header <= 0:
+                raise V2BError(f"resolved Lean boundary is empty: {key}")
+            if live_files:
+                token = row["split_kind"].encode("utf-8")
+                try:
+                    with open(old["source"], "rb") as handle:
+                        handle.seek(h_byte)
+                        found = handle.read(len(token))
+                except OSError as err:
+                    raise V2BError(f"cannot read Lean boundary source: "
+                                   f"{err}") from err
+                if found != token or h_byte + len(token) > end:
+                    raise V2BError(f"Lean boundary delimiter byte drift: "
+                                   f"{key}")
+        elif header != end - start or body != 0 \
+                or row.get("split_kind") is not None:
+            raise V2BError(f"unsplit Lean boundary is not verbatim: {key}")
+        effective = dict(header_bytes=header, body_bytes=body,
+                         split_kind=row.get("split_kind"))
+        if type(row.get("changed_vs_v3")) is not bool \
+                or row["changed_vs_v3"] != (effective != old["old_split"]):
+            raise V2BError(f"Lean boundary change flag drift: {key}")
+        sid = span_id_of(old["module"], old["source_sha256"], start, end)
+        if row.get("span_id") != sid or not _hex(sid):
+            raise V2BError(f"Lean boundary span identity drift: {key}")
+        # Shared-span identities may differ only in their identity field.
+        witness = {name: value for name, value in row.items()
+                   if name != "identity"}
+        prior = span_witnesses.setdefault(sid, witness)
+        if prior != witness:
+            raise V2BError(f"Lean shared-span boundary disagreement: {sid}")
+
+    spans = list(span_witnesses.values())
+    resolved = sum(row["status"] == "resolved" for row in spans)
+    unsplit = sum(row["status"] == "unsplit" for row in spans)
+    changed = sum(row["changed_vs_v3"] for row in spans)
+    counts = (
+        ("n_spans", len(spans)),
+        ("n_resolved_spans", resolved),
+        ("n_unsplit_spans", unsplit),
+        ("n_changed_spans_vs_v3", changed),
+        ("n_unchanged_spans_vs_v3", len(spans) - changed))
+    for field, expected_count in counts:
+        if type(artifact.get(field)) is not int \
+                or artifact[field] != expected_count:
+            raise V2BError(f"Lean boundary {field} drift")
+    return boundaries
+
+
+def load_boundary_overlay(boundaries_path, extraction_path,
+                          expected_repo=None, live_files=True):
+    """Load, bind, and validate the exact production overlay for consumers."""
+    boundary_binding, artifact = artifact_binding(
+        boundaries_path, BOUNDARIES_SCHEMA)
+    extraction_binding, extraction = artifact_binding(
+        extraction_path, LEAN_EXTRACT_SCHEMA)
+    index = validate_boundary_artifact(
+        artifact, extraction, extraction_binding["sha256"],
+        expected_repo=expected_repo, require_generator=True,
+        live_files=live_files)
+    return boundary_binding, artifact, index
 
 
 def replay_equal(artifact_a, artifact_b):

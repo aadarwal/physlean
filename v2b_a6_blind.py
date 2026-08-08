@@ -16,7 +16,7 @@ from v2b_common import (A6_AUDIT_PACKET_SCHEMA, A6_BLIND_SCHEMA,
                         A6_LABELS_SCHEMA, A6_OUTCOME_SCHEMA, V2BError,
                         artifact_binding, canonical_json_bytes, identity_key,
                         load_json, sha256_bytes, sha256_file, sha256_json,
-                        validate_identity)
+                        sha256_sorted_json, validate_identity)
 from v2b_neardup import (collision_activation, jaccard_outcome, lex_unit,
                          load_lean_keyword_freeze, normalized_hash,
                          verbatim_hash)
@@ -379,4 +379,4 @@ def build_outcome(packet_path, presentation_path, labels_path):
         n_blind_pairs=len(mapping),
         n_projected_roles=n_roles,
         outcomes=outcomes,
-        outcomes_sha256=sha256_json(outcomes))
+        outcomes_sha256=sha256_sorted_json(outcomes))

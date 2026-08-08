@@ -8,7 +8,7 @@
 # CPU-only exact-five array. The two write-once, committed artifacts are
 # supplied only after the blind A6 review and deterministic target draw:
 #   sbatch -p mit_normal --array=0-4 \
-#     --export=ALL,V2B_SAMPLE=<sample.json>,V2B_A6_OUTCOME=<outcome.json>,V2B_K4X_GRAPH=<k4x.json> \
+#     --export=ALL,V2B_SAMPLE=<sample.json>,V2B_A6_OUTCOME=<outcome.json>,V2B_K4X_GRAPH=<k4x.json>,V2B_CANDIDATES_JOB=<candidate-array-id>,V2B_BOUNDARY_JOB=<boundary-array-id> \
 #     slurm/v2b_assembly.sbatch
 set -euo pipefail
 cd "$SLURM_SUBMIT_DIR"
@@ -53,11 +53,17 @@ V2B_A6_OUTCOME="${V2B_A6_OUTCOME:?export the committed A6 outcome path}"
 
 V2B_TASK="${SLURM_ARRAY_TASK_ID:?submit as array 0-4}"
 V2B_K4X_ARGS=()
+V2B_BOUNDARY_ARGS=()
+V2B_CANDIDATES_JOB="${V2B_CANDIDATES_JOB:?export the completed candidate array job id}"
+[[ "$V2B_CANDIDATES_JOB" =~ ^[0-9]+$ ]] || {
+  echo "V2B_CANDIDATES_JOB must be numeric" >&2
+  exit 1
+}
 case "$V2B_TASK" in
   0)
     V2B_TAG="mathlib4"
     V2B_EXPECTED_SHA="87adeaebd370a3b6a41ac4f044fddd4bf81803ad"
-    V2B_CANDIDATES="results_v2/v2b/candidates/job19931908_0_mathlib4.json"
+    V2B_CANDIDATES="results_v2/v2b/candidates/job${V2B_CANDIDATES_JOB}_0_mathlib4.json"
     V2B_EXTRACTION="results_v2/v2a/job19915851_0_mathlib4/extraction.json"
     V2B_NEARDUP="results_v2/v2b/neardup/job19930941_0_mathlib4.json"
     V2B_K7="results_v2/v2b/k7/job19921318_0_mathlib4.json"
@@ -65,7 +71,7 @@ case "$V2B_TASK" in
   1)
     V2B_TAG="batteries"
     V2B_EXPECTED_SHA="76e1c118b0700b4ceafe99532e887d6431625e1a"
-    V2B_CANDIDATES="results_v2/v2b/candidates/job19931908_1_batteries.json"
+    V2B_CANDIDATES="results_v2/v2b/candidates/job${V2B_CANDIDATES_JOB}_1_batteries.json"
     V2B_EXTRACTION="results_v2/v2a/job19915851_1_batteries/extraction.json"
     V2B_NEARDUP="results_v2/v2b/neardup/job19929883_1_batteries.json"
     V2B_K7="results_v2/v2b/k7/job19921318_1_batteries.json"
@@ -73,7 +79,7 @@ case "$V2B_TASK" in
   2)
     V2B_TAG="physlib"
     V2B_EXPECTED_SHA="e882411d1b6bcbdfdd336d4c509c6cc72e96842d"
-    V2B_CANDIDATES="results_v2/v2b/candidates/job19931908_2_physlib.json"
+    V2B_CANDIDATES="results_v2/v2b/candidates/job${V2B_CANDIDATES_JOB}_2_physlib.json"
     V2B_EXTRACTION="results_v2/v2a/job19916781_2_physlib/extraction.json"
     V2B_NEARDUP="results_v2/v2b/neardup/job19929883_2_physlib.json"
     V2B_K7="results_v2/v2b/k7/job19921318_2_physlib.json"
@@ -85,7 +91,7 @@ case "$V2B_TASK" in
   3)
     V2B_TAG="sympy"
     V2B_EXPECTED_SHA="c0a595d78fb2a2c4b0dfa7f2ee720fde84918c6c"
-    V2B_CANDIDATES="results_v2/v2b/candidates/job19931908_3_sympy.json"
+    V2B_CANDIDATES="results_v2/v2b/candidates/job${V2B_CANDIDATES_JOB}_3_sympy.json"
     V2B_EXTRACTION="results_v2/v2a/job19915852_0_sympy/extraction.json"
     V2B_NEARDUP="results_v2/v2b/neardup/job19929883_3_sympy.json"
     V2B_K7="results_v2/v2b/k7/job19921318_3_sympy.json"
@@ -93,7 +99,7 @@ case "$V2B_TASK" in
   4)
     V2B_TAG="astropy"
     V2B_EXPECTED_SHA="440fe546589c4e496235d712bc29783ecf5a5fec"
-    V2B_CANDIDATES="results_v2/v2b/candidates/job19931908_4_astropy.json"
+    V2B_CANDIDATES="results_v2/v2b/candidates/job${V2B_CANDIDATES_JOB}_4_astropy.json"
     V2B_EXTRACTION="results_v2/v2a/job19915852_1_astropy/extraction.json"
     V2B_NEARDUP="results_v2/v2b/neardup/job19929883_4_astropy.json"
     V2B_K7="results_v2/v2b/k7/job19921318_4_astropy.json"
@@ -104,6 +110,16 @@ case "$V2B_TASK" in
     ;;
 esac
 
+if [[ "$V2B_TASK" -le 2 ]]; then
+  V2B_BOUNDARY_JOB="${V2B_BOUNDARY_JOB:?export the completed Lean boundary array job id}"
+  [[ "$V2B_BOUNDARY_JOB" =~ ^[0-9]+$ ]] || {
+    echo "V2B_BOUNDARY_JOB must be numeric" >&2
+    exit 1
+  }
+  V2B_BOUNDARIES="results_v2/v2b/lean_boundaries/job${V2B_BOUNDARY_JOB}_${V2B_TASK}_${V2B_TAG}.json"
+  V2B_BOUNDARY_ARGS=(--lean-boundaries "$V2B_BOUNDARIES")
+fi
+
 V2B_KEYWORD_ARGS=()
 if [[ "$V2B_TASK" -le 2 ]]; then
   V2B_KEYWORD_FREEZE="results_v2/v2b/lean_keywords/freeze_tokens_job19929877.json"
@@ -111,7 +127,8 @@ if [[ "$V2B_TASK" -le 2 ]]; then
 fi
 for V2B_INPUT in "$V2B_CANDIDATES" "$V2B_EXTRACTION" "$V2B_NEARDUP" \
                  "$V2B_K7" "${V2B_KEYWORD_FREEZE:-}" \
-                 "${V2B_K4X_GRAPH:-}" "${V2B_K4X_EXTERNAL:-}"; do
+                 "${V2B_K4X_GRAPH:-}" "${V2B_K4X_EXTERNAL:-}" \
+                 "${V2B_BOUNDARIES:-}"; do
   [[ -z "$V2B_INPUT" || -f "$V2B_INPUT" ]] || {
     echo "missing sealed V2-b assembly input: $V2B_INPUT" >&2
     exit 1
@@ -148,6 +165,7 @@ V2B_OUT="results_v2/v2b/assembly/job${V2B_RUN_ID}_${V2B_TAG}.json"
   --repo "$V2B_TAG" \
   --candidates "$V2B_CANDIDATES" \
   --extraction "$V2B_EXTRACTION" \
+  "${V2B_BOUNDARY_ARGS[@]}" \
   --neardup "$V2B_NEARDUP" \
   --a6-outcome "$V2B_A6_OUTCOME" \
   "${V2B_KEYWORD_ARGS[@]}" \

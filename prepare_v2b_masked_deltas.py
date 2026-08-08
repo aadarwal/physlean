@@ -48,6 +48,7 @@ from v2b_common import (ASSEMBLY_SCHEMA, BOUND_SAMPLE_SCHEMA,
                         CANDIDATES_SCHEMA, MASKED_DELTAS_SCHEMA,
                         SALT_COMMITMENT_SCHEMA, V2BError, artifact_binding,
                         load_json, sha256_file, sha256_json,
+                        sha256_sorted_json,
                         write_new_json)
 
 DELTA_METRIC = "bpb"
@@ -264,7 +265,7 @@ def build_masked_deltas(complete_path, manifest_path, sample_path,
     run_identity = complete.get("run_identity")
     run_sha = complete.get("run_identity_sha256")
     if not isinstance(run_identity, dict) \
-            or sha256_json(run_identity) != run_sha:
+            or sha256_sorted_json(run_identity) != run_sha:
         raise V2BError("completion run identity hash drift")
     if complete.get("assembly_manifest", {}).get("sha256") != \
             manifest_binding["sha256"]:

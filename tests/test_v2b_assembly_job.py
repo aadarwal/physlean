@@ -19,6 +19,8 @@ def test_exact_five_cpu_job_and_write_once_inputs():
     assert 'V2B_POOL_BASE="/orcd/pool/008/${USER:?USER is required}"' in src
     assert "V2B_SAMPLE" in src and "V2B_A6_OUTCOME" in src
     assert "V2B_K4X_GRAPH" in src
+    assert "V2B_BOUNDARY_JOB" in src and "V2B_CANDIDATES_JOB" in src
+    assert "--lean-boundaries" in src
     assert "prepare_v2b_assembly.py" in src
     assert "job${V2B_RUN_ID}_${V2B_TAG}.json" in src
     assert "V2B-ASSEMBLY-DONE" in src
@@ -36,8 +38,10 @@ def test_exact_sealed_chain_and_identity_guards():
     assert '--k4x-external-extraction "$V2B_K4X_EXTERNAL"' in src
     for task, tag in enumerate(("mathlib4", "batteries", "physlib",
                                 "sympy", "astropy")):
-        assert f"job19931908_{task}_{tag}.json" in src
+        assert f"job${{V2B_CANDIDATES_JOB}}_{task}_{tag}.json" in src
         assert f"job19921318_{task}_{tag}.json" in src
+    assert "job${V2B_BOUNDARY_JOB}_${V2B_TASK}_${V2B_TAG}.json" in src
+    assert 'if [[ "$V2B_TASK" -le 2 ]]' in src
     for path in ("job19930941_0_mathlib4.json",
                  "job19929883_1_batteries.json",
                  "job19929883_2_physlib.json",

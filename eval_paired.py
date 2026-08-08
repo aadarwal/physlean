@@ -28,11 +28,12 @@ from layout import (PAIRED_SCHEMA_VERSION, PRODUCTION_CHUNK_TOKENS,
                     token_spans)
 from v2b_common import (ASSEMBLY_SCHEMA, V2BError, artifact_binding,
                         canonical_json_bytes, load_json, sha256_bytes,
-                        sha256_file, sha256_json, write_new_json)
+                        sha256_file, sha256_json, sha256_sorted_json,
+                        write_new_json)
 
 
-TARGET_SCHEMA = "v2b_paired_nll_target_v1"
-COMPLETE_SCHEMA = "v2b_paired_nll_complete_v1"
+TARGET_SCHEMA = "v2b_paired_nll_target_v2"
+COMPLETE_SCHEMA = "v2b_paired_nll_complete_v2"
 AST_CLASS_STATE = "not-run-separate-required-gate"
 LOG = lambda *args: print(*args, file=sys.stderr, flush=True)
 
@@ -454,6 +455,7 @@ def _chain_paths(manifest, args):
         "sample": "sample",
         "candidates": "candidates",
         "extraction": "extraction",
+        "lean_boundaries": "lean_boundaries",
         "neardup": "neardup",
         "a6_outcome": "a6_outcome",
         "keyword_freeze": "lean_keyword_freeze",
@@ -470,6 +472,10 @@ def _chain_paths(manifest, args):
         path = override or (binding.get("path")
                             if isinstance(binding, dict) else None)
         if binding_name == "keyword_freeze" \
+                and manifest.get("language") != "lean":
+            out[binding_name] = None
+            continue
+        if binding_name == "lean_boundaries" \
                 and manifest.get("language") != "lean":
             out[binding_name] = None
             continue
@@ -567,7 +573,9 @@ def evaluate(args):
                                                   ASSEMBLY_SCHEMA)
     targets = manifest.get("targets")
     if not isinstance(targets, list) or not targets \
-            or manifest.get("n_targets") != len(targets):
+            or manifest.get("n_targets") != len(targets) \
+            or manifest.get("targets_sha256") != \
+            sha256_sorted_json(targets):
         raise V2BError("assembly manifest target table is malformed")
     if [row.get("key") for row in targets] != sorted(
             row.get("key") for row in targets):
@@ -591,7 +599,7 @@ def evaluate(args):
         chunk_tokens=PRODUCTION_CHUNK_TOKENS,
         paired_harness_hash=harness, env_fingerprint=environment,
         ast_class_state=AST_CLASS_STATE)
-    run_sha = sha256_json(run_identity)
+    run_sha = sha256_sorted_json(run_identity)
     os.makedirs(args.out_dir, exist_ok=True)
 
     bindings = {}
@@ -626,7 +634,8 @@ def evaluate(args):
             paths["candidates"], paths["extraction"], paths["neardup"],
             paths["a6_outcome"], paths["keyword_freeze"],
             paths["k7_order"], paths["k4x_graph"],
-            paths["k4x_external_extraction"])
+            paths["k4x_external_extraction"],
+            paths["lean_boundaries"])
         if set(materialized) != {row["key"] for row in targets}:
             raise V2BError("materialization target set differs from manifest")
         _check_guard(source_hash, harness, environment, args.manifest,
@@ -759,6 +768,7 @@ def main():
     ap.add_argument("--sample")
     ap.add_argument("--candidates")
     ap.add_argument("--extraction")
+    ap.add_argument("--lean-boundaries")
     ap.add_argument("--neardup")
     ap.add_argument("--a6-outcome")
     ap.add_argument("--lean-keyword-freeze")

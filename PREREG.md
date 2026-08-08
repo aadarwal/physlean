@@ -1527,6 +1527,29 @@ arxiv_manifest) must be committed before measurement.
   self-hashes must be audited and, where safe because still pre-label/pre-draw,
   regenerated or schema-bumped prospectively.
 
+- ADOPTED (2026-08-08, parser-backed Lean boundary consumption and persisted
+  hash migration; PRE-A6-LABEL/PRE-SAMPLE/PRE-SCORE/PRE-OUTCOME): the complete
+  three-corpus boundary audit is not a diagnostic sidecar. Every Lean
+  extraction identity is overlaid upstream of candidate eligibility and body
+  terciles; a previously lexical-null declaration may become eligible only
+  when parser-resolved, while a parser-unresolved declaration stays in the
+  all-unit context universe as verbatim and cannot be sampled. Candidate,
+  bound-sample, and assembly chains must all bind the exact same boundary
+  artifact; sampled Lean targets additionally match source, body bytes, and
+  span id. Python forbids this Lean-only input. The pinned-mathlib k4x snapshot
+  remains raw implementation context and is not interface-rendered. Because
+  this changes the population, ALL five candidate tables are regenerated at
+  one source/tree cohort before the first draw; no old candidate table is
+  admissible. Candidate/sample/bound-sample/assembly schemas move to v2.
+  The pre-publication review also confirmed four remaining mapping-order
+  self-hash failures in the never-yet-produced chain: A6 outcomes, sample
+  plans, assembly targets, and paired run identity (four persisted fields in
+  total). They now use recursively key-sorted JSON; A6 outcome, paired target,
+  and paired complete schemas move to v2 and PAIRED_SCHEMA_VERSION becomes 2.
+  Frozen list/scalar seed and identity preimages remain unchanged. No legacy
+  artifact is migrated in place and no label, sample, salt, model output, or
+  contrast was read to make this amendment.
+
 - ADOPTED/AMENDED (2026-08-08, Lean behavioral extraction rule;
   PRE-GENERATION and PRE-OUTCOME — no generated token or extracted body
   exists): Lean S4 uses a

@@ -18,6 +18,7 @@ import tempfile
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from eval_paired import COMPLETE_SCHEMA, TARGET_SCHEMA, target_cell_specs
+from layout import PAIRED_SCHEMA_VERSION
 from prepare_v2b_assembly import materialize
 from prepare_v2b_masked_deltas import (_production_salt, _read_salt,
                                        _write_salt_pair, blind_rows,
@@ -26,7 +27,7 @@ from prepare_v2b_masked_deltas import (_production_salt, _read_salt,
 from test_prepare_v2b_assembly import _build, _lean_chain
 from v2b_common import (ASSEMBLY_SCHEMA, MASKED_DELTAS_SCHEMA,
                         SALT_COMMITMENT_SCHEMA, V2BError, identity_key,
-                        sha256_json)
+                        sha256_json, sha256_sorted_json)
 from v2b_n_governance import variance_components
 
 SALT = bytes(range(32))
@@ -122,7 +123,8 @@ def _paired_fixture(td, nll_of=None):
     blobs = materialize(manifest_path, chain["sample"], chain["repo"],
                         chain["candidates"], chain["extraction"],
                         chain["neardup"], chain["outcome"],
-                        chain["freeze"], chain["k7"])
+                        chain["freeze"], chain["k7"],
+                        lean_boundaries_path=chain["boundaries"])
     target_row = manifest_loaded["targets"][0]
     target_key = target_row["key"]
     specs = target_cell_specs(
@@ -138,14 +140,14 @@ def _paired_fixture(td, nll_of=None):
         cell["boundary_ledger"] = dict(
             scored_body_bytes=SCORED_BODY_BYTES)
         cells.append(cell)
-    run_identity = dict(paired_schema_version=1,
+    run_identity = dict(paired_schema_version=PAIRED_SCHEMA_VERSION,
                         manifest_sha256=manifest_sha, model="m",
                         revision="a" * 40, dtype="bfloat16",
                         chunk_tokens=2048,
                         paired_harness_hash="b" * 64,
                         env_fingerprint="c" * 64,
                         ast_class_state="not-run-separate-required-gate")
-    run_sha = sha256_json(run_identity)
+    run_sha = sha256_sorted_json(run_identity)
     generator = dict(source_commit="d" * 40, source_tree_hash="e" * 64,
                      program="eval_paired.py")
     target_artifact = dict(

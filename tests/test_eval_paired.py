@@ -162,7 +162,8 @@ def _materialized_fixture(td):
     blobs = materialize(manifest_path, chain["sample"], chain["repo"],
                         chain["candidates"], chain["extraction"],
                         chain["neardup"], chain["outcome"],
-                        chain["freeze"], chain["k7"])
+                        chain["freeze"], chain["k7"],
+                        lean_boundaries_path=chain["boundaries"])
     target = manifest["targets"][0]
     return target, blobs[identity_key("lean", ["M.A", "M.A.t"])]
 
@@ -237,8 +238,8 @@ def test_existing_target_requires_exact_resume_identity_and_cell_grid():
         chain = _lean_chain(td)
         manifest = _build(chain)
         target = manifest["targets"][0]
-        run_identity = {"sealed": "test-run"}
-        run_sha = paired.sha256_json(run_identity)
+        run_identity = {"z_field": "test-run", "a_field": 2}
+        run_sha = paired.sha256_sorted_json(run_identity)
         manifest_binding = dict(
             path=os.path.join(td, "manifest.json"),
             sha256="a" * 64, schema=paired.ASSEMBLY_SCHEMA)
@@ -272,7 +273,7 @@ def test_existing_target_requires_exact_resume_identity_and_cell_grid():
                            program="eval_paired.py"))
         path = os.path.join(td, "target.json")
         with open(path, "w", encoding="utf-8") as fh:
-            json.dump(artifact, fh)
+            json.dump(artifact, fh, sort_keys=True)
 
         accepted = paired._existing_target(
             path, run_identity, run_sha, manifest, manifest_binding,
@@ -341,7 +342,8 @@ def test_target_cell_specs_covers_k4x_when_applicable():
                             chain["candidates"], chain["extraction"],
                             chain["neardup"], chain["outcome"],
                             chain["freeze"], chain["k7"],
-                            chain["k4x"], chain["external"])
+                            chain["k4x"], chain["external"],
+                            chain["boundaries"])
         target = manifest["targets"][0]
         specs = target_cell_specs(
             target,

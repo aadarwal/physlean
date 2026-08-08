@@ -19,13 +19,14 @@ def test_cpu_job_and_source_boundary():
     assert "git status --porcelain -- . ':(exclude)results_v2'" in src
     assert src.count("v2b_assert_source_identity") >= 3
     assert "V2B_A6_OUTCOME" in src
+    assert "V2B_CANDIDATES_JOB" in src
 
 
 def test_exact_candidate_cohort_and_new_output():
     src = source()
     for task, tag in enumerate(("mathlib4", "batteries", "physlib",
                                 "sympy", "astropy")):
-        assert f"job19931908_{task}_{tag}.json" in src
+        assert f"job${{V2B_CANDIDATES_JOB}}_{task}_{tag}.json" in src
     assert "finalize_v2b_sample.py" in src
     assert 'V2B_CANDIDATE_ARGS+=(--candidates "$V2B_CANDIDATE")' in src
     assert "job${V2B_RUN_ID}_sample.json" in src

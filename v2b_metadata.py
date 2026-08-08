@@ -8,7 +8,7 @@ the frozen tercile and proportional-Hamilton quota rules, and deterministic
 sample-plan construction. Everything fails closed on schema, revision,
 source-path, or git-history problems; nothing here reads model outputs.
 
-The CLI can write v2b_candidates_v1 / v2b_sample_v1 artifacts, but drawing a
+The CLI can write v2b_candidates_v2 / v2b_sample_v2 artifacts, but drawing a
 REAL study sample remains gated behind the PREREG boundary — synthetic use
 only until that boundary is logged.
 """
@@ -25,6 +25,7 @@ from v2b_common import (CANDIDATES_SCHEMA, SAMPLE_SCHEMA, V2BError,
                         artifact_binding, identity_key, load_json,
                         relative_source_path, seeded_hash, sha256_json,
                         validate_identity, sha256_file, write_new_json)
+from v2b_lean_boundaries import BOUNDARIES_SCHEMA, load_boundary_overlay
 
 LEAN_EXTRACT_SCHEMA = "v2a_lean_extract_v3"
 PYTHON_EXTRACT_SCHEMA = "v2a_python_extract_v3"
@@ -241,7 +242,7 @@ def cohort_of(record):
 
 # --------------------------------------------------- extraction -> targets
 
-def _lean_targets(extraction):
+def _lean_targets(extraction, boundaries):
     corpus_modules = {f["module"] for f in extraction["files"]}
     render = extraction.get("graph", {}).get(
         "internal_renderability_by_target")
@@ -262,10 +263,15 @@ def _lean_targets(extraction):
     out = []
     for f in extraction["files"]:
         for name, d in f["decls"].items():
-            if not (d.get("eligible_kind") and d.get("selection_contained")
-                    and d.get("split_kind") is not None):
-                continue
             identity = validate_identity("lean", (f["module"], name))
+            key = identity_key("lean", identity)
+            boundary = boundaries.get(key)
+            if not isinstance(boundary, dict):
+                raise V2BError(f"Lean boundary overlay lacks {key}")
+            if not (d.get("eligible_kind") and d.get("selection_contained")
+                    and boundary.get("status") == "resolved"
+                    and boundary.get("split_kind") is not None):
+                continue
             counts = render.get(f["module"], {}).get(name)
             coverage = None
             if counts and counts.get("n_internal_occurrences"):
@@ -274,7 +280,8 @@ def _lean_targets(extraction):
             out.append(dict(
                 identity=list(identity), module=f["module"],
                 source=f["source"], kind=d["kind"],
-                body_bytes=d["body_bytes"],
+                body_bytes=boundary["body_bytes"],
+                span_id=boundary["span_id"],
                 renderability_coverage=coverage,
                 docstring_bytes=None, duplicate_stratum=False,
                 module_in_degree=len(module_importers.get(f["module"], ())),
@@ -380,6 +387,23 @@ def build_sample_plan(candidates, n, exclude_keys=frozenset()):
         raise V2BError("candidates artifact lacks repo")
     if language not in ("lean", "python"):
         raise V2BError("candidates artifact lacks supported language")
+    boundary_binding = candidates.get("lean_boundaries")
+    structural = candidates.get("structural_evidence")
+    structural_boundary = structural.get("lean_boundaries") \
+        if isinstance(structural, dict) else None
+    if language == "lean":
+        if not isinstance(boundary_binding, dict) \
+                or boundary_binding.get("schema") != BOUNDARIES_SCHEMA \
+                or not isinstance(boundary_binding.get("path"), str) \
+                or not boundary_binding["path"] \
+                or not isinstance(boundary_binding.get("sha256"), str) \
+                or len(boundary_binding["sha256"]) != 64 \
+                or structural_boundary != boundary_binding:
+            raise V2BError("Lean candidates lack their exact boundary "
+                           "artifact binding")
+    elif boundary_binding is not None or structural_boundary is not None:
+        raise V2BError("Python candidates carry a forbidden Lean boundary "
+                       "binding")
     targets = candidates.get("targets")
     if not isinstance(targets, list) or candidates.get("n_candidates") != \
             len(targets):
@@ -419,6 +443,14 @@ def build_sample_plan(candidates, n, exclude_keys=frozenset()):
         if key in seen:
             raise V2BError(f"duplicate candidate identity {identity!r}")
         seen.add(key)
+        span_id = t.get("span_id")
+        if language == "lean":
+            if not isinstance(span_id, str) or len(span_id) != 64 \
+                    or any(ch not in "0123456789abcdef" for ch in span_id):
+                raise V2BError(f"Lean candidate lacks span_id: {identity!r}")
+        elif span_id is not None:
+            raise V2BError(f"Python candidate carries Lean span_id: "
+                           f"{identity!r}")
         cell = t.get("cell")
         if cell not in by_cell:
             raise V2BError(f"candidate has invalid cell {cell!r}")
@@ -477,8 +509,12 @@ def build_sample_plan(candidates, n, exclude_keys=frozenset()):
         fills[label] = take
         if take < quotas[label]:
             shortfalls[label] = quotas[label] - take
-        chosen.extend(dict(identity=t["identity"], cell=label,
-                           priority=t["priority"]) for t in rows[:take])
+        for target in rows[:take]:
+            selected = dict(identity=target["identity"], cell=label,
+                            priority=target["priority"])
+            if language == "lean":
+                selected["span_id"] = target["span_id"]
+            chosen.append(selected)
     return dict(schema=SAMPLE_SCHEMA, repo=repo,
                 language=language, n_requested=n,
                 n_excluded=len(exclude_keys),
@@ -495,12 +531,23 @@ def build_sample_plan(candidates, n, exclude_keys=frozenset()):
 # ------------------------------------------------------------ assembly
 
 def build_candidate_table(extraction_path, corpus_root, repo,
-                          expected_corpus_sha=None, workers=1):
+                          expected_corpus_sha=None, workers=1,
+                          lean_boundaries_path=None):
     binding, extraction = artifact_binding(extraction_path)
     schema = extraction.get("schema")
     if schema == LEAN_EXTRACT_SCHEMA:
-        language, rows = "lean", _lean_targets(extraction)
+        if not lean_boundaries_path:
+            raise V2BError("Lean candidates require the parser-backed "
+                           "body-boundary artifact")
+        boundary_binding, _boundary_artifact, boundary_index = \
+            load_boundary_overlay(lean_boundaries_path, extraction_path,
+                                  expected_repo=repo)
+        language, rows = "lean", _lean_targets(extraction, boundary_index)
     elif schema == PYTHON_EXTRACT_SCHEMA:
+        if lean_boundaries_path:
+            raise V2BError("Python candidates forbid a Lean boundary "
+                           "artifact")
+        boundary_binding = None
         language, rows = "python", _python_targets(extraction)
     else:
         raise V2BError(f"unsupported extraction schema {schema!r}")
@@ -580,6 +627,7 @@ def build_candidate_table(extraction_path, corpus_root, repo,
     rows.sort(key=lambda r: identity_key(language, r["identity"]))
     return dict(schema=CANDIDATES_SCHEMA, repo=repo, language=language,
                 extraction=binding,
+                lean_boundaries=boundary_binding,
                 corpus_git_sha=ident["corpus_git_sha"],
                 git_version=ident["git_version"],
                 first_add_workers=workers,
@@ -602,6 +650,7 @@ def main():
     c.add_argument("--repo", required=True)
     c.add_argument("--expected-corpus-sha", required=True)
     c.add_argument("--workers", type=int, default=8)
+    c.add_argument("--lean-boundaries")
     c.add_argument("--allow-unbound-dev", action="store_true")
     c.add_argument("--out", required=True)
     s = sub.add_parser("sample")
@@ -616,7 +665,9 @@ def main():
                              "only; production uses prepare_v2b_candidates.py")
         table = build_candidate_table(args.extraction, args.corpus_root,
                                       args.repo, args.expected_corpus_sha,
-                                      workers=args.workers)
+                                      workers=args.workers,
+                                      lean_boundaries_path=
+                                      args.lean_boundaries)
         digest = write_new_json(args.out, table)
         print(f"[v2b-candidates] {args.repo}: {table['n_candidates']} "
               f"candidates -> {args.out} ({digest[:12]})")

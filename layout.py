@@ -22,7 +22,7 @@ PRODUCTION_CHUNK_TOKENS = 2048
 # The V2 paired-target driver (eval_paired, G3.5+) versions its schema
 # INDEPENDENTLY so V2 evolution never invalidates G3-path artifacts;
 # bump this only for semantic changes to the PAIRED measurement.
-PAIRED_SCHEMA_VERSION = 1
+PAIRED_SCHEMA_VERSION = 2
 
 
 def token_spans(text, offsets):

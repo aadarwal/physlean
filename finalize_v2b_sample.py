@@ -27,7 +27,8 @@ from provenance import head_commit, source_clean, source_tree_hash
 from v2b_a6_blind import require_committed
 from v2b_common import (A6_OUTCOME_SCHEMA, BOUND_SAMPLE_SCHEMA,
                         CANDIDATES_SCHEMA, V2BError, artifact_binding,
-                        sha256_json, write_new_json)
+                        sha256_json, sha256_sorted_json, write_new_json)
+from v2b_lean_boundaries import BOUNDARIES_SCHEMA
 from v2b_metadata import COHORT_CUTOFF, build_sample_plan
 
 N_PER_CORPUS = 20
@@ -46,6 +47,7 @@ def _validate_candidate_table(path):
     language, corpus_sha = EXPECTED[repo]
     generator = table.get("generator")
     structural = table.get("structural_evidence")
+    boundary = table.get("lean_boundaries")
     git_version = table.get("git_version")
     if table.get("language") != language \
             or table.get("corpus_git_sha") != corpus_sha \
@@ -61,6 +63,18 @@ def _validate_candidate_table(path):
             or not isinstance(structural.get("cohort"), dict) \
             or not _hex(structural["cohort"].get("sha256")):
         raise V2BError(f"malformed/binding-drifted candidates for {repo}")
+    structural_boundary = structural.get("lean_boundaries")
+    if language == "lean":
+        if not isinstance(boundary, dict) \
+                or boundary.get("schema") != BOUNDARIES_SCHEMA \
+                or not _hex(boundary.get("sha256")) \
+                or not isinstance(boundary.get("path"), str) \
+                or not boundary["path"] \
+                or structural_boundary != boundary:
+            raise V2BError(f"Lean candidates lack boundary binding for "
+                           f"{repo}")
+    elif boundary is not None or structural_boundary is not None:
+        raise V2BError(f"Python candidates carry Lean boundaries for {repo}")
     provenance = dict(source_commit=generator["source_commit"],
                       source_tree_hash=generator["source_tree_hash"],
                       structural_cohort_sha256=structural["cohort"]["sha256"],
@@ -80,7 +94,8 @@ def _validate_outcome(path):
             or not _hex(generator.get("source_commit"), 40) \
             or not _hex(generator.get("source_tree_hash")) \
             or not isinstance(outcomes, dict) \
-            or outcome.get("outcomes_sha256") != sha256_json(outcomes) \
+            or outcome.get("outcomes_sha256") != \
+            sha256_sorted_json(outcomes) \
             or not isinstance(labels, dict) \
             or not _hex(labels.get("sha256")) \
             or not _hex(labels.get("introducing_commit"), 40) \
@@ -119,7 +134,8 @@ def build_bound_sample(candidate_paths, outcome_path, n=N_PER_CORPUS):
         rows[repo] = dict(binding, repo=repo,
                           language=EXPECTED[repo][0],
                           corpus_git_sha=EXPECTED[repo][1],
-                          n_candidates=table.get("n_candidates"))
+                          n_candidates=table.get("n_candidates"),
+                          lean_boundaries=table.get("lean_boundaries"))
         tables[repo] = table
         provenances[repo] = provenance
     if set(rows) != set(EXPECTED):
@@ -151,7 +167,7 @@ def build_bound_sample(candidate_paths, outcome_path, n=N_PER_CORPUS):
         n_selected_total=sum(plan["n_selected"] for plan in plans.values()),
         n_shortfall_total=sum(sum(plan["shortfalls"].values())
                               for plan in plans.values()),
-        plans_sha256=sha256_json(plans))
+        plans_sha256=sha256_sorted_json(plans))
 
 
 def prepare(candidate_paths, outcome_path, n=N_PER_CORPUS):

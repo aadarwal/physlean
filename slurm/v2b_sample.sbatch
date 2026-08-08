@@ -7,7 +7,7 @@
 #SBATCH -t 04:00:00
 # Deterministic five-corpus pilot draw after the write-once A6 outcome:
 #   sbatch -p mit_normal \
-#     --export=ALL,V2B_A6_OUTCOME=<committed-outcome.json> \
+#     --export=ALL,V2B_A6_OUTCOME=<committed-outcome.json>,V2B_CANDIDATES_JOB=<candidate-array-id> \
 #     slurm/v2b_sample.sbatch
 set -euo pipefail
 cd "$SLURM_SUBMIT_DIR"
@@ -44,12 +44,17 @@ v2b_assert_source_identity() {
 v2b_assert_source_identity
 
 V2B_A6_OUTCOME="${V2B_A6_OUTCOME:?export the committed A6 outcome path}"
+V2B_CANDIDATES_JOB="${V2B_CANDIDATES_JOB:?export the completed candidate array job id}"
+[[ "$V2B_CANDIDATES_JOB" =~ ^[0-9]+$ ]] || {
+  echo "V2B_CANDIDATES_JOB must be numeric" >&2
+  exit 1
+}
 V2B_CANDIDATES=(
-  results_v2/v2b/candidates/job19931908_0_mathlib4.json
-  results_v2/v2b/candidates/job19931908_1_batteries.json
-  results_v2/v2b/candidates/job19931908_2_physlib.json
-  results_v2/v2b/candidates/job19931908_3_sympy.json
-  results_v2/v2b/candidates/job19931908_4_astropy.json
+  "results_v2/v2b/candidates/job${V2B_CANDIDATES_JOB}_0_mathlib4.json"
+  "results_v2/v2b/candidates/job${V2B_CANDIDATES_JOB}_1_batteries.json"
+  "results_v2/v2b/candidates/job${V2B_CANDIDATES_JOB}_2_physlib.json"
+  "results_v2/v2b/candidates/job${V2B_CANDIDATES_JOB}_3_sympy.json"
+  "results_v2/v2b/candidates/job${V2B_CANDIDATES_JOB}_4_astropy.json"
 )
 [[ -f "$V2B_A6_OUTCOME" ]] || {
   echo "missing committed A6 outcome: $V2B_A6_OUTCOME" >&2

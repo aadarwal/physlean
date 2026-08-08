@@ -56,7 +56,8 @@ def build_source_token_ledger(manifest_path, sample_path, repo,
                               neardup_path, outcome_path,
                               keyword_freeze_path=None, k7_order_path=None,
                               k4x_graph_path=None,
-                              external_extraction_path=None):
+                              external_extraction_path=None,
+                              lean_boundaries_path=None):
     manifest_binding, manifest = artifact_binding(manifest_path,
                                                   ASSEMBLY_SCHEMA)
     if manifest.get("repo") != repo:
@@ -71,7 +72,7 @@ def build_source_token_ledger(manifest_path, sample_path, repo,
     concrete = materialize(
         manifest_path, sample_path, repo, candidates_path, extraction_path,
         neardup_path, outcome_path, keyword_freeze_path, k7_order_path,
-        k4x_graph_path, external_extraction_path)
+        k4x_graph_path, external_extraction_path, lean_boundaries_path)
     expected_keys = [row.get("key") for row in targets]
     if expected_keys != sorted(expected_keys) \
             or set(concrete) != set(expected_keys):
@@ -141,6 +142,7 @@ def _manifest_paths(manifest_path, overrides):
         "sample": "sample", "candidates": "candidates",
         "extraction": "extraction", "neardup": "neardup",
         "a6_outcome": "a6_outcome",
+        "lean_boundaries": "lean_boundaries",
         "lean_keyword_freeze": "keyword_freeze",
         "k7_order": "k7_order", "k4x_graph": "k4x_graph",
         "k4x_external_extraction": "k4x_external_extraction"}
@@ -154,6 +156,8 @@ def _manifest_paths(manifest_path, overrides):
             name in ("sample", "candidates", "extraction", "neardup",
                      "a6_outcome", "k7_order")
             or (name == "lean_keyword_freeze"
+                and manifest.get("language") == "lean")
+            or (name == "lean_boundaries"
                 and manifest.get("language") == "lean")
             or (name in ("k4x_graph", "k4x_external_extraction")
                 and isinstance(manifest.get("k4x"), dict)
@@ -171,6 +175,7 @@ def main():
     ap.add_argument("--repo")
     ap.add_argument("--candidates")
     ap.add_argument("--extraction")
+    ap.add_argument("--lean-boundaries")
     ap.add_argument("--neardup")
     ap.add_argument("--a6-outcome")
     ap.add_argument("--lean-keyword-freeze")
@@ -183,6 +188,7 @@ def main():
         manifest, paths = _manifest_paths(args.manifest, dict(
             sample=args.sample, candidates=args.candidates,
             extraction=args.extraction, neardup=args.neardup,
+            lean_boundaries=args.lean_boundaries,
             a6_outcome=args.a6_outcome,
             lean_keyword_freeze=args.lean_keyword_freeze,
             k7_order=args.k7_order, k4x_graph=args.k4x_graph,
@@ -192,7 +198,8 @@ def main():
             paths["candidates"], paths["extraction"], paths["neardup"],
             paths["a6_outcome"], paths["lean_keyword_freeze"],
             paths["k7_order"], paths["k4x_graph"],
-            paths["k4x_external_extraction"])
+            paths["k4x_external_extraction"],
+            paths["lean_boundaries"])
         digest = write_new_json(args.out, artifact)
     except V2BError as err:
         raise SystemExit(f"FATAL: {err}") from err

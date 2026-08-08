@@ -41,6 +41,10 @@ def test_exact_structural_inputs_and_new_only_output():
     assert "--structural-cohort" in src
     assert "--expected-corpus-sha" in src
     assert "--workers" in src
+    assert "V2B_BOUNDARY_JOB" in src
+    assert "--lean-boundaries" in src
+    assert "job${V2B_BOUNDARY_JOB}_${V2B_TASK}_${V2B_TAG}.json" in src
+    assert 'if [[ "$V2B_TASK" -le 2 ]]' in src
     assert "V2B-CANDIDATES-DONE" in src
     assert "job${V2B_RUN_ID}_${V2B_TAG}.json" in src
 

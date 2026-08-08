@@ -23,7 +23,7 @@ from v2b_lean_boundaries import (BOUNDARIES_SCHEMA, BOUNDARY_MANIFEST_SCHEMA,
                                  canonical_driver_manifest_bytes,
                                  compute_invocation_sha256,
                                  parse_driver_stdout, replay_equal,
-                                 span_id_of)
+                                 span_id_of, validate_boundary_artifact)
 from v2b_common import (V2BError, identity_key, sha256_bytes,
                         sha256_sorted_json)
 
@@ -309,6 +309,24 @@ def test_consumer_witnesses_delimiters_and_builds_effective_rows():
         assert artifact["n_changed_spans_vs_v3"] == 1
         assert artifact["boundaries_sha256"] == \
             sha256_sorted_json(artifact["boundaries"])
+        extraction = json.load(open(fixture["extraction"]))
+        extraction_sha = _sha(open(fixture["extraction"], "rb").read())
+        validated = validate_boundary_artifact(
+            artifact, extraction, extraction_sha,
+            expected_repo="mathlib4", require_generator=False)
+        assert validated == artifact["boundaries"]
+        tampered = copy.deepcopy(artifact)
+        tampered["boundaries"][f_key]["body_bytes"] -= 1
+        tampered["boundaries"][f_key]["header_bytes"] += 1
+        tampered["boundaries_sha256"] = sha256_sorted_json(
+            tampered["boundaries"])
+        try:
+            validate_boundary_artifact(
+                tampered, extraction, extraction_sha,
+                expected_repo="mathlib4", require_generator=False)
+            assert False, "effective split drift accepted downstream"
+        except V2BError:
+            pass
         # deterministic replay comparison
         replay = build_boundary_artifact(
             manifest_path, os.path.join(td, "result.json"), driver_path)

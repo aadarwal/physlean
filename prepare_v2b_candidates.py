@@ -8,6 +8,7 @@ from finalize_v2a_cohort import COHORT_SCHEMA, EXPECTED
 from provenance import head_commit, source_clean, source_tree_hash
 from v2b_common import (V2BError, artifact_binding, load_json, sha256_file,
                         write_new_json)
+from v2b_lean_boundaries import load_boundary_overlay
 from v2b_metadata import build_candidate_table, corpus_git_identity
 
 
@@ -74,7 +75,7 @@ def validate_structural_inputs(cohort_path, extraction_path, repo, language,
 
 
 def prepare(cohort_path, extraction_path, corpus_root, repo, language,
-            expected_corpus_sha, workers):
+            expected_corpus_sha, workers, lean_boundaries_path=None):
     if not source_clean():
         raise V2BError("measurement source tree is dirty outside results_v2")
     source_commit_start = head_commit()
@@ -83,17 +84,36 @@ def prepare(cohort_path, extraction_path, corpus_root, repo, language,
         cohort_path, extraction_path, repo, language, expected_corpus_sha)
     table = build_candidate_table(extraction_path, corpus_root, repo,
                                   expected_corpus_sha=expected_corpus_sha,
-                                  workers=workers)
+                                  workers=workers,
+                                  lean_boundaries_path=
+                                  lean_boundaries_path)
     if table.get("language") != language:
         raise V2BError(f"candidate language {table.get('language')} != "
                        f"expected {language}")
+    boundary_binding = table.get("lean_boundaries")
+    if language == "lean":
+        if not isinstance(boundary_binding, dict):
+            raise V2BError("Lean candidate table lacks boundary binding")
+        structural["lean_boundaries"] = boundary_binding
+    elif lean_boundaries_path is not None or boundary_binding is not None:
+        raise V2BError("Python candidate build received a Lean boundary "
+                       "artifact")
+    else:
+        structural["lean_boundaries"] = None
     # Recheck the long-running inputs before publication: a concurrent git
     # update or evidence edit cannot be hidden behind start-time hashes.
     corpus_git_identity(corpus_root, expected_corpus_sha)
     structural_end = validate_structural_inputs(
         cohort_path, extraction_path, repo, language, expected_corpus_sha)
+    structural_end["lean_boundaries"] = structural["lean_boundaries"]
     if structural_end != structural:
         raise V2BError("structural inputs drifted during candidate build")
+    if language == "lean":
+        boundary_end, _artifact, _index = load_boundary_overlay(
+            lean_boundaries_path, extraction_path, expected_repo=repo)
+        if boundary_end != boundary_binding:
+            raise V2BError("Lean boundary artifact drifted during candidate "
+                           "build")
     if not source_clean() or head_commit() != source_commit_start \
             or source_tree_hash() != source_hash_start:
         raise V2BError("measurement source drifted during candidate build")
@@ -113,11 +133,13 @@ def main():
     ap.add_argument("--language", required=True, choices=("lean", "python"))
     ap.add_argument("--expected-corpus-sha", required=True)
     ap.add_argument("--workers", type=int, default=8)
+    ap.add_argument("--lean-boundaries")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     table = prepare(args.structural_cohort, args.extraction,
                     args.corpus_root, args.repo, args.language,
-                    args.expected_corpus_sha, args.workers)
+                    args.expected_corpus_sha, args.workers,
+                    args.lean_boundaries)
     digest = write_new_json(args.out, table)
     print(f"[v2b-candidates] {args.repo}: {table['n_candidates']} -> "
           f"{args.out} ({digest[:12]})")

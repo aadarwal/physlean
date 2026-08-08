@@ -28,7 +28,7 @@ def _fixture(td, language):
         path, chain["sample"], chain["repo"], chain["candidates"],
         chain["extraction"], chain["neardup"], chain["outcome"],
         chain["freeze"], chain["k7"], chain.get("k4x"),
-        chain.get("external"))
+        chain.get("external"), chain.get("boundaries"))
     return chain, manifest, path, artifact
 
 
@@ -75,6 +75,7 @@ def test_manifest_paths_recover_the_exact_bound_chain():
         assert paths["sample"] == chain["sample"]
         assert paths["candidates"] == chain["candidates"]
         assert paths["lean_keyword_freeze"] == chain["freeze"]
+        assert paths["lean_boundaries"] == chain["boundaries"]
         assert paths["k7_order"] == chain["k7"]
 
 
@@ -88,7 +89,8 @@ def test_wrong_repo_and_body_binding_fail_closed():
             build_source_token_ledger(
                 path, chain["sample"], "physlib", chain["candidates"],
                 chain["extraction"], chain["neardup"], chain["outcome"],
-                chain["freeze"], chain["k7"])
+                chain["freeze"], chain["k7"],
+                lean_boundaries_path=chain["boundaries"])
             assert False, "wrong corpus tag accepted"
         except V2BError as err:
             assert "repo mismatch" in str(err)
@@ -101,7 +103,8 @@ def test_wrong_repo_and_body_binding_fail_closed():
             build_source_token_ledger(
                 path, chain["sample"], chain["repo"], chain["candidates"],
                 chain["extraction"], chain["neardup"], chain["outcome"],
-                chain["freeze"], chain["k7"])
+                chain["freeze"], chain["k7"],
+                lean_boundaries_path=chain["boundaries"])
             assert False, "tampered body binding accepted"
         except V2BError:
             pass

@@ -6,7 +6,9 @@
 #SBATCH --mem=32G
 #SBATCH -t 08:00:00
 # CPU-only exact-five array:
-#   sbatch -p mit_normal --array=0-4 slurm/v2b_candidates.sbatch
+#   sbatch -p mit_normal --array=0-4 \
+#     --export=ALL,V2B_BOUNDARY_JOB=<completed-boundary-array-id> \
+#     slurm/v2b_candidates.sbatch
 set -euo pipefail
 cd "$SLURM_SUBMIT_DIR"
 
@@ -42,6 +44,7 @@ v2b_assert_source_identity() {
 v2b_assert_source_identity
 
 V2B_TASK="${SLURM_ARRAY_TASK_ID:?submit as array 0-4}"
+V2B_BOUNDARY_ARGS=()
 case "$V2B_TASK" in
   0)
     V2B_TAG="mathlib4"
@@ -78,6 +81,19 @@ case "$V2B_TASK" in
     exit 1
     ;;
 esac
+if [[ "$V2B_TASK" -le 2 ]]; then
+  V2B_BOUNDARY_JOB="${V2B_BOUNDARY_JOB:?export the completed Lean boundary array job id}"
+  [[ "$V2B_BOUNDARY_JOB" =~ ^[0-9]+$ ]] || {
+    echo "V2B_BOUNDARY_JOB must be numeric" >&2
+    exit 1
+  }
+  V2B_BOUNDARIES="results_v2/v2b/lean_boundaries/job${V2B_BOUNDARY_JOB}_${V2B_TASK}_${V2B_TAG}.json"
+  [[ -f "$V2B_BOUNDARIES" ]] || {
+    echo "missing parser-backed Lean boundaries: $V2B_BOUNDARIES" >&2
+    exit 1
+  }
+  V2B_BOUNDARY_ARGS=(--lean-boundaries "$V2B_BOUNDARIES")
+fi
 V2B_REPO="$SLURM_SUBMIT_DIR/corpora/$V2B_TAG"
 V2B_ACTUAL_SHA=$(git -C "$V2B_REPO" rev-parse HEAD)
 [[ "$V2B_ACTUAL_SHA" == "$V2B_EXPECTED_SHA" ]] || {
@@ -116,6 +132,7 @@ V2B_OUT="results_v2/v2b/candidates/job${V2B_RUN_ID}_${V2B_TAG}.json"
   --language "$V2B_LANGUAGE" \
   --expected-corpus-sha "$V2B_EXPECTED_SHA" \
   --workers "${SLURM_CPUS_PER_TASK:-16}" \
+  "${V2B_BOUNDARY_ARGS[@]}" \
   --out "$V2B_OUT"
 
 v2b_assert_corpus_identity

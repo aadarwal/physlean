@@ -1175,15 +1175,31 @@ SHA256(UTF-8(json.dumps([["eval_paired.py", <sha256hex>],
 ensure_ascii=False, separators=(",",":")))); eval_paired.py MUST
 import the chunked-NLL core from eval_incontext.py (hard import,
 never a copy). Assembly manifest ({schema:
-"v2b_assembly_manifest_v1"}, per corpus) binds per (target, arm,
+"v2b_assembly_manifest_v2"}, per corpus) binds per (target, arm,
 budget) cell: rendered-context SHA256 + bytes, common-query-prefix
 SHA256 + bytes, scored-body SHA256 + bytes, the source extraction
 artifact's SHA256 and schema string, the corpus revision, and the
-unit list with spans; the manifest's own SHA256 joins every paired
+unit list with spans. For main-corpus Lean units it additionally binds
+the complete parser-backed `v2b_lean_body_boundaries_v1` artifact and
+overlays its effective split on EVERY extraction identity before candidate
+eligibility, body-length terciles, sampling, interface rendering, or target
+prefix/body construction. `resolved` rows use the parser-witnessed boundary;
+unresolved rows remain in the all-unit universe but render verbatim and are
+ineligible as targets. The separately pinned k4x snapshot remains raw
+implementation-only and is never interface-rendered. A sampled Lean target
+must match the same overlay in candidate body bytes, source, span id, and
+sample span id. The manifest's own SHA256 joins every paired
 cell identity. Before scoring, eval_paired REHASHES prefix, context,
 AND body against the manifest — fail-closed on any mismatch — plus
 paired_harness_hash and env-lock refusal before model load.
-PAIRED_SCHEMA_VERSION = 1; source_tree_hash-alone drift stays
+Candidate/sample/bound-sample/assembly schemas are v2 and reject a Lean
+artifact without that exact boundary binding or a Python artifact carrying
+one. Persisted mapping self-hashes use recursively key-sorted compact JSON:
+A6 `outcomes_sha256`, bound-sample `plans_sha256`, assembly
+`targets_sha256`, and paired `run_identity_sha256`. Seed/identity hashes stay
+on their already-frozen order-preserving encoding. A6 outcome is
+`v2b_a6_outcome_v2`; paired target/complete artifacts are v2 and
+PAIRED_SCHEMA_VERSION = 2. source_tree_hash-alone drift stays
 acceptable per the adopted cell_done rule. Property suite: byte-suffix
 nesting asserted for every arm and budget pair across {k2, k3, k4,
 k4x, k5(s0,s1,s2), k6, k6-realistic, k7} plus per-arm partial-unit

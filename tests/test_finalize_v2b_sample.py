@@ -15,7 +15,8 @@ from finalize_v2a import EVIDENCE_SOURCE_COMMIT
 from finalize_v2b_a6 import EXPECTED
 from finalize_v2b_sample import (BOUND_SAMPLE_SCHEMA, build_bound_sample)
 from v2b_common import (A6_OUTCOME_SCHEMA, CANDIDATES_SCHEMA, V2BError,
-                        sha256_json)
+                        sha256_sorted_json)
+from v2b_lean_boundaries import BOUNDARIES_SCHEMA
 from v2b_metadata import (COHORT_CUTOFF, SAMPLING_SEED, cohort_of,
                           seeded_hash, tercile, tercile_cutpoints)
 
@@ -28,17 +29,24 @@ def _target(language, repo, index, body_bytes, degree, stamp):
         identity = [f"M{index}", f"M{index}.t"]
     else:
         identity = [f"m{index}", "f", index]
-    return dict(identity=identity, body_bytes=body_bytes,
+    row = dict(identity=identity, body_bytes=body_bytes,
                 module_in_degree=degree,
                 source_rel=f"src/{repo}/u{index}.txt",
                 first_add=dict(timestamp_utc=stamp,
                                provenance_mode="exact-add",
                                exact_add_unresolved=False,
                                n_add_records=1))
+    if language == "lean":
+        row["span_id"] = f"{index + 1:064x}"
+    return row
 
 
 def _candidates(td, repo):
     language, corpus_sha = EXPECTED[repo]
+    boundary = (dict(path=f"/x/{repo}-boundaries.json",
+                     sha256=(repo.encode().hex() + "0" * 64)[:64],
+                     schema=BOUNDARIES_SCHEMA)
+                if language == "lean" else None)
     targets = [
         _target(language, repo, 0, 40, 0, PRE),
         _target(language, repo, 1, 80, 1, PRE),
@@ -68,11 +76,13 @@ def _candidates(td, repo):
         first_add_provenance_file_counts={
             "exact-add": len(targets), "no-add-pre-witness": 0},
         no_add_pre_witness_files=[],
+        lean_boundaries=boundary,
         n_candidates=len(targets), targets=targets,
         structural_evidence=dict(
             evidence_source_commit=EVIDENCE_SOURCE_COMMIT,
             cohort=dict(path="/x/cohort.json", sha256="c" * 64,
-                        schema="v2a_structural_cohort_v1")),
+                        schema="v2a_structural_cohort_v1"),
+            lean_boundaries=boundary),
         generator=dict(source_commit="a" * 40, source_tree_hash="b" * 64,
                        program="prepare_v2b_candidates.py"))
     path = os.path.join(td, f"candidates_{repo}.json")
@@ -96,13 +106,12 @@ def _outcome(td, sampling_state="not-drawn", break_sha=False,
         n_blind_pairs=12,
         n_projected_roles=14,
         outcomes=outcomes,
-        outcomes_sha256=("0" * 64 if break_sha else sha256_json(outcomes)),
+        outcomes_sha256=("0" * 64 if break_sha else
+                         sha256_sorted_json(outcomes)),
         generator=dict(source_commit="e" * 40, source_tree_hash="f" * 64,
                        program="finalize_v2b_a6_labels.py"))
     path = os.path.join(td, name)
-    # no sort_keys: outcomes_sha256 is bound to the exact serialized key
-    # order (the frozen canonical encoding does not reorder)
-    json.dump(value, open(path, "w"))
+    json.dump(value, open(path, "w"), sort_keys=True)
     return path
 
 
@@ -127,6 +136,11 @@ def test_bound_sample_is_deterministic_and_fully_bound():
         assert sample["a6_outcome"]["labels_introducing_commit"] == "d" * 40
         assert sample["n_selected_total"] == 15
         assert sample == build_bound_sample(paths, outcome, n=3)
+        published = os.path.join(td, "published-sample.json")
+        json.dump(sample, open(published, "w"), sort_keys=True)
+        reloaded = json.load(open(published))
+        assert reloaded["plans_sha256"] == \
+            sha256_sorted_json(reloaded["plans"])
         # population-limited draw records shortfall, never rebalances
         big = build_bound_sample(paths, outcome, n=20)
         assert big["plans"]["sympy"]["n_selected"] == 6
@@ -264,7 +278,7 @@ def test_schema_constant_has_single_source():
     import v2b_common
     import finalize_v2b_sample as fs
     assert fs.BOUND_SAMPLE_SCHEMA is v2b_common.BOUND_SAMPLE_SCHEMA
-    assert v2b_common.BOUND_SAMPLE_SCHEMA == "v2b_bound_sample_v1"
+    assert v2b_common.BOUND_SAMPLE_SCHEMA == "v2b_bound_sample_v2"
 
 
 def test_untracked_candidates_accepted_but_outcome_commit_enforced():

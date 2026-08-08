@@ -13,11 +13,13 @@ import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from extract_lean import target_priority
-from v2b_common import V2BError, seeded_hash
+from v2b_common import (V2BError, identity_key, seeded_hash,
+                        sha256_sorted_json)
 from v2b_metadata import (SAMPLING_SEED, allocate_quotas,
                           build_candidate_table, build_sample_plan,
                           cohort_of, corpus_git_identity, first_add_record,
                           tercile, tercile_cutpoints)
+from test_prepare_v2b_assembly import _boundaries
 
 
 def _git(repo, *args, author_date=None, commit_date=None):
@@ -286,33 +288,56 @@ def _lean_extraction(root, rels):
                            internal_renderability_by_target=render))
 
 
-def _lean_decl(body_bytes):
-    return dict(eligible_kind=True, selection_contained=True,
-                split_kind=":=", kind="theorem", body_bytes=body_bytes)
+def _lean_source(module, specs):
+    """Return byte-exact synthetic commands and extraction rows."""
+    chunks = []
+    decls = {}
+    offset = 0
+    for fqname, body_bytes, eligible, kind in specs:
+        bare = fqname.rsplit(".", 1)[-1]
+        header = f"{kind} {bare} : True "
+        body = ":=" + " " * (body_bytes - 3) + "\n"
+        text = header + body
+        decls[fqname] = dict(
+            eligible_kind=eligible, selection_contained=True,
+            split_kind=":=", kind=kind, start_byte=offset,
+            end_byte=offset + len(text), header_bytes=len(header),
+            body_bytes=len(body), shell=[])
+        chunks.append(text)
+        offset += len(text)
+    return "".join(chunks), decls
 
 
 def test_lean_candidate_table_end_to_end():
     with tempfile.TemporaryDirectory() as td:
         root = _repo(td)
-        for i, rel in enumerate(("MA.lean", "MB.lean", "MC.lean")):
-            _commit(root, rel, f"-- {rel}", f"add {rel}",
+        ma_text, ma_decls = _lean_source("M.A", [
+            ("M.A.t", 100, True, "theorem"),
+            ("M.A.s", 200, True, "theorem"),
+            ("M.A.gen", 9, False, "instance")])
+        mb_text, mb_decls = _lean_source("M.B", [
+            ("M.B.u", 300, True, "theorem")])
+        mc_text, mc_decls = _lean_source("M.C", [
+            ("M.C.v", 400, True, "theorem")])
+        source_rows = (("MA.lean", ma_text), ("MB.lean", mb_text),
+                       ("MC.lean", mc_text))
+        for i, (rel, text) in enumerate(source_rows):
+            _commit(root, rel, text, f"add {rel}",
                     f"202{3 + (i % 2)}-0{1 + i}-01T00:00:00 +0000")
         ex = _lean_extraction(root, {
-            "MA.lean": ("M.A", [], {"M.A.t": _lean_decl(100),
-                                    "M.A.s": _lean_decl(200)}),
-            "MB.lean": ("M.B", ["M.A"], {"M.B.u": _lean_decl(300)}),
+            "MA.lean": ("M.A", [], ma_decls),
+            "MB.lean": ("M.B", ["M.A"], mb_decls),
             "MC.lean": ("M.C", ["M.A", "M.B", "External.Mod"],
-                        {"M.C.v": _lean_decl(400)}),
+                        mc_decls),
         })
-        # one ineligible decl never becomes a candidate
-        ex["files"][0]["decls"]["M.A.gen"] = dict(
-            eligible_kind=False, selection_contained=True,
-            split_kind=None, kind="instance", body_bytes=9)
         ex_path = os.path.join(td, "extract.json")
         json.dump(ex, open(ex_path, "w"))
+        boundaries_path, _binding, _rows = _boundaries(
+            td, ex, ex_path, name="metadata_boundaries.json")
         head = _git(root, "rev-parse", "HEAD").strip()
         table = build_candidate_table(ex_path, root, "mathlib4",
-                                      expected_corpus_sha=head)
+                                      expected_corpus_sha=head,
+                                      lean_boundaries_path=boundaries_path)
         assert table["first_add_provenance_file_counts"] == {
             "exact-add": 3, "no-add-pre-witness": 0}
         assert table["no_add_pre_witness_files"] == []
@@ -335,9 +360,49 @@ def test_lean_candidate_table_end_to_end():
                 f"L{t['strata']['length_tercile']}-"
                 f"D{t['strata']['centrality_tercile']}-C")
         assert by[("M.A", "M.A.t")]["renderability_coverage"] == 0.75
+        # v3 lexical null is diagnostic only: a parser-resolved declaration
+        # re-enters the population with parser-derived body bytes/span id.
+        promoted_ex = json.loads(json.dumps(ex))
+        promoted_decl = promoted_ex["files"][0]["decls"]["M.A.s"]
+        parser_header = promoted_decl["header_bytes"]
+        parser_body = promoted_decl["body_bytes"]
+        promoted_decl["header_bytes"] += promoted_decl["body_bytes"]
+        promoted_decl["body_bytes"] = 0
+        promoted_decl["split_kind"] = None
+        promoted_path = os.path.join(td, "promoted_extract.json")
+        json.dump(promoted_ex, open(promoted_path, "w"))
+        promoted_boundaries, _binding, _rows = _boundaries(
+            td, promoted_ex, promoted_path,
+            name="promoted_boundaries.json")
+        boundary_value = json.load(open(promoted_boundaries))
+        promoted_key = identity_key("lean", ["M.A", "M.A.s"])
+        boundary_row = boundary_value["boundaries"][promoted_key]
+        boundary_row.update(
+            header_bytes=parser_header, body_bytes=parser_body,
+            split_kind=":=", status="resolved", reason=None,
+            n_candidate_starts_total=1, n_tested=1,
+            n_untested_after_choice=0, rejected_starts=[],
+            changed_vs_v3=True)
+        boundary_value["n_resolved_spans"] += 1
+        boundary_value["n_unsplit_spans"] -= 1
+        boundary_value["n_changed_spans_vs_v3"] += 1
+        boundary_value["n_unchanged_spans_vs_v3"] -= 1
+        boundary_value["boundaries_sha256"] = sha256_sorted_json(
+            boundary_value["boundaries"])
+        json.dump(boundary_value, open(promoted_boundaries, "w"),
+                  sort_keys=True)
+        promoted_table = build_candidate_table(
+            promoted_path, root, "mathlib4", expected_corpus_sha=head,
+            lean_boundaries_path=promoted_boundaries)
+        promoted_by = {tuple(row["identity"]): row
+                       for row in promoted_table["targets"]}
+        assert promoted_by[("M.A", "M.A.s")]["body_bytes"] == parser_body
+        assert promoted_by[("M.A", "M.A.s")]["span_id"] == \
+            boundary_row["span_id"]
         # strict failures: wrong schema, wrong repo, revision drift
         try:
-            build_candidate_table(ex_path, root, "physlib")
+            build_candidate_table(ex_path, root, "physlib",
+                                  lean_boundaries_path=boundaries_path)
             assert False
         except V2BError:
             pass
@@ -351,12 +416,14 @@ def test_lean_candidate_table_end_to_end():
             pass
         try:
             build_candidate_table(ex_path, root, "mathlib4",
-                                  expected_corpus_sha="e" * 40)
+                                  expected_corpus_sha="e" * 40,
+                                  lean_boundaries_path=boundaries_path)
             assert False
         except V2BError:
             pass
         try:
-            build_candidate_table(ex_path, root, "mathlib4")
+            build_candidate_table(ex_path, root, "mathlib4",
+                                  lean_boundaries_path=boundaries_path)
             assert False, "accepted unpinned candidate build"
         except V2BError as err:
             assert "revision" in str(err)
@@ -365,9 +432,12 @@ def test_lean_candidate_table_end_to_end():
         drifted["files"][0]["source_sha256"] = "0" * 64
         drifted_path = os.path.join(td, "drifted.json")
         json.dump(drifted, open(drifted_path, "w"))
+        drifted_boundaries, _binding, _rows = _boundaries(
+            td, drifted, drifted_path, name="drifted_boundaries.json")
         try:
             build_candidate_table(drifted_path, root, "mathlib4",
-                                  expected_corpus_sha=head)
+                                  expected_corpus_sha=head,
+                                  lean_boundaries_path=drifted_boundaries)
             assert False, "accepted live/extraction source hash drift"
         except V2BError as err:
             assert "source hash drift" in str(err)
@@ -375,7 +445,8 @@ def test_lean_candidate_table_end_to_end():
         open(os.path.join(root, "MA.lean"), "a").write("\n-- dirty")
         try:
             build_candidate_table(ex_path, root, "mathlib4",
-                                  expected_corpus_sha=head)
+                                  expected_corpus_sha=head,
+                                  lean_boundaries_path=boundaries_path)
             assert False, "accepted dirty tracked corpus"
         except V2BError:
             pass

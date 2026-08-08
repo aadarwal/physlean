@@ -18,9 +18,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import v2b_n_governance as governance
 from finalize_v2a import EVIDENCE_SOURCE_COMMIT
 from finalize_v2b_a6 import EXPECTED
-from v2b_common import (BOUND_SAMPLE_SCHEMA, CANDIDATES_SCHEMA,
+from layout import PAIRED_SCHEMA_VERSION
+from v2b_common import (ASSEMBLY_SCHEMA, BOUND_SAMPLE_SCHEMA, CANDIDATES_SCHEMA,
                         MASKED_DELTAS_SCHEMA, V2BError, identity_key,
-                        sha256_json)
+                        sha256_json, sha256_sorted_json)
+from v2b_lean_boundaries import BOUNDARIES_SCHEMA
 from v2b_metadata import (COHORT_CUTOFF, SAMPLING_SEED, build_sample_plan,
                           cohort_of, seeded_hash, tercile,
                           tercile_cutpoints)
@@ -118,11 +120,14 @@ def test_family_governance_smallest_feasible_n_and_underfill():
 
 def _gov_candidates(td, repo="mathlib4", n_targets=430):
     language, corpus_sha = EXPECTED[repo]
+    boundary = dict(path="/x/mathlib4-boundaries.json",
+                    sha256="8" * 64, schema=BOUNDARIES_SCHEMA)
     targets = []
     for index in range(n_targets):
         identity = [f"Mod{index % 4}", f"Mod{index % 4}.t{index}"]
         targets.append(dict(
             identity=identity, body_bytes=40 + 17 * index,
+            span_id=f"{index + 1:064x}",
             module_in_degree=index % 7,
             source_rel=f"src/u{index}.lean",
             first_add=dict(timestamp_utc=PRE,
@@ -148,11 +153,13 @@ def _gov_candidates(td, repo="mathlib4", n_targets=430):
         first_add_provenance_file_counts={
             "exact-add": len(targets), "no-add-pre-witness": 0},
         no_add_pre_witness_files=[],
+        lean_boundaries=boundary,
         n_candidates=len(targets), targets=targets,
         structural_evidence=dict(
             evidence_source_commit=EVIDENCE_SOURCE_COMMIT,
             cohort=dict(path="/x/cohort.json", sha256="c" * 64,
-                        schema="v2a_structural_cohort_v1")),
+                        schema="v2a_structural_cohort_v1"),
+            lean_boundaries=boundary),
         generator=dict(source_commit="a" * 40, source_tree_hash="b" * 64,
                        program="prepare_v2b_candidates.py"))
     path = os.path.join(td, "candidates.json")
@@ -201,10 +208,10 @@ def _gov_chain(td, deltas_fn, n_targets=430, fids=FIDS):
     rows = [[identity_key("lean", t["identity"]),
              deltas_fn(index, t)] for index, t in enumerate(pilot_rows)]
     assembly_sha = "a" * 64
-    run_identity = dict(paired_schema_version=1,
+    run_identity = dict(paired_schema_version=PAIRED_SCHEMA_VERSION,
                         manifest_sha256=assembly_sha, model="m",
                         revision="1" * 40, dtype="bfloat16")
-    run_sha = sha256_json(run_identity)
+    run_sha = sha256_sorted_json(run_identity)
     scored_generator = dict(source_commit="d" * 40,
                             source_tree_hash="e" * 64,
                             program="eval_paired.py")
@@ -236,8 +243,7 @@ def _gov_chain(td, deltas_fn, n_targets=430, fids=FIDS):
         bindings=dict(
             sample=dict(sha256=sample_sha),
             candidates=dict(sha256=candidates_sha),
-            assembly=dict(sha256=assembly_sha, schema="v2b_assembly_"
-                          "manifest_v1"),
+            assembly=dict(sha256=assembly_sha, schema=ASSEMBLY_SCHEMA),
             completion=dict(sha256=complete_sha,
                             schema=PAIRED_COMPLETE_SCHEMA),
             run_identity_sha256=run_sha,
@@ -407,7 +413,7 @@ def test_analyze_b3_chain_refusals():
             td, lambda index, t: 0.0)
         value = json.load(open(masked))
         value["run_identity"]["model"] = "forged"
-        value["bindings"]["run_identity_sha256"] = sha256_json(
+        value["bindings"]["run_identity_sha256"] = sha256_sorted_json(
             value["run_identity"])
         json.dump(value, open(masked, "w"))
         try:
@@ -419,7 +425,7 @@ def test_analyze_b3_chain_refusals():
     with tempfile.TemporaryDirectory() as td:
         def broken_manifest(value):
             value["run_identity"]["manifest_sha256"] = "9" * 64
-            value["bindings"]["run_identity_sha256"] = sha256_json(
+            value["bindings"]["run_identity_sha256"] = sha256_sorted_json(
                 value["run_identity"])
         masked_tamper(td, broken_manifest, "binding chain")
     with tempfile.TemporaryDirectory() as td:

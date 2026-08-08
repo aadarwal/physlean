@@ -22,10 +22,14 @@ from prepare_v2b_assembly import (B_STAR, K7_ORDER_RULE, build_assembly,
                                   materialize)
 from v2b_assemble import normalize_payload
 from v2b_common import (ASSEMBLY_SCHEMA, BOUND_SAMPLE_SCHEMA,
-                        CANDIDATES_SCHEMA, K7_ORDER_SCHEMA,
+                        A6_OUTCOME_SCHEMA, CANDIDATES_SCHEMA, K7_ORDER_SCHEMA,
                         LEAN_KEYWORD_FREEZE_SCHEMA, NEARDUP_SCHEMA,
                         V2BError, canonical_json_bytes, identity_key,
-                        seeded_hash, sha256_json)
+                        seeded_hash, sha256_json, sha256_sorted_json)
+from v2b_lean_boundaries import (BOUNDARIES_SCHEMA,
+                                 BOUNDARY_MANIFEST_SCHEMA,
+                                 BOUNDARY_MARKER,
+                                 BOUNDARY_RESULT_SCHEMA, span_id_of)
 from v2b_neardup import (lean_keyword_provenance_hash, lex_unit,
                          lexical_records, load_lean_keyword_freeze,
                          verbatim_hash)
@@ -43,6 +47,75 @@ def _write(path, text):
     with open(path, "w", encoding="utf-8") as fh:
         fh.write(text)
     return _sha(text.encode("utf-8"))
+
+
+def _boundaries(td, extraction, extraction_path,
+                name="boundaries.json"):
+    """Complete production-shaped parser overlay for a synthetic extraction."""
+    rows = {}
+    span_rows = {}
+    for file_row in extraction["files"]:
+        module = file_row["module"]
+        for decl_name, decl in file_row["decls"].items():
+            identity = [module, decl_name]
+            key = identity_key("lean", identity)
+            start, end = decl["start_byte"], decl["end_byte"]
+            split = decl["split_kind"]
+            sid = span_id_of(module, file_row["source_sha256"], start, end)
+            old = dict(header_bytes=decl["header_bytes"],
+                       body_bytes=decl["body_bytes"], split_kind=split)
+            if split is None:
+                row = dict(
+                    identity=identity, span_id=sid, module=module,
+                    source_sha256=file_row["source_sha256"],
+                    start_byte=start, end_byte=end,
+                    header_bytes=end - start, body_bytes=0,
+                    split_kind=None, status="unsplit",
+                    reason="no-canonical-candidate",
+                    syntax_kind="Lean.Parser.Command.declaration",
+                    n_candidate_starts_total=0, n_tested=0,
+                    n_untested_after_choice=0, rejected_starts=[],
+                    old_split=old, changed_vs_v3=False)
+            else:
+                row = dict(
+                    identity=identity, span_id=sid, module=module,
+                    source_sha256=file_row["source_sha256"],
+                    start_byte=start, end_byte=end,
+                    header_bytes=decl["header_bytes"],
+                    body_bytes=decl["body_bytes"], split_kind=split,
+                    status="resolved", reason=None,
+                    syntax_kind="Lean.Parser.Command.declaration",
+                    n_candidate_starts_total=1, n_tested=1,
+                    n_untested_after_choice=0, rejected_starts=[],
+                    old_split=old, changed_vs_v3=False)
+            rows[key] = row
+            span_rows.setdefault(sid, row)
+    rows = {key: rows[key] for key in sorted(rows)}
+    spans = list(span_rows.values())
+    artifact = dict(
+        schema=BOUNDARIES_SCHEMA, marker=BOUNDARY_MARKER,
+        repo=extraction["repo"],
+        extraction=dict(sha256=_sha(open(extraction_path, "rb").read()),
+                        schema=extraction["schema"]),
+        manifest=dict(sha256="a" * 64,
+                      schema=BOUNDARY_MANIFEST_SCHEMA),
+        result=dict(sha256="b" * 64, schema=BOUNDARY_RESULT_SCHEMA),
+        driver_sha256="c" * 64, invocation_sha256="d" * 64,
+        toolchain="leanprover/lean4:test",
+        n_identities=len(rows), n_spans=len(spans),
+        n_resolved_spans=sum(row["status"] == "resolved" for row in spans),
+        n_unsplit_spans=sum(row["status"] == "unsplit" for row in spans),
+        n_changed_spans_vs_v3=0,
+        n_unchanged_spans_vs_v3=len(spans), boundaries=rows,
+        boundaries_sha256=sha256_sorted_json(rows),
+        generator=dict(source_commit="e" * 40,
+                       source_tree_hash="f" * 64,
+                       program="v2b_lean_boundaries.py"))
+    path = os.path.join(td, name)
+    json.dump(artifact, open(path, "w"), sort_keys=True)
+    return path, dict(path=os.path.abspath(path),
+                      sha256=_sha(open(path, "rb").read()),
+                      schema=BOUNDARIES_SCHEMA), rows
 
 
 def _freeze(td):
@@ -77,11 +150,11 @@ def _outcome(td, jaccard="0.80", active_bands=(), name="outcome.json"):
             lean={band: dict(n_labeled=8, n_clones=8, active=True)
                   for band in active_bands},
             python={}))
-    value = dict(schema="v2b_a6_outcome_v1",
+    value = dict(schema=A6_OUTCOME_SCHEMA,
                  label_state="unblinded-from-committed-labels",
                  sampling_state="not-drawn",
                  outcomes=outcomes,
-                 outcomes_sha256=sha256_json(outcomes))
+                 outcomes_sha256=sha256_sorted_json(outcomes))
     path = os.path.join(td, name)
     json.dump(value, open(path, "w"))
     return path
@@ -153,7 +226,10 @@ def _lean_chain(td, jaccard="0.80", big_dep=False, external=True):
 
     def decl(spans, name, header, split=":=", shell=()):
         start, end = spans[name]
+        if split is None:
+            header = end - start
         return dict(start_byte=start, end_byte=end, header_bytes=header,
+                    body_bytes=end - start - header,
                     split_kind=split, shell=list(shell))
 
     b_decls = {
@@ -194,6 +270,8 @@ def _lean_chain(td, jaccard="0.80", big_dep=False, external=True):
     extraction_path = os.path.join(td, "extraction.json")
     json.dump(extraction, open(extraction_path, "w"))
     extraction_sha = _sha(open(extraction_path, "rb").read())
+    boundaries_path, boundary_binding, boundary_rows = _boundaries(
+        td, extraction, extraction_path)
 
     freeze_path = _freeze(td)
     _, freeze_binding = load_lean_keyword_freeze(freeze_path)
@@ -226,9 +304,18 @@ def _lean_chain(td, jaccard="0.80", big_dep=False, external=True):
     outcome_sha = _sha(open(outcome_path, "rb").read())
 
     candidates = dict(schema=CANDIDATES_SCHEMA, repo=repo,
+                      language="lean",
                       corpus_git_sha=corpus_sha,
                       extraction=dict(path=extraction_path,
-                                      sha256=extraction_sha))
+                                      sha256=extraction_sha),
+                      lean_boundaries=boundary_binding,
+                      structural_evidence=dict(
+                          lean_boundaries=boundary_binding),
+                      targets=[dict(
+                          identity=["M.A", "M.A.t"],
+                          source_rel="A.lean",
+                          body_bytes=boundary_rows[target_key]["body_bytes"],
+                          span_id=boundary_rows[target_key]["span_id"])])
     candidates_path = os.path.join(td, "candidates.json")
     json.dump(candidates, open(candidates_path, "w"))
     candidates_sha = _sha(open(candidates_path, "rb").read())
@@ -236,9 +323,15 @@ def _lean_chain(td, jaccard="0.80", big_dep=False, external=True):
     sample = dict(schema=BOUND_SAMPLE_SCHEMA, sampling_state="drawn",
                   n_requested_per_corpus=20,
                   a6_outcome=dict(sha256=outcome_sha),
+                  candidate_tables=[dict(
+                      repo=repo, sha256=candidates_sha,
+                      lean_boundaries=boundary_binding)],
                   plans={repo: dict(candidates_sha256=candidates_sha,
                                     targets=[dict(
-                                        identity=["M.A", "M.A.t"])])})
+                                        identity=["M.A", "M.A.t"],
+                                        span_id=boundary_rows[
+                                            target_key]["span_id"])])})
+    sample["plans_sha256"] = sha256_sorted_json(sample["plans"])
     sample_path = os.path.join(td, "sample.json")
     json.dump(sample, open(sample_path, "w"))
     k7_path = _k7_artifact(td, repo, "lean",
@@ -247,6 +340,7 @@ def _lean_chain(td, jaccard="0.80", big_dep=False, external=True):
     return dict(sample=sample_path, repo=repo, candidates=candidates_path,
                 extraction=extraction_path, neardup=neardup_path,
                 outcome=outcome_path, freeze=freeze_path, k7=k7_path,
+                boundaries=boundaries_path,
                 a_spans=a_spans, b_spans=b_spans, texts=texts,
                 c_text=c_text)
 
@@ -255,7 +349,8 @@ def _build(chain):
     return build_assembly(chain["sample"], chain["repo"],
                           chain["candidates"], chain["extraction"],
                           chain["neardup"], chain["outcome"],
-                          chain["freeze"], chain["k7"])
+                          chain["freeze"], chain["k7"],
+                          lean_boundaries_path=chain.get("boundaries"))
 
 
 def test_lean_manifest_end_to_end():
@@ -374,6 +469,42 @@ def test_binding_drift_fails_closed():
             assert False, "candidates drift accepted"
         except V2BError:
             pass
+
+
+def test_boundary_overlay_is_mandatory_lean_only_and_exact():
+    with tempfile.TemporaryDirectory() as td:
+        chain = _lean_chain(td)
+        try:
+            build_assembly(chain["sample"], chain["repo"],
+                           chain["candidates"], chain["extraction"],
+                           chain["neardup"], chain["outcome"],
+                           chain["freeze"], chain["k7"])
+            assert False, "Lean assembly accepted no boundary overlay"
+        except V2BError as err:
+            assert "boundary" in str(err).lower()
+        copied = os.path.join(td, "copied-boundaries.json")
+        json.dump(json.load(open(chain["boundaries"])), open(copied, "w"),
+                  sort_keys=True)
+        try:
+            build_assembly(chain["sample"], chain["repo"],
+                           chain["candidates"], chain["extraction"],
+                           chain["neardup"], chain["outcome"],
+                           chain["freeze"], chain["k7"],
+                           lean_boundaries_path=copied)
+            assert False, "same-content but differently bound overlay accepted"
+        except V2BError as err:
+            assert "exact" in str(err).lower()
+    with tempfile.TemporaryDirectory() as td:
+        chain = _python_chain(td)
+        try:
+            build_assembly(chain["sample"], chain["repo"],
+                           chain["candidates"], chain["extraction"],
+                           chain["neardup"], chain["outcome"], None,
+                           chain["k7"],
+                           lean_boundaries_path=chain["outcome"])
+            assert False, "Python assembly accepted a Lean overlay"
+        except V2BError as err:
+            assert "forbid" in str(err).lower()
     with tempfile.TemporaryDirectory() as td:
         chain = _lean_chain(td)
         value = json.load(open(chain["neardup"]))
@@ -389,7 +520,7 @@ def test_binding_drift_fails_closed():
         _outcome(td, jaccard="0.80", name="outcome.json")   # rewrite bytes
         value = json.load(open(chain["outcome"]))
         value["outcomes"]["jaccard"]["lean"]["outcome"] = "0.90"
-        value["outcomes_sha256"] = sha256_json(value["outcomes"])
+        value["outcomes_sha256"] = sha256_sorted_json(value["outcomes"])
         json.dump(value, open(chain["outcome"], "w"))
         try:
             _build(chain)
@@ -402,7 +533,8 @@ def test_binding_drift_fails_closed():
             build_assembly(chain["sample"], chain["repo"],
                            chain["candidates"], chain["extraction"],
                            chain["neardup"], chain["outcome"], None,
-                           chain["k7"])
+                           chain["k7"],
+                           lean_boundaries_path=chain["boundaries"])
             assert False, "lean assembly without keyword freeze accepted"
         except V2BError:
             pass
@@ -412,7 +544,8 @@ def test_binding_drift_fails_closed():
             build_assembly(chain["sample"], chain["repo"],
                            chain["candidates"], chain["extraction"],
                            chain["neardup"], chain["outcome"],
-                           chain["freeze"], None)
+                           chain["freeze"], None,
+                           lean_boundaries_path=chain["boundaries"])
             assert False, "assembly without the k7 order accepted"
         except V2BError:
             pass
@@ -629,7 +762,8 @@ def test_materialize_round_trip():
         blobs = materialize(manifest_path, chain["sample"], chain["repo"],
                             chain["candidates"], chain["extraction"],
                             chain["neardup"], chain["outcome"],
-                            chain["freeze"], chain["k7"])
+                            chain["freeze"], chain["k7"],
+                            lean_boundaries_path=chain["boundaries"])
         target_key = identity_key("lean", ["M.A", "M.A.t"])
         row = manifest["targets"][0]
         blob = blobs[target_key]
@@ -656,7 +790,8 @@ def test_materialize_round_trip():
             materialize(tampered_path, chain["sample"], chain["repo"],
                         chain["candidates"], chain["extraction"],
                         chain["neardup"], chain["outcome"],
-                        chain["freeze"], chain["k7"])
+                        chain["freeze"], chain["k7"],
+                        lean_boundaries_path=chain["boundaries"])
             assert False, "tampered manifest materialized"
         except V2BError:
             pass
@@ -715,18 +850,26 @@ def _python_chain(td, big=False):
     outcome_path = _outcome(td)
     outcome_sha = _sha(open(outcome_path, "rb").read())
     candidates = dict(schema=CANDIDATES_SCHEMA, repo=repo,
+                      language="python",
                       corpus_git_sha=corpus_sha,
                       extraction=dict(path=extraction_path,
-                                      sha256=extraction_sha))
+                                      sha256=extraction_sha),
+                      lean_boundaries=None,
+                      structural_evidence=dict(lean_boundaries=None),
+                      targets=[dict(identity=["pkg.a", "f", 0])])
     candidates_path = os.path.join(td, "candidates.json")
     json.dump(candidates, open(candidates_path, "w"))
     candidates_sha = _sha(open(candidates_path, "rb").read())
     sample = dict(schema=BOUND_SAMPLE_SCHEMA, sampling_state="drawn",
                   n_requested_per_corpus=20,
                   a6_outcome=dict(sha256=outcome_sha),
+                  candidate_tables=[dict(
+                      repo=repo, sha256=candidates_sha,
+                      lean_boundaries=None)],
                   plans={repo: dict(
                       candidates_sha256=candidates_sha,
                       targets=[dict(identity=["pkg.a", "f", 0])])})
+    sample["plans_sha256"] = sha256_sorted_json(sample["plans"])
     sample_path = os.path.join(td, "sample.json")
     json.dump(sample, open(sample_path, "w"))
     k7_path = _k7_artifact(td, repo, "python",
@@ -890,7 +1033,8 @@ def _physlib_chain(td, jaccard="0.80", active_bands=()):
 
     def decl(start, text, header, shell=()):
         return dict(start_byte=start, end_byte=start + len(text),
-                    header_bytes=header, split_kind=":=",
+                    header_bytes=header,
+                    body_bytes=len(text) - header, split_kind=":=",
                     shell=list(shell))
 
     physlib_extraction = dict(
@@ -943,6 +1087,9 @@ def _physlib_chain(td, jaccard="0.80", active_bands=()):
     physlib_extraction_path = os.path.join(td, "extraction.json")
     json.dump(physlib_extraction, open(physlib_extraction_path, "w"))
     extraction_sha = _sha(open(physlib_extraction_path, "rb").read())
+    boundaries_path, boundary_binding, boundary_rows = _boundaries(
+        td, physlib_extraction, physlib_extraction_path,
+        name="physlib_boundaries.json")
     external_extraction_path = os.path.join(td, "external_extraction.json")
     json.dump(external_extraction, open(external_extraction_path, "w"))
 
@@ -976,18 +1123,40 @@ def _physlib_chain(td, jaccard="0.80", active_bands=()):
                             active_bands=active_bands)
     outcome_sha = _sha(open(outcome_path, "rb").read())
     candidates = dict(schema=CANDIDATES_SCHEMA, repo=repo,
+                      language="lean",
                       corpus_git_sha=corpus_sha,
                       extraction=dict(path=physlib_extraction_path,
-                                      sha256=extraction_sha))
+                                      sha256=extraction_sha),
+                      lean_boundaries=boundary_binding,
+                      structural_evidence=dict(
+                          lean_boundaries=boundary_binding),
+                      targets=[dict(
+                          identity=["Physlib.P", "Physlib.P.t"],
+                          source_rel="P.lean",
+                          body_bytes=boundary_rows[identity_key(
+                              "lean", ["Physlib.P", "Physlib.P.t"])][
+                                  "body_bytes"],
+                          span_id=boundary_rows[identity_key(
+                              "lean", ["Physlib.P", "Physlib.P.t"])][
+                                  "span_id"])])
     candidates_path = os.path.join(td, "candidates.json")
     json.dump(candidates, open(candidates_path, "w"))
     candidates_sha = _sha(open(candidates_path, "rb").read())
     sample = dict(schema=BOUND_SAMPLE_SCHEMA, sampling_state="drawn",
                   n_requested_per_corpus=20,
                   a6_outcome=dict(sha256=outcome_sha),
+                  candidate_tables=[dict(
+                      repo=repo, sha256=candidates_sha,
+                      lean_boundaries=boundary_binding)],
                   plans={repo: dict(candidates_sha256=candidates_sha,
-                                    targets=[dict(identity=[
-                                        "Physlib.P", "Physlib.P.t"])])})
+                                    targets=[dict(
+                                        identity=["Physlib.P",
+                                                  "Physlib.P.t"],
+                                        span_id=boundary_rows[identity_key(
+                                            "lean", ["Physlib.P",
+                                                     "Physlib.P.t"])][
+                                                         "span_id"])])})
+    sample["plans_sha256"] = sha256_sorted_json(sample["plans"])
     sample_path = os.path.join(td, "sample.json")
     json.dump(sample, open(sample_path, "w"))
     k7_path = _k7_artifact(td, repo, "lean",
@@ -995,7 +1164,8 @@ def _physlib_chain(td, jaccard="0.80", active_bands=()):
     return dict(sample=sample_path, repo=repo, candidates=candidates_path,
                 extraction=physlib_extraction_path, neardup=neardup_path,
                 outcome=outcome_path, freeze=freeze_path, k7=k7_path,
-                k4x=k4x_path, external=external_extraction_path)
+                k4x=k4x_path, external=external_extraction_path,
+                boundaries=boundaries_path)
 
 
 def _build_physlib(chain):
@@ -1003,7 +1173,8 @@ def _build_physlib(chain):
                           chain["candidates"], chain["extraction"],
                           chain["neardup"], chain["outcome"],
                           chain["freeze"], chain["k7"],
-                          chain["k4x"], chain["external"])
+                          chain["k4x"], chain["external"],
+                          lean_boundaries_path=chain["boundaries"])
 
 
 def test_k4x_combined_graph_and_cross_screening():
@@ -1056,7 +1227,8 @@ def test_k4x_materializes_with_snapshot_banners():
                             chain["candidates"], chain["extraction"],
                             chain["neardup"], chain["outcome"],
                             chain["freeze"], chain["k7"],
-                            chain["k4x"], chain["external"])
+                            chain["k4x"], chain["external"],
+                            chain["boundaries"])
         row = manifest["targets"][0]
         blob = blobs[identity_key("lean", ["Physlib.P", "Physlib.P.t"])]
         context = blob["k4x:65536"]
@@ -1075,7 +1247,8 @@ def test_k4x_gate_fails_closed():
             build_assembly(chain["sample"], chain["repo"],
                            chain["candidates"], chain["extraction"],
                            chain["neardup"], chain["outcome"],
-                           chain["freeze"], chain["k7"])
+                           chain["freeze"], chain["k7"],
+                           lean_boundaries_path=chain["boundaries"])
             assert False, "physlib assembly without k4x accepted"
         except V2BError as err:
             assert "hard gate" in str(err)
@@ -1087,7 +1260,8 @@ def test_k4x_gate_fails_closed():
                            chain["candidates"], chain["extraction"],
                            chain["neardup"], chain["outcome"],
                            chain["freeze"], chain["k7"],
-                           os.path.join(td, "k4x.json"), chain["neardup"])
+                           os.path.join(td, "k4x.json"), chain["neardup"],
+                           lean_boundaries_path=chain["boundaries"])
             assert False, "k4x inputs for non-physlib corpus accepted"
         except V2BError as err:
             assert "physlib-only" in str(err)
