@@ -595,6 +595,16 @@ arxiv_manifest) must be committed before measurement.
   interpretation: absolute BPB carries the frozen chunk shape as
   part of measurement identity; all within-grid comparisons share
   it, and cross-study comparisons must note it.
+- ADOPTED (G3a scheduler-envelope repair, before any sentinel
+  allocation or model outcome): the first sentinel `sbatch` was
+  rejected because `mit_normal_gpu` has `MaxTime=06:00:00` while the
+  shared Phase-1 script requested 08:00:00. No job was created and no
+  cell artifact was written. The launcher now passes explicit
+  partition-valid walltimes: 06:00:00 for every normal/L40S shard and
+  the original 08:00:00 for preemptable/H200 shards (whose partition
+  permits up to two days); the script default is 06:00:00. This is an
+  orchestration-only repair, but the strict source-tree identity moves,
+  so the short validity battery is rerun before G3a submission.
 - ADOPTED (item-A FOLLOW-UP falsifier after diagnostic 19903226, still
   before any grid outcome): the first diagnostic HARD-STOPPED per its
   frozen rule — oracle, cache_position, and repeat PASSED while ALL 12

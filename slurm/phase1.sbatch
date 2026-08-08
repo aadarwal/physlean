@@ -3,9 +3,10 @@
 #SBATCH -o logs/slurm-%x-%j.out
 #SBATCH -c 8
 #SBATCH --mem=80G
-#SBATCH -t 08:00:00
+#SBATCH -t 06:00:00
 #SBATCH --requeue
-# Submit with:  sbatch -p <part> --gres=gpu:<type>:1 \
+# Submit with:  sbatch -p <part> --time=<partition-valid-limit> \
+#   --gres=gpu:<type>:1 \
 #   --export=ALL,MODELS=<short,short,...> slurm/phase1.sbatch
 # Cells are skipped once their .meta.json exists -> requeue/resubmit is safe.
 set -euo pipefail

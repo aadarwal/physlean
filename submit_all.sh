@@ -13,7 +13,12 @@ cd "$(dirname "$0")"
 mkdir -p logs
 
 SUBMIT_FAIL=0
-P1() { sbatch -p "$1" --gres="$2" --export=ALL,MODELS="$3" slurm/phase1.sbatch \
+# mit_normal_gpu currently caps jobs at 6h; mit_preemptable permits the
+# 8h big-rung envelope. Pass walltime explicitly so the shared sbatch file
+# is valid on both partitions (an 8h script directive was rejected before
+# allocation at the first G3a submission boundary).
+P1() { sbatch -p "$1" --time="$4" --gres="$2" \
+  --export=ALL,MODELS="$3" slurm/phase1.sbatch \
   || { echo "SBATCH-FAILED for $3"; SUBMIT_FAIL=1; }; }
 
 # parse mode FIRST, then run the gate matching the mode (review fix:
@@ -53,17 +58,18 @@ fi
 
 if [ "$MODE" = "sentinel" ]; then
   echo "[G3a] sentinel: q25c-0.5b only — stop/go on instrument viability"
-  P1 mit_normal_gpu gpu:l40s:1 "q25c-0.5b"
+  P1 mit_normal_gpu gpu:l40s:1 "q25c-0.5b" 06:00:00
 elif [ "$MODE" = "smallmid" ]; then
-  P1 mit_normal_gpu gpu:l40s:1 "q25c-7b,q25c-3b"
-  P1 mit_normal_gpu gpu:l40s:1 "q25c-0.5b,q25c-1.5b"
-  P1 mit_normal_gpu gpu:l40s:1 "q3-0.6b,q3-1.7b,q3-4b,sc2-3b"
-  P1 mit_normal_gpu gpu:l40s:1 "q35-0.8b,q35-2b,q35-4b"
+  P1 mit_normal_gpu gpu:l40s:1 "q25c-7b,q25c-3b" 06:00:00
+  P1 mit_normal_gpu gpu:l40s:1 "q25c-0.5b,q25c-1.5b" 06:00:00
+  P1 mit_normal_gpu gpu:l40s:1 "q3-0.6b,q3-1.7b,q3-4b,sc2-3b" 06:00:00
+  P1 mit_normal_gpu gpu:l40s:1 "q35-0.8b,q35-2b,q35-4b" 06:00:00
 fi
 
 if [ "$DO_BIG" -eq 1 ]; then
-  P1 mit_preemptable gpu:h200:1 "q25c-14b,q25c-32b,dsc2-lite,q35-2b-131k"
-  P1 mit_preemptable gpu:h200:1 "q3-8b,q3-14b,q35-9b"
+  P1 mit_preemptable gpu:h200:1 \
+    "q25c-14b,q25c-32b,dsc2-lite,q35-2b-131k" 08:00:00
+  P1 mit_preemptable gpu:h200:1 "q3-8b,q3-14b,q35-9b" 08:00:00
 fi
 
 squeue -u "$USER" -o "%.10i %.14j %.12P %.8T %.10M %R"

@@ -19,6 +19,28 @@ def test_production_chunk_is_single_frozen_identity():
     assert '"--chunk", str(PRODUCTION_CHUNK_TOKENS)' in src
 
 
+def test_partition_walltimes_are_submission_explicit():
+    """The shared Phase-1 script must fit mit_normal_gpu's 6h cap while
+    submit_all preserves the preregistered 8h envelope on preemptable H200s."""
+    root = os.path.dirname(os.path.dirname(__file__))
+    sbatch = open(os.path.join(root, "slurm", "phase1.sbatch"),
+                  encoding="utf-8").read()
+    submit = open(os.path.join(root, "submit_all.sh"),
+                  encoding="utf-8").read()
+    assert "#SBATCH -t 06:00:00" in sbatch
+    assert 'sbatch -p "$1" --time="$4"' in submit
+    normal = [ln for ln in submit.splitlines()
+              if ln.strip().startswith("P1 mit_normal_gpu")]
+    assert len(normal) == 5 and all(ln.endswith("06:00:00") for ln in normal)
+    flat = " ".join(submit.replace("\\", " ").split())
+    assert flat.count("P1 mit_preemptable") == 2
+    assert ('P1 mit_preemptable gpu:h200:1 '
+            '"q25c-14b,q25c-32b,dsc2-lite,q35-2b-131k" 08:00:00'
+            in flat)
+    assert ('P1 mit_preemptable gpu:h200:1 '
+            '"q3-8b,q3-14b,q35-9b" 08:00:00' in flat)
+
+
 def mkfiles(sizes):
     return [dict(rel=f"f{i:03d}.lean", bytes=s, text="x" * s, date=None)
             for i, s in enumerate(sizes)]
