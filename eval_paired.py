@@ -247,45 +247,46 @@ def _utf8(blob, label):
         raise V2BError(f"{label} is not UTF-8: {err}") from err
 
 
-def _bound_blob(blob, row, label):
-    """Rehash one materialized component against its manifest row."""
+def _context_row(row, label):
+    """Validate and return the immutable context metadata in one row."""
     if not isinstance(row, dict) \
             or not isinstance(row.get("context_bytes"), int) \
             or isinstance(row.get("context_bytes"), bool) \
+            or row["context_bytes"] < 0 \
             or not _hex(row.get("context_sha256")):
         raise V2BError(f"malformed assembly context row for {label}")
+    return dict(context_sha256=row["context_sha256"],
+                context_bytes=row["context_bytes"],
+                eligible=row.get("eligible"),
+                cell_manifest_sha256=sha256_json(row))
+
+
+def _bound_blob(blob, row, label):
+    """Rehash one materialized component against its manifest row."""
+    metadata = _context_row(row, label)
     if len(blob) != row["context_bytes"] \
             or sha256_bytes(blob) != row["context_sha256"]:
         raise V2BError(f"materialized context drift for {label}")
+    return metadata
 
 
-def target_cell_specs(target, blobs):
-    """Return every NLL cell frozen into one assembly target.
-
-    The concrete byte strings come only from ``materialize``.  The manifest
-    supplies their identity/eligibility metadata and is independently hashed
-    into every output row.
-    """
-    if not isinstance(target, dict) or not isinstance(blobs, dict):
-        raise V2BError("malformed assembly target/materialization")
+def _target_cell_rows(target):
+    """Enumerate the exact manifest rows/roles for one target, without
+    reading materialized bytes. Shared by fresh scoring and resume audit so
+    the two paths cannot silently disagree about the required cell grid."""
+    if not isinstance(target, dict):
+        raise V2BError("malformed assembly target")
     arms = target.get("arms")
     if not isinstance(arms, dict):
         raise V2BError("assembly target lacks arms")
-    specs = []
+    rows = []
 
     def add(arm, collect_key, row, budget=None, seed=None,
             estimand_role="primary-grid"):
-        if collect_key not in blobs:
-            raise V2BError(f"materialization lacks {collect_key}")
-        context = blobs[collect_key]
-        _bound_blob(context, row, collect_key)
-        specs.append(dict(
+        metadata = _context_row(row, collect_key)
+        rows.append(dict(
             cell_id=collect_key, arm=arm, budget_bytes=budget, seed=seed,
-            estimand_role=estimand_role, context=context,
-            context_sha256=row["context_sha256"],
-            context_bytes=row["context_bytes"],
-            eligible=row.get("eligible"),
-            cell_manifest_sha256=sha256_json(row)))
+            estimand_role=estimand_role, row=row, **metadata))
 
     add("k1", "k1", arms.get("k1"), estimand_role="absence")
     for arm in ("k2", "k3", "k4"):
@@ -295,7 +296,11 @@ def target_cell_specs(target, blobs):
     k5 = arms.get("k5")
     if not isinstance(k5, dict):
         raise V2BError("assembly target lacks k5 seeds")
-    for seed in sorted(k5, key=int):
+    try:
+        seeds = sorted(k5, key=int)
+    except (TypeError, ValueError) as err:
+        raise V2BError("assembly target has a non-integer k5 seed") from err
+    for seed in seeds:
         seed_row = k5[seed]
         cells = seed_row.get("cells") if isinstance(seed_row, dict) else None
         role = "primary-grid" if int(seed) == 0 else "seed-sensitivity"
@@ -314,9 +319,33 @@ def target_cell_specs(target, blobs):
     for arm in ("k3s", "k4s"):
         row = arms.get(arm)
         if row:
-            add(arm, arm, row, estimand_role="same-dependency-sensitivity")
-    if len({row["cell_id"] for row in specs}) != len(specs):
+            add(arm, arm, row,
+                estimand_role="same-dependency-sensitivity")
+    if len({row["cell_id"] for row in rows}) != len(rows):
         raise AssertionError("duplicate paired cell id")
+    return rows
+
+
+def target_cell_specs(target, blobs):
+    """Return every NLL cell frozen into one assembly target.
+
+    The concrete byte strings come only from ``materialize``.  The manifest
+    supplies their identity/eligibility metadata and is independently hashed
+    into every output row.
+    """
+    if not isinstance(blobs, dict):
+        raise V2BError("malformed assembly target/materialization")
+    specs = []
+    for description in _target_cell_rows(target):
+        collect_key = description["cell_id"]
+        if collect_key not in blobs:
+            raise V2BError(f"materialization lacks {collect_key}")
+        context = blobs[collect_key]
+        _bound_blob(context, description["row"], collect_key)
+        spec = {key: value for key, value in description.items()
+                if key != "row"}
+        spec["context"] = context
+        specs.append(spec)
     return specs
 
 
@@ -467,16 +496,61 @@ def _check_guard(source_hash, harness, environment, manifest_path,
         raise V2BError("assembly manifest changed during evaluation")
 
 
-def _existing_target(path, run_sha, target_key):
+def _existing_target(path, run_identity, run_sha, manifest,
+                     manifest_binding, target, target_index,
+                     source_commit, source_hash):
+    """Revalidate a completed target before a requeue/resubmit trusts it.
+
+    Atomic publication prevents partial JSON, but it does not make a stale
+    or manually copied target compatible. Bind the whole target identity and
+    required manifest cell grid here; the completion artifact then binds this
+    file's SHA256.
+    """
     value, digest = load_json(path, TARGET_SCHEMA)
-    if value.get("run_identity_sha256") != run_sha \
-            or value.get("target_key") != target_key \
-            or value.get("n_cells") != len(value.get("cells", [])) \
-            or value.get("ast_class_state") != AST_CLASS_STATE:
+    cells = value.get("cells")
+    generator = value.get("generator")
+    common_ok = value.get("paired_schema_version") == \
+        PAIRED_SCHEMA_VERSION \
+        and value.get("run_identity") == run_identity \
+        and value.get("run_identity_sha256") == run_sha \
+        and value.get("repo") == manifest.get("repo") \
+        and value.get("language") == manifest.get("language") \
+        and value.get("corpus_git_sha") == manifest.get("corpus_git_sha") \
+        and value.get("assembly_manifest") == manifest_binding \
+        and value.get("assembly_target_sha256") == sha256_json(target) \
+        and value.get("target_index") == target_index \
+        and value.get("target_identity") == target.get("identity") \
+        and value.get("target_key") == target.get("key") \
+        and value.get("prefix_sha256") == target.get("prefix_sha256") \
+        and value.get("prefix_bytes") == target.get("prefix_bytes") \
+        and value.get("body_sha256") == target.get("body_sha256") \
+        and value.get("body_bytes") == target.get("body_bytes") \
+        and _hex(value.get("boundary_signature")) \
+        and _hex(value.get("body_layout_signature")) \
+        and value.get("ast_class_state") == AST_CLASS_STATE \
+        and value.get("empty_cell_arms") == empty_cell_arms(target) \
+        and isinstance(generator, dict) \
+        and generator == dict(source_commit=source_commit,
+                              source_tree_hash=source_hash,
+                              program="eval_paired.py") \
+        and isinstance(cells, list) \
+        and value.get("n_cells") == len(cells)
+    if not common_ok:
         raise V2BError(f"existing paired target artifact is incompatible: "
                        f"{path}")
+
+    expected = []
+    for row in _target_cell_rows(target):
+        expected.append({key: value for key, value in row.items()
+                         if key != "row"})
+    metadata_fields = tuple(expected[0]) if expected else ()
+    observed = [{key: cell.get(key) for key in metadata_fields}
+                if isinstance(cell, dict) else None for cell in cells]
+    if not expected or observed != expected:
+        raise V2BError(f"existing paired target cell grid is incompatible: "
+                       f"{path}")
     return dict(path=os.path.abspath(path), sha256=digest,
-                target_key=target_key, n_cells=value["n_cells"])
+                target_key=target["key"], n_cells=value["n_cells"])
 
 
 def evaluate(args):
@@ -528,7 +602,9 @@ def evaluate(args):
             raise V2BError(f"manifest target[{index}] lacks a key")
         path = os.path.join(args.out_dir, f"target-{index:04d}.json")
         if os.path.exists(path):
-            bindings[index] = _existing_target(path, run_sha, key)
+            bindings[index] = _existing_target(
+                path, run_identity, run_sha, manifest, manifest_binding,
+                target, index, source_commit, source_hash)
         else:
             missing.append((index, target, path))
 

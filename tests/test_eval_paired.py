@@ -217,6 +217,81 @@ def test_target_cell_specs_fails_on_missing_or_tampered_blob():
             assert "drift" in str(err)
 
 
+def test_target_cell_specs_rejects_negative_context_bytes():
+    with tempfile.TemporaryDirectory() as td:
+        target, blob = _materialized_fixture(td)
+        target["arms"]["k1"]["context_bytes"] = -1
+        try:
+            target_cell_specs(target, blob)
+            assert False, "negative manifest byte count accepted"
+        except V2BError as err:
+            assert "malformed assembly context row" in str(err)
+
+
+def test_existing_target_requires_exact_resume_identity_and_cell_grid():
+    """A pre-existing atomic target is reusable only when it is the exact
+    artifact this invocation would have produced. In particular, a copied
+    target with the same key/run SHA but a drifted cell grid must not be
+    silently counted as complete."""
+    with tempfile.TemporaryDirectory() as td:
+        chain = _lean_chain(td)
+        manifest = _build(chain)
+        target = manifest["targets"][0]
+        run_identity = {"sealed": "test-run"}
+        run_sha = paired.sha256_json(run_identity)
+        manifest_binding = dict(
+            path=os.path.join(td, "manifest.json"),
+            sha256="a" * 64, schema=paired.ASSEMBLY_SCHEMA)
+        source_commit = "b" * 40
+        source_hash = "c" * 64
+        cells = []
+        for description in paired._target_cell_rows(target):
+            cells.append({key: value for key, value in description.items()
+                          if key != "row"})
+        artifact = dict(
+            schema=paired.TARGET_SCHEMA,
+            paired_schema_version=paired.PAIRED_SCHEMA_VERSION,
+            run_identity=run_identity, run_identity_sha256=run_sha,
+            repo=manifest["repo"], language=manifest["language"],
+            corpus_git_sha=manifest["corpus_git_sha"],
+            assembly_manifest=manifest_binding,
+            assembly_target_sha256=paired.sha256_json(target),
+            target_index=0, target_identity=target["identity"],
+            target_key=target["key"],
+            prefix_sha256=target["prefix_sha256"],
+            prefix_bytes=target["prefix_bytes"],
+            body_sha256=target["body_sha256"],
+            body_bytes=target["body_bytes"],
+            boundary_signature="d" * 64,
+            body_layout_signature="e" * 64,
+            ast_class_state=paired.AST_CLASS_STATE,
+            empty_cell_arms=empty_cell_arms(target),
+            n_cells=len(cells), cells=cells,
+            generator=dict(source_commit=source_commit,
+                           source_tree_hash=source_hash,
+                           program="eval_paired.py"))
+        path = os.path.join(td, "target.json")
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(artifact, fh)
+
+        accepted = paired._existing_target(
+            path, run_identity, run_sha, manifest, manifest_binding,
+            target, 0, source_commit, source_hash)
+        assert accepted["target_key"] == target["key"]
+        assert accepted["n_cells"] == len(cells)
+
+        artifact["cells"][0]["context_sha256"] = "f" * 64
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(artifact, fh)
+        try:
+            paired._existing_target(
+                path, run_identity, run_sha, manifest, manifest_binding,
+                target, 0, source_commit, source_hash)
+            assert False, "drifted resume cell grid accepted"
+        except V2BError as err:
+            assert "cell grid is incompatible" in str(err)
+
+
 def test_target_cell_specs_includes_ineligible_empty_cells():
     """The §3/§15.A4 empty-rendering representation reaches the evaluator:
     empty arms contribute their full budget grid as eligible=false cells
