@@ -554,6 +554,14 @@ arxiv_manifest) must be committed before measurement.
   environment. These checks are CPU-only structural validation, not a
   scored pilot result; the validation report remains gate_complete=false
   until their reports are combined and reviewed.
+  FOLLOW-UP ADOPTED same day, still pre-outcome: each selected Python
+  target receives the analogous unchanged-file plus boundary-marked
+  `py_compile` audit under the locked Python binary (comment marker for
+  indented suites, inert string statement for one-line suites; imports
+  and target code are never executed). Python closure verification is
+  explicitly NOT-APPLICABLE as an exact check: §14.4's AST closure is
+  best-effort and its declaration-resolution coverage remains the
+  reported diagnostic rather than being relabeled elaborator truth.
 - ADOPTED (V2-a Lean source-renderability amendment, 2026-08-08,
   PRE-OUTCOME — compiler-core machinery audit only, no study-corpus or
   model outcome): the first module-qualified live sweep left 123,621
