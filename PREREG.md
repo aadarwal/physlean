@@ -549,8 +549,8 @@ arxiv_manifest) must be committed before measurement.
   required for each selected Lean target: (1) a stdlib-only raw-.ilean
   parser, sharing no extractor code, must reproduce the exact resolved /
   external / unrenderable partition and occurrence counts; (2) the
-  unchanged file and a full-source copy with an inert comment inserted
-  at the extracted body boundary must both compile in the pinned Lake
+  unchanged file and a full-source copy with a layout-safe comment/newline
+  marker at the extracted body boundary must both compile in the pinned Lake
   environment. These checks are CPU-only structural validation, not a
   scored pilot result; the validation report remains gate_complete=false
   until their reports are combined and reviewed.
@@ -623,6 +623,23 @@ arxiv_manifest) must be committed before measurement.
   `ec2279ef1b8c171996f020f6acf5b5d9847ad2e910e538b3142686909bb9bbc6`).
   Failed job-scoped artifacts remain quarantined as diagnostic evidence and
   are never relabeled complete.
+- ADOPTED (second live V2-a Lean structural-array incident, job 19914765,
+  2026-08-08, PRE-OUTCOME — CPU-only boundary audit, no model score or pilot
+  draw): mathlib and PhysLib completed, while Batteries failed closed at
+  17/20 boundary compiles. All three failures (`List.fillNones`,
+  `Substring.Raw.Valid.prev`, `RBTree.RBNode.foldl`) were equation-style
+  declarations. Their unchanged source controls compiled; the marked copies
+  reported missing cases followed by an unexpected next `|`. Byte inspection
+  showed that the extracted boundary was correctly the first depth-zero body
+  bar, but the old same-line block comment shifted that bar to a later
+  PHYSICAL COLUMN, so it was not inert under Lean's layout grammar. The audit
+  marker now ends its line and restores the exact original indentation when
+  the delimiter begins an otherwise-whitespace layout line; an inline
+  delimiter is moved to a two-space continuation line. Regression tests cover
+  both forms. Job 19914765_1 remains diagnostic-only and no completion
+  envelope exists for it. The corrected audit is first replayed on the same
+  frozen 20 targets, then all five structural jobs are rerun under one source
+  commit so the final gate never mixes evidence cohorts.
 - ADOPTED (V2-a docstring-asymmetry amendment, 2026-08-08, PRE-OUTCOME
   — no scored pilot output exists; from the adversarial read-only
   review of the extractors): Python docstrings are literal expressions

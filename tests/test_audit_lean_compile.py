@@ -7,7 +7,7 @@ import sys
 import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from audit_lean_compile import MARKER, audit
+from audit_lean_compile import MARKER, _marked_source, audit
 
 
 def _fixture(td):
@@ -78,6 +78,38 @@ def test_marker_compile_failure_is_counted():
         assert report["summary"]["standalone_compile"] == "FAIL"
         assert report["summary"]["n_failed"] == 2
         assert all(not t["passed"] for t in report["targets"])
+
+
+def test_equation_marker_preserves_body_delimiter_indentation():
+    source = (b"def f : Nat -> Nat\n"
+              b"  | 0 => 0\n"
+              b"  | n => n\n")
+    boundary = source.index(b"|")
+    marked, insertion, mode, indent = _marked_source(source, boundary)
+    assert mode == "layout-line-indentation-preserved"
+    assert indent == 2
+    assert marked == source[:boundary] + insertion + source[boundary:]
+    assert b"  " + MARKER + b"\n  | 0 => 0" in marked
+
+
+def test_inline_delimiter_marker_uses_continuation_line():
+    source = b"def f : Nat := 1\n"
+    boundary = source.index(b":=")
+    marked, insertion, mode, indent = _marked_source(source, boundary)
+    assert mode == "inline-delimiter-to-continuation-line"
+    assert indent == 2
+    assert marked == source[:boundary] + insertion + source[boundary:]
+    assert marked == b"def f : Nat " + MARKER + b"\n  := 1\n"
+
+
+def test_inline_marker_indent_is_relative_to_declaration_layout():
+    source = b"  def f : Nat := 1\n"
+    boundary = source.index(b":=")
+    marked, insertion, mode, indent = _marked_source(source, boundary)
+    assert mode == "inline-delimiter-to-continuation-line"
+    assert indent == 4
+    assert marked == source[:boundary] + insertion + source[boundary:]
+    assert marked == b"  def f : Nat " + MARKER + b"\n    := 1\n"
 
 
 def test_work_directory_outside_lake_root_fails_closed():

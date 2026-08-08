@@ -3,10 +3,14 @@
 
 For each selected target, compile the unchanged source once as an environment
 control, then compile a full-source copy containing an inert Lean block comment
-inserted exactly at the extracted header/body byte boundary. A passing marker
-compile shows that the recorded boundary is a valid token boundary in the
-target's real file environment. This is structural validation only; it does not
-run a language model or claim the extracted prompt fragment elaborates alone.
+at the extracted header/body byte boundary.  The marker ends its line and the
+body delimiter is placed at its original indentation when the boundary already
+starts a layout line.  This matters for equation-style declarations: an inline
+comment before their first ``|`` changes that token's physical column and is
+not layout-inert.  A passing marker compile shows that the recorded boundary is
+a valid token boundary in the target's real file environment. This is
+structural validation only; it does not run a language model or claim the
+extracted prompt fragment elaborates alone.
 """
 import argparse
 import hashlib
@@ -20,7 +24,7 @@ import tempfile
 
 EXTRACT_SCHEMA = "v2a_lean_extract_v3"
 AUDIT_SCHEMA = "v2a_lean_boundary_compile_audit_v1"
-MARKER = b" /- V2A_BODY_BOUNDARY -/ "
+MARKER = b"/- V2A_BODY_BOUNDARY -/"
 
 
 class CompileAuditError(RuntimeError):
@@ -68,6 +72,43 @@ def _compile_one(lake, repo_root, source, out_stem, timeout, runner):
                 outputs_ok=outputs_ok,
                 stdout_tail=_tail(proc.stdout), stderr_tail=_tail(proc.stderr),
                 pass_compile=(proc.returncode == 0 and outputs_ok))
+
+
+def _marked_source(source, boundary):
+    """Insert a visible boundary marker without shifting Lean layout.
+
+    If the delimiter begins on an otherwise-whitespace line, reproduce that
+    exact indentation after the marker newline.  If it begins later on a
+    header line (normally ``:=`` or ``where``), move it two spaces beyond
+    that line's leading indentation.  The relative indent is required for
+    legal declarations nested inside layout blocks such as ``mutual``.
+    Block comments are lexical whitespace, so the declaration text is
+    unchanged apart from the audited boundary marker and a layout-safe line
+    break.
+    """
+    if not isinstance(source, bytes) or not (0 <= boundary <= len(source)):
+        raise CompileAuditError(f"invalid marker boundary: {boundary!r}")
+    line_start = source.rfind(b"\n", 0, boundary) + 1
+    before_on_line = source[line_start:boundary]
+    try:
+        before_on_line.decode("utf-8")
+    except UnicodeDecodeError as err:
+        raise CompileAuditError(
+            f"marker boundary splits invalid UTF-8 line: {err}") from err
+    if before_on_line.strip():
+        leading = before_on_line[:len(before_on_line)
+                                 - len(before_on_line.lstrip())]
+        indent = leading + b"  "
+        mode = "inline-delimiter-to-continuation-line"
+    else:
+        indent = before_on_line
+        mode = "layout-line-indentation-preserved"
+    insertion = MARKER + b"\n" + indent
+    marked = source[:boundary] + insertion + source[boundary:]
+    if (marked[:boundary] != source[:boundary]
+            or marked[boundary + len(insertion):] != source[boundary:]):
+        raise AssertionError("boundary marker is not a pure insertion")
+    return marked, insertion, mode, len(indent)
 
 
 def audit(extraction, validation, repo_root, work_dir, timeout=300,
@@ -150,7 +191,8 @@ def audit(extraction, validation, repo_root, work_dir, timeout=300,
                 lake, repo_root, source, stem, timeout, runner)
         baseline = baseline_cache[source]
 
-        marked = source_bytes[:boundary] + MARKER + source_bytes[boundary:]
+        marked, marker_insertion, marker_mode, marker_indent = _marked_source(
+            source_bytes, boundary)
         marked_path = os.path.join(work_dir, f"marked_{i:04d}.lean")
         with open(marked_path, "xb") as fh:
             fh.write(marked)
@@ -164,14 +206,17 @@ def audit(extraction, validation, repo_root, work_dir, timeout=300,
             identity=list(ident), source=source,
             source_sha256=file_rec["source_sha256"],
             start_byte=start, end_byte=end, boundary_byte=boundary,
+            marker_mode=marker_mode, marker_indent_bytes=marker_indent,
+            marker_insertion_sha256=hashlib.sha256(
+                marker_insertion).hexdigest(),
             marker_sha256=hashlib.sha256(marked).hexdigest(),
             baseline=baseline, marked=marker_compile, passed=passed))
 
     return dict(
         schema=AUDIT_SCHEMA, extraction_schema=EXTRACT_SCHEMA,
-        mode=("full-source control plus inert block-comment insertion at "
-              "the extracted header/body byte boundary; not an isolated-"
-              "prompt elaboration claim"),
+        mode=("full-source control plus layout-safe block-comment/newline "
+              "marker at the extracted header/body byte boundary; not an "
+              "isolated-prompt elaboration claim"),
         repo_root=repo_root, timeout_seconds=timeout,
         summary=dict(n_selected=len(selected),
                      n_unique_source_controls=len(baseline_cache),
