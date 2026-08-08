@@ -118,8 +118,9 @@ def test_module_setup_output_paths_cannot_escape():
 def test_setup_artifact_closure_covers_imports_plugins_and_dynlibs():
     value = _setup("M.A")
     value["importArts"] = {
-        "Init": ["/pool/Init.olean", "/pool/Init.ir"],
-        "Lean": ["/pool/Lean.olean"]}
+        "Init": [["/pool/Init.olean", "/pool/Init.olean.server"],
+                 ["/pool/Init.ir.sig", "/pool/Init.ir"]],
+        "Lean": [["/pool/Lean.olean"]]}
     value["dynlibs"] = ["/pool/runtime.so"]
     value["plugins"] = [
         "/pool/simple-plugin.so",
@@ -129,10 +130,20 @@ def test_setup_artifact_closure_covers_imports_plugins_and_dynlibs():
     assert roles["/pool/runtime.so"] == {"dynamic-library"}
     assert roles["/pool/simple-plugin.so"] == {"plugin"}
     assert roles["/pool/custom-plugin.so"] == {"plugin"}
+    lean432 = _setup("M.B")
+    lean432["importArts"] = {
+        "Init": ["/pool/432/Init.olean", "/pool/432/Init.ir"]}
+    roles432 = setup_artifact_roles(lean432, "lean-4.32")
+    assert roles432["/pool/432/Init.olean"] == {"import-artifact"}
     invalid = _setup("M.A")
-    invalid["importArts"] = {"Init": [""]}
+    invalid["importArts"] = {"Init": [[""]]}
     _expect_failure(lambda: setup_artifact_roles(invalid, "fixture"),
-                    "malformed importArts")
+                    "malformed ModuleSetup")
+    mixed = _setup("M.A")
+    mixed["importArts"] = {
+        "Init": ["/pool/Init.olean", ["/pool/Init.ir"]]}
+    _expect_failure(lambda: validate_setup(mixed, "M.A", "mixed"),
+                    "malformed ModuleSetup")
     relative = _setup("M.A")
     relative["dynlibs"] = ["relative.so"]
     _expect_failure(lambda: setup_artifact_roles(relative, "relative"),

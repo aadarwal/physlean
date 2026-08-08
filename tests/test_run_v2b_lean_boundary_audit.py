@@ -83,7 +83,7 @@ def _fixture(td):
 
     setup = os.path.join(td, "setups", "A.setup.json")
     setup_value = dict(
-        dynlibs=[], importArts={"Init": [source]}, isModule=True, name="A",
+        dynlibs=[], importArts={"Init": [[source]]}, isModule=True, name="A",
         options={}, plugins=[])
     _write(setup, json.dumps(setup_value))
     extraction = dict(

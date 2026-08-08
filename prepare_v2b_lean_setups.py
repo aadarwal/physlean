@@ -99,6 +99,23 @@ def validate_setup(value, expected_module, where):
             and all(type(entry.get(key)) is bool for key in (
                 "importAll", "isExported", "isMeta"))
 
+    def valid_import_artifacts(import_arts):
+        def valid_groups(groups):
+            if not isinstance(groups, list):
+                return False
+            flat = all(isinstance(path, str) and bool(path)
+                       for path in groups)
+            nested = all(isinstance(group, list)
+                         and all(isinstance(path, str) and bool(path)
+                                 for path in group)
+                         for group in groups)
+            return flat or nested
+
+        return isinstance(import_arts, dict) and all(
+            isinstance(module, str) and bool(module)
+            and valid_groups(groups)
+            for module, groups in import_arts.items())
+
     keys = set(value) if isinstance(value, dict) else set()
     if not REQUIRED_SETUP_KEYS <= keys \
             or keys - REQUIRED_SETUP_KEYS - OPTIONAL_SETUP_KEYS:
@@ -110,7 +127,7 @@ def validate_setup(value, expected_module, where):
                    for path in value["dynlibs"]) \
             or not isinstance(value.get("plugins"), list) \
             or any(not valid_plugin(plugin) for plugin in value["plugins"]) \
-            or not isinstance(value.get("importArts"), dict) \
+            or not valid_import_artifacts(value.get("importArts")) \
             or not isinstance(value.get("options"), dict) \
             or ("imports" in value
                 and (not isinstance(value["imports"], list)
@@ -137,14 +154,21 @@ def setup_artifact_roles(value, where):
             raise V2BError(f"relative {role} path in {where}: {path!r}")
         roles.setdefault(path, set()).add(role)
 
-    for module, paths in value["importArts"].items():
+    for module, groups in value["importArts"].items():
         if not isinstance(module, str) or not module \
-                or not isinstance(paths, list) \
-                or any(not isinstance(path, str) or not path
-                       for path in paths):
+                or not isinstance(groups, list):
             raise V2BError(f"malformed importArts row in {where}")
-        for path in paths:
-            add(path, "import-artifact")
+        if all(isinstance(path, str) for path in groups):
+            for path in groups:
+                add(path, "import-artifact")
+        else:
+            for group in groups:
+                if not isinstance(group, list) \
+                        or any(not isinstance(path, str) or not path
+                               for path in group):
+                    raise V2BError(f"malformed importArts row in {where}")
+                for path in group:
+                    add(path, "import-artifact")
     for path in value["dynlibs"]:
         add(path, "dynamic-library")
     for plugin in value["plugins"]:

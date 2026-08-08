@@ -2054,7 +2054,9 @@ closure named by `importArts`, dynamic-library, and plugin fields, then
 revalidates that closure before and after the corpus run. Ambient
 `LEAN_PATH`/`LEAN_SRC_PATH` are forbidden, the remaining relevant environment
 is an exact-keyed runtime projection, and each module has a frozen 7200-second
-process ceiling.
+process ceiling. The exact setup decoder recognizes the pinned frontend's
+versioned `importArts` encodings—flat file arrays in Lean 4.32 and grouped file
+arrays in Lean 4.33—and flattens either only after rejecting mixed shapes.
 
   A V2-a declaration span nested inside a larger top-level wrapper command
 (for example a scoped `set_option ... in theorem`) is not silently promoted:

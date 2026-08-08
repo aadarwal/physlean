@@ -1481,7 +1481,9 @@ arxiv_manifest) must be committed before measurement.
   complete pre-draw artifact must expose status/kind transition counts. Its
   setup index binds every referenced import artifact, dynamic library, and
   plugin file; ambient Lean search paths are forbidden and every module has a
-  frozen 7200-second ceiling.
+  frozen 7200-second ceiling. Its exact decoder prospectively accepts the
+  pinned version distinction—flat `importArts` arrays under Lean 4.32 and
+  grouped arrays under Lean 4.33—but rejects mixed shapes.
 
 - ADOPTED (2026-08-08, new-artifact self-hash encoding; PRE-A6-LABEL/
   PRE-SAMPLE/PRE-SCORE/PRE-OUTCOME): review found that legacy `sha256_json`
