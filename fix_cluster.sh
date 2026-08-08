@@ -57,7 +57,7 @@ echo "=== [fix 2/6] env (lock-synced; install must succeed) ==="
 "$HOME/.local/bin/uv" python install 3.12.13 --no-bin \
   --install-dir "$UV_PYTHON_INSTALL_DIR" \
   || { echo "MANAGED-PYTHON-INSTALL-FAILED"; exit 1; }
-PYBIN="$("$HOME/.local/bin/uv" python find --managed-python 3.12.13)" \
+PYBIN="$("$HOME/.local/bin/uv" python find 3.12.13)" \
   || { echo "MANAGED-PYTHON-FIND-FAILED"; exit 1; }
 echo "[venv] managed interpreter: $PYBIN"
 VENV_ID='import os, sys, sysconfig

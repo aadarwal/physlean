@@ -63,6 +63,18 @@ def test_python_binary_hash_tracks_real_interpreter():
     assert f"python-binary=={h}" in env_canonical().splitlines()[1]
 
 
+def test_fix_cluster_managed_python_selection_is_nonconflicting():
+    """The environment preference already restricts uv to managed
+    interpreters. Passing uv's redundant --managed-python selector as well
+    is an error on the cluster uv build, so the resolver must rely on
+    only-managed and name the exact version directly."""
+    script = open(os.path.join(BASE, "fix_cluster.sh"), encoding="utf-8").read()
+    assert "UV_PYTHON_PREFERENCE=only-managed" in script
+    assert "python install 3.12.13 --no-bin" in script
+    assert "python find 3.12.13" in script
+    assert "python find --managed-python" not in script
+
+
 def test_lock_contract_matches_committed_lock():
     """The committed cluster lock carries the python==3.12.13 runtime
     contract and 66 exact pins including the measurement-critical ones
