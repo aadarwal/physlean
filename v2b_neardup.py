@@ -134,7 +134,14 @@ def _scan_lean_char(text, start):
     n = len(text)
     index = start + 1
     if index >= n:
-        raise V2BError("unterminated lean char literal")
+        # This is the same strict char-shape miss as a non-closing next
+        # character.  In an extracted declaration, a registered notation
+        # atom such as `⟧'` can end exactly at the unit boundary, leaving
+        # the table-free scanner no following byte with which to distinguish
+        # it from a char opener.  lex_lean applies the narrow, preceding-
+        # nonspace notation fallback; a standalone/space-preceded apostrophe
+        # still re-raises and fails closed.
+        raise _LeanCharMissingClose("unterminated lean char literal")
     if text[index] != "\\":
         index += 1                              # one Unicode codepoint
     else:
@@ -160,6 +167,127 @@ def _scan_lean_char(text, start):
     if index >= n or text[index] != "'":
         raise _LeanCharMissingClose("malformed lean char literal")
     return index + 1
+
+
+def _scan_lean_string(text, start, label="string"):
+    """End index of one ordinary quoted string, including string gaps."""
+    n = len(text)
+    index = start + 1
+    while index < n:
+        if text[index] == "\\":
+            index += 2
+            continue
+        if text[index] == '"':
+            return index + 1
+        index += 1
+    raise V2BError(f"unterminated lean {label} literal")
+
+
+def _scan_lean_raw_string(text, start):
+    """Return a raw-string end index, or None when ``start`` is ordinary r."""
+    n = len(text)
+    index = start + 1
+    hashes = 0
+    while index < n and text[index] == "#":
+        hashes, index = hashes + 1, index + 1
+    if index >= n or text[index] != '"':
+        return None
+    closer = '"' + "#" * hashes
+    close = text.find(closer, index + 1)
+    if close < 0:
+        raise V2BError("unterminated lean raw string literal")
+    return close + len(closer)
+
+
+def _scan_lean_interpolated_string(text, quote_start):
+    """End index of an interpolated string beginning at its opening quote.
+
+    Lean's pinned parser delegates each ``{...}`` region to the full term
+    grammar, so the boundary scanner balances braces while skipping the same
+    lexical constructs that can contain braces or quotes.  The A6 record keeps
+    the entire interpolation verbatim as one literal: this is conservative
+    for near-duplicate recall but cannot manufacture a normalized collision.
+    """
+    n = len(text)
+
+    def scan_term(index):
+        depth = 1
+        while index < n:
+            if text.startswith("--", index):
+                line_end = text.find("\n", index)
+                index = n if line_end < 0 else line_end + 1
+                continue
+            if text.startswith("/-", index):
+                comment_depth, index = 1, index + 2
+                while index < n and comment_depth:
+                    if text.startswith("/-", index):
+                        comment_depth, index = comment_depth + 1, index + 2
+                    elif text.startswith("-/", index):
+                        comment_depth, index = comment_depth - 1, index + 2
+                    else:
+                        index += 1
+                if comment_depth:
+                    raise V2BError(
+                        "unterminated lean block comment in interpolation")
+                continue
+            ch = text[index]
+            if ch == "«":
+                close = text.find("»", index + 1)
+                if close < 0:
+                    raise V2BError(
+                        "unterminated « quoted identifier in interpolation")
+                index = close + 1
+                continue
+            if ch == "r":
+                raw_end = _scan_lean_raw_string(text, index)
+                if raw_end is not None:
+                    index = raw_end
+                    continue
+            if _lean_id_first(ch):
+                ident_end = index + 1
+                while ident_end < n and _lean_id_rest(text[ident_end]):
+                    ident_end += 1
+                if ident_end < n and text[ident_end] == '"' \
+                        and text[index:ident_end].endswith("!"):
+                    index = _scan_lean_interpolated_string(text, ident_end)
+                else:
+                    index = ident_end
+                continue
+            if ch == '"':
+                index = _scan_lean_string(
+                    text, index, label="string inside interpolation")
+                continue
+            if ch == "'":
+                try:
+                    index = _scan_lean_char(text, index)
+                except _LeanCharMissingClose:
+                    if index > 0 and not text[index - 1].isspace():
+                        index += 1
+                        continue
+                    raise
+                continue
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    return index + 1
+            index += 1
+        raise V2BError("unterminated lean interpolated expression")
+
+    index = quote_start + 1
+    while index < n:
+        ch = text[index]
+        if ch == "\\":
+            index += 2
+            continue
+        if ch == '"':
+            return index + 1
+        if ch == "{":
+            index = scan_term(index + 1)
+            continue
+        index += 1
+    raise V2BError("unterminated lean interpolated string literal")
 
 
 def lex_python(text):
@@ -236,7 +364,9 @@ def lex_lean(text):
     sentinels. FROZEN LAYOUT READING: a sentinel is emitted when a token
     STARTS on a later physical line than the PREVIOUS token's START
     line, carrying the new line's exact leading horizontal whitespace.
-    Unterminated comments/literals and CR bytes fail closed."""
+    Interpolated `s!`/`m!`-style strings balance term braces while skipping
+    nested literals/comments, then emit as one conservative verbatim STR
+    record. Unterminated comments/literals and CR bytes fail closed."""
     if not isinstance(text, str) or not text:
         raise V2BError("lean unit text must be a non-empty string")
     if "\r" in text:
@@ -286,16 +416,8 @@ def lex_lean(text):
             i = j + 1
             continue
         if ch == "r":
-            j = i + 1
-            hashes = 0
-            while j < n and text[j] == "#":
-                hashes, j = hashes + 1, j + 1
-            if j < n and text[j] == '"':
-                closer = '"' + "#" * hashes
-                k = text.find(closer, j + 1)
-                if k < 0:
-                    raise V2BError("unterminated lean raw string literal")
-                end = k + len(closer)
+            end = _scan_lean_raw_string(text, i)
+            if end is not None:
                 emit("STR", text[i:end], start)
                 i = end
                 continue
@@ -304,6 +426,11 @@ def lex_lean(text):
             j = i + 1
             while j < n and _lean_id_rest(text[j]):
                 j += 1
+            if j < n and text[j] == '"' and text[i:j].endswith("!"):
+                end = _scan_lean_interpolated_string(text, j)
+                emit("STR", text[i:end], start)
+                i = end
+                continue
             emit("IDENT", text[i:j], start)
             i = j
             continue
@@ -313,18 +440,9 @@ def lex_lean(text):
             i = j
             continue
         if ch == '"':
-            j = i + 1
-            while j < n:
-                if text[j] == "\\":
-                    j += 2
-                    continue
-                if text[j] == '"':
-                    break
-                j += 1
-            if j >= n:
-                raise V2BError("unterminated lean string literal")
-            emit("STR", text[i:j + 1], start)
-            i = j + 1
+            end = _scan_lean_string(text, i)
+            emit("STR", text[i:end], start)
+            i = end
             continue
         if ch == "'":
             # Lean invokes the char parser only if the next character is not
@@ -333,8 +451,9 @@ def lex_lean(text):
             # including multi-character notation atoms such as `]'`, `∑'`,
             # and `×'`.  In those atoms the prime therefore arrives here on
             # its own.  Retain it as punctuation only for the exact
-            # missing-close failure after a non-whitespace symbol; malformed
-            # escapes and genuinely unterminated/standalone literals remain
+            # missing-close failure after a non-whitespace symbol, including
+            # when that prime is the final character of an extracted unit;
+            # malformed escapes and standalone/space-preceded literals remain
             # fail-closed.  A valid character literal wins the tie.
             if i + 1 < n and text[i + 1] == "'":
                 j = i

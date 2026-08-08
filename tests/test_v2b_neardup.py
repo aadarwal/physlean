@@ -11,7 +11,8 @@ import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from v2b_common import V2BError, identity_key, seeded_hash
-from v2b_neardup import (build_calibration_pack, build_collision_pack,
+from v2b_neardup import (LEAN_SENTINEL, build_calibration_pack,
+                         build_collision_pack,
                          build_neardup_artifact, brute_force_pairs,
                          candidate_pairs, collision_activation,
                          collision_groups, five_grams, jaccard_bin,
@@ -99,6 +100,33 @@ def test_lean_string_literals_survive_and_distinguish_units():
     assert ("CHAR", "'\\u03bb'") in lex_lean("def uni := '\\u03bb'")
 
 
+def test_lean_interpolated_strings_are_one_balanced_literal_record():
+    """The term inside `{...}` may itself contain ordinary strings.  This
+    exact shape occurs in mathlib's setOptionLinter declaration."""
+    source = '''def msg := m!"Setting options starting with '{"', '".intercalate (forbidden.map (\u00b7.toString))}' \
+      is only intended for development; please don't use it."'''
+    records = lex_lean(source)
+    strings = [value for kind, value in records if kind == "STR"]
+    assert strings == [source[source.index("m!\""):]]
+    assert not any(kind == "CHAR" for kind, _ in records)
+
+    nested = 'def x := s!"foo {"bar" ++ "baz"}"'
+    assert [value for kind, value in lex_lean(nested) if kind == "STR"] == \
+        ['s!"foo {"bar" ++ "baz"}"']
+    multiline = lex_lean('def x := s!"first\n{foo}\nlast"')
+    assert len([1 for kind, _ in multiline if kind == "STR"]) == 1
+    assert not any(kind == LEAN_SENTINEL for kind, _ in multiline)
+    assert verbatim_hash(lex_lean('def x := s!"{foo}"')) != \
+        verbatim_hash(lex_lean('def x := s!"{bar}"'))
+
+    for bad in ('def x := s!"{foo"', 'def x := m!"{("x")"'):
+        try:
+            lex_lean(bad)
+            assert False, bad
+        except V2BError:
+            pass
+
+
 def test_lean_notation_atom_primes_are_retained_as_punctuation():
     """The table-free scanner splits registered atoms such as `]'` and
     `×'`; their prime must not be mistaken for a malformed char literal."""
@@ -113,6 +141,13 @@ def test_lean_notation_atom_primes_are_retained_as_punctuation():
         assert ("OP", "'") in records
         assert not any(kind == "CHAR" for kind, _ in records)
 
+    # A declaration span can end on the prime itself.  This exact shape
+    # occurred in mathlib's singleδ definition: the whole-file scan has a
+    # following newline, but the extracted declaration unit ends at `⟧'`.
+    terminal = lex_lean("def δ := F X⟦(1 : ℤ)⟧'")
+    assert terminal[-1] == ("OP", "'")
+    assert not any(kind == "CHAR" for kind, _ in terminal)
+
     assert verbatim_hash(lex_lean("def p := ×' β")) != \
         verbatim_hash(lex_lean("def p := × β"))
 
@@ -122,8 +157,8 @@ def test_lean_notation_atom_primes_are_retained_as_punctuation():
     assert ("CHAR", "'h'") in lex_lean("def x := xs[i]'h'")
 
     # The narrow punctuation fallback must not swallow other literal errors.
-    for bad in ("def c := 'ab'", "def c := '\\q'", "def c := 'a",
-                "def c := f 'x", "def c := ('\\q')"):
+    for bad in ("'", "def c := '", "def c := 'ab'", "def c := '\\q'",
+                "def c := 'a", "def c := f 'x", "def c := ('\\q')"):
         try:
             lex_lean(bad)
             assert False, bad

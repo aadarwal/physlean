@@ -1255,17 +1255,25 @@ implementation discoveries recorded below; none uses outcome information.
 
   A6 LEXER AND LABEL BINDING. The Lean scanner rule in §15.A6 supersedes the
   earlier literal use of extraction `code_mask`; ordinary strings, raw strings
-  `r#*"..."#*`, and character literals (including escapes and embedded comment
-  markers) each emit one literal record, and their internal newlines emit no
-  layout sentinel. Unterminated comments/literals fail. Required fixtures make
+  `r#*"..."#*`, interpolated `s!`/`m!`-style strings, and character literals
+  (including escapes and embedded comment markers) each emit one literal
+  record, and their internal newlines emit no layout sentinel. An interpolated
+  string balances its `{term}` regions while skipping nested ordinary/raw/
+  interpolated strings, characters, quoted identifiers, and nested comments,
+  then retains the ENTIRE interpolation verbatim as one `STR`. Identifiers
+  inside interpolation terms are therefore not rename-normalized: this is a
+  conservative near-duplicate false-negative risk, never a way to manufacture
+  a normalized collision. Unterminated comments/literals fail. Required fixtures make
   distinct literal contents hash differently and pin numeric bases,
   underscores, fractions, and exponents. Because this deliberately table-free
   scanner emits every other non-space symbol one character at a time, a prime
   embedded in a registered multi-character notation atom (`]'`, `∑'`, `×'`)
   reaches the apostrophe branch alone: the strict character-literal grammar
   wins when it matches; otherwise ONLY its exact missing-close failure after a
-  non-whitespace symbol emits a retained `OP("'")`. Other malformed escapes
-  and unterminated/standalone character literals still fail. Thus the
+  non-whitespace symbol emits a retained `OP("'")`, including when the prime
+  is the final character of an extracted declaration unit (for example
+  `⟦(1 : ℤ)⟧'`). Other malformed escapes and standalone/space-preceded
+  unterminated character literals still fail. Thus the
   synthetically ambiguous `xs[i]'h'` is deterministically classified with
   `'h'` as a character literal rather than parser-table maximal-munch; this is
   a recorded hash-consistent lexer limitation. Calibration-pair order is the two
@@ -1307,6 +1315,30 @@ implementation discoveries recorded below; none uses outcome information.
   fallback above was adopted before any packet, label, sample, assembly, model
   score, or behavioral outcome. The incomplete array is quarantined and the
   exact five corpora rerun under one amended generator commit.
+
+  A6 DECLARATION-END PRIME + INTERPOLATED-STRING CORRECTION. The amended source-locked token/freeze
+  chain `19928513`/`19928515` completed, and small-corpus A6 array `19928520`
+  produced four passing scale artifacts. The gated mathlib task `19929004`
+  then failed closed before artifact write on
+  `CategoryTheory.ShortComplex.ShortExact.singleδ`: its exact extracted span
+  ends with the registered shift-notation atom `⟧'`. Unlike the earlier
+  in-unit atoms, the prime had no next character, so the strict char scanner
+  reported its zero-payload unterminated shape outside the narrow fallback.
+  Read-only diagnostic `19929108` identified the exact source-bound span. The
+  zero-payload shape is now the same private missing-close class, so the same
+  preceding-nonspace fallback applies at a unit boundary; standalone and
+  space-preceded apostrophes still fail. Before commit or rerun, the extended
+  full-extraction preflight `19929236` then exposed a second mathlib unit,
+  `Mathlib.Linter.Style.setOption.setOptionLinter`: an `m!` message interpolates
+  the term `"', '".intercalate ...`, whose nested quotes had prematurely ended
+  the draft ordinary-string scan. Interpolated strings now use the balanced,
+  whole-literal rule above. The exact patched scanner (SHA256
+  `021a3446466a5a0a424cf818acbb668525ee45c6a330d3357b12929630469e24`)
+  passed every pinned mathlib extraction span in read-only job `19929429`
+  (`LEX-ALL-PASS`, 32 seconds, 1.85 GB). No mathlib artifact, packet, label,
+  sample, model score, or behavioral outcome existed. The four small artifacts
+  are quarantined as a mixed-source cohort, and all token/freeze/A6 inputs are
+  rerun once under the amended exact-five generator commit.
 
   A6 BLIND LABEL BOUNDARY. Before any packet or label existed, the operational
   label handoff was fixed as one interleaved presentation across both audit

@@ -554,6 +554,35 @@ arxiv_manifest) must be committed before measurement.
   preservation, and the deterministic valid-char tie-break. Tasks 1/2 failed
   before writing; tasks 3/4 were cancelled before writing. Array `19924368` is
   quarantined and all five corpora rerun under one amended source cohort.
+- ADOPTED (V2-b A6 declaration-end prime + interpolated-string correction,
+  2026-08-08,
+  PRE-LABEL/PRE-SAMPLE/PRE-SCORE): amended token/freeze jobs
+  `19928513`/`19928515` completed and small-corpus A6 array `19928520`
+  produced four passing artifacts. The separately gated mathlib task
+  `19929004` then failed closed before artifact write on
+  `CategoryTheory.ShortComplex.ShortExact.singleδ`, whose exact extracted
+  declaration span ends at the registered shift-notation atom `⟧'`. With no
+  following character inside that unit, the strict char parser emitted its
+  zero-payload unterminated shape rather than the already-handled missing-close
+  shape. Read-only source-bound diagnostic `19929108` identified the span. The
+  zero-payload shape now uses the same private missing-close class and therefore
+  the same preceding-nonspace punctuation fallback; standalone and
+  space-preceded apostrophes, malformed escapes, and other invalid literals
+  remain fatal. A fixture pins the exact unit-terminal `⟧'` case and the
+  negative EOF cases. Before commit or rerun, the extended full-extraction
+  preflight `19929236` exposed a second exact unit,
+  `Mathlib.Linter.Style.setOption.setOptionLinter`, whose `m!` message contains
+  the interpolated term `"', '".intercalate ...`; the draft ordinary-string
+  scan had stopped at those nested quotes. The adopted scanner balances
+  `{term}` while skipping nested literal/comment forms and retains the entire
+  interpolation as one verbatim `STR`. This conservatively loses rename
+  normalization inside interpolation terms but cannot create a normalized
+  collision. Exact patched-scanner job `19929429` then replayed every pinned
+  mathlib extraction span and returned `LEX-ALL-PASS` (32 seconds, 1.85 GB).
+  No mathlib A6 artifact, packet, label, target sample,
+  model score, or behavioral outcome existed. The four small artifacts are
+  diagnostic-only because the exact-five cohort must be regenerated under one
+  amended source commit; the full token/freeze/A6 chain is rerun once.
 - ADOPTED (V2-b pre-sample hardening, 2026-08-08, PRE-OUTCOME — the first
   candidate array had begun producing metadata only and was never finalized;
   no sample, near-duplicate corpus artifact/label, assembly, score, or
