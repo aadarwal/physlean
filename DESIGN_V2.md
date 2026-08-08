@@ -371,13 +371,20 @@ claims.
 
 ## 14. V2-a implementation freeze (amendment, adopted pre-implementation)
 
-14.1 Selection & rendering: dependency inclusion ranked by direct/short
-graph distance; selected units rendered dependency-topologically with
-nearer dependencies closest to the query (topological and distance
-orders agree since dependencies lie at greater distance); SCCs (mutual
-recursion) are collapsed and ordered by stable name. Nesting across
-budgets is set inclusion by selection and, given §3's far-boundary
-truncation, literal query-adjacent suffix containment of rendered text.
+14.1 Selection & rendering (operational form frozen in §15.A4/§15.A4b,
+adopted pre-outcome): every presence arm builds ONE canonical maximal
+target-level rendering and every budget is an exact byte suffix of it
+(§3). For k3/k4/k4x the order is the §15.A4 canonical SCC-DAG order:
+dependencies precede dependents (Kahn over the reversed rendering
+graph); TOPOLOGY IS PRIMARY, descending BFS distance is only the
+ready-set tie-break, then the frozen seeded hash. The earlier
+parenthetical claiming topological and distance orders always agree
+was WRONG for same-shell dependency edges (t->a, t->b, a->c, c->b) and
+is RETRACTED. SCCs (mutual recursion) are collapsed, identified by
+their lexicographically smallest member, and rendered internally in
+stable-name order. Nesting across budgets is literal query-adjacent
+byte-suffix containment BY CONSTRUCTION, property-tested for every
+arm and budget pair (§15.A4b).
 
 14.2 Frozen estimand -> presence-arm map for contrast-specific
 eligibility: E1a {k4}; E1b {k3, k4}; E2 {k5, k4}; E3 per-arm over the
@@ -472,17 +479,32 @@ original span; standalone re-elaboration) is the check that this
 reconstruction is right.
 
 14.6 Near-duplicates: primary lexical token 5-gram Jaccard >= 0.80
-retaining identifiers/literals, plus exact normalized-hash always;
+retaining identifiers/literals, plus the VERBATIM-TOKEN exact hash
+always (LAYOUT-PRESERVING typed token stream, comment-stripped,
+identifiers retained, JSON-serialized — §15.A6);
+identifier-NORMALIZED-hash exclusion is a separately validated
+candidate rule, primary only per §15.A6's collision-audit gate;
 0.70/0.90 sensitivities; unit = declaration with a >= 20-token floor
-(short tactic bodies would flood any threshold); threshold calibrated
-ONLY by blind manual pair audit.
+(short tactic bodies would flood any threshold). Operational freeze in
+§15.A6: per-language lexers (Python stdlib tokenize; Lean identifier
+predicates ported from the pinned toolchain, unicode-correct), exact
+no-false-negative size+prefix candidate filtering computed once at
+t = 0.70, and TWO fully deterministic blind audits — the Jaccard-bin
+calibration (40 labeled pairs per language, mechanical label->outcome
+mapping onto {0.70, 0.80, 0.90, lexical-inconclusive}) and the
+normalized-hash collision audit (group-sampled, per language x length
+band) — with no human choice after labeling.
 
 14.7 k7 = per-target variants of ONE canonical locked full-corpus topo
 order, built ONLY from the PREFIX of that order ending immediately
-before the target file's original position: remove the target file and
-near-duplicate docs from that prefix, then take the query-adjacent
-SUFFIX of the remainder to the exact budget B (far-boundary
-truncation, §3). Files at or after the target's position NEVER enter
+before the target file's original position: remove the target file,
+near-duplicate docs, AND every file containing at least one unit of
+the target's transitive reverse closure under the FROZEN EXTRACTED
+GRAPH of that language (§15.A8; removed files/bytes recorded), then
+take the query-adjacent SUFFIX of the remainder to the exact budget B
+(far-boundary truncation, §3). The filtered stream is the arm's ONE
+maximal rendering (§15.A4b): the filter is applied once per target,
+never per budget. Files at or after the target's position NEVER enter
 k7 — no future-relative-to-target leakage — and k7 is NOT the 2.4MB G3
 sample. Targets too early in the order to fill B are recorded as
 k7-ineligible at that budget (contrast-specific eligibility, §14.2
@@ -491,7 +513,12 @@ reporting rules apply).
 14.8 k6 = declaration-unit BM25, highest score closest to the query;
 query = the common unscored prefix text; universe = corpus declaration
 units minus that target's exclusions; IDF frozen over the full unit
-universe.
+universe, document frequency computed over the SAME CORPUS's
+declaration units (documents = declaration units). Equal-score ties
+break by the frozen k6tie hash with the LOWER hash NEARER the query:
+the arm's one maximal rendering is ordered top-to-bottom by
+(score ascending, tie-hash descending) and every budget is a byte
+suffix of it (§15.A4b).
 
 14.9 Common prefix = only the syntactically ACTIVE shell + the exact
 target header; all prompt overhead is separately recorded; appending the
@@ -546,9 +573,14 @@ name/signature/usage — leaving them in k5 biases E2 toward null and
 inflates k6; excluded mass recorded per target). k3/k4 draw the forward
 closure; k5 draws from U(t) minus the forward closure; k6 retrieves
 over U(t) WITH forward deps allowed (retrieval realism; retrieved
-overlap with the closure recorded); k7 uses the §14.7 prefix, which is
-reverse-dep-free by topology, and additionally drops same-SCC members
-(cycle-mates are mutual dependencies). Post-hoc repair was considered
+overlap with the closure recorded); k7 uses the §14.7 prefix,
+REVERSE-DEPENDENCY-FILTERED WITH RESPECT TO THE FROZEN EXTRACTED
+GRAPH of its language — never claimed globally reverse-dep-free: the
+Lean elaborated graph supports the removal, while the Python static
+graph is best-effort (§14.4), so residual dynamic/alias/dispatch
+reverse-dependency leakage is RECORDED as a standing Python k7
+caveat — and additionally drops same-SCC members (cycle-mates are
+mutual dependencies). Post-hoc repair was considered
 and REJECTED: it makes k5's realized sampling outcome-correlated and
 cannot fix the frozen BM25 IDF universe.
 
@@ -600,8 +632,14 @@ count toward B and are recorded per cell.
 detection applies at ALL lengths (the 5-gram Jaccard floor of §14.6
 stays at 20 tokens — lowering it floods). Targets under 20 tokens form
 a recorded stratum with a predeclared exclusion sensitivity; their
-rename-variant near-duplicates are acknowledged as residually
-uncontrolled below the floor.
+residual dedup risk depends on the §15.A6 collision-audit outcome:
+where identifier-normalized exclusion is ACTIVATED, the residual is
+NON-EXACT rename variants (exact identifier-only renames with
+otherwise identical token streams are caught) plus the audit's
+measured false-positive rate; where it is sensitivity-only,
+under-20-token rename-clones are uncaught in the primary (the Jaccard
+floor) and this is recorded as a leakage-direction risk. Both counts
+reported.
 
 14.19 DETERMINISTIC TARGET SAMPLING: within each §2 stratum, targets
 are ranked by a seeded priority key and quotas filled in ascending
@@ -717,7 +755,20 @@ pass the same harness verifier or the item is excluded as
 HARNESS-INVALID (excluded counts reported per corpus). The
 python-semantic class requires MEASURED execution coverage of the
 target span by the selected test subset; without it the item demotes
-to compile-only.
+to compile-only. The coverage/test-subset machinery is frozen in
+§15.A7; a python-semantic pass means PASS UNDER THE FROZEN CAPPED
+VERIFIER (first 4 seeded covering test nodes). Deterministic
+arm-independent test SELECTION does not make capped-verifier
+MISCLASSIFICATION arm-uncorrelated — arms can produce different bug
+types escaping the same tests at different rates — so
+semantic-correctness CONTRASTS may carry differential measurement
+error; that caveat attaches wherever python-semantic contrasts are
+reported, and absolute python-semantic pass rates are never headline
+quantities. If §15.A7's per-repo pre-generation feasibility gate
+declares a repo's semantic verification infeasible, Python
+confirmatory F1 is INFEASIBLE FOR THAT REPO (§14.22/§8 restrict F1
+to semantic strata; compile-only never substitutes); NLL estimands
+proceed and compile-only outcomes remain descriptive.
 
 14.24 GENERATION-ARM CONSISTENCY: five behavioral arms
 {k1, k3, k4, k5, k6} at B* (§9 cost accounting corrected to match).
@@ -767,3 +818,294 @@ sign flip on a confirmatory contrast, or divergence exceeding
 max(0.005 b/B, 50% of the absolute primary point estimate) — the
 floor keeps the gate well-defined for near-zero estimates — labels
 the result TRUNCATION-SENSITIVE in all reporting, both numbers shown.
+
+## 15. V2-b implementation freeze (adopted pre-outcome)
+
+Consolidates the jointly reviewed A1-A10 specification (v4 + v5
+addendum + the A6 hash addendum). Conflicting older wording in §14.1,
+§14.6-14.8, §14.14, §14.18, and §14.23 has been reconciled IN PLACE
+above; where any residual tension is found, this section governs.
+Adopted before any pilot sample draw, any paired scoring, and any
+calibration or collision label. Conventions: hash keys are SHA256 over
+UTF-8 canonical compact JSON arrays (ensure_ascii=False,
+separators=(",",":")); seed family "v2b:20260808"; identities are Lean
+[module, declName] and Python [module, name, start_byte], spliced flat
+into key arrays; "recorded" means emitted in run evidence.
+
+15.A1 STRATUM QUOTAS. Sampler-crossed strata per corpus: length
+tercile x module-centrality tercile x first-add cohort = 18 cells
+(<20-token stratum, Python duplicate stratum, Lean renderability
+coverage stay recorded covariates only). Length = the extraction-
+recorded scored-body size body_bytes. Population = all extraction-
+eligible targets (Lean: eligible_kind AND selection_contained AND
+split_kind != null; Python: every direct module-body def/class);
+near-dup and <20-token targets included. Terciles: sort ascending;
+q1 = value at floor((n-1)/3), q2 = at floor(2*(n-1)/3); tercile(v) =
+1 if v <= q1 else 2 if v <= q2 else 3; ties share a tercile, realized
+imbalance recorded. Quotas: proportional Hamilton — floors, then one
+seat each in descending fractional-remainder order, remainder ties by
+ascending cell label "L<t>-D<t>-C<pre|post>"; within-cell fill in
+ascending §14.19 priority order; shortfalls recorded, never
+rebalanced. Pilot: identical rule at N = 20 per corpus; unsampled
+cells recorded.
+
+15.A2 FIRST-ADD DATE (a CONSERVATIVE PROXY for content age, not
+target-creation time). Per file:
+git log --follow --find-renames=50% --diff-filter=A
+--format=%H|%aI|%cI -- <path>; parse EVERY add record (>= 1 required;
+zero is a hard error); first_add = the MINIMUM over every author AND
+committer timestamp of ALL records; timestamp ties choose the
+lexicographically smallest commit hash as recorded provenance. If any
+author date precedes the repository's first commit, set
+author_date_anomalous — RECORD ONLY, never a fallback (a later date
+could mint a false-clean). vendor_flagged = OR over ALL add commits of
+(a) the existing audited prep_streams subject-based vendor/port/copy
+classifier (same function, no parallel regex), (b) bulk-import (the
+commit added >= 100 files), (c) path segment in {vendor, third_party,
+external}; per-commit signal values recorded; diagnostic only, with
+the vendor-excluding clean-cohort sensitivity predeclared. Cutoff:
+post/clean requires first_add STRICTLY LATER than 2024-11-12T23:59:59Z
+(boundary day = PRE); raw dates stored so other family cutoffs
+recompute at analysis. Shallow clones refused; git version recorded.
+
+15.A3 CENTRALITY (per §2, MODULE-level). centrality(target) =
+in-degree of the target's module in the same-repo module import graph
+(distinct importing corpus modules; Lean direct_imports, Python
+resolved imports; deduplicated). Terciles over the target population
+by the 15.A1 rule; ties recorded. Declaration-level in-degree is
+recorded per target as an analysis covariate, never sampler-crossed.
+
+15.A4 k4/k4x CANONICAL ORDER. Raw edges are DEPENDENT -> DEPENDENCY.
+SCC-condense the same-repo declaration graph. Context universe of t =
+SCC-units forward-reachable from the TARGET SCC'S OUTGOING EDGES; the
+entire target SCC (t + cycle-mates) is EXCLUDED (cycle-mates are
+reverse-dependency leak channels, §3), excluded mass recorded.
+Canonical order = Kahn topological sort in which every dependency
+precedes its dependents (Kahn over the reversed rendering graph);
+ready-set tie-break: BFS distance from t DESCENDING, then ascending
+SHA256(json(["k4sel:v2b:20260808", <repo>, <target-identity...>,
+<unit-identity...>])). Topology is primary; no global farthest-first
+claim. Collapsed-SCC unit identity = lexicographically smallest
+member; members render internally in stable-name order. The nearest-
+rendered end is query-adjacent.
+  CHUNKS AND SEPARATORS. normalize(payload): let r = the trailing LF
+  run length (0x0A only; other whitespace is payload). r = 0: append
+  one LF (n_removed_terminal_lf=0, n_appended_terminal_lf=1); r >= 1:
+  remove r-1 (n_removed_terminal_lf=r-1, n_appended_terminal_lf=0).
+  Idempotent; counts recorded; all non-terminal-LF bytes preserved
+  (whitespace-only terminal lines survive). chunk(unit) = banner_line
+  + LF + normalize(payload); rendering = chunks joined by exactly ONE
+  additional LF (exactly one empty line between chunks); the join LF
+  belongs to the PRECEDING (farther) chunk's span; the last chunk has
+  none. Every byte belongs to exactly one chunk span, so each suffix
+  has at most one partial unit, byte-exactly.
+  BUDGETS. Budget B = the largest UTF-8-valid byte suffix <= B of the
+  one canonical rendering (§3 far-boundary truncation = the leading
+  partial span). Selected units at B are DERIVED from the suffix and
+  recorded. Rendering shorter than B => ineligible at B (§14.2).
+  Implementation note (frozen, property-tested byte-equivalent): the
+  full unit-id order is always computed; materialization may run from
+  the query-adjacent end backward past B_max plus one unit span.
+  k4x: identical construction over the combined internal+external
+  graph at the lake-manifest-pinned snapshot (§14.20/§14.27).
+
+15.A4b ALL-ARMS SUFFIX INVARIANT (required by §3 for k2-k7). ONE
+maximal target-level rendering per (arm, target[, seed]); every budget
+is an exact byte suffix; per-budget reselection or re-rendering is
+PROHIBITED in every arm. Orders: k2 = the target file's bytes strictly
+above the target span with near-duplicate-of-target spans excised once
+(splice points recorded); k3 = the 15.A4 canonical order rendered
+interface-style (15.A5); k4/k4x = 15.A4; k5 (per seed) = top-to-bottom
+DESCENDING §14.21 priority hash, so the LOWEST hash (best selection
+priority) is query-nearest and every suffix reproduces the frozen draw;
+k6 = top-to-bottom (score ascending, k6tie hash DESCENDING) — highest
+score nearest, lower hash nearer within an equal-score block, tie key
+SHA256(json(["k6tie:v2b:20260808", <repo>, <target-identity...>,
+<unit-identity...>])), scores recorded, §14.26 variant same rule over
+its universe; k7 = the §14.7/15.A8 filtered stream. Sole exception: k1
+(absence arm, nothing to render). §14.13's T* = 4096 equal-token
+sensitivity is the token-count suffix of the SAME maximal rendering
+under each scoring tokenizer, never a reselection. The assembly
+validator asserts byte-suffix nesting for EVERY arm and budget pair as
+a HARD failure.
+
+15.A5 k3 BODY-OMITTED MARKER (payload definitions; banners/joins come
+only from 15.A4). indent(x) = leading whitespace bytes of line x.
+Python: H = header bytes through the suite colon; I = indent(first
+original body line) if the body starts on its own line, else
+indent(header first line) + 4 spaces; payload = H + LF + I +
+"...  # ctx: body omitted" + LF. Lean: H = header bytes (the split
+token :=/where/| belongs to the body and is dropped); I =
+indent(delimiter line) if the delimiter starts its line, else
+indent(declaration first line) + 2 spaces (RELATIVE, never absolute);
+payload = H + LF + I + "-- ctx: body omitted" + LF. C++ (stretch):
+H + " { /* ctx: body omitted */ }" + LF. No sorry anywhere. Recorded
+asymmetry: Python k3 units parse, Lean k3 units do not elaborate;
+§14.5's exported-type sensitivity probes this choice.
+
+15.A6 NEAR-DUPLICATES, OPERATIONAL. Lexers produce LAYOUT-PRESERVING
+TYPED TOKEN STREAMS: Python stdlib tokenize retains ordinary lexical
+tokens {NAME, OP, NUMBER, STRING, FSTRING_*} AND maps INDENT, DEDENT,
+and logical NEWLINE to canonical typed sentinel records, dropping
+ONLY COMMENT, NL, ENCODING, ENDMARKER (block layout is semantic —
+dropping it would let different nestings collide); Lean: comments
+removed via code_mask, identifier characters per the pinned
+toolchain's isIdFirst/isIdRest (isLetterLike + isSubScriptAlnum)
+transcribed verbatim and cited, «...» single tokens, numeric/string
+literals, any other non-space char a token, plus a typed LAYOUT
+SENTINEL emitted whenever a token begins on a later physical line
+than the previous token, carrying that line's exact leading
+horizontal whitespace (strings/comments cannot manufacture
+sentinels: sentinels are typed records, never text); unicode
+fixtures pinned.
+  TWO EXACT HASHES, one serialization: the hash input is the UTF-8
+  canonical compact JSON array of typed token records
+  [[kind, value], ...] including layout sentinels — never a
+  delimiter join (Lean quoted identifiers/literals can contain
+  spaces; JSON typing length-delimits every record). (1) VERBATIM-
+  TOKEN hash — identifiers retained — is self-validating and ALWAYS
+  PRIMARY at all lengths. (2) IDENTIFIER-NORMALIZED hash — each
+  non-keyword identifier record replaced by a typed ["IDRANK", <k>]
+  integer record, k = first-occurrence rank (frozen per-language
+  keyword lists, test-pinned) — conflates rename-clones with
+  same-skeleton distinct entities (sin-vs-cos wrappers; Lean
+  same-skeleton proofs) and is therefore a CANDIDATE rule requiring
+  its own validation. Jaccard 5-grams remain over the LEXICAL
+  records excluding layout sentinels (similarity is formatting-
+  robust; identity is layout-exact); the 20-token floor counts
+  lexical records only. Required fixtures: identical lexical tokens
+  with different Python nesting hash differently; identical Lean
+  tokens at different layout columns hash differently; a
+  space-containing quoted identifier/literal hashes differently
+  from the corresponding multi-token sequence.
+  COLLISION AUDIT (blind, group-sampled). Collision group = maximal
+  within-corpus unit set sharing one normalized hash with >= 2
+  distinct verbatim-token hashes; a group's normalized token count
+  fixes its length band (under20 / geq20). Per (language, band):
+  within each corpus rank groups by ascending
+  SHA256(json(["a6hashgrp:v2b:20260808", <repo>, <normalized-hash>]));
+  interleave corpora round-robin (ascending repo name); take up to 8
+  groups; from each group label exactly ONE member pair via the
+  O(m log m) SEEDED MEMBER RULE (a minimum over all member pairs is
+  O(m^2) and recreates the pair explosion inside a giant group):
+  rank members by ascending
+  SHA256(json(["a6hashmember:v2b:20260808", <repo>,
+  <normalized-hash>, <member-identity...>])); the pair = the
+  first-ranked member plus the first later-ranked member with a
+  DIFFERENT verbatim-token hash (exists by the group definition);
+  both members' ranks and verbatim hashes recorded.
+  Underfilled bands label all groups
+  (recorded); max 32 labels over both languages; labels committed
+  before unblinding, seeded-shuffled presentation. Clone rubric:
+  duplicate = same implementation/specification modulo ONE systematic
+  identifier renaming — not merely a shared syntax skeleton; differing
+  API calls or referenced constants = not a clone.
+  ACTIVATION (per language x band; a thin or empty band can never
+  vacuously validate): normalized-hash exclusion joins the PRIMARY
+  dedup for band b of language L iff >= 8 labeled collision pairs
+  exist in (L, b) AND ALL 8 are labeled true clones (8/8 — with
+  n = 8 the only precision meeting the frozen >= 0.90 bar; one
+  false positive demotes the band). Otherwise it is a
+  LABELED SENSITIVITY for that band and the primary is verbatim-token
+  hash + calibrated Jaccard. Residual risk recorded per §14.18.
+  JACCARD AT SCALE (exact at t = 0.70 so all sensitivity thresholds
+  derive from one candidate set): size filter |A|/|B| >= 0.70; global
+  canonical 5-gram order = ascending (same-corpus declaration-unit
+  document frequency, tie ascending SHA256 of gram bytes); prefix =
+  first floor(0.30*s)+1 grams; inverted index over prefixes; exact
+  verification. REQUIRED equivalence test vs brute force on slices
+  <= 2,000 units with boundary-Jaccard fixtures. Units under 20
+  tokens: exact hashes only.
+  JACCARD CALIBRATION (blind, deterministic). Bins B1=[0.70,0.75)
+  B2=[0.75,0.80) B3=[0.80,0.85) B4=[0.85,0.90) B5=[0.90,1.0]; 8 pairs
+  per bin PER LANGUAGE, repo-balanced round-robin, within repo by
+  ascending SHA256(json(["a6cal:v2b:20260808", <repo>,
+  <pair identities sorted...>])); underfilled bins recorded; labels
+  committed before unblinding. Mapping, evaluated in order per
+  language (D(bin) = duplicate fraction; prec(>=x) over labeled pairs
+  with J >= x; a zero-label bin's D() condition is vacuously true,
+  recorded; < 8 labeled pairs at J >= 0.80 => lexical-inconclusive):
+   1. prec(>=0.80) >= 0.9 AND D(B1) < 0.5            -> 0.80
+   2. else prec(>=0.90) >= 0.9 AND D(B1) < 0.5
+          AND D(B2 u B3 u B4) < 0.5                  -> 0.90
+   3. else D(B1) >= 0.5 AND prec(>=0.70) >= 0.9      -> 0.70
+   4. else                                           -> lexical-
+                                                        inconclusive
+  On lexical-inconclusive: primary near-dup exclusion = the exact
+  hashes alone (per the activation rule); the 0.80 lexical exclusion
+  runs only as a labeled sensitivity. All labels and the mechanical
+  outcome are committed evidence.
+
+15.A7 PYTHON BEHAVIORAL VERIFICATION. Stage 1 (once per target,
+unmodified repo): test discovery = name-matched (test_<mod-stem>.py
+under tests/ directories from the target's directory upward, nearest
+first) union import-matched (static imports resolving to the target's
+module, same resolver as extraction); 50-file cap by ascending
+SHA256(json(["a7tests:v2b:20260808", <repo>, <target-identity...>,
+<test-relpath>])), cap recorded. coverage.py session with per-node
+attribution via a committed conftest plugin (no pytest-cov):
+pytest_runtest_logstart(nodeid, location) -> COV.switch_context(
+nodeid). COVERING_NODES = sorted node ids covering >= 1 executable
+line of the target span; empty => compile-only ceiling (no-subset
+recorded distinctly from timeout). Stage 2 (per completion): rerun
+ONLY the first 4 covering nodes by ascending
+SHA256(json(["a7nodes:v2b:20260808", <repo>, <target-identity...>,
+<node-id>])); node timeout 120 s, subset 600 s; timeout = completion
+FAILURE. Estimand: PASS UNDER THE FROZEN CAPPED VERIFIER (differential
+measurement error caveat per §14.23). Feasibility (per repo,
+pre-generation): projected stage-2 cost = sum over targets of
+(min(4, n_covering) x median node wall-clock x 5 arms x 32
+completions) measured on the 20 structural targets; > 200 CPU-hours
+=> that repo's python-semantic behavioral pilot is INFEASIBLE before
+any generation — generation and compile-only verification still run,
+NLL proceeds, §14.22 reliability uses the outcome classes that exist,
+Python confirmatory F1 is infeasible for that repo (§14.23). No
+per-target caps or exceptions.
+
+15.A8 k7 ORDER + FILTER. Order: the G3 regex source-import graph and
+the audited prep_streams ordering function (Kahn, min-heap on file
+sort index, existing cycle handling) over ALL corpus source files of
+the language at the locked revision (k7 keeps its G3-style identity;
+the physlib near-lexicographic caveat is restated verbatim). Filter
+(per target, applied once): remove the target file, near-duplicate
+docs, and every file containing >= 1 unit of the target's transitive
+reverse closure under the frozen extracted graph of that language —
+Lean elaborated (supports the removal), Python static best-effort
+(§14.4; residual dynamic/alias/dispatch leakage is a standing recorded
+Python k7 caveat). Removed files/bytes recorded. Artifact
+{schema: "v2b_k7_order_v1", repo, corpus_git_sha, order_rule:
+"g3_full_topo_kahn_minheap_v1", n_edges, n_cycle_break_events,
+files: [[relpath, bytes, source_sha256, file_scc_id], ...]},
+committed and hash-bound; assembly consumes only this artifact plus
+the extraction graph for the filter; a target file absent from the
+order is a hard error.
+
+15.A9 PAIRED IDENTITY + ASSEMBLY BINDING. paired_harness_hash =
+SHA256(UTF-8(json.dumps([["eval_paired.py", <sha256hex>],
+["eval_incontext.py", <sha256hex>], ["layout.py", <sha256hex>]],
+ensure_ascii=False, separators=(",",":")))); eval_paired.py MUST
+import the chunked-NLL core from eval_incontext.py (hard import,
+never a copy). Assembly manifest ({schema:
+"v2b_assembly_manifest_v1"}, per corpus) binds per (target, arm,
+budget) cell: rendered-context SHA256 + bytes, common-query-prefix
+SHA256 + bytes, scored-body SHA256 + bytes, the source extraction
+artifact's SHA256 and schema string, the corpus revision, and the
+unit list with spans; the manifest's own SHA256 joins every paired
+cell identity. Before scoring, eval_paired REHASHES prefix, context,
+AND body against the manifest — fail-closed on any mismatch — plus
+paired_harness_hash and env-lock refusal before model load.
+PAIRED_SCHEMA_VERSION = 1; source_tree_hash-alone drift stays
+acceptable per the adopted cell_done rule. Property suite: byte-suffix
+nesting asserted for every arm and budget pair across {k2, k3, k4,
+k4x, k5(s0,s1,s2), k6, k6-realistic, k7} plus per-arm partial-unit
+accounting; any violation is an assembly hard failure.
+
+15.A10 E1b SAME-DEPENDENCY-SET (k3s/k4s). Unit set = ONLY the
+declaration units WHOLLY contained in the k4 B* suffix; the at-most-
+one leading partial unit is EXCLUDED from both sides (identity and
+partial bytes recorded). Render that exact list twice with the frozen
+rendering — k4s implementation-style, k3s interface-style — NO
+truncation, NO reselection; both byte lengths recorded and
+deliberately unequal. k4s is a distinct sibling of the k4 cell and
+never conflated with it. Both are budget-UNMATCHED labeled
+sensitivities; the equal-budget E1b primary is untouched.

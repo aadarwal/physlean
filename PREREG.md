@@ -538,6 +538,50 @@ arxiv_manifest) must be committed before measurement.
 
 ## 13. Disagreement log
 
+- ADOPTED (V2-b implementation-freeze consolidation, 2026-08-08,
+  PRE-OUTCOME — no pilot sample drawn, no paired cell scored, no
+  calibration or collision label collected): DESIGN_V2 gains §15, the
+  operational A1-A10 specification produced by the joint adversarial
+  review (freeze draft v4 + the v5 addendum + the A6 hash addendum),
+  and the conflicting older clauses are RECONCILED IN PLACE rather
+  than left as parallel rules: §14.1 (canonical-order selection and
+  rendering; the topological-equals-distance parenthetical was wrong
+  for same-shell dependency edges and is retracted), §14.6
+  (per-language lexers, exact scalable filtering, two deterministic
+  blind audits), §14.7 (per-target reverse-dependency file filter;
+  one maximal rendering per arm), §14.8 (document-frequency
+  population; frozen equal-score tie direction), §14.14 (k7 is
+  reverse-dependency-filtered with respect to the frozen extracted
+  graph — the "reverse-dep-free by topology" claim is withdrawn, and
+  Python residual dynamic-leakage risk is recorded), §14.18
+  (VERBATIM-token exact hash is always primary; identifier-NORMALIZED
+  exclusion activates only per the group-sampled collision audit,
+  separately per language x length band, because normalized-hash
+  equality conflates rename-clones with same-skeleton distinct
+  entities and the Jaccard-bin audit cannot validate it), §14.23
+  (python-semantic pass = pass under the frozen capped verifier with
+  a differential-measurement-error caveat on contrasts; per-repo
+  pre-generation semantic infeasibility makes Python confirmatory F1
+  infeasible for that repo, compile-only never substituting).
+  Headline §15 content: Hamilton stratum quotas over 18 cells with
+  body_bytes length; conservative min-over-all-add-records first-add
+  dates with vendor signals OR'd across all add commits; module-level
+  centrality per §2; one canonical maximal rendering per presence arm
+  with every budget an exact byte suffix (k5 lowest-hash-priority
+  query-nearest, k6 highest-score query-nearest, k1 the sole
+  exception) and the chunk/join/normalize(terminal-LF) byte rule;
+  exact k3 marker bytes with relative indentation; the
+  layout-preserving typed-token two-hash near-dup rule (canonical
+  JSON record serialization, layout sentinels, 8/8 collision-audit
+  activation per language x length band) with the deterministic
+  Jaccard calibration mapping; the
+  capped four-node Python verifier with the 200 CPU-hour per-repo
+  feasibility gate; the filtered G3-order k7 with committed hash-bound
+  order artifact; paired_harness_hash plus a full prefix/context/body
+  assembly-manifest binding rehashed before every scoring; and the
+  wholly-contained-units k3s/k4s same-dependency-set sensitivity.
+  Every rule was fixed outcome-blind; sampling, labeling, and drawing
+  all remain in the future at adoption time.
 - ADOPTED (V2-a structural-evidence boundary, 2026-08-08,
   PRE-OUTCOME): source/artifact pairing schema is v2 and records
   exact-vs-srcDir-suffix match kind, absolute paths, both file hashes,
