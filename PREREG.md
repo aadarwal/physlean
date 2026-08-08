@@ -562,6 +562,10 @@ arxiv_manifest) must be committed before measurement.
   explicitly NOT-APPLICABLE as an exact check: §14.4's AST closure is
   best-effort and its declaration-resolution coverage remains the
   reported diagnostic rather than being relabeled elaborator truth.
+  `finalize_v2a.py` is the sole combiner: it verifies the completion-envelope
+  hashes and all independent input bindings before emitting a new-only
+  `v2a_structural_gate_v1` verdict. The extraction validator itself always
+  remains `gate_complete=false`.
 - ADOPTED (V2-a Lean source-renderability amendment, 2026-08-08,
   PRE-OUTCOME — compiler-core machinery audit only, no study-corpus or
   model outcome): the first module-qualified live sweep left 123,621
