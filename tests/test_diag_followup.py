@@ -11,6 +11,7 @@ from diag_item_a_followup import (CAUSAL_CHUNK, CAUSAL_MAX, CAUSAL_P,
                                   F2_MEAN, F2_P99, F2_REPEAT_MAX,
                                   causality_partition, followup_verdict,
                                   perturb_ids)
+from layout import PRODUCTION_CHUNK_TOKENS
 
 
 def test_frozen_bounds():
@@ -18,6 +19,7 @@ def test_frozen_bounds():
     pre-incident oracle bounds; causality reuses the verified
     determinism bound; p=4095 is the last input position of chunk 2."""
     assert (F2_CTX, F2_CHUNK_A, F2_CHUNK_B) == (8192, 512, 2048)
+    assert F2_CHUNK_B == CAUSAL_CHUNK == PRODUCTION_CHUNK_TOKENS
     assert (F2_MEAN, F2_P99, F2_REPEAT_MAX) == (1e-4, 1e-3, 1e-6)
     assert (CAUSAL_P, CAUSAL_CHUNK, CAUSAL_MAX) == (4095, 2048, 1e-6)
     assert CAUSAL_P == 2 * CAUSAL_CHUNK - 1     # last position, chunk 2

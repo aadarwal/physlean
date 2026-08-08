@@ -558,7 +558,14 @@ def gate_common_science():
     try:
         b = json.load(open(bp))
         errs = [k for k in b if k.endswith("_error")]
-        a = b.get("A_chunk_equality", {})
+        a = b.get("A_fixed_chunk_semantics", {})
+        from layout import PRODUCTION_CHUNK_TOKENS
+        from validity_battery import (FAM_SMALL, a_fixed_chunk_verdict)
+        a_ok, a_fails = a_fixed_chunk_verdict(
+            a, tuple(FAM_SMALL), PRODUCTION_CHUNK_TOKENS)
+        a_stored_ok = ((a.get("verdict") or {}).get("ok") == a_ok
+                       and (a.get("verdict") or {}).get("failures")
+                       == a_fails)
         zr = b.get("B_zero_rows", {})
         from provenance import source_tree_hash
         src_match = b.get("source_tree_hash") == source_tree_hash()
@@ -598,14 +605,18 @@ def gate_common_science():
                              for m, r in recorded.items()))
         check("battery-plumbing",
               bool(b.get("plumbing_pass")) and not errs
-              and a.get("all_class_ok", False)
+              and a_ok and a_stored_ok
+              and "A_chunk_equality" not in b
               and zr.get("conservation_ok", False)
               and b.get("device") == "cuda"
               and b.get("gate_eligible") is True
               and src_match and rev_match and ident_match and e_ok,
               dict(errors=errs, plumbing_pass=b.get("plumbing_pass"),
-                   chunk_worst_delta=a.get("mean_abs_delta_nats"),
-                   class_ok=a.get("all_class_ok"),
+                   item_a_recomputed_ok=a_ok,
+                   item_a_failures=a_fails,
+                   item_a_stored_matches=a_stored_ok,
+                   production_chunk=a.get("production_chunk"),
+                   f2_stats=(a.get("f2") or {}).get("stats"),
                    conservation=zr.get("conservation_ok"),
                    device=b.get("device"),
                    source_tree_match=src_match,

@@ -153,13 +153,15 @@ group mass is a battery diagnostic (§7).
 
 Windows of ctx tokens (32k default) are nonoverlapping context-reset
 episodes — the resampling cluster for bootstraps, NOT statistically
-independent samples (adjacent windows share a repo and its conventions);
-the
-chunked KV-cache forward with fp32 log-softmax is exact w.r.t. **the
-checkpoint's attention semantics** (equality with one-shot forward is a
-battery assert) — NOT "full attention over all c bytes": StarCoder2's 4k
-sliding window and Qwen3.5's hybrid attention do not expose all in-window
-bytes, and each cell's meta records the attention mechanism note. ctx_bytes
+independent samples (adjacent windows share a repo and its conventions).
+The chunked KV-cache forward implements teacher forcing under the
+checkpoint's attention semantics on one frozen bf16 numerical path, with
+fp32 log-softmax; it is NOT numerically identical across chunk shapes or
+to one-shot, so chunk = 2048 is fixed and identity-gated (§7/§13). The
+semantic and causal-mask invariants are battery assertions. This is also
+NOT "full attention over all c bytes": StarCoder2's 4k sliding window and
+Qwen3.5's hybrid attention do not expose all in-window bytes, and each
+cell's meta records the resolved attention mechanism note. ctx_bytes
 for a target = bytes of preceding tokens within its window (bytes present,
 not necessarily attended). The window-phase ablation (phases {8192, 16384,
 24576} on the sentinel 0.5B, paired same-group analysis) runs IN G3a and
@@ -181,7 +183,8 @@ of the RESOLVED base interpreter binary (two builds of the same version
 string are different environments — see the §13 Triton incident) +
 torch CUDA build + every installed distribution as sorted name==version
 lines (one shared implementation in provenance.py used by the
-evaluator, cell_done, the battery, and preflight). A production eval (non-dev,
+evaluator, cell_done, the battery, and preflight); and (c) the frozen
+PRODUCTION_CHUNK_TOKENS = 2048, checked by cell_done. A production eval (non-dev,
 non-random-init, any device) REFUSES before model load unless the live
 environment equals both the committed wheel lock
 (requirements-cluster.lock, python contract included) and the
@@ -332,26 +335,47 @@ silently under a re-prep.
 ## 7. Validity battery (G2 gate; smallest set)
 
 On Qwen2.5-Coder-0.5B unless noted; all outputs to results_v2/battery/.
-A. Chunked-vs-one-shot NLL equality on one 8k window (report max/mean |Δ|;
-   tolerance note for bf16). [UNDER INCIDENT REVIEW — battery 19902567
-   failed A on all families; the frozen diagnostic + decision rule is
-   in §13, and the battery rerun is blocked on its verdict. Any
-   re-specification of A happens only per that rule.]
+A. RE-SPECIFIED as **A_fixed_chunk_semantics** (per the §13 incident
+   rule, after the follow-up falsifier PASSED): production-path
+   invariants at exactly 8192 tokens per bf16 family — loader
+   class/param sanity; production-chunk repeat determinism; the
+   structural CAUSALITY probe (perturb input p=4095, protected
+   rows 0..4093 unchanged, non-vacuity required) on the exact
+   production kernel with resolved attention impl recorded — plus the
+   q25c fp32 semantic leg (TF32 off asserted, model impl gated ==
+   'sdpa', torch SDP backend forced MATH, chunk 512 vs
+   PRODUCTION_CHUNK_TOKENS). NO bf16 cross-shape or one-shot gate
+   exists: bf16 kernel-shape divergence is characterized (§13), not
+   gated, and every production cell runs the ONE frozen chunk
+   (layout.PRODUCTION_CHUNK_TOKENS = 2048; chunk is part of the
+   cell_done measurement identity), so the measurement never crosses
+   kernel shapes.
 B. Zero-byte-row mass per corpus x tokenizer family (rows share; NLL share
    on two corpora) — gates the merge fix.
 C. Nested-context monotonicity: same 512-token targets scored under true
    prefixes {1k,4k,16k,32k}; report violations.
 D. Duplicate/boilerplate control: file repeated 8x -> later copies must
    collapse toward ~0 BPB (in-context copying sensitivity).
-E. (lite) Dependency-vs-irrelevant context: physlib targets under direct
+E. (lite) Dependency-vs-irrelevant context: designated-corpus targets
+   (mathlib — see the §13 infeasibility amendment below) under direct
    import context vs equal-byte random same-corpus context.
 
 Gating semantics: **A and B are plumbing invariants** — failures block
-G3. FROZEN numeric gates (set before any battery run; code and PREREG
-must agree): A passes iff, for EVERY family probed, the chunked-vs-
-one-shot mean |ΔNLL| < 5e-3 nats AND p99 |ΔNLL| < 5e-2 nats AND the
-loaded class is a text-generation class within the predeclared
-per-family parameter range (loader sanity). B passes iff group
+G3. FROZEN numeric gates (code and PREREG must agree; A's gates
+re-specified per the §13 incident rule): A passes iff the PURE verdict
+(a_fixed_chunk_verdict) holds — top-level production chunk and EXACT
+family coverage; per family: bf16 dtype, text-generation class within
+the predeclared parameter range, chunk == PRODUCTION_CHUNK_TOKENS,
+exactly 8192 tokens, repeat max in [0, 1e-6], and the exact causality
+partition/perturbation identity with protected max in [0, 1e-6],
+finite nonnegative excluded row, and
+downstream > 1e-6; q25c fp32 leg: float32 dtype, exactly 8192 tokens,
+resolved impl == 'sdpa', SDP backend == MATH, TF32 off (matmul+cudnn
+false, precision highest), mean |ΔNLL| < 1e-4 AND p99 < 1e-3
+(pre-incident oracle bounds), repeat <= 1e-6, chunks exactly
+[512, PRODUCTION_CHUNK_TOKENS].
+NaN/non-finite or structurally invalid metrics, missing/extra families,
+wrong dispatch, and wrong chunk all fail closed. B passes iff group
 aggregation conserves NLL exactly (fp64 tolerance 1e-6 relative) and
 byte union equals raw bytes exactly, on real corpora and the synthetic
 and real-offset probes, for all four tokenizer families. **C, D, E are characterization controls**,
@@ -540,6 +564,37 @@ arxiv_manifest) must be committed before measurement.
   external-mathlib (lake-manifest-pinned revision) hard interpretation
   gate. The k1-vs-k3 inconsistency in DESIGN_V2 §3/§8 is resolved to
   k4 (matching E1a and the §14.2 map).
+- ADOPTED (item-A RESOLUTION: follow-up PASS + re-specification):
+  the follow-up falsifier PASSED with exact outcomes — F2 (fp32,
+  TF32 off/highest, resolved sdpa, SDP MATH forced, chunk 512 vs
+  2048): mean 3.1806e-6, p99 2.4080e-5, max 6.485e-5, repeat 0;
+  CAUSALITY (bf16 production path): protected 4094 rows max EXACTLY
+  0, downstream max 5.141, excluded row delta 16.406. Both targeted
+  semantic-bug probes passed for q25c on the tested window:
+  no shared chunked-prefill discrepancy or production-path causal leak
+  was detected. The
+  claim adopted is deliberately bounded: the bf16 cross-shape
+  divergence is CONSISTENT WITH accumulated-KV kernel-shape numerics
+  — the probes passed; the numerics mechanism is not "proven".
+  Re-specification adopted per the frozen rule: (a)
+  PRODUCTION_CHUNK_TOKENS = 2048 in layout.py (measurement-harness
+  file; hash moves, no accepted cell predates it) — ONE chunk shape
+  for every production cell, replacing the 1024-if-big ternary that
+  crossed kernel shapes inside families (incl. 7B vs its own
+  ladder); chunk joins the cell_done identity (field already in
+  meta; acceptance tightens, no schema bump); (b) battery item A
+  becomes A_fixed_chunk_semantics (§7): production-path invariants
+  (repeat determinism, causality probe per family, q25c fp32/MATH
+  semantic leg) with a PURE completeness/finiteness/dispatch/chunk
+  fail-closed verdict; its probe helpers are imported from
+  diag_item_a_followup so the implemented partition/perturbation/load
+  semantics cannot drift from the falsifier; the old A_chunk_equality
+  key is RETIRED; (c)
+  NO bf16 cross-shape or one-shot gate anywhere — that comparison is
+  a characterized non-production contrast; (d) consequence for
+  interpretation: absolute BPB carries the frozen chunk shape as
+  part of measurement identity; all within-grid comparisons share
+  it, and cross-study comparisons must note it.
 - ADOPTED (item-A FOLLOW-UP falsifier after diagnostic 19903226, still
   before any grid outcome): the first diagnostic HARD-STOPPED per its
   frozen rule — oracle, cache_position, and repeat PASSED while ALL 12

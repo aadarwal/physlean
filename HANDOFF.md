@@ -178,10 +178,11 @@ speaks directly to the essay's security motivation.
    or bits-per-byte normalization is non-negotiable. (SPM-style vocabs mangle
    whitespace via ▁-replacement — 3 tokens per space — which is why the GGUF
    uses a GPT-2-alphabet byte vocab with no merges.)
-4. Chunked evaluation resets context at chunk boundaries: position-0 tokens
-   have genuinely zero context (that's the c→1 end of the curve, a feature),
-   but make sure chunk boundaries don't systematically align with file
-   boundaries differently across corpora.
+4. Evaluation resets context at WINDOW boundaries, not inference-chunk
+   boundaries: the KV cache grows across the frozen 2048-token chunks.
+   Window-opening tokens have genuinely zero context (the c→1 end of the
+   curve); window phases test alignment with corpus/file content. Chunk shape
+   is part of measurement identity because bf16 scores are shape-sensitive.
 5. Lean files are Unicode-dense (∀, ⟨⟩, ↦ …): any tokenizer/vocab choice must
    round-trip them byte-exactly; verify token-count == byte-count on mathlib
    files specifically.

@@ -8,6 +8,17 @@ from prep_streams import select_docs, doc_priority, SELECT_SEED
 from run_phase1 import phase_of, cell_out
 
 
+def test_production_chunk_is_single_frozen_identity():
+    """The post-incident grid has one chunk shape across every rung; the
+    1024-if-big ternary must never return as a scale-ladder confound."""
+    from layout import PRODUCTION_CHUNK_TOKENS
+    src = open(os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                            "run_phase1.py"), encoding="utf-8").read()
+    assert PRODUCTION_CHUNK_TOKENS == 2048
+    assert '"1024" if big else "2048"' not in src
+    assert '"--chunk", str(PRODUCTION_CHUNK_TOKENS)' in src
+
+
 def mkfiles(sizes):
     return [dict(rel=f"f{i:03d}.lean", bytes=s, text="x" * s, date=None)
             for i, s in enumerate(sizes)]
@@ -170,7 +181,7 @@ def test_cell_done_trust_boundary():
     software environment."""
     import gzip, hashlib, json, tempfile
     from run_phase1 import cell_done, _HASH_CACHE
-    from layout import MEASUREMENT_SCHEMA_VERSION
+    from layout import MEASUREMENT_SCHEMA_VERSION, PRODUCTION_CHUNK_TOKENS
     from provenance import env_fingerprint, harness_hash
 
     def sha(p):
@@ -191,6 +202,7 @@ def test_cell_done_trust_boundary():
                     revision="r", random_init=False, max_bytes=0,
                     window_phase=0, source_clean=True, dtype="bfloat16",
                     device="cuda", ctx_tokens=32768,
+                    chunk=PRODUCTION_CHUNK_TOKENS,
                     max_position_embeddings=32768, reset_per_doc=False,
                     stream_sha256=sha(stream), manifest_sha256=sha(man),
                     byte_ledger_ok=True, source_unchanged_during_eval=True,
@@ -242,6 +254,11 @@ def test_cell_done_trust_boundary():
         meta_bad = dict(meta, env_fingerprint="0" * 64)
         json.dump(meta_bad, open(out + ".meta.json", "w"))
         assert not cell_done(*args), "stale env fingerprint accepted"
+        # (g) WRONG CHUNK: bf16 chunk shape is measurement identity after
+        # incident 19902567; a resumed ladder must never mix shapes.
+        meta_bad = dict(meta, chunk=PRODUCTION_CHUNK_TOKENS // 2)
+        json.dump(meta_bad, open(out + ".meta.json", "w"))
+        assert not cell_done(*args), "wrong production chunk accepted"
         # missing identities (pre-v4 meta shape) must also be rejected
         meta_bad = dict(meta)
         del meta_bad["harness_hash"], meta_bad["env_fingerprint"]

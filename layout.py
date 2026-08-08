@@ -12,6 +12,13 @@ unit tests and the evaluator share one implementation."""
 # current — mixed-harness / mixed-environment raw grids are impossible.
 MEASUREMENT_SCHEMA_VERSION = 4
 
+# One inference shape across the entire model ladder. Item-A incident
+# 19902567 + diagnostics 19903226/19903583 showed that bf16 NLL is
+# deterministic at a fixed chunk but not numerically invariant to chunk
+# shape. This is therefore part of measurement identity, not a memory-tuning
+# knob; run_phase1/cell_done/battery all consume this one definition.
+PRODUCTION_CHUNK_TOKENS = 2048
+
 # The V2 paired-target driver (eval_paired, G3.5+) versions its schema
 # INDEPENDENTLY so V2 evolution never invalidates G3-path artifacts;
 # bump this only for semantic changes to the PAIRED measurement.

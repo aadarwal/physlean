@@ -17,6 +17,8 @@ disjoint --models subsets concurrently.
 """
 import argparse, json, math, os, subprocess, sys, time
 
+from layout import PRODUCTION_CHUNK_TOKENS
+
 BASE = os.path.dirname(os.path.abspath(__file__))
 PY = os.path.join(BASE, ".venv", "bin", "python")
 STREAMS = os.path.join(BASE, "data", "streams")
@@ -159,8 +161,11 @@ def cell_done(out, mid, ctx, flags, stream, mj):
                 and m.get("source_clean") is True
                 and m.get("dtype") == "bfloat16"
                 and m.get("device") == "cuda"
-                # chunk intentionally unchecked: battery item A proves
-                # chunked==one-shot per architecture
+                # Incident 19902567 disproved chunk-shape invariance in
+                # bf16. One frozen chunk is now part of cell identity;
+                # otherwise a resumed ladder could silently mix numerical
+                # paths across model sizes.
+                and m.get("chunk") == PRODUCTION_CHUNK_TOKENS
                 and m.get("ctx_tokens") == min(
                     ctx, m.get("max_position_embeddings") or ctx)
                 and m.get("reset_per_doc") == ("--reset-per-doc" in flags)
@@ -264,12 +269,10 @@ def main():
             enumerate(todo):
         if f"{short}__{corpus}__{kind}" in invalid_set:
             quarantine(out)
-        big = any(s in mid for s in ("-7B", "-8B", "-9B", "-14B", "-32B",
-                                     "V2-Lite"))
         cmd = [PY, os.path.join(BASE, "eval_incontext.py"),
                "--model", mid.split("@")[0], "--stream", stream, "--out", out,
                "--ctx-tokens", str(ctx),
-               "--chunk", "1024" if big else "2048", *flags]
+               "--chunk", str(PRODUCTION_CHUNK_TOKENS), *flags]
         t0 = time.time()
         print(f"[{k+1}/{len(todo)}] P{prio} {short} {corpus} {kind} ctx={ctx}",
               flush=True)

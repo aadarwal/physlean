@@ -8,11 +8,12 @@ Measurement semantics (HANDOFF §4, pitfalls §5.3/§5.4):
   - The token sequence is cut into consecutive windows of --ctx-tokens.
     A window boundary is a hard context reset: the first target in a window
     is predicted from ~1 byte of context (that is the c->1 end of the curve).
-  - Within a window the model is fed in chunks with a growing KV cache, so
-    NLL at position p is exact teacher forcing under the CHECKPOINT'S
-    attention semantics over the p-1 preceding tokens (sliding-window and
-    hybrid mechanisms may not attend to all of them; PREREG §4). Logits are log-softmaxed in fp32, in row slices, so
-    peak memory stays bounded at 32k context.
+  - Within a window the model is fed in one frozen chunk shape with a growing
+    KV cache. This implements teacher forcing under the CHECKPOINT'S attention
+    semantics over the p-1 preceding tokens (sliding-window and hybrid
+    mechanisms may not attend to all of them; PREREG §4). Finite-precision
+    bf16 scores are not invariant to chunk shape, so chunk=2048 is part of
+    measurement identity. Logits are log-softmaxed in fp32 row slices.
   - --reset-per-doc tokenizes and windows each document separately
     (single-file ablation: no cross-file context at all).
 
@@ -69,19 +70,26 @@ def load_model(name, dtype, device, random_init=False, revision=None,
     model.eval()
     for p in model.parameters():
         p.requires_grad_(False)
-    tcfg = (cfg.get_text_config() if hasattr(cfg, "get_text_config")
-            else cfg)
+    # Use the POST-LOAD config: transformers resolves its concrete attention
+    # implementation during model construction (the pre-load AutoConfig can
+    # still report None). Record it for every cell.
+    mcfg = model.config
+    tcfg = (mcfg.get_text_config() if hasattr(mcfg, "get_text_config")
+            else mcfg)
+    attn_impl = (getattr(mcfg, "_attn_implementation", None)
+                 or getattr(tcfg, "_attn_implementation", None))
     ident = dict(model_class=type(model).__name__,
                  n_params=sum(p.numel() for p in model.parameters()),
                  attn_note=dict(
+                     implementation=attn_impl,
                      model_type=getattr(tcfg, "model_type", None),
                      sliding_window=getattr(tcfg, "sliding_window", None),
                      layer_types=str(getattr(tcfg, "layer_types", None))[:200]))
     return model, tcfg, ident
 
 
-from layout import (MEASUREMENT_SCHEMA_VERSION, token_spans, windows_of,
-                    snap_phase)  # noqa: E402
+from layout import (MEASUREMENT_SCHEMA_VERSION, PRODUCTION_CHUNK_TOKENS,
+                    token_spans, windows_of, snap_phase)  # noqa: E402
 
 
 def doc_lookup(manifest_path):
@@ -148,7 +156,7 @@ def main():
     ap.add_argument("--stream", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--ctx-tokens", type=int, default=32768)
-    ap.add_argument("--chunk", type=int, default=2048)
+    ap.add_argument("--chunk", type=int, default=PRODUCTION_CHUNK_TOKENS)
     ap.add_argument("--dtype", default="bfloat16")
     ap.add_argument("--device", default=None)
     ap.add_argument("--reset-per-doc", action="store_true")
@@ -162,6 +170,15 @@ def main():
                     help="dev smokes only; gate-quality dumps require a "
                          "clean source tree so source_tree_hash is honest")
     args = ap.parse_args()
+
+    # A gate-quality cell must use the single ladder-wide numerical path.
+    # Fail before model load rather than spend GPU time on an artifact that
+    # cell_done is required to reject. Dev/random runs may probe alternatives.
+    if (not (args.random_init or args.allow_dirty)
+            and args.chunk != PRODUCTION_CHUNK_TOKENS):
+        raise SystemExit(
+            f"FATAL: production chunk must be {PRODUCTION_CHUNK_TOKENS}; "
+            f"got {args.chunk} (use --allow-dirty only for dev probes)")
 
     from provenance import source_clean, source_tree_hash
     src_clean = source_clean()
