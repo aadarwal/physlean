@@ -8,7 +8,8 @@ import tempfile
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from prepare_v2b_lean_setups import (
     SETUP_INDEX_SCHEMA, _safe_module_relpath, extraction_modules,
-    parse_query_stdout, setup_artifact_roles, validate_setup)
+    parse_lake_environment, parse_query_stdout, setup_artifact_roles,
+    validate_setup)
 from v2b_common import V2BError, sha256_file
 
 
@@ -74,6 +75,24 @@ def test_setup_query_rows_are_exact_ordered_and_duplicate_key_free():
             lambda value=invalid: parse_query_stdout(
                 json.dumps(value), ["M.A"]),
             "malformed ModuleSetup")
+
+
+def test_lake_environment_projection_is_exact_and_nul_terminated():
+    raw = ("PATH=/pool/bin:/usr/bin\0LEAN_SRC_PATH=/pool/src\0"
+           "LEAN_PATH=/pool/lib/lean\0LD_LIBRARY_PATH=/pool/lib\0"
+           "UNBOUND_SECRET=not-persisted\0")
+    projection = parse_lake_environment(raw, "fixture")
+    assert projection == {
+        "LEAN_PATH": "/pool/lib/lean",
+        "LEAN_SRC_PATH": "/pool/src",
+        "LD_LIBRARY_PATH": "/pool/lib",
+        "DYLD_LIBRARY_PATH": None,
+        "PATH": "/pool/bin:/usr/bin",
+    }
+    _expect_failure(lambda: parse_lake_environment(raw[:-1], "fixture"),
+                    "terminal NUL")
+    _expect_failure(lambda: parse_lake_environment(
+        raw + "PATH=/different\0", "fixture"), "duplicate")
 
 
 def test_extraction_module_map_binds_unique_live_sources():

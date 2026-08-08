@@ -2052,9 +2052,16 @@ list-based seeds/identity hashes and exact order-preserving driver invocation
 preimages are unchanged. The setup index also hashes the complete unique file
 closure named by `importArts`, dynamic-library, and plugin fields, then
 revalidates that closure before and after the corpus run. Ambient
-`LEAN_PATH`/`LEAN_SRC_PATH` are forbidden, the remaining relevant environment
-is an exact-keyed runtime projection, and each module has a frozen 7200-second
-process ceiling. The exact setup decoder recognizes the pinned frontend's
+`LEAN_PATH`/`LEAN_SRC_PATH` are forbidden. The setup producer separately
+queries Lake's NUL-delimited environment, persists only the exact-keyed
+`LEAN_PATH`, `LEAN_SRC_PATH`, `LD_LIBRARY_PATH`, `DYLD_LIBRARY_PATH`, and
+`PATH` projection, and the runner independently requeries Lake before
+installing and binding that projection. The absolute environment-probe
+executable and its bytes are also bound. This supplies package search paths
+without trusting ambient shell state. The remaining relevant environment is
+also bound; each Lake-environment replay has a 600-second ceiling and each
+module has a frozen 7200-second process ceiling. The
+exact setup decoder recognizes the pinned frontend's
 versioned `importArts` encodings—flat file arrays in Lean 4.32 and grouped file
 arrays in Lean 4.33—and flattens either only after rejecting mixed shapes.
 

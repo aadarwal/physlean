@@ -27,6 +27,9 @@ from v2b_neardup import LEAN_EXTRACT_SCHEMA
 
 
 SETUP_INDEX_SCHEMA = "v2b_lean_setup_index_v1"
+LAKE_ENV_KEYS = (
+    "LEAN_PATH", "LEAN_SRC_PATH", "LD_LIBRARY_PATH",
+    "DYLD_LIBRARY_PATH", "PATH")
 REQUIRED_SETUP_KEYS = frozenset((
     "dynlibs", "importArts", "isModule", "name", "options", "plugins"))
 OPTIONAL_SETUP_KEYS = frozenset(("package", "imports"))
@@ -34,6 +37,8 @@ IMPORT_KEYS = frozenset(("module", "importAll", "isExported", "isMeta"))
 SETUP_INDEX_KEYS = frozenset((
     "schema", "repo", "language", "corpus_git_sha", "extraction",
     "corpus_root", "toolchain", "lean_toolchain_sha256", "lake", "lean",
+    "environment_probe",
+    "lake_environment", "lake_environment_sha256",
     "n_modules", "n_batches", "batch_size", "setups", "setups_sha256",
     "rows", "rows_sha256", "batches", "batches_sha256", "n_artifacts",
     "artifacts", "artifacts_sha256"))
@@ -49,6 +54,7 @@ EXECUTABLE_KEYS = frozenset(("path", "sha256", "version"))
 GENERATOR_KEYS = frozenset(("source_commit", "source_tree_hash", "program"))
 ARTIFACT_ROW_KEYS = frozenset(("path", "sha256", "roles"))
 ARTIFACT_ROLES = frozenset(("import-artifact", "dynamic-library", "plugin"))
+FILE_BINDING_KEYS = frozenset(("path", "sha256"))
 
 
 def _hex(value, length=64):
@@ -78,6 +84,38 @@ def _json_no_duplicates(text, where):
     if not isinstance(value, dict):
         raise V2BError(f"Lake setup result is not an object in {where}")
     return value
+
+
+def parse_lake_environment(stdout, where="lake env /usr/bin/env -0"):
+    """Exact whitelisted projection of Lake's NUL-delimited environment."""
+    if not isinstance(stdout, str):
+        raise V2BError(f"{where}: environment output is not text")
+    records = stdout.split("\0")
+    if not records or records[-1] != "":
+        raise V2BError(f"{where}: environment output lacks terminal NUL")
+    parsed = {}
+    for index, record in enumerate(records[:-1]):
+        if not record or "=" not in record:
+            raise V2BError(f"{where}: malformed environment row[{index}]")
+        name, value = record.split("=", 1)
+        if not name or name in parsed:
+            raise V2BError(f"{where}: duplicate/empty environment name")
+        parsed[name] = value
+    projection = {name: parsed.get(name) for name in LAKE_ENV_KEYS}
+    if any(not isinstance(projection[name], str) or not projection[name]
+           for name in ("LEAN_PATH", "LEAN_SRC_PATH", "PATH")):
+        raise V2BError(f"{where}: Lake search/runtime path is absent")
+    return projection
+
+
+def query_lake_environment(lake, corpus_root, env, timeout,
+                           probe="/usr/bin/env"):
+    result = _run([lake, "env", probe, "-0"], corpus_root,
+                  env, timeout)
+    if result.returncode != 0:
+        raise V2BError(f"Lake environment query failed: "
+                       f"{result.stderr.strip()[:500]}")
+    return parse_lake_environment(result.stdout)
 
 
 def validate_setup(value, expected_module, where):
@@ -341,6 +379,24 @@ def validate_setup_index(value, live_files=True, require_generator=False):
         if live_files and sha256_file(executable["path"]) != \
                 executable["sha256"]:
             raise V2BError(f"setup index {label} executable byte drift")
+    probe = value.get("environment_probe")
+    if not isinstance(probe, dict) or set(probe) != FILE_BINDING_KEYS \
+            or not isinstance(probe.get("path"), str) or not probe["path"] \
+            or not _hex(probe.get("sha256")):
+        raise V2BError("setup index environment probe binding drift")
+    if live_files and sha256_file(probe["path"]) != probe["sha256"]:
+        raise V2BError("setup index environment probe byte drift")
+    lake_environment = value.get("lake_environment")
+    if not isinstance(lake_environment, dict) \
+            or set(lake_environment) != set(LAKE_ENV_KEYS) \
+            or value.get("lake_environment_sha256") != \
+            sha256_sorted_json(lake_environment) \
+            or any(lake_environment[name] is not None
+                   and not isinstance(lake_environment[name], str)
+                   for name in LAKE_ENV_KEYS) \
+            or any(not lake_environment[name] for name in (
+                "LEAN_PATH", "LEAN_SRC_PATH", "PATH")):
+        raise V2BError("setup index Lake environment binding drift")
     setups, rows, batches, artifacts = (
         value.get("setups"), value.get("rows"), value.get("batches"),
         value.get("artifacts"))
@@ -486,15 +542,21 @@ def build_setup_index(extraction_path, corpus_root, expected_corpus_sha,
         raise V2BError("corpus lean-toolchain is malformed")
     lake = os.path.join(elan_home, "bin", "lake")
     elan = os.path.join(elan_home, "bin", "elan")
+    environment_probe = "/usr/bin/env"
     if not os.path.isfile(lake) or not os.access(lake, os.X_OK) \
             or not os.path.isfile(elan) or not os.access(elan, os.X_OK):
         raise V2BError("POOL Elan/Lake executable is absent")
+    if not os.path.isfile(environment_probe) \
+            or not os.access(environment_probe, os.X_OK):
+        raise V2BError("Lake environment probe executable is absent")
     env = os.environ.copy()
     env["ELAN_HOME"] = elan_home
     version = _run([lake, "--version"], corpus_root, env, timeout)
     if version.returncode != 0 or not version.stdout.strip():
         raise V2BError(f"Lake version query failed: {version.stderr[:300]}")
     toolchain_env = dict(env, ELAN_TOOLCHAIN=toolchain)
+    lake_environment = query_lake_environment(
+        lake, corpus_root, toolchain_env, timeout, environment_probe)
     lean_which = _run([elan, "which", "lean"], corpus_root, toolchain_env,
                       timeout)
     if lean_which.returncode != 0 or not lean_which.stdout.strip():
@@ -519,7 +581,7 @@ def build_setup_index(extraction_path, corpus_root, expected_corpus_sha,
         names = [row["module"] for row in batch]
         targets = [f"+{module}:setup" for module in names]
         result = _run([lake, "query", *targets, "--json"], corpus_root,
-                      env, timeout)
+                      toolchain_env, timeout)
         if result.returncode != 0:
             raise V2BError(f"Lake setup batch {batch_index} failed: "
                            f"{result.stderr.strip()[:1000]}")
@@ -569,6 +631,10 @@ def build_setup_index(extraction_path, corpus_root, expected_corpus_sha,
                   version=version.stdout.strip()),
         lean=dict(path=lean, sha256=sha256_file(lean),
                   version=lean_version.stdout.strip()),
+        environment_probe=dict(
+            path=environment_probe, sha256=sha256_file(environment_probe)),
+        lake_environment=lake_environment,
+        lake_environment_sha256=sha256_sorted_json(lake_environment),
         n_modules=len(rows), n_batches=len(batches), batch_size=batch_size,
         setups=setups, setups_sha256=sha256_sorted_json(setups),
         rows=rows, rows_sha256=sha256_sorted_json(rows),

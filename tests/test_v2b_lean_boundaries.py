@@ -115,8 +115,8 @@ def _runtime(td, driver_path, driver_sha, toolchain):
     environment = {name: None for name in (
         "ELAN_HOME", "ELAN_TOOLCHAIN", "LANG", "LC_ALL",
         "LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH", "LIBRARY_PATH", "LEAN_CC",
-        "LEAN_NUM_THREADS", "PATH", "TMPDIR", "XDG_CACHE_HOME",
-        "XDG_CONFIG_HOME", "XDG_DATA_HOME")}
+        "LEAN_NUM_THREADS", "LEAN_PATH", "LEAN_SRC_PATH", "PATH", "TMPDIR",
+        "XDG_CACHE_HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME")}
     environment["ELAN_HOME"] = os.path.join(td, "elan")
     environment["ELAN_TOOLCHAIN"] = toolchain
     return dict(

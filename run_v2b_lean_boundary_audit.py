@@ -17,7 +17,8 @@ import subprocess
 import sys
 import tempfile
 
-from prepare_v2b_lean_setups import (SETUP_INDEX_SCHEMA,
+from prepare_v2b_lean_setups import (LAKE_ENV_KEYS, SETUP_INDEX_SCHEMA,
+                                     query_lake_environment,
                                      validate_setup_index)
 from provenance import head_commit, source_clean, source_tree_hash
 from v2b_common import (V2BError, artifact_binding, load_json, sha256_bytes,
@@ -49,8 +50,8 @@ SETUP_BINDING_KEYS = frozenset(("path", "sha256", "schema"))
 ENVIRONMENT_KEYS = (
     "ELAN_HOME", "ELAN_TOOLCHAIN", "LANG", "LC_ALL", "LD_LIBRARY_PATH",
     "DYLD_LIBRARY_PATH", "LIBRARY_PATH", "LEAN_CC", "LEAN_NUM_THREADS",
-    "PATH", "TMPDIR", "XDG_CACHE_HOME", "XDG_CONFIG_HOME",
-    "XDG_DATA_HOME")
+    "LEAN_PATH", "LEAN_SRC_PATH", "PATH", "TMPDIR", "XDG_CACHE_HOME",
+    "XDG_CONFIG_HOME", "XDG_DATA_HOME")
 FORBIDDEN_LEAN_ENV = ("LEAN_PATH", "LEAN_SRC_PATH")
 
 
@@ -88,7 +89,7 @@ def _corpus_identity(corpus_root, expected_sha):
         raise V2BError("corpus checkout is dirty during boundary audit")
 
 
-def _environment(elan_home, toolchain):
+def _environment(elan_home, toolchain, lake_environment):
     if not isinstance(elan_home, str) or not elan_home:
         raise V2BError("boundary runner ELAN_HOME is empty")
     for name in FORBIDDEN_LEAN_ENV:
@@ -97,6 +98,17 @@ def _environment(elan_home, toolchain):
     env = os.environ.copy()
     env["ELAN_HOME"] = os.path.realpath(elan_home)
     env["ELAN_TOOLCHAIN"] = toolchain
+    if not isinstance(lake_environment, dict) \
+            or set(lake_environment) != set(LAKE_ENV_KEYS):
+        raise V2BError("boundary runner Lake environment is malformed")
+    for name in LAKE_ENV_KEYS:
+        value = lake_environment[name]
+        if value is None:
+            env.pop(name, None)
+        elif isinstance(value, str):
+            env[name] = value
+        else:
+            raise V2BError(f"boundary runner Lake environment {name} drift")
     projection = {name: env.get(name) for name in ENVIRONMENT_KEYS}
     return env, projection
 
@@ -111,7 +123,9 @@ def _command(args, cwd, env, timeout):
 
 
 def validate_runtime(setup_index_path, global_manifest, driver_path,
-                     elan_home):
+                     elan_home, environment_timeout=600):
+    if type(environment_timeout) is not int or environment_timeout <= 0:
+        raise V2BError("Lake environment timeout must be positive")
     setup_binding, setup_index = artifact_binding(
         setup_index_path, SETUP_INDEX_SCHEMA)
     validate_setup_index(
@@ -159,7 +173,21 @@ def validate_runtime(setup_index_path, global_manifest, driver_path,
     if not os.path.isfile(lean_path) or not os.access(lean_path, os.X_OK) \
             or sha256_file(lean_path) != lean["sha256"]:
         raise V2BError("resolved Lean executable hash/path drift")
-    env, environment = _environment(elan_home, toolchain)
+    lake_environment = setup_index.get("lake_environment")
+    for name in FORBIDDEN_LEAN_ENV:
+        if os.environ.get(name):
+            raise V2BError(f"ambient {name} is forbidden for the Lean audit")
+    query_env = os.environ.copy()
+    query_env["ELAN_HOME"] = os.path.realpath(elan_home)
+    query_env["ELAN_TOOLCHAIN"] = toolchain
+    live_lake_environment = query_lake_environment(
+        setup_index["lake"]["path"], corpus_root, query_env,
+        environment_timeout,
+        setup_index["environment_probe"]["path"])
+    if live_lake_environment != lake_environment:
+        raise V2BError("live Lake environment disagrees with setup index")
+    env, environment = _environment(
+        elan_home, toolchain, lake_environment)
     version = _command([lean_path, "--version"], corpus_root, env, 60)
     if version.returncode != 0 \
             or _strict_text(version.stdout, "Lean --version stdout").strip() \
@@ -340,8 +368,10 @@ def run_audit(global_manifest_path, setup_index_path, driver_path,
         raise V2BError("boundary timeout must be a positive integer")
     _, global_manifest = artifact_binding(
         global_manifest_path, BOUNDARY_MANIFEST_SCHEMA)
+    environment_timeout = min(timeout, 600)
     runtime, env = validate_runtime(
-        setup_index_path, global_manifest, driver_path, elan_home)
+        setup_index_path, global_manifest, driver_path, elan_home,
+        environment_timeout)
     manifests = build_driver_manifests(
         global_manifest, driver_path, runtime["toolchain"])
     run_dir = os.path.abspath(run_dir)
@@ -371,7 +401,8 @@ def run_audit(global_manifest_path, setup_index_path, driver_path,
     result = aggregate_driver_runs(
         global_manifest_path, driver_path, runtime["toolchain"], runs)
     runtime_after, _ = validate_runtime(
-        setup_index_path, global_manifest, driver_path, elan_home)
+        setup_index_path, global_manifest, driver_path, elan_home,
+        environment_timeout)
     if runtime_after != runtime:
         raise V2BError("boundary runtime changed during corpus audit")
     result["runtime"] = runtime

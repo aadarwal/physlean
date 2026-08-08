@@ -18,10 +18,20 @@ from v2b_lean_boundaries import (build_boundary_artifact,
 
 FAKE_LEAN = r'''#!/usr/bin/env python3
 import json
+import os
 import sys
 
 if sys.argv[1:] == ["--version"]:
     print("Lean fixture 4.32")
+    raise SystemExit(0)
+if sys.argv[1:] == ["env", "/usr/bin/env", "-0"]:
+    rows = [
+        ("LEAN_PATH", "/fixture/lean"),
+        ("LEAN_SRC_PATH", "/fixture/src"),
+        ("LD_LIBRARY_PATH", "/fixture/lib"),
+        ("PATH", os.environ["PATH"]),
+    ]
+    sys.stdout.write("".join(f"{key}={value}\0" for key, value in rows))
     raise SystemExit(0)
 manifest = json.load(open(sys.argv[-1], encoding="utf-8"))
 marker = "@@V2B_LEAN_BOUNDARY@@"
@@ -78,7 +88,8 @@ def _fixture(td):
     _git(corpus, "config", "user.email", "fixture@example.test")
     _git(corpus, "config", "user.name", "Fixture")
     _git(corpus, "add", "A.lean", "lean-toolchain")
-    _git(corpus, "commit", "-qm", "fixture")
+    _git(corpus, "-c", "commit.gpgsign=false", "commit", "-qm",
+         "fixture")
     corpus_sha = _git(corpus, "rev-parse", "HEAD")
 
     setup = os.path.join(td, "setups", "A.setup.json")
@@ -122,6 +133,10 @@ def _fixture(td):
     artifacts = [dict(
         path=source, sha256=sha256_file(source),
         roles=["import-artifact"])]
+    lake_environment = dict(
+        LEAN_PATH="/fixture/lean", LEAN_SRC_PATH="/fixture/src",
+        LD_LIBRARY_PATH="/fixture/lib", DYLD_LIBRARY_PATH=None,
+        PATH=os.environ["PATH"])
     setup_index = dict(
         schema=SETUP_INDEX_SCHEMA, repo="fixture", language="lean",
         corpus_git_sha=corpus_sha,
@@ -133,6 +148,10 @@ def _fixture(td):
                   version="Lake fixture"),
         lean=dict(path=lean, sha256=sha256_file(lean),
                   version="Lean fixture 4.32"),
+        environment_probe=dict(
+            path="/usr/bin/env", sha256=sha256_file("/usr/bin/env")),
+        lake_environment=lake_environment,
+        lake_environment_sha256=sha256_sorted_json(lake_environment),
         n_modules=1, n_batches=1, batch_size=1,
         setups=setups, setups_sha256=sha256_sorted_json(setups),
         rows=rows, rows_sha256=sha256_sorted_json(rows),
