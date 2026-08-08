@@ -70,6 +70,24 @@ def sha256_json(value):
     return sha256_bytes(canonical_json_bytes(value))
 
 
+def sha256_sorted_json(value):
+    """SHA256 of compact JSON with object keys recursively sorted.
+
+    New evidence schemas should use this for hashes that must recompute after
+    ``write_new_json`` publication, because that writer sorts object keys.
+    ``sha256_json`` remains unchanged for already-frozen seeds, identities,
+    and legacy artifact contracts whose insertion-order preimages cannot be
+    retroactively altered.
+    """
+    try:
+        text = json.dumps(value, ensure_ascii=False, separators=(",", ":"),
+                          allow_nan=False, sort_keys=True)
+    except (TypeError, ValueError) as err:
+        raise V2BError(f"value is not sorted-JSON encodable: {err}") \
+            from err
+    return sha256_bytes(text.encode("utf-8"))
+
+
 def validate_identity(language, identity):
     """Return the frozen Lean pair or Python source-qualified triple."""
     if not isinstance(identity, (list, tuple)):

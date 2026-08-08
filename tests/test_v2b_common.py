@@ -8,7 +8,8 @@ import tempfile
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from v2b_common import (V2BError, canonical_json_bytes, identity_key,
                         load_json, relative_source_path, seeded_hash,
-                        sha256_file, validate_identity, write_new_json)
+                        sha256_file, sha256_json, sha256_sorted_json,
+                        validate_identity, write_new_json)
 
 
 def test_canonical_unicode_and_flat_identity_hashes_are_unambiguous():
@@ -56,6 +57,21 @@ def test_new_only_json_roundtrip_and_schema_gate():
         else:
             raise AssertionError("accepted wrong schema")
         assert json.load(open(path, encoding="utf-8")) == value
+
+
+def test_sorted_json_self_hash_survives_evidence_publication():
+    left = {"b": 1, "a": {"d": 4, "c": 3}}
+    right = {"a": {"c": 3, "d": 4}, "b": 1}
+    assert left == right
+    assert sha256_json(left) != sha256_json(right)  # legacy/order-sensitive
+    assert sha256_sorted_json(left) == sha256_sorted_json(right)
+    with tempfile.TemporaryDirectory() as td:
+        path = os.path.join(td, "sorted.json")
+        value = {"schema": "sorted_v1", "payload": left}
+        expected = sha256_sorted_json(value["payload"])
+        write_new_json(path, value)
+        reloaded, _ = load_json(path, "sorted_v1")
+        assert sha256_sorted_json(reloaded["payload"]) == expected
 
 
 def test_duplicate_keys_and_nonfinite_json_fail_closed():

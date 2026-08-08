@@ -497,8 +497,26 @@ Before any Lean sample/assembly/score, a pinned-parser body-boundary artifact
 must audit every Lean declaration that can be a scored target or rendered
 unit, bind the v3 extraction and exact source/ModuleSetup inputs, and validate
 or correct H using §15.A20's exact-token plus same-form complete-sentinel rule.
-Zero/ambiguous body slots become explicit unsplit units (and cannot be scored
-targets); corrected boundaries must be source-byte exact and corpus-audited.
+The old v3 split, including `split_kind=null`, is diagnostic only. For each
+UNIQUE committed declaration span, the audit parses the exact original
+top-level command under its pre-command Lake/parser/elaborator state, enumerates
+distinct exact canonical leaves spelling {`:=`,`where`,`|`} in increasing raw
+byte order, tests same-form sentinels in that order, and stops at the first
+valid candidate. Later valid delimiters are expected inside bodies and are not
+ambiguity. Zero candidates, no valid sentinel, or a span that is not one exact
+top-level command becomes an explicit conservative unsplit unit (and cannot be
+a scored target); metadata/member conflicts, missing identity coverage, or
+nondeterministic replay abort the artifact. Corrected boundaries must be
+source-byte exact and corpus-audited across every `files[].decls` identity,
+not only a later behavioral subset.
+
+This artifact is upstream of the draw: Lean candidate population, body bytes,
+terciles, target hashes, k3 interface rendering, and assembly validation must
+all consume the same bound effective split. A formerly null v3 row may become
+eligible if the parser resolves it; an unresolved dependency stays in the
+context universe and renders verbatim. Raw full-declaration context arms,
+graphs, A6/neardup evidence, and k4x external implementations are unchanged.
+Any candidate tables/sample derived before this overlay must be regenerated.
 The assembly producer must refuse unbound raw v3 Lean split fields. This gate
 is currently UNRUN and is a hard launch blocker; no GPU rerun is implied
 because no V2-b sample, assembly, or score exists.
@@ -1912,8 +1930,9 @@ driver's prevalidation record to echo it.
 
   TRUSTED PREPARATION. Under the repository's pinned Lake/toolchain, the
 driver loads the exact ModuleSetup package, resolved imports/artifacts,
-plugins, dynamic libraries, and package options. Matching Lean 4.32's
-`runFrontend`, raw bound CLI option strings are installed BEFORE the
+plugins, dynamic libraries, and package options. Matching `runFrontend` in
+the exact pinned frontend (Lean 4.33.0-rc2 for mathlib4/Batteries and Lean
+4.32.0 for PhysLib), raw bound CLI option strings are installed BEFORE the
 ModuleSetup merge, setup/file options win collisions, and the combined options
 are reparsed after imports register plugin options. The driver then forces
 `Elab.async=false` before every command even if setup, CLI, or source text
@@ -2015,3 +2034,34 @@ failures rather than hanging or aborting the study. S5 must elaborate the
 retained reconstruction and verify the exact declaration name and statement/
 type against the original before its ordinary baseline/forbidden-escape tests.
 S5, masking, behavioral governance, and all GPU generation remain unrun.
+
+  CORPUS BODY-BOUNDARY AUDIT (distinct from generated-sample S4). Before any
+candidate rebuild, one CPU-only per-module driver traverses the full trusted
+source under the exact `ModuleSetup` obtained with Lake's queryable
+`+Module:setup --json` facet. It elaborates trusted original commands
+synchronously to reconstruct file-local syntax state, but parses and never
+elaborates sentinels. Exact-keyed module manifests, raw stdout/stderr, exit
+status, source/setup/driver/Lean executable hashes before and after execution,
+and marker-only transcripts are immutable and requeue-safe. The corpus fold
+deduplicates execution by `(module,source_sha,start,end)` while preserving all
+assembly identities, selects the earliest sentinel-valid canonical candidate,
+and publishes a complete resolved/unsplit overlay. Every persisted nested
+self-hash in this new schema uses recursively key-sorted compact JSON so it
+recomputes after the evidence writer's sorted-key serialization; frozen
+list-based seeds/identity hashes and exact order-preserving driver invocation
+preimages are unchanged. The setup index also hashes the complete unique file
+closure named by `importArts`, dynamic-library, and plugin fields, then
+revalidates that closure before and after the corpus run. Ambient
+`LEAN_PATH`/`LEAN_SRC_PATH` are forbidden, the remaining relevant environment
+is an exact-keyed runtime projection, and each module has a frozen 7200-second
+process ceiling.
+
+  A V2-a declaration span nested inside a larger top-level wrapper command
+(for example a scoped `set_option ... in theorem`) is not silently promoted:
+it receives `not-exact-command-span`, remains a verbatim context unit, and is
+ineligible as a target. Resolution itself is syntax-based rather than a
+declaration-kind whitelist. Consequently a structure-style `where` may
+resolve when its same-form sentinel is complete, while an inductive-style
+boundary that cannot pass that probe remains unsplit; both retain their
+already-frozen target-eligibility kind. The prospective artifact must report
+these status/kind transition counts before any sample is drawn.

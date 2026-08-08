@@ -1459,6 +1459,44 @@ arxiv_manifest) must be committed before measurement.
   invalidated because V2-b has not reached sampling or scoring. Full detail:
   DESIGN_V2 §14.5 and §15.A20.
 
+- ADOPTED/CLARIFIED (2026-08-08, corpus-wide Lean boundary algorithm;
+  PRE-A6-LABEL/PRE-SAMPLE/PRE-SCORE): the old v3 split, including null, is
+  diagnostic only. The audit groups every extraction identity by its exact
+  unique source command span, parses each original command under the exact
+  pre-command pinned Lake state, enumerates distinct exact canonical
+  {`:=`,`where`,`|`} leaves in ascending byte order, and stops at the FIRST
+  same-form-sentinel-valid candidate. Later valid delimiters are ordinary body
+  syntax, not ambiguity. Zero candidates, no valid sentinel, or non-exact
+  command spans become conservative unsplit/non-target rows but remain
+  verbatim context units; conflicting joins, missing/duplicate identity
+  coverage, or replay drift abort the artifact. The overlay is required
+  upstream of Lean candidate population/body-size terciles and is hash-bound
+  again by assembly; any pre-overlay Lean candidates/sample must be
+  regenerated. Exact `ModuleSetup` JSON is obtained through Lake
+  `query +Module:setup --json`; mathlib4/Batteries run their pinned Lean
+  4.33.0-rc2 frontend and PhysLib runs pinned Lean 4.32.0. This CPU audit
+  reads no salt, model output, sample, or outcome. Spans nested inside a larger
+  top-level wrapper command are conservatively `not-exact-command-span` and
+  remain verbatim/non-target; syntax kinds are not force-normalized, so the
+  complete pre-draw artifact must expose status/kind transition counts. Its
+  setup index binds every referenced import artifact, dynamic library, and
+  plugin file; ambient Lean search paths are forbidden and every module has a
+  frozen 7200-second ceiling.
+
+- ADOPTED (2026-08-08, new-artifact self-hash encoding; PRE-A6-LABEL/
+  PRE-SAMPLE/PRE-SCORE/PRE-OUTCOME): review found that legacy `sha256_json`
+  preserves mapping insertion order while `write_new_json` serializes mapping
+  keys sorted. Consequently a nested legacy self-hash need not recompute from
+  its published representation (confirmed on the still-unlabeled A6 packet).
+  This is a provenance/encoding defect, not a changed identity, draw, label,
+  or outcome. New Lean-boundary/setup/result schemas therefore use recursively
+  key-sorted compact JSON for every persisted nested self-hash. Frozen
+  list-based seed/identity preimages and exact order-preserving Lean driver
+  manifest invocation bindings remain unchanged. Before A6 labels or any
+  reveal, legacy governance artifacts that claim recomputable nested
+  self-hashes must be audited and, where safe because still pre-label/pre-draw,
+  regenerated or schema-bumped prospectively.
+
 - ADOPTED/AMENDED (2026-08-08, Lean behavioral extraction rule;
   PRE-GENERATION and PRE-OUTCOME — no generated token or extracted body
   exists): Lean S4 uses a
