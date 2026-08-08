@@ -63,11 +63,23 @@ for d in corpora/*/; do
     || { echo "[STILL-BROKEN] $n"; FAILED=1; }
 done
 
-echo "=== [fix 3b/6] arXiv pinned refetch (exact-set fail-closed) ==="
-# the script itself validates the EXACT expected set (missing/mismatch ->
-# nonzero); loose shell counts were fail-open (review fix)
-.venv/bin/python arxiv_fetch.py --from-manifest || { echo "[ARXIV-FAILED]"; FAILED=1; }
-echo "arxiv: old=$(ls corpora/arxiv/old 2>/dev/null | wc -l) new=$(ls corpora/arxiv/new 2>/dev/null | wc -l) (informational)"
+echo "=== [fix 3b/6] arXiv (OPTIONAL corpus, tri-state) ==="
+# amendment (PREREG §2): fetch/validation runs ONLY when source material
+# is present on disk (shared recursive definition — any .tex anywhere).
+# ABSENT -> explicit non-blocking report, no network dependency for G1.
+# PRESENT -> repair/validate against the adopted manifest; the script
+# validates the EXACT expected set (missing/mismatch -> nonzero; loose
+# shell counts were fail-open — review fix) and failure blocks G1.
+if .venv/bin/python -c 'import sys; sys.path.insert(0, ".");
+from arxiv_fetch import material_present
+sys.exit(0 if material_present("corpora/arxiv") else 3)'; then
+  .venv/bin/python arxiv_fetch.py --from-manifest || { echo "[ARXIV-FAILED]"; FAILED=1; }
+  echo "arxiv: old=$(ls corpora/arxiv/old 2>/dev/null | wc -l) new=$(ls corpora/arxiv/new 2>/dev/null | wc -l) (informational)"
+else
+  rc=$?
+  [ "$rc" -eq 3 ] || { echo "[ARXIV-PRESENCE-CHECK-FAILED] rc=$rc"; FAILED=1; }
+  [ "$rc" -eq 3 ] && echo "[ARXIV-ABSENT] optional corpus has no source material — fetch/validation skipped (non-blocking)"
+fi
 # replay pinned corpus SHAs + verify arXiv identity when a committed lock
 # exists (runs AFTER arxiv fetch so checksums.json is present); on the
 # first acquisition there is no lock — `corpus_lock.py write` at the G1

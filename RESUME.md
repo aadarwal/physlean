@@ -15,7 +15,9 @@ only the operational state.
 - **Code** (all committed, validated end-to-end on M5/MPS):
   - `prep_streams.py` — Phase 1 streams: 2×2 grid + geant4 (C++) + arXiv LaTeX
     (old=2023H1 contaminated / new=2026-05+ clean), topo/shuffled/clean-per-cutoff
-    variants, byte-budget-matched; contamination dates = rename-aware one-pass
+    variants, byte-budget-matched; [superseded post-pause: arXiv is now an
+    OPTIONAL self-budgeted format diagnostic outside all core budgets —
+    PREREG §2/§13]; contamination dates = rename-aware one-pass
     git walk + per-file `--follow` re-check for candidate-clean files (the
     one-pass date alone can be ~5 weeks late — observed on physlib).
   - `eval_incontext.py` — teacher-forced NLL vs in-context bytes; KV-chunked,

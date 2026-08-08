@@ -201,7 +201,17 @@ def grouping_conservation(lens, grps, ids, nll_seq):
 
 
 def item_B(device_model, tok_main, device, res):
-    corpora = ["physlib", "mathlib", "qutip", "sympy", "geant4", "arxiv_old"]
+    corpora = ["physlib", "mathlib", "qutip", "sympy", "geant4"]
+    # OPTIONAL arXiv rows are opportunistic and NON-GATING, and must be
+    # CURRENT: a corpus joins only if the present streams_stats records
+    # it (a stale on-disk file alone must not resurrect it — review fix)
+    try:
+        _st = json.load(open(os.path.join(BASE, "data",
+                                          "streams_stats.json")))
+        corpora += [c for c in ("arxiv_old", "arxiv_new")
+                    if c in _st.get("corpora", {})]
+    except (OSError, ValueError):
+        pass
     rows = {}
     for fam, mid in FAM_SMALL.items():  # ALL FOUR tokenizer families
         tk = tok_of(mid)
@@ -269,17 +279,27 @@ def item_B(device_model, tok_main, device, res):
                         if sg[i] not in sg[:i]))
     # REAL-offset probe on all four pinned tokenizers (reviewer-verified:
     # 31/31 bytes conserved; Qwen 1 overlap row, SC2 5 incl. partial spans)
-    probe = "a∀b ⟨x,y⟩ ↦ α → β"
+    # two fixed probes: the unicode string (reviewer-verified) and a
+    # synthetic LaTeX snippet so FORMAT coverage never depends on the
+    # OPTIONAL arXiv corpus being present (amendment); real-arXiv rows
+    # above are opportunistic and non-gating
+    probes = {"unicode": "a∀b ⟨x,y⟩ ↦ α → β",
+              "latex": ("\\begin{equation} \\alpha_s(M_Z^2) = "
+                        "\\frac{12\\pi}{23\\ln(M_Z^2/\\Lambda^2)} "
+                        "\\end{equation} % comment ~5\\%")}
     probe_out, probe_ok = {}, True
     for fam, mid in FAM_SMALL.items():
-        enc = tok_of(mid)(probe, add_special_tokens=False,
-                          return_offsets_mapping=True)
-        pl, pg = token_spans(probe, enc["offset_mapping"])
-        ok = sum(pl) == len(probe.encode())
-        probe_ok = probe_ok and ok
-        probe_out[fam] = dict(tokens=len(pl),
-                              overlap_rows=sum(1 for L in pl if L == 0),
-                              bytes_conserved=ok)
+        tk = tok_of(mid)  # one load per family, shared by both probes
+        for pname, probe in probes.items():
+            enc = tk(probe, add_special_tokens=False,
+                     return_offsets_mapping=True)
+            pl, pg = token_spans(probe, enc["offset_mapping"])
+            ok = sum(pl) == len(probe.encode())
+            probe_ok = probe_ok and ok
+            probe_out[f"{fam}/{pname}"] = dict(
+                tokens=len(pl),
+                overlap_rows=sum(1 for L in pl if L == 0),
+                bytes_conserved=ok)
     rows["real_offset_probe"] = probe_out
     rows["synthetic_partition_ok"] = bool(synth_ok)
     rows["conservation_ok"] = bool(conserv_ok and synth_ok and probe_ok)

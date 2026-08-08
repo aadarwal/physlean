@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Fail-closed preflight (PREREG §12). Gates:
   --gate g1   after acquisition repair: env, corpora, streams, locks, shas
-  --gate g3a  sentinel science gate (battery-cached 0.5B; 53 frozen cells)
-  --gate g3b  expansion gate (small/mid pinned; 183 frozen cells; requires
+  --gate g3a  sentinel science gate (battery-cached 0.5B; 44 frozen cells)
+  --gate g3b  expansion gate (small/mid pinned; 152 frozen cells; requires
               sentinel AND paired-v2 pilot signoffs)  [alias: g3]
+arXiv is an OPTIONAL preserved artifact: absent -> non-blocking report;
+present -> integrity must validate and failure blocks G1 (tri-state).
   --gate big  big shards: big-rung models cached at pinned revisions
 Writes results_v2/preflight_<gate>.json (gate-specific evidence is
 preserved, never overwritten by later gates). Exit 0 only on pass."""
@@ -31,6 +33,109 @@ STREAM_SOURCE_REPOS = {"physlib", "mathlib4", "qutip", "sympy", "geant4"}
 BIG = ["Qwen/Qwen2.5-Coder-14B", "Qwen/Qwen2.5-Coder-32B",
        "Qwen/Qwen3-8B-Base", "Qwen/Qwen3-14B-Base",
        "Qwen/Qwen3.5-9B-Base", "deepseek-ai/DeepSeek-Coder-V2-Lite-Base"]
+
+
+def arxiv_present():
+    """ONE shared recursive presence definition (review fix: a shallow
+    listdir treated a nested-only stray .tex as absent, contradicting
+    scan_disk and letting rot pass silently): any .tex anywhere under
+    corpora/arxiv is PRESENT and must then validate."""
+    sys.path.insert(0, BASE)
+    from arxiv_fetch import material_present
+    return material_present(os.path.join(BASE, "corpora", "arxiv"))
+
+
+def arxiv_validated_check():
+    """Optional-corpus tri-state (amendment, PREREG §2/§13): ABSENT
+    passes non-blocking; PRESENT must fully validate against the adopted
+    version+sha256 manifest — failure blocks the gate. Validation
+    MEASURES THE DISK (review fix: trusting checksums.json's recorded
+    hashes let a .tex mutated after the ledger was written pass): every
+    current canonical on-disk file is re-hashed against the pin; the
+    ledger is cross-checked as fetch-time evidence, never as truth."""
+    if not arxiv_present():
+        check("arxiv-validated", True,
+              "optional corpus absent — non-blocking (tri-state)")
+        return
+    try:
+        sys.path.insert(0, BASE)
+        from arxiv_fetch import ledger_vs_pin, verify_disk_against_pin
+        pin = json.load(open(os.path.join(BASE, "arxiv_manifest.json")))
+        disk = verify_disk_against_pin(
+            os.path.join(BASE, "corpora", "arxiv"), pin)
+        disk_ok = not (disk["missing"] or disk["extra"]
+                       or disk["hash_mismatch"] or disk["bytes_mismatch"])
+        # ledger cross-check (weaker, still required): the fetch-time
+        # record must cover the exact universe and its recorded
+        # sha256/bytes must agree with the pin INDEPENDENTLY of its own
+        # matches_pin claim (review fix: a forged/stale record asserting
+        # matches_pin=true must not pass)
+        cj = json.load(open(os.path.join(BASE, "corpora", "arxiv",
+                                         "checksums.json")))
+        expected = {f"{m['era']}/{k}" for k, m in pin.items()
+                    if not m.get("skipped")}
+        got = set(cj["files"])
+        ledger_bad = (sorted(expected - got) + sorted(got - expected)
+                      + ledger_vs_pin(cj["files"], pin)
+                      + [k for k, v in cj["files"].items()
+                         if not v.get("matches_pin")]
+                      + list(cj.get("extra_on_disk") or []))
+        check("arxiv-validated", disk_ok and not ledger_bad,
+              dict(expected=len(expected), disk_rehash_ok=disk_ok,
+                   missing=disk["missing"][:5], extra=disk["extra"][:5],
+                   hash_mismatch=disk["hash_mismatch"][:5],
+                   bytes_mismatch=disk["bytes_mismatch"][:5],
+                   byte_only_pins=len(disk["byte_only_pins"]),
+                   ledger_bad=ledger_bad[:5]))
+    except Exception as e:
+        check("arxiv-validated", False, repr(e))
+
+
+def current_era_presence():
+    sys.path.insert(0, BASE)
+    from arxiv_fetch import material_present
+    root = os.path.join(BASE, "corpora", "arxiv")
+    return {era: material_present(root, era=era) for era in ("old", "new")}
+
+
+def stats_arxiv_rows_ok(st_rows, sha, era_present):
+    """Exact tri-state consistency (review fix: bool(rows) let a fully
+    valid two-era corpus pass with a missing or stale era row): the
+    arxiv rows in streams_stats must be EXACTLY those implied by current
+    per-era presence, and the manifest hash must be recorded iff any era
+    is present. Pure so the rule is testable."""
+    exp = sorted(n for n, era in (("arxiv_old", "old"),
+                                  ("arxiv_new", "new"))
+                 if era_present.get(era))
+    return sorted(st_rows) == exp and (sha is not None) == bool(exp)
+
+
+def lock_arxiv_ok(present, arx, cur):
+    """Frozen tri-state lock rule (amendment): current ABSENT passes
+    regardless of a prior locked identity (reported, never blocking);
+    current PRESENT requires the lock to CARRY the identity and every
+    hash to match the on-disk state — pure so the rule is testable."""
+    return ((not present) or
+            (bool(arx) and all(arx.get(k) == cur[k] and cur[k]
+                               for k in cur)))
+
+
+def arxiv_pins_strong_check():
+    """Science gates forbid weak byte-only arXiv pins WHEN the optional
+    corpus is present: the version+sha256 migration must be adopted, not
+    skipped. Absent -> non-blocking (tri-state)."""
+    if not arxiv_present():
+        check("arxiv-pins-strong", True,
+              "optional corpus absent — non-blocking (tri-state)")
+        return
+    try:
+        pin = json.load(open(os.path.join(BASE, "arxiv_manifest.json")))
+        weak = [k for k, m in pin.items()
+                if not m.get("skipped") and not m.get("sha256")]
+        check("arxiv-pins-strong", not weak,
+              dict(byte_only_pins=len(weak), sample=weak[:5]))
+    except Exception as e:
+        check("arxiv-pins-strong", False, repr(e))
 
 
 def check(name, ok, detail):
@@ -79,7 +184,8 @@ def gate_g1():
             if c["n_files"] == 0 or c["total_bytes"] == 0:
                 bad.append(name)
             ft = c["streams"].get("full_topo")
-            if name != "arxiv_new" and (not ft or ft["bytes"] < 500_000):
+            if name not in ("arxiv_old", "arxiv_new") and (
+                    not ft or ft["bytes"] < 500_000):
                 bad.append(f"{name}:full_topo={ft and ft['bytes']}")
         check("streams-nonzero", not bad, bad or "all full_topo >= 500KB")
         check("budget-targets", st["targets"].get("full", 0) >= 1_000_000,
@@ -121,11 +227,22 @@ def gate_g1():
               clean_cells)
         gitless = [k for k, v in st.get("corpus_shas", {}).items() if not v]
         shas_keys = set(st.get("corpus_shas") or {})
+        # tri-state consistency (amendment): streams_stats must carry
+        # EXACTLY the arxiv rows implied by current per-era presence
+        # (review fix: bool(rows) let a valid two-era corpus pass with a
+        # missing/stale era row) and the manifest hash iff any era is
+        # present; stale pre-demotion residue fails and forces re-prep
+        st_arx = sorted(n for n in st.get("corpora", {})
+                        if n in ("arxiv_old", "arxiv_new"))
+        sha = st.get("arxiv_manifest_sha256")
+        ep = current_era_presence()
+        arx_need = stats_arxiv_rows_ok(st_arx, sha, ep)
         check("corpus-shas", shas_keys == STREAM_SOURCE_REPOS
-              and not gitless and st.get("arxiv_manifest_sha256"),
+              and not gitless and arx_need,
               dict(keys=sorted(shas_keys),
                    expected=sorted(STREAM_SOURCE_REPOS), gitless=gitless,
-                   arxiv_sha=(st.get("arxiv_manifest_sha256") or "")[:12]))
+                   era_presence=ep, arxiv_rows_in_stats=st_arx,
+                   arxiv_sha=(sha or "")[:12] or None))
     except Exception as e:
         check("streams-nonzero", False, repr(e))
 
@@ -219,41 +336,7 @@ def gate_g1():
     except Exception as e:
         check("env-frozen", False, repr(e))
 
-    try:
-        cj = json.load(open(os.path.join(BASE, "corpora", "arxiv",
-                                         "checksums.json")))
-        pin = json.load(open(os.path.join(BASE, "arxiv_manifest.json")))
-        expected = {f"{m['era']}/{k}" for k, m in pin.items()
-                    if not m.get("skipped")}
-        got = set(cj["files"])
-        missing = sorted(expected - got)
-        extra = sorted(got - expected)
-        failed_pin = [k for k, v in cj["files"].items()
-                      if not v.get("matches_pin")]
-        # exact per-(era,safe)-key hash equality where sha256 is pinned
-        hash_bad = [k for k, m in pin.items()
-                    if not m.get("skipped") and m.get("sha256")
-                    and (cj["files"].get(f"{m['era']}/{k}") or {})
-                    .get("sha256") != m["sha256"]]
-        weak_pins = [k for k, m in pin.items()
-                     if not m.get("skipped") and not m.get("sha256")]
-        # independent DISK scan: prep ingests directories, so un-pinned
-        # on-disk .tex files are fatal even if checksums.json missed them
-        from arxiv_fetch import scan_disk  # one era-qualified scanner
-        on_disk = scan_disk(os.path.join(BASE, "corpora", "arxiv"))
-        disk_extra = sorted(on_disk - expected)
-        rec_extra = cj.get("extra_on_disk") or []
-        check("arxiv-validated",
-              not missing and not extra and not failed_pin and not hash_bad
-              and not disk_extra and not rec_extra
-              and len(got) == len(expected),
-              dict(expected=len(expected), got=len(got),
-                   missing=missing[:5], extra=extra[:5],
-                   disk_extra=disk_extra[:5],
-                   failed_pin=failed_pin[:5], hash_mismatch=hash_bad[:5],
-                   byte_only_pins=len(weak_pins)))
-    except Exception as e:
-        check("arxiv-validated", False, repr(e))
+    arxiv_validated_check()
 
     # corpus worktrees: clean, full-history, and (if locked) at the locked
     # SHA with the locked remote (HEAD alone is insufficient provenance)
@@ -319,7 +402,14 @@ def gate_g1():
         mfp = os.path.join(BASE, "arxiv_manifest.json")
         cur_m = (hashlib.sha256(open(mfp, "rb").read()).hexdigest()
                  if os.path.exists(mfp) else None)
-        if st.get("arxiv_manifest_sha256") != cur_m:
+        st_rows = [n for n in st.get("corpora", {})
+                   if n in ("arxiv_old", "arxiv_new")]
+        ep = current_era_presence()
+        if not stats_arxiv_rows_ok(st_rows, st.get("arxiv_manifest_sha256"),
+                                   ep):
+            probs.append(f"arxiv rows/hash inconsistent with current era "
+                         f"presence (rows={sorted(st_rows)}, eras={ep})")
+        if any(ep.values()) and st.get("arxiv_manifest_sha256") != cur_m:
             probs.append("arxiv manifest hash != current")
         for corpus, c in st.get("corpora", {}).items():
             for kind, s in (c.get("streams") or {}).items():
@@ -410,26 +500,24 @@ def gate_common_science():
                            "manifest_sha256")):
             cur[key] = (hashlib.sha256(open(path, "rb").read()).hexdigest()
                         if os.path.exists(path) else None)
-        arx_ok = bool(arx) and all(arx.get(k) == cur[k] and cur[k]
-                                   for k in cur)
+        # frozen tri-state rule: CURRENT state governs. Current ABSENT
+        # -> ok regardless of a prior locked identity (reported).
+        # Current PRESENT -> the lock must carry the identity and it
+        # must match the on-disk hashes (a present-but-unlocked corpus
+        # fails: rewrite + commit the lock to adopt it).
+        present = arxiv_present()
+        arx_ok = lock_arxiv_ok(present, arx, cur)
         check("corpus-lock-complete",
               not unlocked and not vanished and arx_ok,
               dict(locked=len(locked), unlocked=unlocked,
-                   vanished=vanished, arxiv_hashes_current=arx_ok))
+                   vanished=vanished, arxiv_present=present,
+                   arxiv_hashes_current=arx_ok,
+                   prior_lock_identity_reported=bool(arx) and not present))
     except Exception as e:
         check("corpus-lock-complete", False,
               f"corpora_lock.json missing/unreadable: {e!r}")
 
-    # science gates forbid weak byte-only arXiv pins: the version+sha256
-    # migration must be adopted, not skipped
-    try:
-        pin = json.load(open(os.path.join(BASE, "arxiv_manifest.json")))
-        weak = [k for k, m in pin.items()
-                if not m.get("skipped") and not m.get("sha256")]
-        check("arxiv-pins-strong", not weak,
-              dict(byte_only_pins=len(weak), sample=weak[:5]))
-    except Exception as e:
-        check("arxiv-pins-strong", False, repr(e))
+    arxiv_pins_strong_check()
 
     raw_inventory()
     viability_check()
@@ -461,10 +549,11 @@ def raw_inventory():
 
 
 # FROZEN expected counts (review: the first preflight must not bless an
-# accidental grid shrink): sentinel = 12 full/clean + 5 XL + 6 shuffled +
-# 6 perdoc + 18 phase + 6 s2 = 53; small/mid = 48 P0 + 99 P1 + 36 P2 = 183
-EXPECTED_N = {"expected_cells_sentinel.json": 53,
-              "expected_cells.json": 183}
+# accidental grid shrink). Post-arXiv-demotion: sentinel = 10 full/clean +
+# 4 XL + 5 shuffled + 5 perdoc + 15 phase + 5 s2 = 44; small/mid =
+# 40 P0 + 82 P1 + 30 P2 = 152
+EXPECTED_N = {"expected_cells_sentinel.json": 44,
+              "expected_cells.json": 152}
 
 
 def expected_cells_check(shards, snap_name):
@@ -517,8 +606,7 @@ def viability_check():
     try:
         from prep_streams import CUTOFFS as cutoffs  # single cutoff source
         viability = {}
-        for corpus in ("physlib", "mathlib", "qutip", "sympy", "geant4",
-                       "arxiv_old"):
+        for corpus in ("physlib", "mathlib", "qutip", "sympy", "geant4"):
             mp = os.path.join(BASE, "data", "streams", corpus,
                               "full_topo.manifest.jsonl")
             if not os.path.exists(mp):
@@ -526,15 +614,14 @@ def viability_check():
             docs = [json.loads(l) for l in open(mp)]
             total = sum(d["end"] - d["start"] for d in docs)
             ent = dict(est_windows=round(total / 105_000, 1))
-            if corpus != "arxiv_old":  # LaTeX excluded from masking (§5)
-                for tag, cut in cutoffs.items():
-                    post = [d for d in docs if (d.get("date") or "") > cut]
-                    ent[tag] = dict(
-                        docs=len(post),
-                        kbytes=round(sum(d["end"] - d["start"]
-                                         for d in post) / 1e3),
-                        ok=len(post) >= 20 and sum(
-                            d["end"] - d["start"] for d in post) >= 300_000)
+            for tag, cut in cutoffs.items():  # all core corpora mask
+                post = [d for d in docs if (d.get("date") or "") > cut]
+                ent[tag] = dict(
+                    docs=len(post),
+                    kbytes=round(sum(d["end"] - d["start"]
+                                     for d in post) / 1e3),
+                    ok=len(post) >= 20 and sum(
+                        d["end"] - d["start"] for d in post) >= 300_000)
             viability[corpus] = ent
         check("windows-and-masking-viability", bool(viability), viability)
     except Exception as e:
@@ -552,9 +639,10 @@ def gate_g3a():
 
 def sentinel_completeness():
     """Post-sentinel artifact verification (review: definition counts are
-    insufficient): every one of the 53 sentinel cells — including all
-    three phase variants per corpus — must pass the FULL cell_done
-    identity/integrity check on the actual artifacts."""
+    insufficient): every one of the 44 sentinel cells (amendment: arXiv
+    demoted out of the core grid) — including all three phase variants
+    per core corpus — must pass the FULL cell_done identity/integrity
+    check on the actual artifacts."""
     try:
         sys.path.insert(0, BASE)
         from run_phase1 import jobs, cell_out, cell_done
@@ -574,7 +662,7 @@ def sentinel_completeness():
                 out, mid, ctx, flags, stream, mj) else missing).append(
                 os.path.basename(out))
         check("sentinel-artifacts-complete",
-              len(done) == 53 and not missing and n_phase == 18,
+              len(done) == 44 and not missing and n_phase == 15,
               dict(verified=len(done), missing=missing[:8],
                    phase_variants_defined=n_phase))
     except Exception as e:

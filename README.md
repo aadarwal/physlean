@@ -13,9 +13,13 @@ growth as a separate, gated longitudinal arm).
 
 Byte-normalized, source-span-grouped, teacher-forced code length of
 pinned base models on byte-budget-matched corpus streams (Lean 4 /
-Python / C++ / a LaTeX-source reference corpus — raw arXiv e-print bundles, not clean prose; physics-domain-matched), as a function of
+Python / C++; physics-domain-matched), as a function of
 window-relative context — **descriptive and model-relative**, with
 window/document sample-size discipline and frozen fit-acceptance gates.
+The LaTeX-source arXiv corpus is an OPTIONAL preserved artifact and
+separately-gated format diagnostic — no core-grid cells, excluded from
+all budget matching, integrity validated when present and non-blocking
+when absent (PREREG §2).
 Contamination control is clean-target masking (post-cutoff targets in
 natural context), reported as a temporal-generalization (cohort) gap.
 

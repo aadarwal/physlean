@@ -8,6 +8,11 @@ unit tests and the evaluator share one implementation."""
 # groups are doc=-1 uniformly).
 MEASUREMENT_SCHEMA_VERSION = 3
 
+# The V2 paired-target driver (eval_paired, G3.5+) versions its schema
+# INDEPENDENTLY so V2 evolution never invalidates G3-path artifacts;
+# bump this only for semantic changes to the PAIRED measurement.
+PAIRED_SCHEMA_VERSION = 1
+
 
 def token_spans(text, offsets):
     """(byte_len, group_id) per token from char-offset intervals.

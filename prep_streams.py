@@ -44,6 +44,10 @@ CUTOFFS = {              # model-family release dates (conservative cutoffs)
                                 # boundary set strictly AFTER the family max
 }
 
+CORE_CORPORA = {"physlib", "mathlib", "qutip", "sympy", "geant4"}
+OPTIONAL_CORPORA = {"arxiv_old", "arxiv_new"}  # preserved artifact +
+# optional format diagnostic: self-budgeted, NEVER in core target math
+
 CORPORA = {
     "physlib":   dict(repo="physlib",  dirs=["Physlib", "QuantumInfo"], exts=[".lean"], lang="lean",
                       exclude=["PhyslibAlpha"]),
@@ -331,88 +335,141 @@ def build(name, cfg, files, targets):
     stats = dict(corpus=name, lang=cfg["lang"], n_files=len(files),
                  total_bytes=sum(f["bytes"] for f in files), cycles=n_cyc,
                  streams={})
-    if name != "arxiv_new":   # full streams (contaminated arm)
-        # canonical subset chosen ONCE by the uniform seeded selection
-        # rule; the shuffle ablation permutes EXACTLY these files
-        canon = select_docs(files, order, targets["full"])
-        st_topo = emit_stream(name, "full_topo", files, canon)
-        st_topo["target_bytes"] = targets["full"]
-        st_topo["target_delta"] = st_topo["bytes"] - targets["full"]
-        st_topo["selection"] = dict(method="seeded-priority-greedy",
-                                    seed=SELECT_SEED)
-        sh = list(canon)
-        random.Random(SHUFFLE_SEED).shuffle(sh)
-        st_shuf = emit_stream(name, "full_shuffled", files, sh)
-        assert st_topo["doc_set_sha256"] == st_shuf["doc_set_sha256"] \
-            and st_topo["bytes"] == st_shuf["bytes"], \
-            f"{name}: shuffle ablation content diverged"
-        stats["streams"]["full_topo"] = st_topo
-        stats["streams"]["full_shuffled"] = st_shuf
-        # sampling-sensitivity stream (sentinel item): SAME rule, second
-        # seed — quantifies selection-policy sensitivity before expansion
-        s2 = select_docs(files, order, targets["full"],
-                         seed=SELECT_SEED + 1)
-        st_s2 = emit_stream(name, "full_topo_s2", files, s2)
-        st_s2["target_bytes"] = targets["full"]
-        st_s2["target_delta"] = st_s2["bytes"] - targets["full"]
-        st_s2["selection"] = dict(method="seeded-priority-greedy",
-                                  seed=SELECT_SEED + 1)
-        stats["streams"]["full_topo_s2"] = st_s2
-        # NESTED XL: same priority order greedy-extended past the
-        # canonical set — stability statements extend the same content
-        xl_idxs = select_docs(files, order, XL_CAP, base=canon)
-        xl = emit_stream(name, "full_topo_xl", files, xl_idxs)
-        xl["matched"] = False  # window-count supplement, never compared
-        xl["nested_superset_of_canonical"] = True
-        xl["selection"] = dict(method="seeded-priority-greedy",
-                               seed=SELECT_SEED, base="full_topo")
-        stats["streams"]["full_topo_xl"] = xl
-    if name != "arxiv_old":   # clean streams (post-cutoff files only)
-        for tag, cut in CUTOFFS.items():
-            if targets[tag] <= 0:
-                continue
-            pool = [i for i in order if files[i]["date"] and files[i]["date"] > cut]
-            avail = sum(files[i]["bytes"] for i in pool)
-            sub_order = pool  # topo-ordered already (filtered from order)
-            idxs = select_docs(files, sub_order, targets[tag])
-            st = emit_stream(name, f"clean_{tag}", files, idxs)
-            st["available_bytes"] = avail
-            st["unmatched"] = avail < MIN_MATCHED
-            if not st["unmatched"]:  # PREREG: matched within EVERY kind
-                st["target_bytes"] = targets[tag]
-                st["target_delta"] = st["bytes"] - targets[tag]
-            stats["streams"][f"clean_{tag}"] = st
+    if name in OPTIONAL_CORPORA:
+        # optional diagnostic corpus: ONE self-budgeted stream, always
+        # unmatched — no clean/shuffled/s2/XL, no target_delta, and by
+        # construction no influence on any code budget
+        cap = min(CAP, sum(f["bytes"] for f in files))
+        canon = select_docs(files, order, cap)
+        st = emit_stream(name, "full_topo", files, canon)
+        st["matched"] = False
+        st["optional"] = True
+        st["selection"] = dict(method="seeded-priority-greedy",
+                               seed=SELECT_SEED, self_budgeted=cap)
+        stats["streams"]["full_topo"] = st
+        return stats
+    # core full streams (contaminated arm): canonical subset chosen ONCE
+    # by the uniform seeded selection rule; the shuffle ablation permutes
+    # EXACTLY these files
+    canon = select_docs(files, order, targets["full"])
+    st_topo = emit_stream(name, "full_topo", files, canon)
+    st_topo["target_bytes"] = targets["full"]
+    st_topo["target_delta"] = st_topo["bytes"] - targets["full"]
+    st_topo["selection"] = dict(method="seeded-priority-greedy",
+                                seed=SELECT_SEED)
+    sh = list(canon)
+    random.Random(SHUFFLE_SEED).shuffle(sh)
+    st_shuf = emit_stream(name, "full_shuffled", files, sh)
+    assert st_topo["doc_set_sha256"] == st_shuf["doc_set_sha256"] \
+        and st_topo["bytes"] == st_shuf["bytes"], \
+        f"{name}: shuffle ablation content diverged"
+    stats["streams"]["full_topo"] = st_topo
+    stats["streams"]["full_shuffled"] = st_shuf
+    # sampling-sensitivity stream (sentinel item): SAME rule, second
+    # seed — quantifies selection-policy sensitivity before expansion
+    s2 = select_docs(files, order, targets["full"],
+                     seed=SELECT_SEED + 1)
+    st_s2 = emit_stream(name, "full_topo_s2", files, s2)
+    st_s2["target_bytes"] = targets["full"]
+    st_s2["target_delta"] = st_s2["bytes"] - targets["full"]
+    st_s2["selection"] = dict(method="seeded-priority-greedy",
+                              seed=SELECT_SEED + 1)
+    stats["streams"]["full_topo_s2"] = st_s2
+    # NESTED XL: same priority order greedy-extended past the
+    # canonical set — stability statements extend the same content
+    xl_idxs = select_docs(files, order, XL_CAP, base=canon)
+    xl = emit_stream(name, "full_topo_xl", files, xl_idxs)
+    xl["matched"] = False  # window-count supplement, never compared
+    xl["nested_superset_of_canonical"] = True
+    xl["selection"] = dict(method="seeded-priority-greedy",
+                           seed=SELECT_SEED, base="full_topo")
+    stats["streams"]["full_topo_xl"] = xl
+    # clean streams (post-cutoff files only)
+    for tag, cut in CUTOFFS.items():
+        if targets[tag] <= 0:
+            continue
+        pool = [i for i in order if files[i]["date"] and files[i]["date"] > cut]
+        avail = sum(files[i]["bytes"] for i in pool)
+        sub_order = pool  # topo-ordered already (filtered from order)
+        idxs = select_docs(files, sub_order, targets[tag])
+        st = emit_stream(name, f"clean_{tag}", files, idxs)
+        st["available_bytes"] = avail
+        st["unmatched"] = avail < MIN_MATCHED
+        if not st["unmatched"]:  # PREREG: matched within EVERY kind
+            st["target_bytes"] = targets[tag]
+            st["target_delta"] = st["bytes"] - targets[tag]
+        stats["streams"][f"clean_{tag}"] = st
     return stats
 
 
-if __name__ == "__main__":
-    os.makedirs(OUT, exist_ok=True)
-    corpora_files = {}
+def compute_targets(corpora_files):
+    """Matched-budget targets over CORE code corpora ONLY (amendment):
+    an optional corpus present in `corpora_files` can never change any
+    code stream's budget — module-level so the invariance is testable."""
+    targets = {"full": min(CAP, min(
+        sum(f["bytes"] for f in fs) for n, fs in corpora_files.items()
+        if n in CORE_CORPORA))}
+    clean_avail = {}
+    for tag, cut in CUTOFFS.items():
+        per = {n: sum(f["bytes"] for f in fs
+                      if f["date"] and f["date"] > cut)
+               for n, fs in corpora_files.items() if n in CORE_CORPORA}
+        ok = [v for v in per.values() if v >= MIN_MATCHED]
+        targets[tag] = min(CAP, min(ok)) if ok else 0
+        clean_avail[tag] = per
+    return targets, clean_avail
+
+
+def active_corpora():
+    """All CORE corpora plus an OPTIONAL corpus only when its source
+    material is present (tri-state, PREREG §2): a truly absent optional
+    corpus is never loaded, dated, built, or recorded — presence uses the
+    one shared recursive definition (arxiv_fetch.material_present), so a
+    nested stray .tex counts as present and must validate downstream."""
+    from arxiv_fetch import material_present
+    act = {}
     for name, cfg in CORPORA.items():
+        if name in OPTIONAL_CORPORA and not material_present(
+                os.path.join(ROOT, cfg["repo"]), era=cfg["dirs"][0]):
+            print(f"[optional] {name}: no source material on disk — "
+                  "skipped (non-blocking)", file=sys.stderr)
+            continue
+        act[name] = cfg
+    return act
+
+
+if __name__ == "__main__":
+    import shutil
+    active = active_corpora()
+    # the streams tree is a DERIVED artifact: rebuild it whole so no
+    # stale stream (e.g. a demoted/absent optional corpus's earlier
+    # emission) can outlive its corpus (review fix). Deterministic
+    # emission keeps hashes stable, so valid cell artifacts stay valid.
+    if os.path.isdir(OUT):
+        shutil.rmtree(OUT)
+    os.makedirs(OUT)
+    corpora_files = {}
+    for name, cfg in active.items():
         corpora_files[name] = load_corpus(name, cfg)
         tot = sum(f["bytes"] for f in corpora_files[name])
         print(f"{name}: {len(corpora_files[name])} files {tot/1e6:.1f}MB",
               file=sys.stderr)
+    for name in sorted(CORE_CORPORA):  # fail-closed: core is mandatory
+        assert corpora_files.get(name), f"core corpus {name} missing/empty"
 
-    targets = {"full": min(CAP, min(
-        sum(f["bytes"] for f in fs) for n, fs in corpora_files.items()
-        if n != "arxiv_new"))}
-    clean_avail = {}
-    for tag, cut in CUTOFFS.items():
-        per = {n: sum(f["bytes"] for f in fs if f["date"] and f["date"] > cut)
-               for n, fs in corpora_files.items() if n != "arxiv_old"}
-        ok = [v for v in per.values() if v >= MIN_MATCHED]
-        targets[tag] = min(CAP, min(ok)) if ok else 0
-        clean_avail[tag] = per
+    targets, clean_avail = compute_targets(corpora_files)
+    for tag, per in clean_avail.items():
         print(f"clean {tag}: " + " ".join(f"{k}={v/1e3:.0f}KB"
                                           for k, v in per.items()),
               file=sys.stderr)
     print("targets:", targets, file=sys.stderr)
 
     # provenance: exact corpus states measured (PREREG §2). arxiv is not a
-    # git repo — its universe is pinned by the manifest's SHA256 instead.
+    # git repo — its universe is pinned by the manifest's SHA256 instead;
+    # with the optional corpus ABSENT the hash is None and no arxiv
+    # corpus appears anywhere in streams_stats (tri-state).
     shas = {}
-    for name, cfg in CORPORA.items():
+    for name, cfg in active.items():
         if cfg.get("dated_by") == "manifest":
             continue
         p = subprocess.run(["git", "-C", os.path.join(ROOT, cfg["repo"]),
@@ -420,13 +477,16 @@ if __name__ == "__main__":
                            text=True)
         shas[cfg["repo"]] = p.stdout.strip() or None
     import hashlib
-    man_p = os.path.join(ROOT, "arxiv", "manifest.json")
-    arxiv_sha = (hashlib.sha256(open(man_p, "rb").read()).hexdigest()
-                 if os.path.exists(man_p) else None)
+    arxiv_sha = None
+    if any(n in OPTIONAL_CORPORA for n in active):
+        # material present -> the dating manifest MUST exist (load_corpus
+        # already opened it); record its identity
+        man_p = os.path.join(ROOT, "arxiv", "manifest.json")
+        arxiv_sha = hashlib.sha256(open(man_p, "rb").read()).hexdigest()
     all_stats = dict(targets=targets, clean_available=clean_avail,
                      corpus_shas=shas, arxiv_manifest_sha256=arxiv_sha,
                      corpora={})
-    for name, cfg in CORPORA.items():
+    for name, cfg in active.items():
         all_stats["corpora"][name] = build(name, cfg, corpora_files[name],
                                            targets)
     with open(os.path.join(BASE, "data", "streams_stats.json"), "w") as f:

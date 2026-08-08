@@ -9,8 +9,8 @@ Priorities:
       and the second-selection-seed full_topo_s2 streams
   P3  big rungs (14B/32B, DeepSeek-V2-Lite) — need >=40GB GPU; gated g3b
   P4  long-context arm (Qwen3.5 @ 131k) on physlib/mathlib
-Submission is sentinel-first (PREREG G3a; 53 frozen sentinel cells,
-183 small/mid).
+Submission is sentinel-first (PREREG G3a; 44 frozen sentinel cells,
+152 small/mid incl. the sentinel — arXiv holds no core cells).
 Each cell is a subprocess; finished cells are skipped via the .meta.json
 marker, so the runner is resumable and shardable: several jobs can run
 disjoint --models subsets concurrently.
@@ -51,14 +51,17 @@ FAMILIES = {
 # the SENTINEL model (battery-cached) carries the ablations: the first
 # science run is one cheap instrument-viability pass, not the full grid
 ABLATION_MODEL = "Qwen/Qwen2.5-Coder-0.5B"
-FULL_CORPORA = ["physlib", "mathlib", "qutip", "sympy", "geant4", "arxiv_old"]
-CLEAN_CORPORA = ["physlib", "mathlib", "qutip", "sympy", "geant4", "arxiv_new"]
+# arXiv is DEMOTED to an optional, separately-gated format diagnostic
+# (PREREG §2/§13, decided before any outcomes): no arXiv cell exists in
+# any core grid, and the optional corpus cannot affect code budgets.
+FULL_CORPORA = ["physlib", "mathlib", "qutip", "sympy", "geant4"]
+CLEAN_CORPORA = ["physlib", "mathlib", "qutip", "sympy", "geant4"]
 LONGCTX_CORPORA = ["physlib", "mathlib"]
 
 
 XL_MODELS = ["Qwen/Qwen2.5-Coder-0.5B", "Qwen/Qwen2.5-Coder-1.5B",
              "Qwen/Qwen2.5-Coder-3B"]  # window-count supplement (PREREG §6)
-XL_CORPORA = ["physlib", "mathlib", "sympy", "geant4", "arxiv_old"]
+XL_CORPORA = ["physlib", "mathlib", "sympy", "geant4"]
 
 
 def jobs():

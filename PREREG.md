@@ -59,16 +59,25 @@ models — it is NOT ingested or evaluated here absent written permission
 
 Corpora (Phase 1 measurement): physlib (Lean/physics), mathlib4 (Lean/math),
 qutip (Py/physics), sympy (Py/math), geant4 (C++/physics), and the
-**LaTeX-source reference** corpus (arXiv e-print bundles; old=2023H1 /
-new=2026-05+, ids pinned in arxiv_manifest.json). Construction confound,
-logged: these are RAW CONCATENATED LaTeX SOURCE BUNDLES — macros,
-auxiliary files, and possible included-file duplication included — not
-clean informal prose; NO Lean-vs-prose formality claim is drawn from
-this arm.
+**LaTeX-source reference** corpus — DEMOTED to an OPTIONAL preserved
+artifact + separately-gated format diagnostic (decided before any
+outcomes; §13): it holds NO cells in any core grid and is excluded from
+ALL budget matching (targets compute over CORE code corpora only;
+optional streams are self-budgeted and always unmatched). Query windows
+were 2023H1 and 2026-05..08, but the earliest-70-per-category listing
+makes the REALIZED corpus a convenience sample: old = 2023-01-01..05
+(132 files), new = 2026-05-01..04 (133 files), 4 predeclared skips.
+Construction confound, logged: RAW CONCATENATED LaTeX SOURCE BUNDLES —
+macros, auxiliary files, possible included-file duplication — not clean
+prose; NO Lean-vs-prose formality claim is drawn from this arm (the true
+formality test is V2's fixed-content pairs). Integrity is tri-state:
+absent -> non-blocking; present -> must validate, failure blocks G1.
 arXiv pinning contract: every non-skipped source is pinned to an EXPLICIT
-version — v1 for ALL entries migrated from the legacy byte-only manifest
-(no Atom versions were stored for either era); future fresh listings
-record the Atom-listed version — and
+version — v1 for ALL migrated entries EXCEPT where v1/v2 carry no TeX
+source: the single such case (2301.00502 -> v4, byte-identical to the
+inherited file, revision dated 2023-03-31, pre-all-cutoffs) is documented
+in-manifest and in §13; future fresh listings record the Atom-listed
+version — and
 fetched as /e-print/{id}{vN}; the committed manifest records per-file
 version, byte count, and SHA256, and refetch/preflight validate exact
 per-key hash equality plus the exact expected key set (no missing, no
@@ -76,7 +85,8 @@ extra on-disk files — prep ingests the directory). The one-time migration
 from the byte-only snapshot is a reviewed two-commit adoption; weak
 byte-only pins fail the science gates. Clean-arm cleanliness is unaffected
 by versioning (revisions cannot predate submission); the v1 pin makes the
-historical arm's "extant at submission" reading exact.
+historical arm's "extant at submission" reading exact for every file
+except the documented v4 case above.
 batteries and astropy are staged now and enter as v2 corpora at G3.5;
 a second C++ repo (e.g. LAMMPS) is DEFERRED and currently unstaged. Until
 multi-repo cells exist, all corpus-level claims are labeled single-repo. Known artifact confound: Lean cells are theorem/proof corpora,
@@ -158,9 +168,12 @@ are post-cutoff while context keeps the natural (old) dependency
 distribution. Computed from existing full_topo dumps (doc_id -> date join).
 **Code corpora only**: the LaTeX corpus's two eras are disjoint stream
 universes (full_topo = 2023 era contains no post-cutoff targets), so LaTeX
-is excluded from this protocol; its contamination design is the era-vs-era
-comparison of matched streams (arxiv_old vs arxiv_new), which exists by
-construction.
+is excluded from this protocol entirely. Since the arXiv demotion
+(§13), the optional corpus's streams are SELF-BUDGETED and unmatched —
+no matched era-vs-era comparison exists; any old-vs-new reading is an
+optional DESCRIPTIVE format/era diagnostic only, never a contamination
+control and never budget-comparable to any code corpus or to the other
+era.
 Secondary: all-new streams (`clean_*`, both target and context post-cutoff)
 as a robustness arm. Both reported; full-split numbers always shown beside
 them. Caveat recorded: git dates bound publication in THIS repo only;
@@ -337,7 +350,7 @@ G1 acquisition repair + fail-closed integrity; boundary report = commit
    hashes, preflight output, corpus SHAs, model inventory ->
 G2 battery results ->
 G2.5 v2 design doc written and reviewed ->
-G3a SENTINEL run (Qwen2.5-Coder-0.5B only; 53 frozen cells: full+clean,
+G3a SENTINEL run (Qwen2.5-Coder-0.5B only; 44 frozen cells: full+clean,
    XL, shuffled, per-doc, window phases {8192,16384,24576}, and the
    second-selection-seed streams): stop/go on INSTRUMENT VIABILITY ONLY —
    realized windows/docs vs preflight estimates, byte-ledger and
@@ -352,7 +365,14 @@ G3.5 v2 EXTRACTION VALIDATION + PILOT (V2-a/V2-b) — adopted strategic
    repository-context sufficiency precedes any grid expansion, because
    the stream grid is position/content-confounded by construction ->
 G3b small/mid grid expansion (human approves, explicit --smallmid;
-   183 frozen cells; OPTIONAL descriptive breadth after G3.5) ->
+   152 frozen cells; OPTIONAL descriptive breadth after G3.5). G3b
+   additionally requires battery-plumbing to match the CURRENT source
+   tree hash: any V2 code merged after the battery run intentionally
+   invalidates it, and the remedy is a battery RERUN at the merged tree
+   (minutes on one L40S) — the hash whitelist is never weakened. G3a may
+   precede V2 code changes; the paired driver carries its own
+   PAIRED_SCHEMA_VERSION so V2 evolution never invalidates G3-path
+   artifacts ->
 G4 OPTIONAL grid analysis (analyzer-v3 over whatever grid ran; purely
    descriptive) ->
 G5 CONFIRMATORY v2 full run (V2-c) + analysis (V2-d) per DESIGN_V2 —
@@ -377,6 +397,28 @@ reviewed at boundaries; everything else (code, PREREG, models.json,
 arxiv_manifest) must be committed before measurement.
 
 ## 13. Disagreement log
+
+- ADOPTED (pre-outcomes, at manifest adoption): arXiv arm DEMOTED to
+  optional preserved artifact + separately-gated format diagnostic; all
+  9 sentinel / 43 total core cells removed BEFORE any outcomes existed
+  (grids 259->216, sentinel 53->44, small/mid 183->152); budget math
+  decoupled (CORE vs OPTIONAL corpora); tri-state integrity gating
+  (absent non-blocking; present must validate, failure blocks G1);
+  synthetic LaTeX battery probe added so format plumbing coverage never
+  depends on the optional corpus. The one honest cost, recorded: the
+  core grid now has no non-code reference point, so "curve shape is
+  code-specific" observations require an explicitly approved diagnostic
+  run.
+- ADOPTED (arXiv v4 exception): 2301.00502 v1/v2 are PDF-only; the
+  inherited file is byte-identical to v4 (75,800B, sha aba85b52…,
+  revision 2023-03-31, pre-all-cutoffs) and is pinned to v4 as the
+  single documented exception. For this file the "extant at submission"
+  reading does NOT hold — its content is the March 2023 revision;
+  realized SUBMISSION ranges are unchanged. Migration re-ran end-to-end
+  from the corrected pin set with zero per-file interventions.
+- ADOPTED (sequencing): G3b battery-rerun-at-current-hash rule (above);
+  source_tree_hash whitelist never weakened; PAIRED_SCHEMA_VERSION
+  introduced for the V2 driver.
 
 - ADOPTED (2026-08-07 late): reviewer's strategic ordering — v2
   extraction/pilot (G3.5) before grid expansion (G3b); the sentinel grid

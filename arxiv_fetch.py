@@ -93,20 +93,99 @@ def fetch_source(aid, version=None):
 
 
 def scan_disk(out_dir):
-    """Era-qualified on-disk scan: canonical files key as 'era/safe';
-    ANY nested path is an explicit extra. Keying by (era,safe) — not safe
-    alone — catches an expected filename sitting in the WRONG era, which
-    a set union over eras cannot see (review fix)."""
+    """WHOLE-TREE era-qualified scan: canonical files key as 'era/safe';
+    a nested path under an era is an explicit extra ('NESTED:era/rel');
+    any .tex OUTSIDE the two era directories — root level or a third
+    directory — is an explicit extra too ('STRAY:rel'), so no location
+    can hide from present-must-validate (review fix: the walk previously
+    covered only old/ and new/). Keying by (era,safe) — not safe alone —
+    catches an expected filename sitting in the WRONG era, which a set
+    union over eras cannot see (review fix)."""
     found = set()
-    for era in ("old", "new"):
-        d = os.path.join(out_dir, era)
-        for dp, _, ns in os.walk(d):
-            for f in ns:
-                if f.endswith(".tex"):
-                    rel = os.path.relpath(os.path.join(dp, f), d)
-                    found.add(f"{era}/{f[:-4]}" if rel == f
-                              else f"NESTED:{era}/{rel}")
+    for dp, _, ns in os.walk(out_dir):
+        for f in ns:
+            if not f.endswith(".tex"):
+                continue
+            rel = os.path.relpath(os.path.join(dp, f), out_dir)
+            parts = rel.split(os.sep)
+            if parts[0] in ("old", "new"):
+                era, sub = parts[0], "/".join(parts[1:])
+                found.add(f"{era}/{f[:-4]}" if len(parts) == 2
+                          else f"NESTED:{era}/{sub}")
+            else:
+                found.add(f"STRAY:{'/'.join(parts)}")
     return found
+
+
+def material_present(out_dir, era=None):
+    """The ONE presence definition shared by prep/preflight/corpus_lock
+    (tri-state, PREREG §2): with era=None, PRESENT iff ANY .tex exists
+    ANYWHERE under out_dir — nested, root-level, or third-directory
+    strays included, which must then VALIDATE (they surface as extras
+    and fail it; never silently absent). An era-restricted query counts
+    only that era's files (strays outside old/ and new/ belong to no
+    era, so they activate no optional corpus while still forcing the
+    global present-must-validate path to fail on them)."""
+    for k in scan_disk(out_dir):
+        if era is None:
+            return True
+        e = k[len("NESTED:"):] if k.startswith("NESTED:") else k
+        if not k.startswith("STRAY:") and e.split("/", 1)[0] == era:
+            return True
+    return False
+
+
+def verify_disk_against_pin(out_dir, pinned):
+    """Re-hash every CURRENT canonical on-disk .tex directly against the
+    pinned manifest (review fix: checksums.json is a fetch-time LEDGER —
+    a .tex mutated after the ledger was written still 'matched' when the
+    gate trusted recorded hashes; the gate must measure the disk).
+    Returns problem lists — with all of them empty (byte_only_pins is
+    reported here but gated separately by arxiv-pins-strong) the disk IS
+    the pinned corpus, independent of any ledger state."""
+    import hashlib
+    expected = {f"{m['era']}/{k}": m for k, m in pinned.items()
+                if not m.get("skipped")}
+    on_disk = scan_disk(out_dir)
+    hash_bad, bytes_bad, weak = [], [], []
+    for key in sorted(on_disk & set(expected)):
+        era, safe = key.split("/", 1)
+        b = open(os.path.join(out_dir, era, safe + ".tex"), "rb").read()
+        m = expected[key]
+        if m.get("sha256"):
+            if hashlib.sha256(b).hexdigest() != m["sha256"]:
+                hash_bad.append(key)
+        else:
+            weak.append(key)  # byte-count is this file's only pin
+        if m.get("bytes") is not None and len(b) != m["bytes"]:
+            bytes_bad.append(key)
+    return dict(missing=sorted(set(expected) - on_disk),
+                extra=sorted(on_disk - set(expected)),
+                hash_mismatch=hash_bad, bytes_mismatch=bytes_bad,
+                byte_only_pins=weak)
+
+
+def ledger_vs_pin(cj_files, pinned):
+    """Independent recorded-value comparison (review fix: matches_pin is
+    the ledger's OWN claim — a forged or stale record asserting True
+    must not pass): every recorded sha256/bytes is compared directly to
+    the pinned manifest. Pure; returns the keys whose record disagrees.
+    Records absent from the ledger are not flagged here — universe
+    coverage is checked separately."""
+    bad = []
+    for k, m in pinned.items():
+        if m.get("skipped"):
+            continue
+        key = f"{m['era']}/{k}"
+        rec = cj_files.get(key)
+        if rec is None:
+            continue
+        sha_bad = m.get("sha256") and rec.get("sha256") != m["sha256"]
+        byt_bad = (m.get("bytes") is not None
+                   and rec.get("bytes") != m["bytes"])
+        if sha_bad or byt_bad:
+            bad.append(key)
+    return sorted(bad)
 
 
 def refetch_from_manifest(pin_path):

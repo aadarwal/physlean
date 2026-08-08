@@ -24,7 +24,11 @@ estimands, all within-target contrasts (each target is its own control):
   establish non-inferiority — review fix). This k3-vs-k4 separation is
   precisely the mechanism the Lean/formality hypothesis cares about: do
   types/signatures carry the predictive load?
-- E2 relevance gain: C(t|random-matched,B) − C(t|k4,B) (equal budget)
+- E2 known-dependency context gain (vs seeded random nondependency;
+  formerly "relevance gain" — renamed because static resolution is
+  incomplete, so the random arm is only guaranteed non-KNOWN-dependency):
+  C(t|k5,B) − C(t|k4,B) (equal budget); stratified by the per-target
+  resolution-coverage metric where resolution is weak (Python)
 - E3 excess over the dependency-closure REFERENCE (not proven optimal — review fix): sum over the budget grid of
   [C(t|k,B) − C(t|k4,B)] with trapezoid weights on log2 B
   (weights frozen: 1, 2, 1 across {4,16,64}KB)
@@ -73,22 +77,27 @@ k1 none: no additional repository context (the signature/shell prefix
 k2 local-file prefix (bytes immediately above the target)
 k3 dependency closure (reference) — INTERFACE-ONLY variant
 k4 dependency closure (reference) — implementation-bearing variant
-k5 random matched-byte same-corpus context (relevance control for k3/k4)
+k5 seeded random NONDEPENDENCY same-corpus context (excludes the known
+   closure ∪ target file ∪ near-duplicates; control for k3/k4)
 k6 retrieved context (BM25 over corpus, top chunks to budget)
 k7 full-repo topo prefix (G3-style contiguous stream, budget-capped)
 
-Byte-matching (review fix — the earlier B_eff=min rule was tautological):
-PRIMARY analysis is NOMINAL-B COMPLETE-CASE — a target enters the paired
-analysis at budget B only if EVERY compared presence arm can supply
-exactly B within tolerance (no padding, ever); targets failing this are
-excluded from that budget's primary analysis and their count reported.
-Pair-specific effective budgets B_eff(t,B) are computed ONLY as a
-labeled sensitivity analysis, never headline. k5 is matched to the arm
-it controls for (k3/k4) at the same budget. The k1-vs-k3 contrast uses
-k5 at the same budget as the named length control, so "context helps"
-is separated from "any tokens present". Budgets are NESTED as SET INCLUSION across B (the
-16KB context contains the 4KB context's content; for local-suffix arms
-like k2 this means suffix containment, not string-prefix identity),
+Byte-matching (frozen at amendment; supersedes both the tautological
+B_eff=min rule and the ±tolerance draft): each arm's text is formed
+DETERMINISTICALLY (selection rule of §14.1), then truncated ONLY at the
+farthest boundary to the largest UTF-8-valid length <= B (shortfall <=
+3 bytes; partial trailing unit recorded) — nominal matching, no padding,
+and nesting becomes literal query-adjacent SUFFIX containment of the
+rendered text across budgets. Whole-unit <= B is a sensitivity.
+Availability below B is complete-case exclusion, and eligibility is
+CONTRAST-SPECIFIC (frozen estimand->arm map, §14.2): only the presence
+arms of THAT estimand must fill B, E3/E4 require their full budget grid,
+and the omnibus all-arm panel is a sensitivity — per-estimand N and the
+overlap matrix are always reported since populations differ. k5 matches
+the arm it controls for (k3/k4) at the same budget; the k1-vs-k3
+contrast uses k5 at the same budget as the named length control, so
+"context helps" is separated from "any tokens present". (For k2's local
+suffix, containment is suffix containment, not string-prefix identity;)
 closures EXCLUDE the target itself and any declaration that
 (transitively) references the target (cycle leakage), and every (t,k,B)
 records bytes AND tokens shown plus its eligibility status.
@@ -305,3 +314,79 @@ bridge (F1) + cross-language pairing. OctoLong motivates k3/k4 vs k7;
 the perplexity-caveat literature (2608.00624, 2410.23771) motivates the
 AST-class split and the behavioral falsifier rather than aggregate-BPB
 claims.
+
+## 14. V2-a implementation freeze (amendment, adopted pre-implementation)
+
+14.1 Selection & rendering: dependency inclusion ranked by direct/short
+graph distance; selected units rendered dependency-topologically with
+nearer dependencies closest to the query (topological and distance
+orders agree since dependencies lie at greater distance); SCCs (mutual
+recursion) are collapsed and ordered by stable name. Nesting across
+budgets is set inclusion by selection and, given §3's far-boundary
+truncation, literal query-adjacent suffix containment of rendered text.
+
+14.2 Frozen estimand -> presence-arm map for contrast-specific
+eligibility: E1a {k4}; E1b {k3, k4}; E2 {k5, k4}; E3 per-arm over the
+full budget grid; E4 {k4} over the full grid. Per-estimand eligible-N
+and the pairwise overlap matrix are always reported; cross-estimand
+comparisons carry a population label.
+
+14.3 Closures are SAME-REPO, CROSS-FILE elaborated (Lean) / static
+(Python) dependency context for both languages; excluded same-file and
+external-package dependency mass are RECORDED per target
+(same_file_mass, external_package_mass: bytes + counts).
+Imported-package context is a later sensitivity — and for physlib,
+whose mathematical spine is mathlib (external), that sensitivity is
+expected to be LOAD-BEARING for any physlib-vs-mathlib E1b reading;
+recorded here so no one is surprised at analysis time.
+
+14.4 Python closures: declaration-level static name/import edges where
+resolvable; module-level fallback recorded with a per-target COVERAGE
+metric = fraction of static references resolved to declaration level
+(reported per target and per corpus); high-coverage subset is a
+sensitivity, and no exact-closure claim is ever made for Python.
+
+14.5 Lean k3 rendering: extractor-derived verbatim declaration
+header/body boundary plus an explicit FIXED body-omitted marker; prompt
+text need not elaborate; exported-type canonical rendering is a
+sensitivity. Implementation note (frozen with this doc): the environment
+walk cannot recover the source-level shell, so the extractor adds a
+SYNTACTIC pass (namespace/section/open/variable commands lexically above
+the declaration); the §10 round-trip validation (prefix + body ==
+original span; standalone re-elaboration) is the check that this
+reconstruction is right.
+
+14.6 Near-duplicates: primary lexical token 5-gram Jaccard >= 0.80
+retaining identifiers/literals, plus exact normalized-hash always;
+0.70/0.90 sensitivities; unit = declaration with a >= 20-token floor
+(short tactic bodies would flood any threshold); threshold calibrated
+ONLY by blind manual pair audit.
+
+14.7 k7 = per-target variants of ONE canonical locked full-corpus topo
+order, built ONLY from the PREFIX of that order ending immediately
+before the target file's original position: remove the target file and
+near-duplicate docs from that prefix, then take the query-adjacent
+SUFFIX of the remainder to the exact budget B (far-boundary
+truncation, §3). Files at or after the target's position NEVER enter
+k7 — no future-relative-to-target leakage — and k7 is NOT the 2.4MB G3
+sample. Targets too early in the order to fill B are recorded as
+k7-ineligible at that budget (contrast-specific eligibility, §14.2
+reporting rules apply).
+
+14.8 k6 = declaration-unit BM25, highest score closest to the query;
+query = the common unscored prefix text; universe = corpus declaration
+units minus that target's exclusions; IDF frozen over the full unit
+universe.
+
+14.9 Common prefix = only the syntactically ACTIVE shell + the exact
+target header; all prompt overhead is separately recorded; appending the
+original body must round-trip byte-exactly in validation.
+
+14.10 lean-zip/zlib acquisition is DEFERRED to an explicit V2
+security-pair gate after the core extraction pilot; the G1 repo set is
+not enlarged.
+
+14.11 Schema constants: the paired driver uses PAIRED_SCHEMA_VERSION
+(layout.py), independent of MEASUREMENT_SCHEMA_VERSION, so V2 evolution
+never invalidates G3-path artifacts (PREREG §11 sequencing rule; G3b
+requires a battery rerun whenever the source tree hash moved).

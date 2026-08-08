@@ -56,12 +56,23 @@ def write():
     if bad:
         print("[lock] REFUSING to write lock:", bad)
         sys.exit(1)
+    sys.path.insert(0, BASE)
+    from arxiv_fetch import material_present  # ONE recursive definition
     cj = os.path.join(ROOT, "arxiv", "checksums.json")
+    if not material_present(os.path.join(ROOT, "arxiv")):
+        # tri-state (amendment): optional corpus ABSENT -> lock is valid
+        # without the arXiv identity, recorded explicitly
+        lock["arxiv"] = None
+        lock["arxiv_absent"] = True
+        with open(LOCK, "w") as f:
+            json.dump(lock, f, indent=1)
+        print(f"[lock] {len(lock['repos'])} repos; optional arXiv absent "
+              "(recorded) -> corpora_lock.json")
+        return
     if not os.path.exists(cj):
-        # a lock without the arXiv identity is an incomplete lock (review
-        # fix): run arxiv_fetch --from-manifest first
-        print("[lock] REFUSING: corpora/arxiv/checksums.json absent — "
-              "the lock must pin the arXiv identity")
+        # PRESENT but unvalidated: refusing (present-must-validate)
+        print("[lock] REFUSING: arXiv material present but "
+              "checksums.json absent — run arxiv_fetch --from-manifest")
         sys.exit(1)
     lock["arxiv"] = dict(
         checksums_sha256=hashlib.sha256(
@@ -112,8 +123,20 @@ def checkout():
             print(f"[lock] {name} -> {ent['sha'][:12]}")
         except RuntimeError as e:
             bad.append(f"{name}: {e}")
-    # arXiv identity: replay must verify, not merely record (review fix)
-    if lock.get("arxiv"):
+    # arXiv identity (tri-state, frozen rule): the CURRENT on-disk state
+    # governs. Current ABSENT -> pass regardless of any prior locked
+    # identity (reported — the optional artifact may legitimately be
+    # gone on this machine). Current PRESENT -> checksums + manifest
+    # must exist, and a locked identity, if any, must match exactly.
+    sys.path.insert(0, BASE)
+    from arxiv_fetch import material_present
+    present = material_present(os.path.join(ROOT, "arxiv"))
+    if not present:
+        if lock.get("arxiv"):
+            print("[lock] optional arXiv corpus ABSENT here; lock records "
+                  f"a prior identity (non-blocking, reported): "
+                  f"{lock['arxiv']}")
+    else:
         cj = os.path.join(ROOT, "arxiv", "checksums.json")
         mf = os.path.join(BASE, "arxiv_manifest.json")
         for path, key in ((cj, "checksums_sha256"), (mf, "manifest_sha256")):
@@ -121,14 +144,18 @@ def checkout():
                 bad.append(f"arxiv: {os.path.basename(path)} missing "
                            "(run arxiv_fetch --from-manifest first)")
                 continue
-            h = hashlib.sha256(open(path, "rb").read()).hexdigest()
-            if h != lock["arxiv"][key]:
-                bad.append(f"arxiv: {key} mismatch ({h[:12]} != "
-                           f"{lock['arxiv'][key][:12]})")
+            if lock.get("arxiv"):
+                h = hashlib.sha256(open(path, "rb").read()).hexdigest()
+                if h != lock["arxiv"][key]:
+                    bad.append(f"arxiv: {key} mismatch ({h[:12]} != "
+                               f"{lock['arxiv'][key][:12]})")
     if bad:
         print("[lock] FAILED:", bad)
         sys.exit(1)
-    print("[lock] all corpora at locked SHAs; arXiv identity verified")
+    print("[lock] all corpora at locked SHAs"
+          + ("; arXiv identity verified" if present and lock.get("arxiv")
+             else "; optional arXiv " + ("present (identity not in lock — "
+             "rewrite the lock to adopt it)" if present else "absent")))
 
 
 if __name__ == "__main__":
