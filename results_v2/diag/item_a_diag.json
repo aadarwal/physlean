@@ -1,0 +1,546 @@
+{
+ "schema": "item_a_diag_v1",
+ "harness_hash": "7774a79b17cd8cfddc8a7bcdea996cc694f1c7b66f868effdade83a1fd61ddfa",
+ "env_fingerprint": "cece9b716c1eb844ffff8c4000421f50441ea775010082f8724953bb9b9cd962",
+ "source_tree_hash": "a8edd501c79fa0a9933959e00bb7c185b28f629659e084dd277bdb2519eaef87",
+ "gpu_name": "NVIDIA L40S",
+ "gpu_driver": "590.48.01",
+ "torch_version": "2.13.0+cu130",
+ "gates": {
+  "mean": 0.005,
+  "p99": 0.05,
+  "repeat_max": 1e-06,
+  "oracle_mean": 0.0001,
+  "oracle_p99": 0.001,
+  "cachepos_max": 1e-06
+ },
+ "families": {
+  "q25c": {
+   "model": "Qwen/Qwen2.5-Coder-0.5B",
+   "revision": "8123ea2e9354afb7ffcc6c8641d1b2f5ecf18301",
+   "cls": "Qwen2ForCausalLM",
+   "n_params": 494032768,
+   "attn": {
+    "model_type": "qwen2",
+    "sliding_window": null,
+    "layer_types": "['full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', '"
+   },
+   "n_targets": 8191,
+   "repeat_max_abs": 0.0,
+   "pairs": {
+    "chunk512": {
+     "n": 8191,
+     "mean_signed": -0.00033969013521648175,
+     "mean_abs": 0.022623733846948095,
+     "p50": 0.003277719020843506,
+     "p90": 0.07587575912475586,
+     "p99": 0.1811025619506839,
+     "max": 0.5802996158599854,
+     "strata": {
+      "first": {
+       "n": 2048,
+       "mean_abs": 0.02428220704077233,
+       "max": 0.2757415771484375
+      },
+      "boundary": {
+       "n": 96,
+       "mean_abs": 0.01817656128305008,
+       "max": 0.3079380989074707
+      },
+      "interior": {
+       "n": 6047,
+       "mean_abs": 0.022132643300426212,
+       "max": 0.5802996158599854
+      }
+     },
+     "argmax_agree": 0.9895006418228149
+    },
+    "chunk1024": {
+     "n": 8191,
+     "mean_signed": -0.0005158885134968317,
+     "mean_abs": 0.022413518167742223,
+     "p50": 0.003183320164680481,
+     "p90": 0.07406997680664062,
+     "p99": 0.17680766582489044,
+     "max": 0.4529595375061035,
+     "strata": {
+      "first": {
+       "n": 2048,
+       "mean_abs": 0.024128326382254817,
+       "max": 0.3914518356323242
+      },
+      "boundary": {
+       "n": 96,
+       "mean_abs": 0.014494104848415882,
+       "max": 0.183760404586792
+      },
+      "interior": {
+       "n": 6047,
+       "mean_abs": 0.021958472104460187,
+       "max": 0.4529595375061035
+      }
+     },
+     "argmax_agree": 0.9886460900306702
+    },
+    "chunk4096": {
+     "n": 8191,
+     "mean_signed": -0.000581489155189386,
+     "mean_abs": 0.016228424833123645,
+     "p50": 0.0004913806915283203,
+     "p90": 0.05938142538070679,
+     "p99": 0.15854631662368793,
+     "max": 0.3927490711212158,
+     "strata": {
+      "first": {
+       "n": 2048,
+       "mean_abs": 0.0,
+       "max": 0.0
+      },
+      "boundary": {
+       "n": 96,
+       "mean_abs": 0.01736448985069335,
+       "max": 0.2694908380508423
+      },
+      "interior": {
+       "n": 6047,
+       "mean_abs": 0.021706637470224777,
+       "max": 0.3927490711212158
+      }
+     },
+     "argmax_agree": 0.9923086166381836
+    }
+   },
+   "oneshot_bf16_characterization": {
+    "n": 8191,
+    "mean_signed": -8.716254782438087e-05,
+    "mean_abs": 0.01676229460203323,
+    "p50": 0.0005054343491792679,
+    "p90": 0.061385154724121094,
+    "p99": 0.16267707347869886,
+    "max": 0.5887117385864258,
+    "strata": {
+     "first": {
+      "n": 2048,
+      "mean_abs": 0.0,
+      "max": 0.0
+     },
+     "boundary": {
+      "n": 96,
+      "mean_abs": 0.018570571373919858,
+      "max": 0.23502302169799805
+     },
+     "interior": {
+      "n": 6047,
+      "mean_abs": 0.02241064664021132,
+      "max": 0.5887117385864258
+     }
+    },
+    "argmax_agree": 0.9916982054710388
+   }
+  },
+  "q3": {
+   "model": "Qwen/Qwen3-0.6B-Base",
+   "revision": "da87bfb608c14b7cf20ba1ce41287e8de496c0cd",
+   "cls": "Qwen3ForCausalLM",
+   "n_params": 596049920,
+   "attn": {
+    "model_type": "qwen3",
+    "sliding_window": null,
+    "layer_types": "['full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', '"
+   },
+   "n_targets": 8191,
+   "repeat_max_abs": 0.0,
+   "pairs": {
+    "chunk512": {
+     "n": 8191,
+     "mean_signed": 0.0006517055252378819,
+     "mean_abs": 0.02185949462293623,
+     "p50": 0.0023785606026649475,
+     "p90": 0.07810425758361816,
+     "p99": 0.16889814138412482,
+     "max": 0.43074703216552734,
+     "strata": {
+      "first": {
+       "n": 2048,
+       "mean_abs": 0.024171102076773476,
+       "max": 0.43074703216552734
+      },
+      "boundary": {
+       "n": 96,
+       "mean_abs": 0.009764716669896126,
+       "max": 0.1548914909362793
+      },
+      "interior": {
+       "n": 6047,
+       "mean_abs": 0.021268610981135864,
+       "max": 0.3515970706939697
+      }
+     },
+     "argmax_agree": 0.9888902306556702
+    },
+    "chunk1024": {
+     "n": 8191,
+     "mean_signed": 0.00026679081290962025,
+     "mean_abs": 0.016446060298520512,
+     "p50": 0.0008962396532297134,
+     "p90": 0.06053948402404785,
+     "p99": 0.13602561950683612,
+     "max": 0.4752955436706543,
+     "strata": {
+      "first": {
+       "n": 2048,
+       "mean_abs": 0.009254682070113984,
+       "max": 0.3560967445373535
+      },
+      "boundary": {
+       "n": 96,
+       "mean_abs": 0.010455378932819078,
+       "max": 0.17132186889648438
+      },
+      "interior": {
+       "n": 6047,
+       "mean_abs": 0.018976744608572422,
+       "max": 0.4752955436706543
+      }
+     },
+     "argmax_agree": 0.9924306869506836
+    },
+    "chunk4096": {
+     "n": 8191,
+     "mean_signed": 4.7040865654594193e-05,
+     "mean_abs": 0.013779698942179239,
+     "p50": 0.00032969145104289055,
+     "p90": 0.051369547843933105,
+     "p99": 0.13897140026092536,
+     "max": 0.38118886947631836,
+     "strata": {
+      "first": {
+       "n": 2048,
+       "mean_abs": 0.0,
+       "max": 0.0
+      },
+      "boundary": {
+       "n": 96,
+       "mean_abs": 0.011623550570554642,
+       "max": 0.10463345050811768
+      },
+      "interior": {
+       "n": 6047,
+       "mean_abs": 0.01848084226568826,
+       "max": 0.38118886947631836
+      }
+     },
+     "argmax_agree": 0.9935294985771179
+    }
+   },
+   "oneshot_bf16_characterization": {
+    "n": 8191,
+    "mean_signed": 3.658905568584707e-05,
+    "mean_abs": 0.014064768681151623,
+    "p50": 0.00032224366441369057,
+    "p90": 0.05124235153198242,
+    "p99": 0.1407309532165529,
+    "max": 0.38118886947631836,
+    "strata": {
+     "first": {
+      "n": 2048,
+      "mean_abs": 0.0,
+      "max": 0.0
+     },
+     "boundary": {
+      "n": 96,
+      "mean_abs": 0.011029129921432457,
+      "max": 0.15712034702301025
+     },
+     "interior": {
+      "n": 6047,
+      "mean_abs": 0.018876421993526613,
+      "max": 0.38118886947631836
+     }
+    },
+    "argmax_agree": 0.9930411577224731
+   }
+  },
+  "q35": {
+   "model": "Qwen/Qwen3.5-0.8B-Base",
+   "revision": "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68",
+   "cls": "Qwen3_5ForCausalLM",
+   "n_params": 752393024,
+   "attn": {
+    "model_type": "qwen3_5_text",
+    "sliding_window": null,
+    "layer_types": "['linear_attention', 'linear_attention', 'linear_attention', 'full_attention', 'linear_attention', 'linear_attention', 'linear_attention', 'full_attention', 'linear_attention', 'linear_attention', 'li"
+   },
+   "n_targets": 8191,
+   "repeat_max_abs": 0.0,
+   "pairs": {
+    "chunk512": {
+     "n": 8191,
+     "mean_signed": 4.173338224572838e-05,
+     "mean_abs": 0.015060487266602264,
+     "p50": 0.001139393076300621,
+     "p90": 0.05742597579956055,
+     "p99": 0.12388939857482915,
+     "max": 0.44304418563842773,
+     "strata": {
+      "first": {
+       "n": 2048,
+       "mean_abs": 0.01770134432562731,
+       "max": 0.32668209075927734
+      },
+      "boundary": {
+       "n": 96,
+       "mean_abs": 0.015804271577394502,
+       "max": 0.14888381958007812
+      },
+      "interior": {
+       "n": 6047,
+       "mean_abs": 0.014154272854378126,
+       "max": 0.44304418563842773
+      }
+     },
+     "argmax_agree": 0.9927969574928284
+    },
+    "chunk1024": {
+     "n": 8191,
+     "mean_signed": -0.00025837574029733323,
+     "mean_abs": 0.015018746827224889,
+     "p50": 0.001184701919555664,
+     "p90": 0.057393789291381836,
+     "p99": 0.12408447265625007,
+     "max": 0.5037474632263184,
+     "strata": {
+      "first": {
+       "n": 2048,
+       "mean_abs": 0.017134457247657497,
+       "max": 0.3261528015136719
+      },
+      "boundary": {
+       "n": 96,
+       "mean_abs": 0.014682360932018431,
+       "max": 0.13156938552856445
+      },
+      "interior": {
+       "n": 6047,
+       "mean_abs": 0.014307537649929343,
+       "max": 0.5037474632263184
+      }
+     },
+     "argmax_agree": 0.9935294985771179
+    },
+    "chunk4096": {
+     "n": 8191,
+     "mean_signed": -3.0461143320784262e-05,
+     "mean_abs": 0.009510187617513214,
+     "p50": 0.0001408550888299942,
+     "p90": 0.03530457615852356,
+     "p99": 0.11448411941528332,
+     "max": 0.30389881134033203,
+     "strata": {
+      "first": {
+       "n": 2048,
+       "mean_abs": 0.0,
+       "max": 0.0
+      },
+      "boundary": {
+       "n": 96,
+       "mean_abs": 0.01369473645540135,
+       "max": 0.11638760566711426
+      },
+      "interior": {
+       "n": 6047,
+       "mean_abs": 0.012664668773827057,
+       "max": 0.30389881134033203
+      }
+     },
+     "argmax_agree": 0.9940178394317627
+    }
+   },
+   "oneshot_bf16_characterization": {
+    "n": 8191,
+    "mean_signed": -0.0003067820455016048,
+    "mean_abs": 0.009847047308535889,
+    "p50": 0.0001408550888299942,
+    "p90": 0.038220882415771484,
+    "p99": 0.11579408645629884,
+    "max": 0.37131452560424805,
+    "strata": {
+     "first": {
+      "n": 2048,
+      "mean_abs": 0.0,
+      "max": 0.0
+     },
+     "boundary": {
+      "n": 96,
+      "mean_abs": 0.013289434000815467,
+      "max": 0.11781787872314453
+     },
+     "interior": {
+      "n": 6047,
+      "mean_abs": 0.01312739851829654,
+      "max": 0.37131452560424805
+     }
+    },
+    "argmax_agree": 0.9951165914535522
+   }
+  },
+  "sc2": {
+   "model": "bigcode/starcoder2-3b",
+   "revision": "733247c55e3f73af49ce8e9c7949bf14af205928",
+   "cls": "Starcoder2ForCausalLM",
+   "n_params": 3030371328,
+   "attn": {
+    "model_type": "starcoder2",
+    "sliding_window": 4096,
+    "layer_types": "None"
+   },
+   "n_targets": 8191,
+   "repeat_max_abs": 0.0,
+   "pairs": {
+    "chunk512": {
+     "n": 8191,
+     "mean_signed": -0.0007144647352019665,
+     "mean_abs": 0.012972640530393355,
+     "p50": 0.0014522336423397064,
+     "p90": 0.04419517517089844,
+     "p99": 0.11480464935302753,
+     "max": 0.2975955009460449,
+     "strata": {
+      "first": {
+       "n": 2048,
+       "mean_abs": 0.014721218582594814,
+       "max": 0.2232968807220459
+      },
+      "boundary": {
+       "n": 96,
+       "mean_abs": 0.014773436310766405,
+       "max": 0.15954875946044922
+      },
+      "interior": {
+       "n": 6047,
+       "mean_abs": 0.01235184273879018,
+       "max": 0.2975955009460449
+      }
+     },
+     "argmax_agree": 0.9924306869506836
+    },
+    "chunk1024": {
+     "n": 8191,
+     "mean_signed": 0.00016049961069019303,
+     "mean_abs": 0.01263309499123419,
+     "p50": 0.0013914881274104118,
+     "p90": 0.042562007904052734,
+     "p99": 0.11811666488647485,
+     "max": 0.7482376098632812,
+     "strata": {
+      "first": {
+       "n": 2048,
+       "mean_abs": 0.014461180361844711,
+       "max": 0.28307580947875977
+      },
+      "boundary": {
+       "n": 96,
+       "mean_abs": 0.013507623379704606,
+       "max": 0.13114476203918457
+      },
+      "interior": {
+       "n": 6047,
+       "mean_abs": 0.012000074722621075,
+       "max": 0.7482376098632812
+      }
+     },
+     "argmax_agree": 0.9940178394317627
+    },
+    "chunk4096": {
+     "n": 8191,
+     "mean_signed": -0.00029856244439819564,
+     "mean_abs": 0.012287066029419605,
+     "p50": 0.001371871680021286,
+     "p90": 0.041278183460235596,
+     "p99": 0.11459269523620606,
+     "max": 0.6236667633056641,
+     "strata": {
+      "first": {
+       "n": 2048,
+       "mean_abs": 0.01443970133587641,
+       "max": 0.3455204963684082
+      },
+      "boundary": {
+       "n": 96,
+       "mean_abs": 0.012544911983477883,
+       "max": 0.13209986686706543
+      },
+      "interior": {
+       "n": 6047,
+       "mean_abs": 0.01155391730786956,
+       "max": 0.6236667633056641
+      }
+     },
+     "argmax_agree": 0.9929190278053284
+    }
+   },
+   "oneshot_bf16_characterization": {
+    "n": 8191,
+    "mean_signed": -3.393366404074917e-05,
+    "mean_abs": 0.012449753798853797,
+    "p50": 0.0013806186616420746,
+    "p90": 0.0418548583984375,
+    "p99": 0.11023063659667973,
+    "max": 0.7482719421386719,
+    "strata": {
+     "first": {
+      "n": 2048,
+      "mean_abs": 0.01443970133587641,
+      "max": 0.3455204963684082
+     },
+     "boundary": {
+      "n": 96,
+      "mean_abs": 0.013626876134907207,
+      "max": 0.13209986686706543
+     },
+     "interior": {
+      "n": 6047,
+      "mean_abs": 0.011757110124290636,
+      "max": 0.7482719421386719
+     }
+    },
+    "argmax_agree": 0.9921865463256836
+   }
+  }
+ },
+ "oracle": {
+  "family": "q25c",
+  "tokens": 2048,
+  "chunk": 512,
+  "dtype": "float32",
+  "attn": "eager",
+  "stats": {
+   "n": 2047,
+   "mean_signed": -3.5366130233881065e-08,
+   "mean_abs": 3.552744379467283e-06,
+   "p50": 9.760260581970215e-07,
+   "p90": 1.0251998901367188e-05,
+   "p99": 2.5458335876464783e-05,
+   "max": 7.915496826171875e-05
+  },
+  "cachepos_max_abs": 0.0
+ },
+ "verdict": {
+  "ok": false,
+  "failures": [
+   "prod-stability:q25c/chunk1024",
+   "prod-stability:q25c/chunk4096",
+   "prod-stability:q25c/chunk512",
+   "prod-stability:q3/chunk1024",
+   "prod-stability:q3/chunk4096",
+   "prod-stability:q3/chunk512",
+   "prod-stability:q35/chunk1024",
+   "prod-stability:q35/chunk4096",
+   "prod-stability:q35/chunk512",
+   "prod-stability:sc2/chunk1024",
+   "prod-stability:sc2/chunk4096",
+   "prod-stability:sc2/chunk512"
+  ],
+  "meaning": "HARD STOP: production-stability/oracle failure \u2014 treat as cache/position bug; fix code, no gate discussion"
+ }
+}

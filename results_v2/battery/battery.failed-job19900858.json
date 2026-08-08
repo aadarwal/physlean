@@ -1,0 +1,39 @@
+{
+ "model": "Qwen/Qwen2.5-Coder-0.5B",
+ "device": "cuda",
+ "gate_eligible": true,
+ "config_notes": {
+  "starcoder2": "config bos/eos id 50256 exceeds vocab_size 49152 (upstream quirk); harmless here \u2014 no special tokens are ever added"
+ },
+ "revision": "8123ea2e9354afb7ffcc6c8641d1b2f5ecf18301",
+ "model_revisions": {
+  "Qwen/Qwen2.5-Coder-0.5B": "8123ea2e9354afb7ffcc6c8641d1b2f5ecf18301",
+  "Qwen/Qwen3-0.6B-Base": "da87bfb608c14b7cf20ba1ce41287e8de496c0cd",
+  "Qwen/Qwen3.5-0.8B-Base": "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68",
+  "bigcode/starcoder2-3b": "733247c55e3f73af49ce8e9c7949bf14af205928"
+ },
+ "torch_version": "2.13.0+cu130",
+ "transformers_version": "5.14.1",
+ "harness_commit": "a0b264e7ca94a71b182f627c85064be5f8a4fdba",
+ "source_tree_hash": "516fec5bfea0ecb87695c00570b79031388d4f7afa9d170cfb63dffdc3fad871",
+ "harness_hash": "7774a79b17cd8cfddc8a7bcdea996cc694f1c7b66f868effdade83a1fd61ddfa",
+ "env_fingerprint": "bf63eb37e2a4342f63588444e256247bb833f64866027c5bc6002188fcd61764",
+ "gpu_name": "NVIDIA L40S",
+ "gpu_driver": "590.48.01",
+ "item_A_error": "CalledProcessError(1, ['/orcd/software/core/001/spack/pkg/gcc/12.2.0/yt6vabm/bin/gcc', '/tmp/tmpozicn_6q/cuda_utils.c', '-O3', '-shared', '-fPIC', '-Wno-psabi', '-o', '/tmp/tmpozicn_6q/cuda_utils.cpython-312-x86_64-linux-gnu.so', '-l:libcuda.so.1', '-L/orcd/pool/008/aadarwal/physlean/.venv/lib/python3.12/site-packages/triton/backends/nvidia/lib', '-L/lib64', '-I/orcd/pool/008/aadarwal/physlean/.venv/lib/python3.12/site-packages/triton/backends/nvidia/include', '-I/tmp/tmpozicn_6q', '-I/usr/include/python3.12'])",
+ "item_B_error": "CalledProcessError(1, ['/orcd/software/core/001/spack/pkg/gcc/12.2.0/yt6vabm/bin/gcc', '/tmp/tmpqlroaga9/cuda_utils.c', '-O3', '-shared', '-fPIC', '-Wno-psabi', '-o', '/tmp/tmpqlroaga9/cuda_utils.cpython-312-x86_64-linux-gnu.so', '-l:libcuda.so.1', '-L/orcd/pool/008/aadarwal/physlean/.venv/lib/python3.12/site-packages/triton/backends/nvidia/lib', '-L/lib64', '-I/orcd/pool/008/aadarwal/physlean/.venv/lib/python3.12/site-packages/triton/backends/nvidia/include', '-I/tmp/tmpqlroaga9', '-I/usr/include/python3.12'])",
+ "item_C_error": "CalledProcessError(1, ['/orcd/software/core/001/spack/pkg/gcc/12.2.0/yt6vabm/bin/gcc', '/tmp/tmpp_gndiyj/cuda_utils.c', '-O3', '-shared', '-fPIC', '-Wno-psabi', '-o', '/tmp/tmpp_gndiyj/cuda_utils.cpython-312-x86_64-linux-gnu.so', '-l:libcuda.so.1', '-L/orcd/pool/008/aadarwal/physlean/.venv/lib/python3.12/site-packages/triton/backends/nvidia/lib', '-L/lib64', '-I/orcd/pool/008/aadarwal/physlean/.venv/lib/python3.12/site-packages/triton/backends/nvidia/include', '-I/tmp/tmpp_gndiyj', '-I/usr/include/python3.12'])",
+ "item_D_error": "CalledProcessError(1, ['/orcd/software/core/001/spack/pkg/gcc/12.2.0/yt6vabm/bin/gcc', '/tmp/tmp371dyj_9/cuda_utils.c', '-O3', '-shared', '-fPIC', '-Wno-psabi', '-o', '/tmp/tmp371dyj_9/cuda_utils.cpython-312-x86_64-linux-gnu.so', '-l:libcuda.so.1', '-L/orcd/pool/008/aadarwal/physlean/.venv/lib/python3.12/site-packages/triton/backends/nvidia/lib', '-L/lib64', '-I/orcd/pool/008/aadarwal/physlean/.venv/lib/python3.12/site-packages/triton/backends/nvidia/include', '-I/tmp/tmp371dyj_9', '-I/usr/include/python3.12'])",
+ "E_meta": {
+  "n_eligible_targets": 0
+ },
+ "E_dep_vs_random_context": {
+  "rows": [],
+  "dep_wins": 0,
+  "n": 0,
+  "skipped_insufficient_pool": [],
+  "mean_delta_nats": 0.0
+ },
+ "plumbing_pass": false,
+ "identities_unchanged_during_run": true
+}

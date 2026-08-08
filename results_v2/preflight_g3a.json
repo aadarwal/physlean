@@ -134,7 +134,7 @@
     "path": "/orcd/pool/008/aadarwal/physlean",
     "free_gb": 771,
     "total_gb": 1100,
-    "inodes_free": 1505939562
+    "inodes_free": 1505938400
    }
   },
   "env-frozen": {
@@ -302,7 +302,226 @@
      }
     }
    }
+  },
+  "battery-plumbing": {
+   "ok": true,
+   "detail": {
+    "errors": [],
+    "plumbing_pass": true,
+    "item_a_recomputed_ok": true,
+    "item_a_failures": [],
+    "item_a_stored_matches": true,
+    "production_chunk": 2048,
+    "f2_stats": {
+     "n": 8191,
+     "mean_signed": -5.0214402782493693e-08,
+     "mean_abs": 3.1806363208340387e-06,
+     "p50": 6.891787052154541e-07,
+     "p90": 1.0013580322265625e-05,
+     "p99": 2.4080276489257812e-05,
+     "max": 6.4849853515625e-05
+    },
+    "conservation": true,
+    "device": "cuda",
+    "source_tree_match": true,
+    "revisions_match": true,
+    "harness_env_match": true,
+    "e_designated_nonvacuous": true,
+    "e_corpus": "mathlib",
+    "e_eligible": 81
+   }
+  },
+  "source-clean": {
+   "ok": true,
+   "detail": "rc=0 clean"
+  },
+  "corpus-lock-complete": {
+   "ok": true,
+   "detail": {
+    "locked": 14,
+    "unlocked": [],
+    "vanished": [],
+    "arxiv_present": true,
+    "arxiv_hashes_current": true,
+    "prior_lock_identity_reported": false
+   }
+  },
+  "arxiv-pins-strong": {
+   "ok": true,
+   "detail": {
+    "byte_only_pins": 0,
+    "sample": []
+   }
+  },
+  "raw-inventory": {
+   "ok": true,
+   "detail": {
+    "artifacts": 0,
+    "quarantined": 0
+   }
+  },
+  "windows-and-masking-viability": {
+   "ok": true,
+   "detail": {
+    "physlib": {
+     "est_windows": 22.9,
+     "c2024_11": {
+      "docs": 132,
+      "kbytes": 1869,
+      "ok": true
+     },
+     "c2025_04": {
+      "docs": 96,
+      "kbytes": 1439,
+      "ok": true
+     },
+     "c2026_02": {
+      "docs": 47,
+      "kbytes": 632,
+      "ok": true
+     }
+    },
+    "mathlib": {
+     "est_windows": 22.9,
+     "c2024_11": {
+      "docs": 95,
+      "kbytes": 739,
+      "ok": true
+     },
+     "c2025_04": {
+      "docs": 72,
+      "kbytes": 524,
+      "ok": true
+     },
+     "c2026_02": {
+      "docs": 25,
+      "kbytes": 167,
+      "ok": false
+     }
+    },
+    "qutip": {
+     "est_windows": 22.8,
+     "c2024_11": {
+      "docs": 14,
+      "kbytes": 118,
+      "ok": false
+     },
+     "c2025_04": {
+      "docs": 10,
+      "kbytes": 90,
+      "ok": false
+     },
+     "c2026_02": {
+      "docs": 2,
+      "kbytes": 8,
+      "ok": false
+     }
+    },
+    "sympy": {
+     "est_windows": 22.9,
+     "c2024_11": {
+      "docs": 3,
+      "kbytes": 57,
+      "ok": false
+     },
+     "c2025_04": {
+      "docs": 3,
+      "kbytes": 57,
+      "ok": false
+     },
+     "c2026_02": {
+      "docs": 1,
+      "kbytes": 4,
+      "ok": false
+     }
+    },
+    "geant4": {
+     "est_windows": 22.9,
+     "c2024_11": {
+      "docs": 8,
+      "kbytes": 77,
+      "ok": false
+     },
+     "c2025_04": {
+      "docs": 7,
+      "kbytes": 72,
+      "ok": false
+     },
+     "c2026_02": {
+      "docs": 1,
+      "kbytes": 8,
+      "ok": false
+     }
+    }
+   }
+  },
+  "models-sentinel-pinned": {
+   "ok": true,
+   "detail": {
+    "missing": [],
+    "unpinned": [],
+    "n_ok": 1
+   }
+  },
+  "expected-cells[expected_cells_sentinel.json]": {
+   "ok": true,
+   "detail": {
+    "n": 44,
+    "frozen_n": 44,
+    "dup": false,
+    "missing_streams": [],
+    "drift": null
+   }
+  },
+  "g3a-own-family-arms": {
+   "ok": true,
+   "detail": {
+    "mismatches": null,
+    "frozen": {
+     "c2024_11": {
+      "masking": [
+       "mathlib",
+       "physlib"
+      ],
+      "allnew": [
+       "geant4",
+       "mathlib",
+       "physlib",
+       "sympy"
+      ]
+     }
+    },
+    "realized_rows": {
+     "c2024_11": {
+      "physlib": {
+       "masking_docs": 132,
+       "masking_bytes": 1869164,
+       "allnew_bytes": 5821822
+      },
+      "mathlib": {
+       "masking_docs": 95,
+       "masking_bytes": 739283,
+       "allnew_bytes": 28518241
+      },
+      "qutip": {
+       "masking_docs": 14,
+       "masking_bytes": 117747,
+       "allnew_bytes": 119988
+      },
+      "sympy": {
+       "masking_docs": 3,
+       "masking_bytes": 56833,
+       "allnew_bytes": 393198
+      },
+      "geant4": {
+       "masking_docs": 8,
+       "masking_bytes": 77072,
+       "allnew_bytes": 3331913
+      }
+     }
+    }
+   }
   }
  },
- "gate": "g1"
+ "gate": "g3a"
 }
