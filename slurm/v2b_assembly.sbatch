@@ -8,7 +8,7 @@
 # CPU-only exact-five array. The two write-once, committed artifacts are
 # supplied only after the blind A6 review and deterministic target draw:
 #   sbatch -p mit_normal --array=0-4 \
-#     --export=ALL,V2B_SAMPLE=<sample.json>,V2B_A6_OUTCOME=<outcome.json> \
+#     --export=ALL,V2B_SAMPLE=<sample.json>,V2B_A6_OUTCOME=<outcome.json>,V2B_K4X_GRAPH=<k4x.json> \
 #     slurm/v2b_assembly.sbatch
 set -euo pipefail
 cd "$SLURM_SUBMIT_DIR"
@@ -52,6 +52,7 @@ V2B_A6_OUTCOME="${V2B_A6_OUTCOME:?export the committed A6 outcome path}"
 }
 
 V2B_TASK="${SLURM_ARRAY_TASK_ID:?submit as array 0-4}"
+V2B_K4X_ARGS=()
 case "$V2B_TASK" in
   0)
     V2B_TAG="mathlib4"
@@ -76,6 +77,10 @@ case "$V2B_TASK" in
     V2B_EXTRACTION="results_v2/v2a/job19916781_2_physlib/extraction.json"
     V2B_NEARDUP="results_v2/v2b/neardup/job19929883_2_physlib.json"
     V2B_K7="results_v2/v2b/k7/job19921318_2_physlib.json"
+    V2B_K4X_GRAPH="${V2B_K4X_GRAPH:?export the sealed PhysLib k4x graph path}"
+    V2B_K4X_EXTERNAL="results_v2/v2a/job19916781_2_physlib/pinned_mathlib_extraction.json"
+    V2B_K4X_ARGS=(--k4x-graph "$V2B_K4X_GRAPH"
+                  --k4x-external-extraction "$V2B_K4X_EXTERNAL")
     ;;
   3)
     V2B_TAG="sympy"
@@ -105,7 +110,8 @@ if [[ "$V2B_TASK" -le 2 ]]; then
   V2B_KEYWORD_ARGS=(--lean-keyword-freeze "$V2B_KEYWORD_FREEZE")
 fi
 for V2B_INPUT in "$V2B_CANDIDATES" "$V2B_EXTRACTION" "$V2B_NEARDUP" \
-                 "$V2B_K7" "${V2B_KEYWORD_FREEZE:-}"; do
+                 "$V2B_K7" "${V2B_KEYWORD_FREEZE:-}" \
+                 "${V2B_K4X_GRAPH:-}" "${V2B_K4X_EXTERNAL:-}"; do
   [[ -z "$V2B_INPUT" || -f "$V2B_INPUT" ]] || {
     echo "missing sealed V2-b assembly input: $V2B_INPUT" >&2
     exit 1
@@ -146,6 +152,7 @@ V2B_OUT="results_v2/v2b/assembly/job${V2B_RUN_ID}_${V2B_TAG}.json"
   --a6-outcome "$V2B_A6_OUTCOME" \
   "${V2B_KEYWORD_ARGS[@]}" \
   --k7-order "$V2B_K7" \
+  "${V2B_K4X_ARGS[@]}" \
   --out "$V2B_OUT"
 
 v2b_assert_corpus_identity

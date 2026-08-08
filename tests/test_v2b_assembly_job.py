@@ -18,6 +18,7 @@ def test_exact_five_cpu_job_and_write_once_inputs():
     assert "--array=0-4" in src
     assert 'V2B_POOL_BASE="/orcd/pool/008/${USER:?USER is required}"' in src
     assert "V2B_SAMPLE" in src and "V2B_A6_OUTCOME" in src
+    assert "V2B_K4X_GRAPH" in src
     assert "prepare_v2b_assembly.py" in src
     assert "job${V2B_RUN_ID}_${V2B_TAG}.json" in src
     assert "V2B-ASSEMBLY-DONE" in src
@@ -30,6 +31,9 @@ def test_exact_sealed_chain_and_identity_guards():
     assert src.count("v2b_assert_corpus_identity") >= 3
     assert "--untracked-files=all" in src
     assert "freeze_tokens_job19929877.json" in src
+    assert "job19916781_2_physlib/pinned_mathlib_extraction.json" in src
+    assert '--k4x-graph "$V2B_K4X_GRAPH"' in src
+    assert '--k4x-external-extraction "$V2B_K4X_EXTERNAL"' in src
     for task, tag in enumerate(("mathlib4", "batteries", "physlib",
                                 "sympy", "astropy")):
         assert f"job19931908_{task}_{tag}.json" in src
