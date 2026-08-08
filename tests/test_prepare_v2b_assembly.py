@@ -662,76 +662,89 @@ def test_materialize_round_trip():
             pass
 
 
+def _python_chain(td, big=False):
+    """Python fixture; big=True makes g exceed B* so the k4 B* suffix
+    holds NO whole unit (explicit-empty k3s/k4s path)."""
+    repo = "sympy"
+    corpus_sha = EXPECTED[repo][1]
+    root = os.path.join(td, "corpus")
+    a_text = "def f(x):\n    return g(x)\n"
+    b_text = "def g(x):\n" + ("    x = x + 1\n" * 2000 if big else "") \
+        + "    return x\n"
+    a_path = os.path.join(root, "pkg_a.py")
+    b_path = os.path.join(root, "pkg_b.py")
+    a_sha, b_sha = _write(a_path, a_text), _write(b_path, b_text)
+    extraction = dict(
+        schema="v2a_python_extract_v3", repo=repo,
+        files=[
+            dict(module="pkg.a", source=a_path, rel="pkg_a.py",
+                 source_sha256=a_sha,
+                 targets=[dict(identity=["pkg.a", "f", 0], start_byte=0,
+                               end_byte=len(a_text),
+                               header_bytes=len("def f(x):"))]),
+            dict(module="pkg.b", source=b_path, rel="pkg_b.py",
+                 source_sha256=b_sha,
+                 targets=[dict(identity=["pkg.b", "g", 0], start_byte=0,
+                               end_byte=len(b_text),
+                               header_bytes=len("def g(x):"))])],
+        graph=dict(
+            edges=[["pkg.a", "f", 0, "pkg.b", "g", 0]],
+            # identity-keyed python shape frozen by the §14.3 amendment
+            target_coverage=[
+                dict(identity=["pkg.a", "f", 0], n_external=3),
+                dict(identity=["pkg.b", "g", 0], n_external=0)]))
+    extraction_path = os.path.join(td, "extraction.json")
+    json.dump(extraction, open(extraction_path, "w"))
+    extraction_sha = _sha(open(extraction_path, "rb").read())
+    neardup = dict(schema=NEARDUP_SCHEMA, repo=repo, language="python",
+                   extraction=dict(path=extraction_path,
+                                   sha256=extraction_sha),
+                   units=[dict(identity=["pkg.a", "f", 0],
+                               key=identity_key("python",
+                                                ["pkg.a", "f", 0]),
+                               verbatim_sha256=_lexed("python", a_text),
+                               normalized_sha256="b" * 64),
+                          dict(identity=["pkg.b", "g", 0],
+                               key=identity_key("python",
+                                                ["pkg.b", "g", 0]),
+                               verbatim_sha256=_lexed("python", b_text),
+                               normalized_sha256="d" * 64)],
+                   jaccard_pairs=[], collision_groups=[])
+    neardup_path = os.path.join(td, "neardup.json")
+    json.dump(neardup, open(neardup_path, "w"))
+    outcome_path = _outcome(td)
+    outcome_sha = _sha(open(outcome_path, "rb").read())
+    candidates = dict(schema=CANDIDATES_SCHEMA, repo=repo,
+                      corpus_git_sha=corpus_sha,
+                      extraction=dict(path=extraction_path,
+                                      sha256=extraction_sha))
+    candidates_path = os.path.join(td, "candidates.json")
+    json.dump(candidates, open(candidates_path, "w"))
+    candidates_sha = _sha(open(candidates_path, "rb").read())
+    sample = dict(schema=BOUND_SAMPLE_SCHEMA, sampling_state="drawn",
+                  n_requested_per_corpus=20,
+                  a6_outcome=dict(sha256=outcome_sha),
+                  plans={repo: dict(
+                      candidates_sha256=candidates_sha,
+                      targets=[dict(identity=["pkg.a", "f", 0])])})
+    sample_path = os.path.join(td, "sample.json")
+    json.dump(sample, open(sample_path, "w"))
+    k7_path = _k7_artifact(td, repo, "python",
+                           [("pkg_b.py", b_path), ("pkg_a.py", a_path)])
+    return dict(sample=sample_path, repo=repo, candidates=candidates_path,
+                extraction=extraction_path, neardup=neardup_path,
+                outcome=outcome_path, freeze=None, k7=k7_path,
+                a_text=a_text, b_text=b_text)
+
+
 def test_python_manifest_end_to_end():
     with tempfile.TemporaryDirectory() as td:
-        repo = "sympy"
-        corpus_sha = EXPECTED[repo][1]
-        root = os.path.join(td, "corpus")
-        a_text = "def f(x):\n    return g(x)\n"
-        b_text = "def g(x):\n    return x\n"
-        a_path = os.path.join(root, "pkg_a.py")
-        b_path = os.path.join(root, "pkg_b.py")
-        a_sha, b_sha = _write(a_path, a_text), _write(b_path, b_text)
-        extraction = dict(
-            schema="v2a_python_extract_v3", repo=repo,
-            files=[
-                dict(module="pkg.a", source=a_path, rel="pkg_a.py",
-                     source_sha256=a_sha,
-                     targets=[dict(identity=["pkg.a", "f", 0], start_byte=0,
-                                   end_byte=len(a_text),
-                                   header_bytes=len("def f(x):"))]),
-                dict(module="pkg.b", source=b_path, rel="pkg_b.py",
-                     source_sha256=b_sha,
-                     targets=[dict(identity=["pkg.b", "g", 0], start_byte=0,
-                                   end_byte=len(b_text),
-                                   header_bytes=len("def g(x):"))])],
-            graph=dict(
-                edges=[["pkg.a", "f", 0, "pkg.b", "g", 0]],
-                # identity-keyed python shape frozen by the §14.3 amendment
-                target_coverage=[
-                    dict(identity=["pkg.a", "f", 0], n_external=3),
-                    dict(identity=["pkg.b", "g", 0], n_external=0)]))
-        extraction_path = os.path.join(td, "extraction.json")
-        json.dump(extraction, open(extraction_path, "w"))
-        extraction_sha = _sha(open(extraction_path, "rb").read())
-        neardup = dict(schema=NEARDUP_SCHEMA, repo=repo, language="python",
-                       extraction=dict(path=extraction_path,
-                                       sha256=extraction_sha),
-                       units=[dict(identity=["pkg.a", "f", 0],
-                                   key=identity_key("python",
-                                                    ["pkg.a", "f", 0]),
-                                   verbatim_sha256=_lexed("python", a_text),
-                                   normalized_sha256="b" * 64),
-                              dict(identity=["pkg.b", "g", 0],
-                                   key=identity_key("python",
-                                                    ["pkg.b", "g", 0]),
-                                   verbatim_sha256=_lexed("python", b_text),
-                                   normalized_sha256="d" * 64)],
-                       jaccard_pairs=[], collision_groups=[])
-        neardup_path = os.path.join(td, "neardup.json")
-        json.dump(neardup, open(neardup_path, "w"))
-        outcome_path = _outcome(td)
-        outcome_sha = _sha(open(outcome_path, "rb").read())
-        candidates = dict(schema=CANDIDATES_SCHEMA, repo=repo,
-                          corpus_git_sha=corpus_sha,
-                          extraction=dict(path=extraction_path,
-                                          sha256=extraction_sha))
-        candidates_path = os.path.join(td, "candidates.json")
-        json.dump(candidates, open(candidates_path, "w"))
-        candidates_sha = _sha(open(candidates_path, "rb").read())
-        sample = dict(schema=BOUND_SAMPLE_SCHEMA, sampling_state="drawn",
-                      n_requested_per_corpus=20,
-                      a6_outcome=dict(sha256=outcome_sha),
-                      plans={repo: dict(
-                          candidates_sha256=candidates_sha,
-                          targets=[dict(identity=["pkg.a", "f", 0])])})
-        sample_path = os.path.join(td, "sample.json")
-        json.dump(sample, open(sample_path, "w"))
-        k7_path = _k7_artifact(td, repo, "python",
-                               [("pkg_b.py", b_path), ("pkg_a.py", a_path)])
-        manifest = build_assembly(sample_path, repo, candidates_path,
-                                  extraction_path, neardup_path,
-                                  outcome_path, None, k7_path)
+        chain = _python_chain(td)
+        a_text, b_text = chain["a_text"], chain["b_text"]
+        manifest = build_assembly(chain["sample"], chain["repo"],
+                                  chain["candidates"], chain["extraction"],
+                                  chain["neardup"], chain["outcome"],
+                                  None, chain["k7"])
         row = manifest["targets"][0]
         assert manifest["language"] == "python"
         assert row["n_k4_units"] == 1
@@ -744,9 +757,11 @@ def test_python_manifest_end_to_end():
         # python external counts pass through; bytes stay null
         assert row["external"]["n_external"] == 3
         assert row["external"]["bytes"] is None
-        # k5 pool is empty (universe == forward closure); k6 has one doc
+        # k5 pool is empty (universe == forward closure): the grid still
+        # exists, every cell empty and ineligible; k6 has one doc
         assert row["arms"]["k5"]["0"]["n_units"] == 0
-        assert row["arms"]["k5"]["0"]["cells"] == {}
+        assert set(row["arms"]["k5"]["0"]["cells"]) == \
+            {"4096", "16384", "65536"}
         assert row["arms"]["k6"]["n_docs"] == 1
         # k7 admits only the non-target file, python comment banner
         k7arm = row["arms"]["k7"]
@@ -756,6 +771,79 @@ def test_python_manifest_end_to_end():
             [["pkg_b.py"]]
         assert k7_cell["context_bytes"] == \
             len("# ctx: pkg_b.py\n") + len(b_text) + 1
+
+
+def test_empty_renderings_emit_ineligible_grid():
+    """§3/§15.A4 representation: an empty maximal rendering still emits
+    its exact budget cell grid — context=b'', 0 bytes, eligible=false, no
+    separator, no units — for every arm, and materializes to b''."""
+    with tempfile.TemporaryDirectory() as td:
+        chain = _python_chain(td)
+        manifest = build_assembly(chain["sample"], chain["repo"],
+                                  chain["candidates"], chain["extraction"],
+                                  chain["neardup"], chain["outcome"],
+                                  None, chain["k7"])
+        row = manifest["targets"][0]
+        k5 = row["arms"]["k5"]
+        empty_sha = _sha(b"")
+        assert set(k5["0"]["cells"]) == {"4096", "16384", "65536"}
+        assert set(k5["1"]["cells"]) == {str(B_STAR)}       # seeds @ B* only
+        assert set(k5["2"]["cells"]) == {str(B_STAR)}
+        for seed in ("0", "1", "2"):
+            assert k5[seed]["n_units"] == 0
+            for key, cell in k5[seed]["cells"].items():
+                assert cell["context_bytes"] == 0
+                assert cell["context_sha256"] == empty_sha
+                assert cell["eligible"] is False
+                assert cell["selected_units"] == []
+                assert cell["partial_unit"] is None
+                assert cell["rendering_bytes"] == 0         # no separator
+                assert cell["budget_bytes"] == int(key)
+        # materialization returns the same empty bytes per cell key
+        manifest_path = os.path.join(td, "manifest.json")
+        json.dump(manifest, open(manifest_path, "w"))
+        blobs = materialize(manifest_path, chain["sample"], chain["repo"],
+                            chain["candidates"], chain["extraction"],
+                            chain["neardup"], chain["outcome"],
+                            None, chain["k7"])
+        blob = blobs[identity_key("python", ["pkg.a", "f", 0])]
+        for cell_key in ("k5:0:4096", "k5:0:16384", "k5:0:65536",
+                         "k5:1:16384", "k5:2:16384"):
+            assert blob[cell_key] == b""
+
+
+def test_k3s_k4s_explicit_empty_when_no_whole_units():
+    with tempfile.TemporaryDirectory() as td:
+        chain = _python_chain(td, big=True)
+        manifest = build_assembly(chain["sample"], chain["repo"],
+                                  chain["candidates"], chain["extraction"],
+                                  chain["neardup"], chain["outcome"],
+                                  None, chain["k7"])
+        row = manifest["targets"][0]
+        b_star_cell = row["arms"]["k4"][str(B_STAR)]
+        assert b_star_cell["eligible"] is True              # giant unit
+        assert all(not r["wholly_contained"]
+                   for r in b_star_cell["selected_units"])
+        partial = b_star_cell["partial_unit"]
+        assert tuple(partial["identity"]) == ("pkg.b", "g", 0)
+        for name in ("k3s", "k4s"):
+            arm = row["arms"][name]
+            assert arm["n_units"] == 0
+            assert arm["identities"] == []
+            assert arm["context_bytes"] == 0
+            assert arm["context_sha256"] == _sha(b"")
+            assert arm["excluded_partial"]["identity"] == \
+                partial["identity"]
+            assert arm["excluded_partial"]["included_bytes"] == \
+                partial["included_bytes"]
+        manifest_path = os.path.join(td, "manifest.json")
+        json.dump(manifest, open(manifest_path, "w"))
+        blobs = materialize(manifest_path, chain["sample"], chain["repo"],
+                            chain["candidates"], chain["extraction"],
+                            chain["neardup"], chain["outcome"],
+                            None, chain["k7"])
+        blob = blobs[identity_key("python", ["pkg.a", "f", 0])]
+        assert blob["k3s"] == b"" and blob["k4s"] == b""
 
 
 def test_source_drift_fails_closed():

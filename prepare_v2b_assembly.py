@@ -29,6 +29,12 @@ Hard property checks (assembly failures, never warnings): smaller
 budgets are literal byte suffixes of larger ones per arm; at most one
 partial unit per cell; no context banner names the target's source
 path; prefix + body round-trip byte-exactly against the live source.
+An EMPTY maximal rendering (empty closure/pool/universe/admission)
+still emits its full budget cell grid — context=b"", context_bytes=0,
+eligible=false, no separator, no units (§3/§15.A4) — so the grid is
+never silently absent and ineligible cells never enter complete-case
+contrasts as true zero-budget effects; k3s/k4s likewise become
+explicit empty sensitivities when the k4 B* suffix has no whole units.
 """
 import argparse
 import sys
@@ -594,26 +600,27 @@ def _assemble_target(language, repo, target_identity, units, edges,
         merged_exclusions=k2["merged_exclusions"],
         retained_intervals=k2["retained_intervals"],
         separator_bytes=k2["separator_bytes"])
-    if k4_units:
-        arms["k4"] = _render_unit_arm(language, k4_units,
-                                      target["source_rel"], budgets,
-                                      collect=collect, collect_key="k4")
-        arms["k3"] = _render_unit_arm(language, k3_units,
-                                      target["source_rel"], budgets,
-                                      collect=collect, collect_key="k3")
-        # §15.A11: per-cell verbatim-rendered (unsplit) unit accounting.
-        for cell in arms["k3"].values():
-            included = [(row, unsplit_bytes_by_key.get(
-                identity_key(language, row["identity"])))
-                for row in cell["selected_units"]]
-            cell["n_unsplit_units"] = sum(
-                1 for _, full in included if full is not None)
-            cell["n_unsplit_bytes"] = sum(
-                row["included_bytes"] for row, full in included
-                if full is not None)
-    else:
-        arms["k4"] = {}
-        arms["k3"] = {}
+    # An empty unit list flows through the SAME machinery: the maximal
+    # rendering is b"", every budget cell exists with context_bytes=0 and
+    # eligible=false (§3/§15.A4), no separator, no units — the grid is
+    # never silently absent and the cell never enters complete-case
+    # contrasts as a true zero-budget effect.
+    arms["k4"] = _render_unit_arm(language, k4_units,
+                                  target["source_rel"], budgets,
+                                  collect=collect, collect_key="k4")
+    arms["k3"] = _render_unit_arm(language, k3_units,
+                                  target["source_rel"], budgets,
+                                  collect=collect, collect_key="k3")
+    # §15.A11: per-cell verbatim-rendered (unsplit) unit accounting.
+    for cell in arms["k3"].values():
+        included = [(row, unsplit_bytes_by_key.get(
+            identity_key(language, row["identity"])))
+            for row in cell["selected_units"]]
+        cell["n_unsplit_units"] = sum(
+            1 for _, full in included if full is not None)
+        cell["n_unsplit_bytes"] = sum(
+            row["included_bytes"] for row, full in included
+            if full is not None)
     arms["k3s"], arms["k4s"] = _sensitivity_arms(
         language, arms["k4"], units, cache, unsplit_bytes_by_key, collect)
     arms["k5"] = _k5_arm(language, repo, target_identity, target, units,
@@ -653,9 +660,9 @@ def _sensitivity_arms(language, k4_cells, units, cache,
     """§15.A10 k3s/k4s: exactly the units WHOLLY contained in the k4 B*
     suffix, partial excluded from both sides (identity + bytes recorded),
     rendered twice with NO truncation; byte lengths deliberately unequal
-    and both recorded. Budget-UNMATCHED labeled sensitivities."""
-    if not k4_cells:
-        return {}, {}
+    and both recorded. Budget-UNMATCHED labeled sensitivities. When the
+    B* suffix holds no whole units both arms are EXPLICIT empty
+    sensitivities (n_units=0, context_bytes=0), never absent."""
     cell = k4_cells.get(str(B_STAR))
     if cell is None:
         raise V2BError(f"budget grid lacks B*={B_STAR}; k3s/k4s undefined")
@@ -711,16 +718,14 @@ def _k5_arm(language, repo, target_identity, target, units, universe,
                        language, repo, target_identity,
                        [units[key]["identity"] for key in pool], seed)]
         seed_budgets = budgets if seed == 0 else (B_STAR,)
-        cells = {}
-        if ordered:
-            cells = _render_unit_arm(
-                language,
-                [dict(identity=units[key]["identity"],
-                      relpath=units[key]["source_rel"],
-                      payload=_unit_payload(units[key], cache))
-                 for key in ordered],
-                target["source_rel"], seed_budgets, collect=collect,
-                collect_key=f"k5:{seed}")
+        cells = _render_unit_arm(
+            language,
+            [dict(identity=units[key]["identity"],
+                  relpath=units[key]["source_rel"],
+                  payload=_unit_payload(units[key], cache))
+             for key in ordered],
+            target["source_rel"], seed_budgets, collect=collect,
+            collect_key=f"k5:{seed}")
         seeds[str(seed)] = dict(
             n_units=len(ordered),
             n_bytes=sum(_span_bytes(units[key]) for key in ordered),
@@ -749,19 +754,17 @@ def _k6_arm(language, repo, target_identity, target, units, universe,
                    [dict(identity=units[key]["identity"],
                          score=score_by_key[key]) for key in docs])]
     scores = {key: score_by_key[key] for key in docs}
-    cells = {}
-    if ordered:
-        cells = _render_unit_arm(
-            language,
-            [dict(identity=units[key]["identity"],
-                  relpath=units[key]["source_rel"],
-                  payload=_unit_payload(units[key], cache))
-             for key in ordered],
-            target["source_rel"], budgets, collect=collect,
-            collect_key="k6")
-        _annotate_cells(cells, language, "bm25_score", scores)
-        _annotate_cells(cells, language, "in_forward_closure",
-                        {key: True for key in closure_keys})
+    cells = _render_unit_arm(
+        language,
+        [dict(identity=units[key]["identity"],
+              relpath=units[key]["source_rel"],
+              payload=_unit_payload(units[key], cache))
+         for key in ordered],
+        target["source_rel"], budgets, collect=collect,
+        collect_key="k6")
+    _annotate_cells(cells, language, "bm25_score", scores)
+    _annotate_cells(cells, language, "in_forward_closure",
+                    {key: True for key in closure_keys})
     return dict(
         n_docs=len(docs),
         n_query_terms=result["n_query_terms"],
@@ -826,15 +829,13 @@ def _k7_arm(language, target, target_key, units, near_dups, reverse,
                     bytes=sum(row_by_rel[rel][1] for rel in ordered),
                     sha256=sha256_json(ordered))
 
-    cells = {}
-    if admitted:
-        cells = _render_unit_arm(
-            language,
-            [dict(identity=[rel], relpath=rel,
-                  payload=_k7_payload(k7["root"], rel, row_by_rel[rel][1],
-                                      row_by_rel[rel][2], k7["cache"]))
-             for rel in admitted],
-            target_rel, budgets, collect=collect, collect_key="k7")
+    cells = _render_unit_arm(
+        language,
+        [dict(identity=[rel], relpath=rel,
+              payload=_k7_payload(k7["root"], rel, row_by_rel[rel][1],
+                                  row_by_rel[rel][2], k7["cache"]))
+         for rel in admitted],
+        target_rel, budgets, collect=collect, collect_key="k7")
     return dict(
         n_order_files=len(k7["rows"]),
         n_admitted_files=len(admitted),

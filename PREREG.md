@@ -538,6 +538,19 @@ arxiv_manifest) must be committed before measurement.
 
 ## 13. Disagreement log
 
+- ADOPTED (V2-b empty-rendering representation resolution, 2026-08-08,
+  PRE-LABEL/PRE-SAMPLE/PRE-SCORE — the unlabeled A6 packet and sanitized
+  presentation existed, but no human label, target draw, assembly artifact,
+  model score, or behavioral result existed): assembly implementation exposed
+  that empty closure/pool/admission arms had been represented by absent cell
+  maps even though §3/§15.A4 already defines any rendering shorter than B as
+  ineligible. DESIGN_V2 §15.A11 now applies that rule literally: an empty
+  k2-k7 maximal rendering emits its ordinary budget grid as exact empty-byte
+  cells with `eligible=false`, no separator, and no units; k5 seeds 1/2 retain
+  only B*. Empty k3s/k4s same-set sensitivities are explicit as well. This
+  prevents downstream code from confusing “not represented” with “not run”
+  while preserving the frozen complete-case estimands: these cells do not
+  count as filling B and never enter E1/E2 merely as zero-context effects.
 - ADOPTED (V2-b assembly prefix/external-mass implementation-blocker
   resolution, 2026-08-08, PRE-LABEL/PRE-SAMPLE/PRE-SCORE — the final
   source-consistent token/freeze chain and four small-corpus diagnostic A6

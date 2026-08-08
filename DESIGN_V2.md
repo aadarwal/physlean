@@ -1235,6 +1235,15 @@ older sentence.
   manifest cell per target with budget_bytes=null and is reused by every
   contrast rather than duplicated as three pseudo-observations. Prompt bytes
   are context + prefix + body with no unrecorded delimiter.
+  EMPTY PRESENCE-ARM RENDERINGS. If a k2-k7 maximal core is empty (empty
+  closure, pool, universe, or admitted-file set), no separator is invented,
+  but every budget cell that arm/seed ordinarily owns is still emitted with
+  context=b"", context_bytes=0, the empty SHA256, zero units, and
+  eligible=false. Thus emptiness is visible without treating a zero-byte
+  context as filling B or entering a complete-case E1/E2 contrast; k5 seeds
+  1/2 retain only B*. If k4 at B* contains no wholly included unit, k3s/k4s
+  are likewise explicit empty, budget-unmatched sensitivities rather than
+  absent objects, with the excluded partial unit still recorded when present.
 
   BODY TOKEN BOUNDARY (primary plus sensitivity). Tokenize the exact prompt
   once with no special tokens and reuse layout.token_spans' overlap groups
