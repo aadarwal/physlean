@@ -66,8 +66,8 @@ PY_IMPORT = re.compile(r"^\s*(?:from\s+([\w.]+)\s+import|import\s+([\w.]+))", re
 CPP_INCLUDE = re.compile(r'^\s*#\s*include\s+"([^"]+)"', re.M)
 
 
-def collect_files(cfg):
-    repo = os.path.join(ROOT, cfg["repo"])
+def collect_files(cfg, root=ROOT):
+    repo = os.path.join(root, cfg["repo"])
     excl = cfg.get("exclude", [])
     files = []
     for d in cfg["dirs"]:
@@ -225,26 +225,17 @@ def imports_of(text, cfg):
     return set()
 
 
-def topo_order(files, cfg):
-    """Returns (order, n_cycle_nodes, n_edges). n_edges is the RESOLVED
-    intra-corpus dependency-edge count — recorded in streams_stats so an
-    import-sparse corpus is visible in the record: with ~zero edges,
-    Kahn's min-heap pops indices in file-sort order, i.e. the 'topo'
-    order degrades to LEXICOGRAPHIC PATH ORDER (physlib: 8 source
-    import directives / 538 files — its order ablation cannot be
-    interpreted like mathlib's; PREREG §2/§13)."""
-    import heapq
-    if cfg["lang"] == "latex":  # chronological (submission date)
-        return sorted(range(len(files)),
-                      key=lambda i: files[i]["date"] or ""), 0, 0
-    if cfg["lang"] == "cpp":    # includes resolve by basename
+def resolved_file_edges(files, cfg):
+    """Exact resolved dependency->dependent edges consumed by topo_order."""
+    if cfg["lang"] == "latex":
+        return set()
+    if cfg["lang"] == "cpp":
         key2idx = {}
         for i, f in enumerate(files):
             key2idx.setdefault(os.path.basename(f["rel"]), i)
     else:
         key2idx = {module_name(f["rel"], cfg): i for i, f in enumerate(files)}
-    adj = defaultdict(set)
-    indeg = [0] * len(files)
+    edges = set()
     for i, f in enumerate(files):
         for imp in imports_of(f["text"], cfg):
             cand = None
@@ -257,9 +248,29 @@ def topo_order(files, cfg):
                     if m in key2idx:
                         cand = key2idx[m]
                         break
-            if cand is not None and cand != i and i not in adj[cand]:
-                adj[cand].add(i)
-                indeg[i] += 1
+            if cand is not None and cand != i:
+                edges.add((cand, i))
+    return edges
+
+
+def topo_order(files, cfg):
+    """Returns (order, n_cycle_nodes, n_edges). n_edges is the RESOLVED
+    intra-corpus dependency-edge count — recorded in streams_stats so an
+    import-sparse corpus is visible in the record: with ~zero edges,
+    Kahn's min-heap pops indices in file-sort order, i.e. the 'topo'
+    order degrades to LEXICOGRAPHIC PATH ORDER (physlib: 8 source
+    import directives / 538 files — its order ablation cannot be
+    interpreted like mathlib's; PREREG §2/§13)."""
+    import heapq
+    if cfg["lang"] == "latex":  # chronological (submission date)
+        return sorted(range(len(files)),
+                      key=lambda i: files[i]["date"] or ""), 0, 0
+    adj = defaultdict(set)
+    indeg = [0] * len(files)
+    edges = resolved_file_edges(files, cfg)
+    for dependency, dependent in edges:
+        adj[dependency].add(dependent)
+        indeg[dependent] += 1
     heap = [i for i in range(len(files)) if indeg[i] == 0]
     heapq.heapify(heap)
     order, seen = [], set()
@@ -273,7 +284,7 @@ def topo_order(files, cfg):
                 heapq.heappush(heap, v)
     cyc = [i for i in range(len(files)) if i not in seen]
     order.extend(cyc)
-    return order, len(cyc), sum(len(v) for v in adj.values())
+    return order, len(cyc), len(edges)
 
 
 SELECT_SEED = 20260808
