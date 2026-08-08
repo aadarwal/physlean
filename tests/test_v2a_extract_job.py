@@ -65,6 +65,10 @@ def test_physlib_pinned_mathlib_is_manifest_derived():
     assert "physlib_pinned_mathlib" in src
     assert 'V2_PIN_ACTUAL=$(git -C "$V2_PIN_REPO" rev-parse HEAD)' in src
     assert "PhysLib-pinned mathlib source tree is dirty" in src
+    for key in ("pinned_mathlib_repo_sha",
+                "pinned_mathlib_pairs_sha256",
+                "pinned_mathlib_extraction_sha256"):
+        assert key in src
 
 
 if __name__ == "__main__":

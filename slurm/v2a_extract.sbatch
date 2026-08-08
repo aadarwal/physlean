@@ -193,6 +193,13 @@ V2_REPORT_TMP=$(mktemp "$V2_RUN_DIR/.complete.XXXXXX")
   printf 'validation_sha256\t%s\n' "$(sha256sum "$V2_VALIDATE" | cut -d' ' -f1)"
   printf 'closure_audit_sha256\t%s\n' "$(sha256sum "$V2_CLOSURE" | cut -d' ' -f1)"
   printf 'compile_audit_sha256\t%s\n' "$(sha256sum "$V2_COMPILE" | cut -d' ' -f1)"
+  if [[ "$V2_TAG" == "physlib" ]]; then
+    printf 'pinned_mathlib_repo_sha\t%s\n' "$V2_PIN_ACTUAL"
+    printf 'pinned_mathlib_pairs_sha256\t%s\n' \
+      "$(sha256sum "$V2_PIN_PAIRS" | cut -d' ' -f1)"
+    printf 'pinned_mathlib_extraction_sha256\t%s\n' \
+      "$(sha256sum "$V2_PIN_EXTRACT" | cut -d' ' -f1)"
+  fi
   printf 'utc_finished\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 } > "$V2_REPORT_TMP"
 mv "$V2_REPORT_TMP" "$V2_RUN_DIR/complete.tsv"

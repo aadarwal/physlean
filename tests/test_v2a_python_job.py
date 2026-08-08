@@ -32,6 +32,7 @@ def test_frozen_revisions_and_structural_checks():
     for program in ("extract_python.py", "validate_v2a.py",
                     "audit_python_compile.py"):
         assert program in src
+    assert '--repo-tag "$V2_TAG"' in src
     assert "--n 20" in src
     assert "V2A-PYTHON-STRUCTURAL-DONE" in src
     assert "complete.tsv" in src

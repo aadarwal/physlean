@@ -347,8 +347,8 @@ def test_collection_order_is_deterministic_and_output_is_new_only():
         got = collect(td, "pkg")
         assert [f["rel"] for f in got] == ["pkg/a/f.py", "pkg/z/f.py"]
         out = os.path.join(td, "out.json")
-        argv = ["extract_python.py", "--repo", td, "--pkg", "pkg",
-                "--out", out]
+        argv = ["extract_python.py", "--repo", td, "--repo-tag", "r",
+                "--pkg", "pkg", "--out", out]
         with patch.object(sys, "argv", argv):
             main()
         first = open(out, "rb").read()
@@ -361,6 +361,7 @@ def test_collection_order_is_deterministic_and_output_is_new_only():
         assert open(out, "rb").read() == first
         parsed = json.loads(first)
         assert parsed["schema"] == "v2a_python_extract_v3"
+        assert parsed["repo"] == "r"
         assert parsed["n_files"] == 2
 
 

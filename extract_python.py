@@ -477,7 +477,10 @@ def collect(repo, pkg):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--repo", required=True)
+    ap.add_argument("--repo", required=True,
+                    help="filesystem root of the pinned checkout")
+    ap.add_argument("--repo-tag",
+                    help="stable corpus identity (default: --repo)")
     ap.add_argument("--pkg", required=True)
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
@@ -485,7 +488,7 @@ def main():
     good = [f for f in files if "error" not in f]
     bad = [f for f in files if "error" in f]
     graph = build_graph(good)
-    out = dict(schema=SCHEMA, repo=args.repo,
+    out = dict(schema=SCHEMA, repo=args.repo_tag or args.repo,
                pkg=args.pkg, n_files=len(good), n_failed=len(bad),
                failed=[dict(rel=f["rel"], error=f["error"])
                        for f in bad],

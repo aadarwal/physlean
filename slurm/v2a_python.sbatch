@@ -89,7 +89,8 @@ V2_VALIDATE="$V2_RUN_DIR/validation.json"
 V2_COMPILE="$V2_RUN_DIR/boundary_compile_audit.json"
 
 "$V2_PY" extract_python.py \
-  --repo "$V2_REPO" --pkg "$V2_PACKAGE" --out "$V2_EXTRACT"
+  --repo "$V2_REPO" --repo-tag "$V2_TAG" \
+  --pkg "$V2_PACKAGE" --out "$V2_EXTRACT"
 "$V2_PY" validate_v2a.py \
   --extraction "$V2_EXTRACT" --repo "$V2_TAG" --n 20 \
   --out "$V2_VALIDATE"

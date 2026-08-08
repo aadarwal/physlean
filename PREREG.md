@@ -695,6 +695,20 @@ arxiv_manifest) must be committed before measurement.
   ambiguity. Semantic behavioral pooling still requires measured execution
   coverage of the exact target span under §14.23, so lexical finality is not
   substituted for runtime evidence.
+- ADOPTED (first live Python-v3 structural rerun, job 19914591, 2026-08-08,
+  PRE-OUTCOME): schema v3 resolved the duplicate-name failure exactly as
+  intended. SymPy extracted 1,561 files / 19,926 declaration targets and
+  Astropy 989 files / 8,353 targets, with ZERO failed source files in either
+  corpus (recovering all 52 and 6 formerly rejected files respectively).
+  Validation selected 20/20 with zero span failures for each. Both jobs then
+  failed closed before compilation because extraction provenance stored the
+  absolute checkout path while validation stored the stable corpus tag;
+  `audit_python_compile.py` correctly rejected the unequal identities. The
+  extractor CLI now separates `--repo` (filesystem root) from `--repo-tag`
+  (frozen corpus identity), and Slurm passes `sympy` / `astropy` explicitly.
+  The extraction schema stays v3 because no successful v3 gate artifact or
+  model outcome predates this provenance correction; the failed job-scoped
+  artifacts remain diagnostic-only.
 - ADOPTED (post-G3a boundary, evidence commit 570c433; first grid
   outcomes): the Qwen2.5-Coder-0.5B sentinel is an INSTRUMENT PASS but
   provides NO POWER-LAW SUPPORT. Slurm 19904528 completed all 44/44
