@@ -43,6 +43,15 @@ def test_old_glibc_nodes_use_the_system_c_compiler():
     assert '"$ELAN_HOME/bin/elan" toolchain install' in src
 
 
+def test_toolchain_install_is_resume_safe():
+    src = source()
+    assert '"$ELAN_HOME/bin/elan" toolchain list' in src
+    assert 'grep -Fqx "$V2_ACTUAL_TOOLCHAIN"' in src
+    install = src.index('"$ELAN_HOME/bin/elan" toolchain install')
+    guard = src.rindex("if !", 0, install)
+    assert guard < install
+
+
 def test_elan_bootstrap_bytes_are_frozen_and_verified():
     src = source()
     assert 'V2_ELAN_VERSION="4.2.3"' in src

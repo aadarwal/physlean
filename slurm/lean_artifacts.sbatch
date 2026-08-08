@@ -108,7 +108,10 @@ v2_build_corpus() {
   fi
   v2_require_clean "$V2_CORPUS_DIR"
 
-  "$ELAN_HOME/bin/elan" toolchain install "$V2_ACTUAL_TOOLCHAIN"
+  if ! "$ELAN_HOME/bin/elan" toolchain list | cut -d' ' -f1 | \
+      grep -Fqx "$V2_ACTUAL_TOOLCHAIN"; then
+    "$ELAN_HOME/bin/elan" toolchain install "$V2_ACTUAL_TOOLCHAIN"
+  fi
   V2_LAKE_VERSION=$(cd "$V2_CORPUS_DIR" && \
     "$ELAN_HOME/bin/lake" --version)
   printf '%s: %s; %s\n' "$V2_CORPUS" "$V2_ACTUAL_TOOLCHAIN" \
