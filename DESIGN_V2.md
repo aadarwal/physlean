@@ -1332,12 +1332,17 @@ implementation discoveries recorded below; none uses outcome information.
   `Mathlib.Linter.Style.setOption.setOptionLinter`: an `m!` message interpolates
   the term `"', '".intercalate ...`, whose nested quotes had prematurely ended
   the draft ordinary-string scan. Interpolated strings now use the balanced,
-  whole-literal rule above. The exact patched scanner (SHA256
+  whole-literal rule above. A pre-commit working copy (SHA256
   `021a3446466a5a0a424cf818acbb668525ee45c6a330d3357b12929630469e24`)
-  passed every pinned mathlib extraction span in read-only job `19929429`
-  (`LEX-ALL-PASS`, 32 seconds, 1.85 GB). No mathlib artifact, packet, label,
-  sample, model score, or behavioral outcome existed. The four small artifacts
-  are quarantined as a mixed-source cohort, and all token/freeze/A6 inputs are
+  first passed every pinned mathlib extraction span in read-only job
+  `19929429` (`LEX-ALL-PASS`, 32 seconds, 1.85 GB), but that evidence is
+  superseded because later test hardening changed the adopted file bytes.
+  The exact scanner committed at `00a0025` (SHA256
+  `c26cba3eff7980c861081a7cca94ad2ff48092c1d41a89cd22ab43782d30b08a`)
+  replayed every span in job `19929789` and returned `LEX-ALL-PASS`
+  (49 seconds, 2.39 GB). No mathlib artifact, packet, label, sample, model
+  score, or behavioral outcome existed. The four small artifacts are
+  quarantined as a mixed-source cohort, and all token/freeze/A6 inputs are
   rerun once under the amended exact-five generator commit.
 
   A6 BLIND LABEL BOUNDARY. Before any packet or label existed, the operational

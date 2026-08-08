@@ -577,12 +577,18 @@ arxiv_manifest) must be committed before measurement.
   `{term}` while skipping nested literal/comment forms and retains the entire
   interpolation as one verbatim `STR`. This conservatively loses rename
   normalization inside interpolation terms but cannot create a normalized
-  collision. Exact patched-scanner job `19929429` then replayed every pinned
-  mathlib extraction span and returned `LEX-ALL-PASS` (32 seconds, 1.85 GB).
-  No mathlib A6 artifact, packet, label, target sample,
-  model score, or behavioral outcome existed. The four small artifacts are
-  diagnostic-only because the exact-five cohort must be regenerated under one
-  amended source commit; the full token/freeze/A6 chain is rerun once.
+  collision. Pre-commit working-copy scanner job `19929429` first replayed
+  every pinned mathlib extraction span and returned `LEX-ALL-PASS` (32 seconds,
+  1.85 GB; SHA256 `021a3446466a5a0a424cf818acbb668525ee45c6a330d3357b12929630469e24`),
+  but that evidence is superseded because later test hardening changed the
+  adopted file bytes. Job `19929789` replayed every span using the exact
+  scanner committed at `00a0025` (SHA256
+  `c26cba3eff7980c861081a7cca94ad2ff48092c1d41a89cd22ab43782d30b08a`)
+  and returned `LEX-ALL-PASS` (49 seconds, 2.39 GB). No mathlib A6 artifact,
+  packet, label, target sample, model score, or behavioral outcome existed.
+  The four small artifacts are diagnostic-only because the exact-five cohort
+  must be regenerated under one amended source commit; the full
+  token/freeze/A6 chain is rerun once.
 - ADOPTED (V2-b pre-sample hardening, 2026-08-08, PRE-OUTCOME — the first
   candidate array had begun producing metadata only and was never finalized;
   no sample, near-duplicate corpus artifact/label, assembly, score, or
