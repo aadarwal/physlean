@@ -25,12 +25,12 @@ def _fixture(td):
                     - second_start),
     }
     extraction = dict(
-        schema="v2a_lean_extract_v2", repo="r",
+        schema="v2a_lean_extract_v3", repo="r",
         files=[dict(module="M", source=source,
                     source_sha256=hashlib.sha256(text).hexdigest(),
                     decls=decls)])
     validation = dict(
-        summary=dict(schema="v2a_lean_extract_v2", repo="r"),
+        summary=dict(schema="v2a_lean_extract_v3", repo="r"),
         targets=[dict(identity=["M", "M.a"]),
                  dict(identity=["M", "M.b"])])
     return extraction, validation, source
@@ -63,6 +63,8 @@ def test_baseline_cached_and_each_boundary_marked():
         assert report["summary"]["standalone_compile"] == "PASS"
         assert report["summary"]["n_unique_source_controls"] == 1
         assert len(runner.calls) == 3       # one source baseline + 2 markers
+        assert all(os.path.commonpath((td, call[0][-1])) == td
+                   for call in runner.calls)
         assert all(t["passed"] for t in report["targets"])
         assert sum(MARKER in open(c[0][-1], "rb").read()
                    for c in runner.calls) == 2
@@ -76,6 +78,18 @@ def test_marker_compile_failure_is_counted():
         assert report["summary"]["standalone_compile"] == "FAIL"
         assert report["summary"]["n_failed"] == 2
         assert all(not t["passed"] for t in report["targets"])
+
+
+def test_work_directory_outside_lake_root_fails_closed():
+    with tempfile.TemporaryDirectory() as repo_td, \
+            tempfile.TemporaryDirectory() as outside_td:
+        extraction, validation, _ = _fixture(repo_td)
+        try:
+            audit(extraction, validation, repo_td, outside_td,
+                  lake="lake", runner=FakeRunner())
+            assert False, "out-of-root marked source accepted"
+        except Exception as err:
+            assert "inside the Lake root" in str(err)
 
 
 if __name__ == "__main__":

@@ -42,7 +42,7 @@ def _lean_ex(td, n_ok=3, repo="mathlib"):
                           eligible_kind=True, header_bytes=27,
                           body_bytes=0, split_kind=None, shell=[])
     return dict(
-        schema="v2a_lean_extract_v2", repo=repo,
+        schema="v2a_lean_extract_v3", repo=repo,
         k4_closure_definition="source-reference",
         files=[dict(module="M", source=sp, source_sha256=sha,
                     decls=decls, references=[])],

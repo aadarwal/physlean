@@ -478,6 +478,67 @@ def test_selection_uncontained_demoted_not_fatal():
             pass
 
 
+def test_foreign_declinfo_range_is_recorded_but_stale_local_range_fails():
+    """Attribute commands can make `.ilean.decls` carry an imported
+    constant's original-file range. The reference table must independently
+    identify that exact name as foreign before the impossible local range may
+    be excluded; the same shape claiming this module remains a hard error."""
+    src = "attribute [simp] foreign_t\n"
+    foreign_name = "foreign_t"
+    base = dict(version=5, module="T.Attr", directImports=[],
+                decls={foreign_name: [99, 0, 99, 9, 99, 0, 99, 9]})
+    with tempfile.TemporaryDirectory() as td:
+        sp = os.path.join(td, "Attr.lean")
+        ip = os.path.join(td, "Attr.ilean")
+        open(sp, "w").write(src)
+        foreign = dict(base, references={
+            _ck("Init.Core", foreign_name): dict(
+                definition=None,
+                usages=[[0, 17, 0, 26, foreign_name]])})
+        json.dump(foreign, open(ip, "w"))
+        rec = extract_file(sp, ip)
+        assert rec["decls"] == {}
+        assert rec["n_foreign_declaration_infos"] == 1
+        info = rec["foreign_declaration_infos"][0]
+        assert info["name"] == foreign_name
+        assert info["defining_modules"] == ["Init.Core"]
+        assert info["n_local_usage_occurrences"] == 1
+        assert info["range_within_paired_source"] is False
+        assert "line 99 out of range" in info["range_error"]
+
+        in_bounds = dict(foreign, decls={
+            foreign_name: [0, 0, 0, 9, 0, 0, 0, 9]})
+        json.dump(in_bounds, open(ip, "w"))
+        in_bounds_rec = extract_file(sp, ip)
+        assert in_bounds_rec["decls"] == {}
+        in_bounds_info = in_bounds_rec["foreign_declaration_infos"][0]
+        assert in_bounds_info["range_within_paired_source"] is True
+        assert in_bounds_info["range_error"] is None
+
+        stale = dict(base, references={
+            _ck("T.Attr", foreign_name): dict(
+                definition=None,
+                usages=[[0, 17, 0, 26, foreign_name]])})
+        json.dump(stale, open(ip, "w"))
+        try:
+            extract_file(sp, ip)
+            assert False, "out-of-range current-module declaration accepted"
+        except ExtractError as err:
+            assert "T.Attr:foreign_t" in str(err)
+
+        mixed = dict(base, references={
+            _ck("Init.Core", foreign_name): dict(
+                definition=None, usages=[[0, 17, 0, 26, foreign_name]]),
+            _ck("T.Attr", foreign_name): dict(
+                definition=None, usages=[[0, 17, 0, 26, foreign_name]])})
+        json.dump(mixed, open(ip, "w"))
+        try:
+            extract_file(sp, ip)
+            assert False, "mixed foreign/current attribution accepted"
+        except ExtractError as err:
+            assert "multiple defining modules" in str(err)
+
+
 def test_definition_parents_and_refinfo_tightening():
     """Length-5 DEFINITION locations map generated consts to their
     source generating declaration (Iff.intro -> Iff class of finding;

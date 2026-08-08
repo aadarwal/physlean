@@ -5,7 +5,7 @@ This module deliberately does NOT import ``extract_lean``. It parses the
 compact v5 JSON a second time, reconstructs module-qualified direct source
 reference edges (including generated-declaration folding), and compares the
 exact resolved / external / internal-unrenderable partition against a
-``v2a_lean_extract_v2`` artifact. Agreement is therefore evidence against a
+``v2a_lean_extract_v3`` artifact. Agreement is therefore evidence against a
 self-consistent bug shared by extraction and validation.
 """
 import argparse
@@ -17,7 +17,7 @@ import tempfile
 
 
 PAIR_SCHEMA = "v2a_ilean_pairs_v2"
-EXTRACT_SCHEMA = "v2a_lean_extract_v2"
+EXTRACT_SCHEMA = "v2a_lean_extract_v3"
 AUDIT_SCHEMA = "v2a_raw_ilean_closure_audit_v1"
 ILEAN_VERSION = 5
 
@@ -175,31 +175,65 @@ def _load_pairs(path):
 
 
 def _definition_state(pairs):
-    """First independent pass: declarations and generated-parent maps."""
+    """First independent pass: local declarations, foreign DeclInfo, and
+    generated-parent maps. Foreign classification is reimplemented here from
+    raw reference identities; no extractor code or output is trusted."""
     decls = {}
     generated = {}
+    foreign_declinfos = {}
     for module, pair in sorted(pairs.items()):
         raw = _read_raw(pair["ilean"], module)
         index = _SourceIndex(pair["source"])
-        spans = {}
-        for name, arr in raw["decls"].items():
-            if not (isinstance(arr, list) and len(arr) == 8
-                    and all(isinstance(x, int) and not isinstance(x, bool)
-                            and x >= 0 for x in arr)):
-                raise AuditError(f"{module}: malformed decl span for {name}")
-            spans[name] = index.span(arr[:4])
-        decls[module] = set(raw["decls"])
-        parents = {}
-        parentless_sites = {}
+        reference_rows = []
+        reference_modules_by_name = {}
         for raw_key, info in raw["references"].items():
             ident = _const_identity(raw_key, f"{module}:reference")
             if not isinstance(info, dict) or set(info) != {
                     "definition", "usages"}:
                 raise AuditError(f"{module}: malformed RefInfo")
-            parent = _location(info["definition"],
-                               f"{module}:definition", nullable=True)
             if not isinstance(info["usages"], list):
                 raise AuditError(f"{module}: usages is not a list")
+            reference_rows.append((ident, info))
+            if ident is not None:
+                defining_module, name = ident
+                reference_modules_by_name.setdefault(name, set()).add(
+                    defining_module)
+        spans = {}
+        module_foreign = {}
+        for name, arr in raw["decls"].items():
+            if not (isinstance(arr, list) and len(arr) == 8
+                    and all(isinstance(x, int) and not isinstance(x, bool)
+                            and x >= 0 for x in arr)):
+                raise AuditError(f"{module}: malformed decl span for {name}")
+            defining_modules = sorted(
+                reference_modules_by_name.get(name, ()))
+            if len(defining_modules) > 1:
+                raise AuditError(
+                    f"{module}:{name}: multiple defining modules")
+            if defining_modules and defining_modules[0] != module:
+                n_local_usages = 0
+                for ident, info in reference_rows:
+                    if ident != (defining_modules[0], name):
+                        continue
+                    for j, loc in enumerate(info["usages"]):
+                        _location(loc, f"{module}:foreign-usage[{j}]")
+                        index.span(loc[:4])
+                        n_local_usages += 1
+                if n_local_usages == 0:
+                    raise AuditError(
+                        f"{module}:{name}: foreign DeclInfo has no local "
+                        "usage occurrence")
+                module_foreign[name] = defining_modules
+                continue
+            spans[name] = index.span(arr[:4])
+        decls[module] = set(spans)
+        if module_foreign:
+            foreign_declinfos[module] = module_foreign
+        parents = {}
+        parentless_sites = {}
+        for ident, info in reference_rows:
+            parent = _location(info["definition"],
+                               f"{module}:definition", nullable=True)
             if ident is not None and parent is not None:
                 defining_module, name = ident
                 if defining_module != module:
@@ -236,7 +270,7 @@ def _definition_state(pairs):
             if len(winners) == 1:
                 parents[name] = winners[0]
         generated[module] = parents
-    return decls, generated
+    return decls, generated, foreign_declinfos
 
 
 def _fold(module, name, decls, generated):
@@ -327,12 +361,19 @@ def audit(extraction, validation, pairs_path):
         ident = target.get("identity")
         if not (isinstance(ident, list) and len(ident) == 2
                 and all(isinstance(x, str) and x for x in ident)):
-            raise AuditError(f"validation target[{i}] lacks v2 identity")
+            raise AuditError(
+                f"validation target[{i}] lacks module-qualified identity")
         selected.append(tuple(ident))
     if not selected or len(set(selected)) != len(selected):
         raise AuditError("selected identities are empty or duplicated")
 
-    decls, generated = _definition_state(pairs)
+    decls, generated, raw_foreign = _definition_state(pairs)
+    expected_foreign = {
+        module: {
+            row["name"]: row["defining_modules"] for row in rows}
+        for module, rows in extraction.get(
+            "foreign_declaration_infos_by_module", {}).items()}
+    foreign_partition_match = raw_foreign == expected_foreign
     raw_edges, raw_external, raw_unrenderable, raw_counts = _derive_selected(
         pairs, selected, decls, generated)
     graph = extraction.get("graph", {})
@@ -347,6 +388,9 @@ def audit(extraction, validation, pairs_path):
 
     target_rows = []
     failures = []
+    global_failures = []
+    if not foreign_partition_match:
+        global_failures.append("foreign-declaration-info-partition")
     for ident in selected:
         def subset(values):
             return sorted(list(v) for v in values if v[:2] == ident)
@@ -385,9 +429,16 @@ def audit(extraction, validation, pairs_path):
         extraction_pairs_manifest_sha256=_sha256(pairs_path),
         summary=dict(n_selected=len(selected),
                      n_passed=len(selected) - len(failures),
-                     n_failed=len(failures), failures=failures,
+                     n_failed=len(failures) + len(global_failures),
+                     failures=failures,
+                     global_failures=global_failures,
+                     foreign_declaration_info_partition_match=(
+                         foreign_partition_match),
+                     n_foreign_declaration_infos=sum(
+                         len(rows) for rows in raw_foreign.values()),
                      elaborator_closure_check=(
-                         "PASS" if not failures else "FAIL")),
+                         "PASS" if not failures and not global_failures
+                         else "FAIL")),
         targets=target_rows)
 
 

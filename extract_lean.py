@@ -695,12 +695,68 @@ def extract_file(src_path, ilean_path):
     # whose selectionRange is the shared enclosing macro_rules
     # selection — valid files, ineligible decls)
     spans = {}
+    reference_modules_by_name = {}
+    reference_occurrences_by_name = {}
+    for ref in parsed["references"]:
+        reference_modules_by_name.setdefault(ref["name"], set()).add(
+            ref["module"])
+        reference_occurrences_by_name.setdefault(ref["name"], []).append(ref)
+    foreign_declaration_infos = []
     for name, d in parsed["decls"].items():
-        s, e = idx.range_to_bytes(d["range"])
-        ss, se = idx.range_to_bytes(d["selectionRange"])
-        if not (s <= e <= idx.total_bytes and ss <= se <= idx.total_bytes):
+        defining_modules = sorted(reference_modules_by_name.get(name, ()))
+        if len(defining_modules) > 1:
             raise ExtractError(
-                f"{name}: range outside file ({s},{e},{ss},{se})")
+                f"{parsed['module']}:{name}: declaration name maps to "
+                f"multiple defining modules {defining_modules}")
+        if defining_modules and defining_modules[0] != parsed["module"]:
+            # `.ilean.decls` can carry source info for an IMPORTED constant
+            # touched by a local attribute command. Constant names are unique
+            # within the environment, and the reference identity stores the
+            # defining module, so this classification is stronger than a
+            # range heuristic and also catches foreign ranges that happen to
+            # fall inside the local file by coincidence.
+            range_error = None
+            range_within_paired_source = False
+            try:
+                fs, fe = idx.range_to_bytes(d["range"])
+                fss, fse = idx.range_to_bytes(d["selectionRange"])
+                range_within_paired_source = (
+                    fs <= fe <= idx.total_bytes
+                    and fss <= fse <= idx.total_bytes)
+            except ExtractError as err:
+                range_error = str(err)
+            foreign_occurrences = [
+                ref for ref in reference_occurrences_by_name[name]
+                if ref["module"] == defining_modules[0]]
+            for ref in foreign_occurrences:
+                try:
+                    idx.range_to_bytes(ref["range"])
+                except ExtractError as err:
+                    raise ExtractError(
+                        f"{parsed['module']}:{name}: foreign DeclInfo has "
+                        f"nonlocal usage range: {err}") from err
+            foreign_declaration_infos.append(dict(
+                name=name, defining_modules=defining_modules,
+                range=d["range"], selection_range=d["selectionRange"],
+                range_within_paired_source=range_within_paired_source,
+                range_error=range_error,
+                n_local_usage_occurrences=len(foreign_occurrences),
+                reason="foreign-constant declaration info"))
+            continue
+        try:
+            s, e = idx.range_to_bytes(d["range"])
+            ss, se = idx.range_to_bytes(d["selectionRange"])
+            if not (s <= e <= idx.total_bytes
+                    and ss <= se <= idx.total_bytes):
+                raise ExtractError(
+                    f"range outside file ({s},{e},{ss},{se})")
+        except ExtractError as err:
+            # No foreign identity evidence: treat any impossible range as
+            # source/artifact skew and fail closed. Live mathlib evidence for
+            # the allowed branch above is Mathlib.Tactic.ToDual: six Init.Core
+            # names with original-source lines around 2458 in a 56-line file.
+            raise ExtractError(
+                f"{parsed['module']}:{name}: {err}") from err
         spans[name] = (s, e, ss, se)
     # Length-4 definition locations omit parentDecl. Real-core audit found
     # that most are generated fields/constructors such as Pure.pure whose
@@ -770,6 +826,9 @@ def extract_file(src_path, ilean_path):
                 source_sha256=hashlib.sha256(by).hexdigest(),
                 direct_imports=parsed["direct_imports"],
                 decls=decls_out, references=parsed["references"],
+                n_foreign_declaration_infos=len(
+                    foreign_declaration_infos),
+                foreign_declaration_infos=foreign_declaration_infos,
                 # wiring fix (stress-test finding): without threading
                 # this through, real extractions never folded generated
                 # constants — only the synthetic unit fixtures did
@@ -860,15 +919,25 @@ def extract_from_manifest(pairs_path, repo):
                             references=rec["references"],
                             definition_parents=rec["definition_parents"]))
     graph = build_corpus_graph(modules)
-    # v2: MODULE-QUALIFIED identity — edges and preserved reference
+    # v3 retains v2's MODULE-QUALIFIED identity and adds identity-checked
+    # foreign DeclInfo exclusion/diagnostics; consumers reject v2 so a
+    # partial pre-amendment corpus can never be mixed with this target set.
+    # Edges and preserved reference
     # lists are quadruples; consumers must reject v1 (pre-outcome
     # schema bump, no committed extraction predates it)
-    return dict(schema="v2a_lean_extract_v2",
+    foreign_by_module = {
+        rec["module"]: rec["foreign_declaration_infos"]
+        for rec in per_file if rec["foreign_declaration_infos"]}
+    return dict(schema="v2a_lean_extract_v3",
                 k4_closure_definition=K4_CLOSURE_DEFINITION,
                 ilean_version=ILEAN_VERSION, repo=repo,
                 pairs_manifest=pairs_path,
                 pairs_manifest_sha256=manifest_sha,
-                n_files=len(per_file), files=per_file, graph=graph)
+                n_files=len(per_file),
+                n_foreign_declaration_infos=sum(
+                    len(records) for records in foreign_by_module.values()),
+                foreign_declaration_infos_by_module=foreign_by_module,
+                files=per_file, graph=graph)
 
 
 def write_new_json(path, value):

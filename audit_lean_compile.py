@@ -18,7 +18,7 @@ import sys
 import tempfile
 
 
-EXTRACT_SCHEMA = "v2a_lean_extract_v2"
+EXTRACT_SCHEMA = "v2a_lean_extract_v3"
 AUDIT_SCHEMA = "v2a_lean_boundary_compile_audit_v1"
 MARKER = b" /- V2A_BODY_BOUNDARY -/ "
 
@@ -83,6 +83,14 @@ def audit(extraction, validation, repo_root, work_dir, timeout=300,
     repo_root = os.path.abspath(repo_root)
     if not os.path.isdir(repo_root):
         raise CompileAuditError(f"missing repo root: {repo_root}")
+    work_dir = os.path.abspath(work_dir)
+    try:
+        work_inside = os.path.commonpath((repo_root, work_dir)) == repo_root
+    except ValueError:
+        work_inside = False
+    if not work_inside:
+        raise CompileAuditError(
+            "Lean audit work directory must be inside the Lake root")
     lake = lake or shutil.which("lake")
     if not lake:
         raise CompileAuditError("lake is not on PATH")
@@ -218,8 +226,14 @@ def main():
         report = audit(extraction, validation, args.repo_root, work_dir,
                        args.timeout)
     else:
-        with tempfile.TemporaryDirectory(prefix="v2a-compile-",
-                                         dir=os.environ.get("TMPDIR")) as td:
+        # Lake rejects input files outside the package root even when invoked
+        # with `lake env lean`. Keep the ephemeral marked full-source copies
+        # under that root; TemporaryDirectory removes them before evidence is
+        # finalized, and a crash leaves source dirt for the next fail-closed
+        # job preflight to detect.
+        with tempfile.TemporaryDirectory(prefix="V2ACompile",
+                                         dir=os.path.abspath(
+                                             args.repo_root)) as td:
             report = audit(extraction, validation, args.repo_root, td,
                            args.timeout)
     report["inputs"] = dict(

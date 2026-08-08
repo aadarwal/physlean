@@ -578,6 +578,38 @@ arxiv_manifest) must be committed before measurement.
   are mandatory. Reviewer recommendation adopted: STRATIFY/diagnose,
   never gate target eligibility on coverage, because such a gate would
   select against the projection-/proof-heavy code under study.
+- ADOPTED (first live V2-a Lean structural-array incident, job 19913042,
+  2026-08-08, PRE-OUTCOME — CPU-only extraction/compilation, no model score
+  or pilot sample): all three tasks failed closed for two distinct, now
+  reproduced mechanisms. Mathlib stopped on `Mathlib.Tactic.ToDual`: its
+  exact-paired 56-line source has an `.ilean.decls` table consisting of six
+  imported `Init.Core` constants (`ge_iff_le`, `gt_iff_lt`, and four
+  transitivity lemmas) whose original-file ranges begin near line 2458. The
+  same `.ilean.references` table gives those exact names defining module
+  `Init.Core`, null local definitions, and usages at the local `to_dual`
+  attribute commands. Thus `.ilean.decls` is not definition-local. Adopted
+  contract (Lean extraction schema v2 -> v3,
+  `v2a_lean_extract_v3`; consumers reject v2): a decl entry is classified as
+  FOREIGN and excluded at any apparent range only when the reference table
+  maps its exact constant name to exactly one defining module different from
+  the embedded `.ilean` module and its supporting usage ranges resolve inside
+  the paired source. Full identity/range diagnostics are retained;
+  absent/ambiguous identity evidence or an impossible current-module range
+  remains fatal. This also prevents an imported original-file range that
+  happens to fit the local file from becoming a false target. Batteries and
+  PhysLib, meanwhile, each passed extraction validation (20/20) and the
+  independent raw-`.ilean` closure audit (20/20), then correctly failed all
+  20 boundary compiles because Lake requires every input file to be contained
+  in its package root and the marked copies lived under pool TMPDIR. Marked
+  full-source copies now live in a `TemporaryDirectory` under the locked repo
+  root and are removed before evidence publication; out-of-root work dirs are
+  rejected. Every structural job now snapshots its source commit at start,
+  rechecks source and corpus HEAD/cleanliness before the completion marker,
+  and the Lean job is hash-bound to the complete artifact-build report
+  `lean_artifacts_job19911017.tsv` (SHA256
+  `ec2279ef1b8c171996f020f6acf5b5d9847ad2e910e538b3142686909bb9bbc6`).
+  Failed job-scoped artifacts remain quarantined as diagnostic evidence and
+  are never relabeled complete.
 - ADOPTED (V2-a docstring-asymmetry amendment, 2026-08-08, PRE-OUTCOME
   — no scored pilot output exists; from the adversarial read-only
   review of the extractors): Python docstrings are literal expressions

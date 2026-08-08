@@ -30,7 +30,7 @@ from extract_python import extract_file as reextract_python_file
 OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                        "results_v2", "v2a")
 N_TARGETS = 20
-LEAN_SCHEMA = "v2a_lean_extract_v2"
+LEAN_SCHEMA = "v2a_lean_extract_v3"
 PYTHON_SCHEMA = "v2a_python_extract_v3"
 
 
@@ -318,6 +318,11 @@ def validate(ex, repo, n_targets):
                             if lean else None),
         definition_site_diagnostics=(
             _definition_site_totals(ex) if lean else None),
+        n_foreign_declaration_infos=(
+            ex.get("n_foreign_declaration_infos", 0) if lean else None),
+        foreign_declaration_info_modules=(
+            sorted(ex.get("foreign_declaration_infos_by_module", {}))
+            if lean else None),
         n_external_reference_edges=(
             len(g.get("external_reference_edges", [])) if lean else None),
         n_eligible=len(elig), n_selected=len(chosen),

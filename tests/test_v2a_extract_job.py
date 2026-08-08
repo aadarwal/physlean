@@ -22,6 +22,16 @@ def test_cpu_resources_and_pool_environment():
         assert f"export {name}=" in src
     assert '.venv/bin/python' in src
     assert "git status --porcelain -- . ':(exclude)results_v2'" in src
+    assert 'V2_SOURCE_COMMIT=$(git rev-parse HEAD)' in src
+    assert src.count("v2_assert_source_identity") >= 3
+    assert "source commit changed during V2-a job" in src
+    assert src.count("v2_assert_corpus_identity") >= 3
+    assert "--untracked-files=all" in src
+    assert "lean_artifacts_job19911017.tsv" in src
+    assert "ec2279ef1b8c171996f020f6acf5b5d9847ad2e910e538b3142686909bb9bbc6" in src
+    assert "V2_ARTIFACT_REPO_SHA" in src
+    assert "artifact_build_report_sha256" in src
+    assert 'END {print value}' in src  # final status, not initial "building"
 
 
 def test_all_frozen_repo_revisions_are_hard_coded():
@@ -44,6 +54,7 @@ def test_structural_gate_runs_both_independent_audits():
     assert "--n 20" in src
     assert "V2A-STRUCTURAL-DONE" in src
     assert "complete.tsv" in src
+    assert '"$V2_SOURCE_COMMIT"' in src
 
 
 def test_physlib_pinned_mathlib_is_manifest_derived():
@@ -53,6 +64,7 @@ def test_physlib_pinned_mathlib_is_manifest_derived():
     assert '.lake/packages/mathlib' in src
     assert "physlib_pinned_mathlib" in src
     assert 'V2_PIN_ACTUAL=$(git -C "$V2_PIN_REPO" rev-parse HEAD)' in src
+    assert "PhysLib-pinned mathlib source tree is dirty" in src
 
 
 if __name__ == "__main__":

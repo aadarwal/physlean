@@ -11,6 +11,8 @@ set -euo pipefail
 cd "$SLURM_SUBMIT_DIR"
 
 V2_POOL_BASE="/orcd/pool/008/${USER:?USER is required}"
+V2_ARTIFACT_REPORT="$V2_POOL_BASE/physlean/results_v2/v2a/lean_artifacts_job19911017.tsv"
+V2_ARTIFACT_REPORT_EXPECTED_SHA="ec2279ef1b8c171996f020f6acf5b5d9847ad2e910e538b3142686909bb9bbc6"
 export ELAN_HOME="$V2_POOL_BASE/elan"
 export XDG_CACHE_HOME="$V2_POOL_BASE/xdg-cache"
 export TMPDIR="$V2_POOL_BASE/tmp"
@@ -27,6 +29,21 @@ V2_SOURCE_DIRT=$(git status --porcelain -- . ':(exclude)results_v2')
   printf '%s\n' "$V2_SOURCE_DIRT" >&2
   exit 1
 }
+V2_SOURCE_COMMIT=$(git rev-parse HEAD)
+v2_assert_source_identity() {
+  V2_CURRENT_COMMIT=$(git rev-parse HEAD)
+  V2_CURRENT_DIRT=$(git status --porcelain -- . ':(exclude)results_v2')
+  [[ "$V2_CURRENT_COMMIT" == "$V2_SOURCE_COMMIT" ]] || {
+    echo "source commit changed during V2-a job: $V2_SOURCE_COMMIT -> $V2_CURRENT_COMMIT" >&2
+    exit 1
+  }
+  [[ -z "$V2_CURRENT_DIRT" ]] || {
+    echo "source tree changed during V2-a job" >&2
+    printf '%s\n' "$V2_CURRENT_DIRT" >&2
+    exit 1
+  }
+}
+v2_assert_source_identity
 
 V2_PY="$SLURM_SUBMIT_DIR/.venv/bin/python"
 [[ -x "$V2_PY" ]] || {
@@ -61,6 +78,40 @@ V2_ACTUAL_SHA=$(git -C "$V2_REPO" rev-parse HEAD)
   echo "$V2_TAG revision drift: $V2_ACTUAL_SHA != $V2_EXPECTED_SHA" >&2
   exit 1
 }
+[[ -f "$V2_ARTIFACT_REPORT" ]] || {
+  echo "missing frozen Lean artifact-build report: $V2_ARTIFACT_REPORT" >&2
+  exit 1
+}
+V2_ARTIFACT_REPORT_SHA=$(sha256sum "$V2_ARTIFACT_REPORT" | cut -d' ' -f1)
+[[ "$V2_ARTIFACT_REPORT_SHA" == "$V2_ARTIFACT_REPORT_EXPECTED_SHA" ]] || {
+  echo "Lean artifact-build report hash drift" >&2
+  exit 1
+}
+V2_ARTIFACT_STATUS=$(awk -F '\t' \
+  '$1 == "status" {value=$2} END {print value}' \
+  "$V2_ARTIFACT_REPORT")
+V2_ARTIFACT_REPO_SHA=$(awk -F '\t' -v key="$V2_TAG.repo_sha" \
+  '$1 == key {print $2}' "$V2_ARTIFACT_REPORT")
+[[ "$V2_ARTIFACT_STATUS" == "complete" \
+  && "$V2_ARTIFACT_REPO_SHA" == "$V2_ACTUAL_SHA" ]] || {
+  echo "$V2_TAG is not bound to a complete matching artifact build" >&2
+  exit 1
+}
+v2_assert_corpus_identity() {
+  V2_CURRENT_REPO_SHA=$(git -C "$V2_REPO" rev-parse HEAD)
+  V2_CORPUS_DIRT=$(git -C "$V2_REPO" status --porcelain \
+    --untracked-files=all)
+  [[ "$V2_CURRENT_REPO_SHA" == "$V2_ACTUAL_SHA" ]] || {
+    echo "$V2_TAG revision changed during V2-a job" >&2
+    exit 1
+  }
+  [[ -z "$V2_CORPUS_DIRT" ]] || {
+    echo "$V2_TAG source tree is dirty" >&2
+    printf '%s\n' "$V2_CORPUS_DIRT" >&2
+    exit 1
+  }
+}
+v2_assert_corpus_identity
 V2_TOOLCHAIN=$(tr -d '\r\n' < "$V2_REPO/lean-toolchain")
 V2_LEAN_BIN=$(ELAN_TOOLCHAIN="$V2_TOOLCHAIN" \
   "$ELAN_HOME/bin/elan" which lean)
@@ -106,6 +157,13 @@ if [[ "$V2_TAG" == "physlib" ]]; then
     echo "PhysLib-pinned mathlib drift: $V2_PIN_ACTUAL != $V2_PIN_EXPECTED" >&2
     exit 1
   }
+  V2_PIN_DIRT=$(git -C "$V2_PIN_REPO" status --porcelain \
+    --untracked-files=all)
+  [[ -z "$V2_PIN_DIRT" ]] || {
+    echo "PhysLib-pinned mathlib source tree is dirty" >&2
+    printf '%s\n' "$V2_PIN_DIRT" >&2
+    exit 1
+  }
   V2_PIN_PAIRS="$V2_RUN_DIR/pinned_mathlib_pairs.json"
   V2_PIN_EXTRACT="$V2_RUN_DIR/pinned_mathlib_extraction.json"
   "$V2_PY" pair_ilean.py \
@@ -118,6 +176,8 @@ if [[ "$V2_TAG" == "physlib" ]]; then
     --out "$V2_PIN_EXTRACT"
 fi
 
+v2_assert_corpus_identity
+v2_assert_source_identity
 V2_REPORT_TMP=$(mktemp "$V2_RUN_DIR/.complete.XXXXXX")
 {
   printf 'key\tvalue\n'
@@ -125,7 +185,9 @@ V2_REPORT_TMP=$(mktemp "$V2_RUN_DIR/.complete.XXXXXX")
   printf 'repo\t%s\n' "$V2_TAG"
   printf 'repo_sha\t%s\n' "$V2_ACTUAL_SHA"
   printf 'toolchain\t%s\n' "$V2_TOOLCHAIN"
-  printf 'source_commit\t%s\n' "$(git rev-parse HEAD)"
+  printf 'source_commit\t%s\n' "$V2_SOURCE_COMMIT"
+  printf 'artifact_build_report\t%s\n' "$V2_ARTIFACT_REPORT"
+  printf 'artifact_build_report_sha256\t%s\n' "$V2_ARTIFACT_REPORT_SHA"
   printf 'pairs_sha256\t%s\n' "$(sha256sum "$V2_PAIRS" | cut -d' ' -f1)"
   printf 'extraction_sha256\t%s\n' "$(sha256sum "$V2_EXTRACT" | cut -d' ' -f1)"
   printf 'validation_sha256\t%s\n' "$(sha256sum "$V2_VALIDATE" | cut -d' ' -f1)"

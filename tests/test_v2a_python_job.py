@@ -18,6 +18,11 @@ def test_cpu_only_pool_job_and_clean_source():
     assert 'V2_POOL_BASE="/orcd/pool/008/${USER:?USER is required}"' in src
     assert '.venv/bin/python' in src
     assert "git status --porcelain -- . ':(exclude)results_v2'" in src
+    assert 'V2_SOURCE_COMMIT=$(git rev-parse HEAD)' in src
+    assert src.count("v2_assert_source_identity") >= 3
+    assert "source commit changed during V2-a job" in src
+    assert src.count("v2_assert_corpus_identity") >= 3
+    assert "--untracked-files=all" in src
 
 
 def test_frozen_revisions_and_structural_checks():
@@ -30,6 +35,7 @@ def test_frozen_revisions_and_structural_checks():
     assert "--n 20" in src
     assert "V2A-PYTHON-STRUCTURAL-DONE" in src
     assert "complete.tsv" in src
+    assert '"$V2_SOURCE_COMMIT"' in src
 
 
 if __name__ == "__main__":

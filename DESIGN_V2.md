@@ -399,6 +399,27 @@ recorded here so no one is surprised at analysis time.
   would structurally select against projection-/proof-heavy targets.
   Coverage-floor analyses, if shown, are labeled sensitivities and do
   not replace the full frozen target population.
+  LEAN FOREIGN DECLINFO (amended 2026-08-08, PRE-OUTCOME): a module's
+  `.ilean.decls` table can include source information for an IMPORTED
+  constant touched by a local attribute command; it is not necessarily a
+  table of declarations defined by the paired source. Live exact-pair
+  evidence: the 56-line `Mathlib.Tactic.ToDual` file carries six
+  `Init.Core` constants with their original-source ranges near line 2458,
+  while the `.ilean.references` identities place their usages at the local
+  `to_dual` attribute commands. Lean extraction schema v3 excludes a decl
+  entry at ANY range only when the reference table maps that exact constant
+  name to exactly one defining module different from the embedded `.ilean`
+  module. The entry, foreign module, ranges, and whether those ranges happen
+  to fit the paired source are recorded, and every supporting usage range
+  must resolve inside the paired source. Missing identity evidence, multiple
+  defining modules, or an impossible range for a current-module declaration
+  remains a hard source/artifact-integrity failure. The explicit assumption
+  is that the attribute mechanism emits the foreign reference occurrence that
+  caused its DeclInfo; without that mapping an impossible range fails, while
+  a coincidentally in-range no-mapping foreign entry is a residual
+  unmeasurable risk. This identity rule avoids
+  both the observed out-of-range crash and the more dangerous coincidental
+  in-range foreign slice; v2 artifacts are rejected.
 
 14.4 Python closures: declaration-level static name/import edges where
 resolvable; module-level fallback recorded with a per-target COVERAGE

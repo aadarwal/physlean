@@ -7,7 +7,7 @@ import sys
 import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from audit_lean_closure import AuditError, audit
+from audit_lean_closure import AuditError, _definition_state, audit
 
 
 def _write_json(path, value):
@@ -60,7 +60,7 @@ def _fixture(td):
     pp = os.path.join(td, "pairs.json")
     _write_json(pp, pairs)
     extraction = dict(
-        schema="v2a_lean_extract_v2", repo="r",
+        schema="v2a_lean_extract_v3", repo="r",
         pairs_manifest_sha256=_sha(pp),
         graph=dict(
             edges=[["A", "A.t", "B", "B.u"]],
@@ -75,7 +75,7 @@ def _fixture(td):
                 n_unrenderable_occurrences=1,
                 coverage=2 / 3)}}))
     validation = dict(
-        summary=dict(schema="v2a_lean_extract_v2", repo="r"),
+        summary=dict(schema="v2a_lean_extract_v3", repo="r"),
         targets=[dict(identity=["A", "A.t"])])
     return extraction, validation, pp
 
@@ -101,6 +101,20 @@ def test_graph_disagreement_fails_target():
         assert report["targets"][0]["match"] is False
 
 
+def test_foreign_declinfo_partition_disagreement_is_global_failure():
+    with tempfile.TemporaryDirectory() as td:
+        extraction, validation, pairs = _fixture(td)
+        extraction["foreign_declaration_infos_by_module"] = {
+            "A": [dict(name="ghost", defining_modules=["Ext.Mod"])]}
+        report = audit(extraction, validation, pairs)
+        summary = report["summary"]
+        assert summary["n_failed"] == 1
+        assert summary["global_failures"] == [
+            "foreign-declaration-info-partition"]
+        assert summary["foreign_declaration_info_partition_match"] is False
+        assert summary["elaborator_closure_check"] == "FAIL"
+
+
 def test_hash_and_schema_drift_fail_closed():
     with tempfile.TemporaryDirectory() as td:
         extraction, validation, pairs = _fixture(td)
@@ -110,13 +124,40 @@ def test_hash_and_schema_drift_fail_closed():
             assert False, "old extraction schema accepted"
         except AuditError as err:
             assert "schema" in str(err)
-        extraction["schema"] = "v2a_lean_extract_v2"
+        extraction["schema"] = "v2a_lean_extract_v3"
         open(json.load(open(pairs))["pairs"][0]["source"], "a").write("--x")
         try:
             audit(extraction, validation, pairs)
             assert False, "drifted source accepted"
         except AuditError as err:
             assert "changed" in str(err)
+
+
+def test_foreign_declinfo_partition_is_independently_identity_checked():
+    with tempfile.TemporaryDirectory() as td:
+        source = os.path.join(td, "Attr.lean")
+        ilean = os.path.join(td, "Attr.ilean")
+        open(source, "w").write("attribute [simp] foreign_t\n")
+        raw = dict(version=5, module="T.Attr", directImports=[],
+                   decls={"foreign_t": [99, 0, 99, 9, 99, 0, 99, 9]},
+                   references={_ck("Init.Core", "foreign_t"): dict(
+                       definition=None,
+                       usages=[[0, 17, 0, 26, "foreign_t"]])})
+        _write_json(ilean, raw)
+        pair = dict(source=source, ilean=ilean)
+        decls, _, foreign = _definition_state({"T.Attr": pair})
+        assert decls == {"T.Attr": set()}
+        assert foreign == {
+            "T.Attr": {"foreign_t": ["Init.Core"]}}
+
+        raw["references"] = {_ck("T.Attr", "foreign_t"): dict(
+            definition=None, usages=[[0, 17, 0, 26, "foreign_t"]])}
+        _write_json(ilean, raw)
+        try:
+            _definition_state({"T.Attr": pair})
+            assert False, "out-of-range current-module DeclInfo accepted"
+        except AuditError as err:
+            assert "invalid LSP position" in str(err)
 
 
 if __name__ == "__main__":
