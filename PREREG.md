@@ -540,6 +540,49 @@ arxiv_manifest) must be committed before measurement.
   external-mathlib (lake-manifest-pinned revision) hard interpretation
   gate. The k1-vs-k3 inconsistency in DESIGN_V2 §3/§8 is resolved to
   k4 (matching E1a and the §14.2 map).
+- ADOPTED (item-A FOLLOW-UP falsifier after diagnostic 19903226, still
+  before any grid outcome): the first diagnostic HARD-STOPPED per its
+  frozen rule — oracle, cache_position, and repeat PASSED while ALL 12
+  bf16 chunk-vs-prod stability pairs FAILED. Established for q25c:
+  chunked cache logic is semantically correct under fp32 EAGER; still open:
+  SDPA-path semantics vs bf16 accumulated-KV shape divergence.
+  Reviewer challenge ADOPTED: the proposed same-shape bf16 eager-vs-
+  SDPA gate is NON-IDENTIFYING (a backend swap perturbs every layer's
+  arithmetic order and the KV projections themselves, so exceeding
+  numeric bounds cannot separate a mask defect from legitimate bf16
+  divergence — the original item-A false dichotomy recreated); it is
+  dropped entirely (not even characterization, for speed). Frozen
+  follow-up (diag_item_a_followup.py), two IDENTIFYING gates: (F2)
+  q25c 8192 tokens FLOAT32, TF32 off (matmul+cudnn+highest precision,
+  asserted and recorded), model attention implementation GATED ==
+  'sdpa' post-load, torch SDP backend EXPLICITLY FORCED to MATH
+  (never inferred from dtype), production eval_window chunk 512 vs
+  2048 at the PRE-INCIDENT oracle bounds (mean < 1e-4, p99 < 1e-3;
+  repeat-2048 <= 1e-6) — scoped as SHARED cache/model/mask-
+  construction semantics, NOT bf16 flash-kernel validation; and
+  (CAUSALITY) q25c bf16 production path chunk 2048, resolved impl
+  gated == 'sdpa', perturb input token p=4095 (last position of chunk
+  2), protected rows 0..4093 must be unchanged (max <= 1e-6 = the
+  verified determinism bound; correct causal masking makes past
+  logits EXACTLY independent of future tokens — threshold-free in
+  spirit), row 4094 EXCLUDED (its TARGET changed; scoring, not
+  leakage), and >= one downstream row must change (> 1e-6,
+  non-vacuity). Exactly 8192 tokens required fail-closed; vocab for
+  the perturbation from the TEXT CONFIG vocab_size (always a valid
+  embedding row). Per-position SIGNED profiles persisted (the first
+  diagnostic aggregated the fingerprint away). Branches, frozen: F2
+  fail -> shared chunked-prefill semantic defect (fix code, hard
+  stop); causality fail -> production-kernel mask defect or vacuous
+  probe (fix code / rerun, hard stop); wrong dispatch -> INVALID RUN,
+  no scientific conclusion; both gates pass -> the targeted semantic-
+  bug probes pass and the observed cross-family pattern is CONSISTENT
+  with accumulated-KV bf16 numerics, permitting the re-specification
+  branch: chunked-vs-chunked
+  item A at ONE unified production chunk (CHUNK_TOKENS=2048,
+  replacing the 1024-if-big ternary that crossed chunk shapes INSIDE
+  families), chunk joins the cell_done identity (field already
+  recorded in meta; acceptance tightens, no schema bump), and the
+  --big battery mode gains 131k/32B chunk-2048 feasibility probes.
 - ADOPTED (item-A incident + FROZEN diagnostic decision rule, before
   any grid outcome — no cell exists): battery 19902567 FAILED item A
   only: chunked-vs-one-shot bf16 deltas ABOVE the frozen 5e-3/5e-2
