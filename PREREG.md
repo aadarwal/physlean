@@ -333,7 +333,10 @@ silently under a re-prep.
 
 On Qwen2.5-Coder-0.5B unless noted; all outputs to results_v2/battery/.
 A. Chunked-vs-one-shot NLL equality on one 8k window (report max/mean |Δ|;
-   tolerance note for bf16).
+   tolerance note for bf16). [UNDER INCIDENT REVIEW — battery 19902567
+   failed A on all families; the frozen diagnostic + decision rule is
+   in §13, and the battery rerun is blocked on its verdict. Any
+   re-specification of A happens only per that rule.]
 B. Zero-byte-row mass per corpus x tokenizer family (rows share; NLL share
    on two corpora) — gates the merge fix.
 C. Nested-context monotonicity: same 512-token targets scored under true
@@ -537,6 +540,41 @@ arxiv_manifest) must be committed before measurement.
   external-mathlib (lake-manifest-pinned revision) hard interpretation
   gate. The k1-vs-k3 inconsistency in DESIGN_V2 §3/§8 is resolved to
   k4 (matching E1a and the §14.2 map).
+- ADOPTED (item-A incident + FROZEN diagnostic decision rule, before
+  any grid outcome — no cell exists): battery 19902567 FAILED item A
+  only: chunked-vs-one-shot bf16 deltas ABOVE the frozen 5e-3/5e-2
+  bounds on ALL FOUR families (mean/p99: q25c .02329/.1919, q3
+  .02126/.1716, q35 .01484/.1256, sc2 .01316/.1157). All non-A items
+  completed (B conservation, C, D, E with exact 8 rows, and all
+  identity checks). Recorded facts: the only pre-freeze end-to-end
+  validation environment was M5/MPS (RESUME) — the bounds were never
+  CUDA-calibrated; the uniform cross-family magnitude and small size
+  MOTIVATE, but do not establish, the kernel-shape-numerics hypothesis
+  over a cache/position bug (completion of non-A items does not
+  distinguish the two) — the hypothesis is NOT adopted, it is TESTED.
+  Frozen diagnostic
+  (diag_item_a.py + slurm/diag_item_a.sbatch, bounds fixed pre-run):
+  (1) production stability — all 4 families, 8192 tokens, PRODUCTION
+  eval_window, bf16 chunks {512,1024,4096} each vs prod-2048 must meet
+  the ORIGINAL 5e-3 mean / 5e-2 p99, and a repeat-2048 must be
+  deterministic (max <= 1e-6); (2) q25c fp32 EAGER oracle at 2048
+  tokens — one-shot vs chunk-512 mean < 1e-4 / p99 < 1e-3, and
+  implicit-vs-explicit cache_position max <= 1e-6; (3) bf16 TRUE
+  one-shot (use_cache=False — the exact battery-A comparator path) is
+  CHARACTERIZATION only (production never executes that kernel shape).
+  Verdict inputs are COMPLETENESS-GATED: exactly 12 alternate pairs
+  and all 4 repeat families required; NaN/non-finite values fail.
+  Reported per pair: signed/abs quantiles, first-chunk/
+  boundary/interior strata (boundary spikes = the cache-bug
+  fingerprint), and argmax agreement (only argmax IDs are retained;
+  logits are not written). DECISION, frozen: ANY production-stability or oracle
+  failure HARD-STOPS (treat as bug; fix code; no gate discussion);
+  only if ALL gates pass may item A be RE-SPECIFIED — production-path
+  invariance gate (chunked-vs-chunked at the original bounds) + fp32
+  eager semantic gate + bf16 one-shot demoted to reported
+  characterization — before any battery rerun. Diagnostic runs under
+  current lock/freeze/source identity and writes a quarantine-on-rerun
+  JSON (results_v2/diag/item_a_diag.json).
 - ADOPTED (item-E infeasibility + transparency, before any E outcome —
   E aborted at eligibility determination): the pinned physlib snapshot
   has 8 source import directives / 538 files (QuantumInfo 0; only two
