@@ -16,7 +16,9 @@ def test_exact_three_source_and_corpus_bound_job():
     assert src.count("v2b_assert_source_identity") >= 3
     assert src.count("v2b_assert_corpus_identity") >= 3
     assert "--untracked-files=all" in src
-    assert "V2B_TOKEN_OUT" in src and "[[ ! -e \"$V2B_RAW\"" in src
+    assert "V2B_RESERVED_OUT" in src and "V2B_DISPATCH_OUT" in src
+    assert "V2B_EXCLUDED_OUT" in src
+    assert "[[ ! -e \"$V2B_RESERVED_RAW\"" in src
     assert "lean_artifacts_job19911017.tsv" in src
     assert "ec2279ef1b8c171996f020f6acf5b5d9847ad2e910e538b3142686909bb9bbc6" in src
     assert "V2B_ARTIFACT_REPO_SHA" in src
@@ -40,7 +42,11 @@ def test_dump_sources_import_exact_umbrellas_and_write_token_table():
                    encoding="utf-8").read()
         assert src.startswith(f"import {module}\n")
         assert "Parser.getTokenTable" in src
-        assert "V2B_TOKEN_OUT" in src
+        assert "Parser.parserExtension.getState" in src
+        assert "leadingTable" in src and "trailingTable" in src
+        assert "Lean.identKind" in src and "Lean.nameLitKind" in src
+        assert "V2B_RESERVED_OUT" in src and "V2B_DISPATCH_OUT" in src
+        assert "V2B_EXCLUDED_OUT" in src
         assert "qsort" in src and "IO.FS.writeFile" in src
 
 

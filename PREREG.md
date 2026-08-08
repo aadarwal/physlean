@@ -559,7 +559,17 @@ arxiv_manifest) must be committed before measurement.
   because contextual tactic heads were absent). Rather than patching a
   subjective list, the freeze is now the exact identifier-shaped union of
   Lean's own parser token tables after the three pinned umbrella imports,
-  with source tables, revisions, list SHA, and A6 binding recorded. These are
+  with source tables, revisions, list SHA, and A6 binding recorded. The first
+  token-table-only implementation then failed its own positive smoke gate at
+  keyword-freeze job 19921335: `rfl`, `simp`, and `omega` are intentionally
+  non-reserved contextual parser dispatch keys in Lean, not
+  `getTokenTable` values. Before any A6 corpus artifact or label, the exact
+  mechanical derivation was therefore amended to union the reserved table with
+  simple leading/trailing keys from every registered parser category, while
+  separately binding and excluding builtin literal-kind and non-simple pseudo
+  keys and recording per-token corpus/section provenance. Token job 19921330,
+  failed freeze 19921335, and cancelled dependent A6 array 19921337 are
+  quarantined. These are
   adverse implementation counterexamples, not responses to model or
   behavioral data; no real A6 corpus artifact, packet, or label existed.
 - ADOPTED (V2-b k7 terminal-LF correction, 2026-08-08, PRE-OUTCOME — no

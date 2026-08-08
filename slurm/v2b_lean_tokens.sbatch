@@ -5,8 +5,8 @@
 #SBATCH -c 4
 #SBATCH --mem=32G
 #SBATCH -t 02:00:00
-# CPU-only exact-three array: the complete parser tables imported by the
-# three pinned Lean corpora, before any A6 corpus artifact or label exists.
+# CPU-only exact-three array: reserved token tables plus contextual parser
+# dispatch keys imported by the three pinned Lean corpora, before A6.
 #   sbatch -p mit_normal --array=0-2 slurm/v2b_lean_tokens.sbatch
 set -euo pipefail
 cd "$SLURM_SUBMIT_DIR"
@@ -112,19 +112,27 @@ v2b_assert_corpus_identity
 
 V2B_ARRAY_ID="${SLURM_ARRAY_JOB_ID:-${SLURM_JOB_ID:-manual}}"
 V2B_RUN_ID="${V2B_ARRAY_ID}_${V2B_TASK}"
-V2B_RAW="$SLURM_SUBMIT_DIR/results_v2/v2b/lean_tokens/job${V2B_RUN_ID}_${V2B_TAG}.txt"
+V2B_RESERVED_RAW="$SLURM_SUBMIT_DIR/results_v2/v2b/lean_tokens/job${V2B_RUN_ID}_${V2B_TAG}_reserved.txt"
+V2B_DISPATCH_RAW="$SLURM_SUBMIT_DIR/results_v2/v2b/lean_tokens/job${V2B_RUN_ID}_${V2B_TAG}_dispatch.txt"
+V2B_EXCLUDED_RAW="$SLURM_SUBMIT_DIR/results_v2/v2b/lean_tokens/job${V2B_RUN_ID}_${V2B_TAG}_excluded.txt"
 V2B_OUT="$SLURM_SUBMIT_DIR/results_v2/v2b/lean_tokens/job${V2B_RUN_ID}_${V2B_TAG}.json"
-[[ ! -e "$V2B_RAW" && ! -e "$V2B_OUT" ]] || {
+[[ ! -e "$V2B_RESERVED_RAW" && ! -e "$V2B_DISPATCH_RAW" \
+   && ! -e "$V2B_EXCLUDED_RAW" && ! -e "$V2B_OUT" ]] || {
   echo "refusing to overwrite parser-token evidence for $V2B_RUN_ID" >&2
   exit 1
 }
 V2B_LEAN_VERSION=$(cd "$V2B_REPO" && "$V2B_LAKE" env lean --version)
 V2B_LAKE_VERSION=$(cd "$V2B_REPO" && "$V2B_LAKE" --version)
-(cd "$V2B_REPO" && V2B_TOKEN_OUT="$V2B_RAW" \
+(cd "$V2B_REPO" \
+  && V2B_RESERVED_OUT="$V2B_RESERVED_RAW" \
+  V2B_DISPATCH_OUT="$V2B_DISPATCH_RAW" \
+  V2B_EXCLUDED_OUT="$V2B_EXCLUDED_RAW" \
   "$V2B_LAKE" env lean "$V2B_DUMP")
 
 "$V2B_PY" prepare_v2b_lean_tokens.py \
-  --raw "$V2B_RAW" \
+  --reserved-raw "$V2B_RESERVED_RAW" \
+  --dispatch-raw "$V2B_DISPATCH_RAW" \
+  --excluded-dispatch-raw "$V2B_EXCLUDED_RAW" \
   --corpus-root "$V2B_REPO" \
   --repo "$V2B_TAG" \
   --expected-corpus-sha "$V2B_EXPECTED_SHA" \

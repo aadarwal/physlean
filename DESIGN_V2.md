@@ -973,14 +973,22 @@ fixtures pinned.
   non-keyword identifier record replaced by a typed ["IDRANK", <k>]
   integer record, k = first-occurrence rank. Python exempts the pinned
   runtime's exact `keyword.kwlist ∪ keyword.softkwlist`. Lean does NOT use a
-  curated vocabulary: before any A6 corpus hash, dump
-  `Lean.Parser.getTokenTable` after the pinned `Mathlib`, `Batteries`, and
-  `Physlib` umbrella imports; retain exactly the values satisfying the same
-  pinned isIdFirst/isIdRest predicates; seal the sorted union and its canonical
-  JSON SHA256 as a write-once language-wide keyword freeze. Both the three
-  source tables and union are source/revision bound and test-pinned. This
-  includes contextual tactic heads such as `rfl`, `simp`, and `omega` without
-  pretending Lean has a small static reserved-word list. Exempting a spelling
+  curated vocabulary: before any A6 corpus hash, inspect the parser state after
+  each pinned `Mathlib`, `Batteries`, and `Physlib` umbrella import. Record two
+  sections separately: (1) `Lean.Parser.getTokenTable` values and (2) the exact
+  simple-name keys from every registered parser category's leading and trailing
+  dispatch tables. The second section is necessary because Lean intentionally
+  keeps contextual tactic heads usable as ordinary identifiers, so they are
+  dispatch keys rather than reserved tokens. Exclude and record the complete
+  builtin literal-kind key set (`choice`, `ident`, `str`, `num`, `scientific`,
+  `char`, `name`) plus non-simple pseudo keys; never treat those internal keys
+  as source-language words. Retain exactly the remaining values satisfying the
+  same pinned isIdFirst/isIdRest predicates; seal the sorted union, per-token
+  section/corpus provenance, excluded-key counts, and canonical JSON SHA256 as
+  a write-once language-wide keyword freeze. All three source sections and the
+  union are source/revision bound and test-pinned. This includes contextual
+  tactic heads such as `rfl`, `simp`, and `omega` without pretending Lean has a
+  small static reserved-word list. Exempting a spelling
   later used as an ordinary binder can only under-normalize that rename-clone
   (recall/sensitivity), never make two unequal token streams collide.
   Identifier normalization — conflates rename-clones with
@@ -1025,6 +1033,23 @@ fixtures pinned.
   false positive demotes the band). Otherwise it is a
   LABELED SENSITIVITY for that band and the primary is verbatim-token
   hash + calibrated Jaccard. Residual risk recorded per §14.18.
+  BLIND PRESENTATION BOUNDARY: collision and Jaccard selections are merged
+  into one seeded-interleaved stream; if one source pair is selected by both,
+  it is shown once and its one label serves both gates. The presentation
+  exposes EXACTLY opaque seeded pair id, language, and the two verbatim source
+  spans, with a deterministic seeded side swap. It omits corpus, identities,
+  audit origin, bin/band, similarity statistics, and token hashes. Each span is
+  recovered through the hash-bound extraction, its live source is rehashed,
+  and both token hashes are recomputed against the sealed A6 unit before
+  display. Every pair uses one binary `duplicate` / `not-duplicate` answer
+  under the frozen clone rubric above; optional notes are diagnostic only.
+  The exact complete label file and presentation must equal committed HEAD
+  blobs, and the label path must have exactly one touching commit, before a
+  separate write-once unblinder reconstructs the hidden mapping
+  and invokes either mechanical gate. This is procedural, not adversarial,
+  blindness because the labeler is also an experimenter: accidental leakage is
+  prevented and deliberate inspection of the sealed packet remains auditable,
+  not technically impossible.
   JACCARD AT SCALE (exact at t = 0.70 so all sensitivity thresholds
   derive from one candidate set): size filter |A|/|B| >= 0.70; global
   canonical 5-gram order = ascending (same-corpus declaration-unit
@@ -1247,12 +1272,34 @@ implementation discoveries recorded below; none uses outcome information.
   A6 KEYWORD FREEZE. A hand-enumerated Lean exemption draft omitted core
   contextual parser heads (the minimal counterexample was `by simp` versus
   `by omega`). No real A6 corpus artifact or label existed. The definitive
-  list is therefore derived mechanically before A6: exact parser token tables
-  after each of the three pinned umbrella imports, filtered by the same
-  identifier predicates, then exact-unioned into one write-once, hash-bound
-  language freeze. A6 generation requires and records that freeze; missing or
-  drifted tables/list/hash fail closed. There is no manual token addition or
-  deletion between dump and union.
+  list is therefore derived mechanically before A6 from each of the three
+  pinned umbrella environments, filtered by the same identifier predicates,
+  then exact-unioned into one write-once, hash-bound language freeze. The first
+  attempted implementation used only `getTokenTable`; its positive smoke gate
+  failed at job 19921335 because Lean intentionally dispatches non-reserved
+  tactic heads (`rfl`, `simp`, `omega`) through parser-category tables. Before
+  any A6 corpus artifact existed, the derivation was corrected to the exact
+  union of reserved-token values and simple leading/trailing dispatch keys,
+  while separately recording and excluding builtin literal-kind/non-simple
+  pseudo keys. Per-token corpus/section provenance and exclusion counts are
+  sealed. A6 generation requires and records that freeze; missing or drifted
+  sections/list/hash fail closed. There is no manual token addition or deletion
+  between dump and union. Token-array job 19921330 and failed freeze job
+  19921335 are quarantined; the cancelled dependent A6 array 19921337 produced
+  no corpus artifact.
+
+  A6 BLIND LABEL BOUNDARY. Before any packet or label existed, the operational
+  label handoff was fixed as one interleaved presentation across both audit
+  mechanisms, deduplicated by exact source pair. Its schema whitelist exposes
+  only opaque seeded id, language, and two revalidated verbatim spans; seeded
+  order and side swap are deterministic. One binary label under §15.A6's
+  already-frozen rubric feeds every hidden role of that pair. The unblinder
+  refuses packet, presentation, or label bytes that are not exact committed
+  HEAD blobs, requires exactly one commit ever to have touched the label path
+  (recorded in the outcome), rejects missing/extra/duplicate labels, and
+  deterministically rebuilds
+  the presentation, and only then computes the frozen outcomes. Sampling
+  remains explicitly `not-drawn` throughout this boundary.
 
   k7 TERMINAL-LF NORMALIZATION. The first k7 array (job 19920847) failed
   closed on one PhysLib file with two terminal LFs and one SymPy file with

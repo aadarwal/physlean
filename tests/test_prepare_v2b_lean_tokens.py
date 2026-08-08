@@ -29,14 +29,22 @@ def _fixture(td):
     _git(repo, "add", "Source.lean")
     _git(repo, "commit", "-q", "-m", "fixture")
     head = _git(repo, "rev-parse", "HEAD")
-    raw = os.path.join(td, "tokens.txt")
+    reserved = os.path.join(td, "reserved.txt")
     tokens = sorted([f"keyword{i:03d}" for i in range(120)] + ["!", "->"])
-    open(raw, "w").write("\n".join(tokens) + "\n")
+    open(reserved, "w").write("\n".join(tokens) + "\n")
+    dispatch = os.path.join(td, "dispatch.txt")
+    dispatch_tokens = sorted([f"tactic{i:03d}" for i in range(30)] +
+                             ["omega", "rfl", "simp"])
+    open(dispatch, "w").write("\n".join(dispatch_tokens) + "\n")
+    excluded = os.path.join(td, "excluded.txt")
+    excluded_keys = sorted(wrapper.LITERAL_KIND_SMOKE)
+    open(excluded, "w").write("\n".join(excluded_keys) + "\n")
     report = os.path.join(td, "lean-artifacts.tsv")
     report_blob = (f"status\tbuilding\n{repo}.unused\tx\n"
                    f"r.repo_sha\t{head}\nstatus\tcomplete\n").encode()
     open(report, "wb").write(report_blob)
-    return repo, head, raw, report, sha256_bytes(report_blob)
+    return (repo, head, reserved, dispatch, excluded, report,
+            sha256_bytes(report_blob))
 
 
 def _patch_source(report_sha):
@@ -57,20 +65,28 @@ def _restore(originals):
 
 def test_prepare_binds_parser_table_revision_and_versions():
     with tempfile.TemporaryDirectory() as td:
-        repo, head, raw, report, report_sha = _fixture(td)
+        repo, head, reserved, dispatch, excluded, report, report_sha = \
+            _fixture(td)
         originals = _patch_source(report_sha)
         try:
-            artifact = wrapper.prepare(raw, repo, "r", head, "Umbrella",
-                                       report, "Lean 4.test", "Lake test")
+            artifact = wrapper.prepare(
+                reserved, dispatch, excluded, repo, "r", head, "Umbrella",
+                report, "Lean 4.test", "Lake test")
         finally:
             _restore(originals)
         assert artifact["schema"] == wrapper.PARSER_TOKENS_SCHEMA
         assert artifact["corpus_git_sha"] == head
         assert artifact["umbrella_module"] == "Umbrella"
         assert artifact["lean_artifact_report"]["sha256"] == report_sha
-        assert artifact["n_tokens"] == 122
-        assert artifact["n_identifier_tokens"] == 120
+        assert artifact["n_tokens"] == 155
+        assert artifact["n_reserved_tokens"] == 122
+        assert artifact["n_dispatch_tokens"] == 33
+        assert artifact["n_identifier_tokens"] == 153
         assert artifact["identifier_tokens"][0] == "keyword000"
+        assert {"rfl", "simp", "omega"} <= set(
+            artifact["dispatch_identifier_tokens"])
+        assert not set(artifact["excluded_dispatch_keys"]) & set(
+            artifact["identifier_tokens"])
         assert artifact["generator"]["source_commit"] == "source-commit"
 
 
@@ -84,7 +100,7 @@ def test_token_dump_parser_fails_closed():
             path = os.path.join(td, name)
             open(path, "wb").write(payload)
             try:
-                wrapper._read_tokens(path)
+                wrapper._read_tokens(path, "test", 1)
                 assert False, name
             except V2BError:
                 pass

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Seal the language-wide Lean normalization vocabulary.
 
-The output is the exact sorted union of identifier-shaped parser tokens from
-the three pinned Lean umbrella environments.  There is no manual inclusion or
-exclusion step, and the write-once freeze is created before A6 corpus hashes,
-audit packets, labels, target sampling, or scores.
+The output is the exact sorted union of identifier-shaped reserved tokens and
+contextual parser dispatch keys from the three pinned Lean umbrella
+environments.  Pseudo-key exclusions and per-token provenance are explicit.
+There is no manual word-list step, and the write-once freeze is created before
+A6 corpus hashes, audit packets, labels, target sampling, or scores.
 """
 import argparse
 
@@ -13,8 +14,10 @@ from v2b_common import (LEAN_KEYWORD_FREEZE_SCHEMA, V2BError,
                         artifact_binding, sha256_json,
                         write_new_json)
 from prepare_v2b_lean_tokens import (LEAN_ARTIFACT_REPORT_SHA256,
+                                     LITERAL_KIND_SMOKE,
                                      PARSER_TOKENS_SCHEMA)
-from v2b_neardup import lean_identifier_spelling
+from v2b_neardup import (lean_identifier_spelling,
+                         lean_keyword_provenance_hash)
 
 
 EXPECTED = {
@@ -42,7 +45,12 @@ def build_freeze(table_paths, expected_source_commit=None,
             raise V2BError(f"unexpected/duplicate Lean token repo {repo!r}")
         expected_sha, expected_module = EXPECTED[repo]
         tokens = table.get("identifier_tokens")
-        raw = table.get("raw")
+        reserved = table.get("reserved_identifier_tokens")
+        dispatch = table.get("dispatch_identifier_tokens")
+        excluded = table.get("excluded_dispatch_keys")
+        reserved_raw = table.get("reserved_raw")
+        dispatch_raw = table.get("dispatch_raw")
+        excluded_raw = table.get("excluded_dispatch_raw")
         artifact_report = table.get("lean_artifact_report")
         generator = table.get("generator")
         if table.get("corpus_git_sha") != expected_sha \
@@ -51,11 +59,40 @@ def build_freeze(table_paths, expected_source_commit=None,
                 or tokens != sorted(tokens) or len(tokens) != len(set(tokens)) \
                 or table.get("n_identifier_tokens") != len(tokens) \
                 or not all(_valid_identifier_token(token) for token in tokens) \
-                or not isinstance(table.get("n_tokens"), int) \
-                or table["n_tokens"] < len(tokens) \
-                or not isinstance(raw, dict) \
-                or not isinstance(raw.get("sha256"), str) \
-                or len(raw["sha256"]) != 64 \
+                or not isinstance(reserved, list) or not reserved \
+                or reserved != sorted(reserved) \
+                or len(reserved) != len(set(reserved)) \
+                or not all(_valid_identifier_token(token)
+                           for token in reserved) \
+                or not isinstance(dispatch, list) or not dispatch \
+                or dispatch != sorted(dispatch) \
+                or len(dispatch) != len(set(dispatch)) \
+                or not all(_valid_identifier_token(token)
+                           for token in dispatch) \
+                or tokens != sorted(set(reserved) | set(dispatch)) \
+                or table.get("n_reserved_identifier_tokens") != \
+                len(reserved) \
+                or table.get("n_dispatch_identifier_tokens") != \
+                len(dispatch) \
+                or not isinstance(excluded, list) or not excluded \
+                or excluded != sorted(excluded) \
+                or len(excluded) != len(set(excluded)) \
+                or table.get("n_excluded_dispatch_keys") != len(excluded) \
+                or not LITERAL_KIND_SMOKE <= set(excluded) \
+                or set(dispatch) & set(excluded) \
+                or not all(isinstance(raw, dict)
+                           and isinstance(raw.get("sha256"), str)
+                           and len(raw["sha256"]) == 64
+                           for raw in (reserved_raw, dispatch_raw,
+                                       excluded_raw)) \
+                or not all(isinstance(table.get(field), int)
+                           and not isinstance(table.get(field), bool)
+                           and table[field] > 0
+                           for field in ("n_reserved_tokens",
+                                         "n_dispatch_tokens", "n_tokens")) \
+                or not max(table["n_reserved_tokens"],
+                           table["n_dispatch_tokens"]) <= table["n_tokens"] \
+                <= table["n_reserved_tokens"] + table["n_dispatch_tokens"] \
                 or not isinstance(artifact_report, dict) \
                 or artifact_report.get("sha256") != \
                 LEAN_ARTIFACT_REPORT_SHA256 \
@@ -77,25 +114,58 @@ def build_freeze(table_paths, expected_source_commit=None,
                           umbrella_module=expected_module,
                           lean_version=table.get("lean_version"),
                           lake_version=table.get("lake_version"),
-                          raw_sha256=raw["sha256"],
+                          reserved_raw_sha256=reserved_raw["sha256"],
+                          dispatch_raw_sha256=dispatch_raw["sha256"],
+                          excluded_dispatch_raw_sha256=
+                          excluded_raw["sha256"],
                           lean_artifact_report_sha256=
                           artifact_report["sha256"],
+                          n_reserved_tokens=table["n_reserved_tokens"],
+                          n_dispatch_tokens=table["n_dispatch_tokens"],
+                          n_excluded_dispatch_keys=len(excluded),
                           n_tokens=table["n_tokens"],
+                          n_reserved_identifier_tokens=len(reserved),
+                          n_dispatch_identifier_tokens=len(dispatch),
                           n_identifier_tokens=len(tokens))
+        rows[repo]["_reserved"] = reserved
+        rows[repo]["_dispatch"] = dispatch
     if set(rows) != set(EXPECTED):
         raise V2BError("Lean token tables do not cover the exact corpus set")
     tokens = sorted(union)
     missing = sorted(SMOKE_TOKENS - set(tokens))
     if missing:
         raise V2BError(f"Lean parser-token union lacks smoke tokens: {missing}")
+    token_provenance = []
+    for token in tokens:
+        sources = []
+        for repo in sorted(rows):
+            in_reserved = token in rows[repo]["_reserved"]
+            in_dispatch = token in rows[repo]["_dispatch"]
+            if in_reserved or in_dispatch:
+                sources.append(dict(repo=repo,
+                                    reserved_token_table=in_reserved,
+                                    parser_dispatch=in_dispatch))
+        token_provenance.append(dict(token=token, sources=sources))
+    source_rows = []
+    for repo in sorted(rows):
+        row = dict(rows[repo])
+        row.pop("_reserved")
+        row.pop("_dispatch")
+        source_rows.append(row)
     return dict(
         schema=LEAN_KEYWORD_FREEZE_SCHEMA,
-        derivation=("exact union of identifier-shaped values from each "
-                    "pinned umbrella environment's Lean parser token table"),
-        source_tables=[rows[repo] for repo in sorted(rows)],
+        derivation=("exact identifier-shaped union of each pinned umbrella "
+                    "environment's reserved token table and contextual "
+                    "leading/trailing parser dispatch keys"),
+        source_tables=source_rows,
+        n_excluded_dispatch_keys_total=sum(
+            row["n_excluded_dispatch_keys"] for row in source_rows),
         n_tokens=len(tokens),
         tokens_sha256=sha256_json(tokens),
-        tokens=tokens)
+        tokens=tokens,
+        token_provenance_sha256=lean_keyword_provenance_hash(
+            token_provenance),
+        token_provenance=token_provenance)
 
 
 def prepare(table_paths):

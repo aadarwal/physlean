@@ -353,11 +353,22 @@ def lex_unit(language, text):
 
 # ------------------------------------------------------------- hashes
 
+def lean_keyword_provenance_hash(provenance):
+    """Order-stable hash projection for nested keyword provenance dicts."""
+    return sha256_json([
+        [row["token"], [[source["repo"],
+                         source["reserved_token_table"],
+                         source["parser_dispatch"]]
+                        for source in row["sources"]]]
+        for row in provenance])
+
+
 def load_lean_keyword_freeze(path):
     """Load and revalidate the write-once parser-token union used by A6."""
     binding, freeze = artifact_binding(path, LEAN_KEYWORD_FREEZE_SCHEMA)
     tokens = freeze.get("tokens")
     sources = freeze.get("source_tables")
+    provenance = freeze.get("token_provenance")
     if not isinstance(tokens, list) or not tokens \
             or tokens != sorted(tokens) or len(tokens) != len(set(tokens)) \
             or freeze.get("n_tokens") != len(tokens) \
@@ -369,6 +380,46 @@ def load_lean_keyword_freeze(path):
             or {source.get("repo") for source in sources} != \
             {"mathlib4", "batteries", "physlib"}:
         raise V2BError("Lean keyword freeze lacks exact source-table evidence")
+    if [source.get("repo") for source in sources] != \
+            sorted(source.get("repo") for source in sources) \
+            or any(not isinstance(source.get("n_excluded_dispatch_keys"), int)
+                   or isinstance(source.get("n_excluded_dispatch_keys"), bool)
+                   or source["n_excluded_dispatch_keys"] <= 0
+                   for source in sources) \
+            or freeze.get("n_excluded_dispatch_keys_total") != sum(
+                source["n_excluded_dispatch_keys"] for source in sources):
+        raise V2BError("Lean keyword freeze dispatch evidence is malformed")
+    if not isinstance(provenance, list) or len(provenance) != len(tokens) \
+            or [row.get("token") if isinstance(row, dict) else None
+                for row in provenance] != tokens:
+        raise V2BError("Lean keyword freeze token provenance is malformed")
+    allowed_repos = {"mathlib4", "batteries", "physlib"}
+    for row in provenance:
+        evidence = row.get("sources")
+        if set(row) != {"token", "sources"} \
+                or not isinstance(evidence, list) or not evidence \
+                or any(not isinstance(source, dict)
+                       or not isinstance(source.get("repo"), str)
+                       for source in evidence):
+            raise V2BError("Lean keyword token provenance row is malformed")
+        repos = [source["repo"] for source in evidence]
+        if repos != sorted(repos) or len(repos) != len(set(repos)):
+            raise V2BError("Lean keyword token source order is malformed")
+        seen = set()
+        for source in evidence:
+            repo = source.get("repo")
+            if set(source) != {"repo", "reserved_token_table",
+                               "parser_dispatch"} \
+                    or repo not in allowed_repos or repo in seen \
+                    or not isinstance(source.get("reserved_token_table"), bool) \
+                    or not isinstance(source.get("parser_dispatch"), bool) \
+                    or not (source["reserved_token_table"] \
+                            or source["parser_dispatch"]):
+                raise V2BError("Lean keyword token source is malformed")
+            seen.add(repo)
+    if freeze.get("token_provenance_sha256") != \
+            lean_keyword_provenance_hash(provenance):
+        raise V2BError("Lean keyword freeze provenance hash is malformed")
     binding.update(n_tokens=len(tokens),
                    tokens_sha256=freeze["tokens_sha256"],
                    source_repos=sorted(source["repo"] for source in sources))

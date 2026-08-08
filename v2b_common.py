@@ -17,8 +17,11 @@ CANDIDATES_SCHEMA = "v2b_candidates_v1"
 NEARDUP_SCHEMA = "v2b_neardup_v1"
 SAMPLE_SCHEMA = "v2b_sample_v1"
 K7_ORDER_SCHEMA = "v2b_k7_order_v1"
-LEAN_KEYWORD_FREEZE_SCHEMA = "v2b_lean_keyword_freeze_v1"
+LEAN_KEYWORD_FREEZE_SCHEMA = "v2b_lean_keyword_freeze_v2"
 A6_AUDIT_PACKET_SCHEMA = "v2b_a6_audit_packet_v1"
+A6_BLIND_SCHEMA = "v2b_a6_blind_v1"
+A6_LABELS_SCHEMA = "v2b_a6_blind_labels_v1"
+A6_OUTCOME_SCHEMA = "v2b_a6_outcome_v1"
 ASSEMBLY_SCHEMA = "v2b_assembly_manifest_v1"
 
 

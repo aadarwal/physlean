@@ -9,19 +9,28 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from finalize_v2b_a6 import EXPECTED, build_packet
 from v2b_common import (A6_AUDIT_PACKET_SCHEMA, LEAN_KEYWORD_FREEZE_SCHEMA,
                         NEARDUP_SCHEMA, V2BError, identity_key, sha256_json)
-from v2b_neardup import (LEXER_CITATION, load_lean_keyword_freeze,
-                         python_keyword_evidence)
+from v2b_neardup import (LEXER_CITATION, lean_keyword_provenance_hash,
+                         load_lean_keyword_freeze, python_keyword_evidence)
 
 
 def _freeze(td):
     tokens = sorted(["by", "def", "omega", "rfl", "simp"])
+    repos = ("batteries", "mathlib4", "physlib")
+    provenance = [dict(
+        token=token,
+        sources=[dict(repo=repo, reserved_token_table=True,
+                      parser_dispatch=False) for repo in repos])
+        for token in tokens]
     value = dict(
         schema=LEAN_KEYWORD_FREEZE_SCHEMA,
         derivation="test",
-        source_tables=[dict(repo=repo) for repo in
-                       ("batteries", "mathlib4", "physlib")],
+        source_tables=[dict(repo=repo, n_excluded_dispatch_keys=7)
+                       for repo in repos],
+        n_excluded_dispatch_keys_total=21,
         n_tokens=len(tokens), tokens_sha256=sha256_json(tokens),
         tokens=tokens,
+        token_provenance_sha256=lean_keyword_provenance_hash(provenance),
+        token_provenance=provenance,
         generator=dict(source_commit="f" * 40,
                        source_tree_hash="1" * 64,
                        program="finalize_v2b_lean_keywords.py"))
