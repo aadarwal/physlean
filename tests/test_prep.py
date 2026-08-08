@@ -141,10 +141,13 @@ def test_arxiv_scan_era_qualified():
 def test_cell_done_trust_boundary():
     """The resume/analyzer trust boundary: accept one fully valid tiny
     artifact, then reject (a) one-byte dump tampering, (b) a changed
-    stream, (c) a changed manifest."""
+    stream, (c) a changed manifest, (d) non-finite summaries, and —
+    schema v4 — (e) a stale measurement harness and (f) a stale
+    software environment."""
     import gzip, hashlib, json, tempfile
     from run_phase1 import cell_done, _HASH_CACHE
     from layout import MEASUREMENT_SCHEMA_VERSION
+    from provenance import env_fingerprint, harness_hash
 
     def sha(p):
         return hashlib.sha256(open(p, "rb").read()).hexdigest()
@@ -170,7 +173,9 @@ def test_cell_done_trust_boundary():
                     n_scored=1, bytes_scored=1,
                     overall_bpb=1.5, per_token_nats=1.0,
                     dump_sha256=hashlib.sha256(blob).hexdigest(),
-                    dump_file_bytes=len(blob))
+                    dump_file_bytes=len(blob),
+                    harness_hash=harness_hash(),
+                    env_fingerprint=env_fingerprint())
         json.dump(meta, open(out + ".meta.json", "w"))
         mj = {"M": {"sha": "r"}}
         args = (out, "M", 32768, [], stream, mj)
@@ -204,6 +209,22 @@ def test_cell_done_trust_boundary():
         meta_bad = dict(meta, overall_bpb=float("nan"))
         json.dump(meta_bad, open(out + ".meta.json", "w"))
         assert not cell_done(*args), "NaN overall_bpb accepted"
+        # (e) STALE HARNESS (schema v4): a cell produced by different
+        # evaluator/layout code must not mix into the current grid
+        meta_bad = dict(meta, harness_hash="0" * 64)
+        json.dump(meta_bad, open(out + ".meta.json", "w"))
+        assert not cell_done(*args), "stale harness hash accepted"
+        # (f) STALE ENVIRONMENT: different software environment rejected
+        meta_bad = dict(meta, env_fingerprint="0" * 64)
+        json.dump(meta_bad, open(out + ".meta.json", "w"))
+        assert not cell_done(*args), "stale env fingerprint accepted"
+        # missing identities (pre-v4 meta shape) must also be rejected
+        meta_bad = dict(meta)
+        del meta_bad["harness_hash"], meta_bad["env_fingerprint"]
+        json.dump(meta_bad, open(out + ".meta.json", "w"))
+        assert not cell_done(*args), "identity-less (pre-v4) meta accepted"
+        json.dump(meta, open(out + ".meta.json", "w"))
+        assert cell_done(*args) is True  # restored
 
 
 if __name__ == "__main__":

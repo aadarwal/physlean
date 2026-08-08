@@ -5,7 +5,7 @@
 set -euo pipefail  # expected failures are explicitly guarded; anything unguarded aborts
 BASE="$(cd "$(dirname "$0")" && pwd)"
 cd "$BASE"  # models.json paths below are relative
-export HF_HUB_ENABLE_HF_TRANSFER=1
+export HF_XET_HIGH_PERFORMANCE=1  # hf-xet backend (current; hf_transfer is deprecated)
 
 SMALLMID=(
   Qwen/Qwen2.5-Coder-0.5B

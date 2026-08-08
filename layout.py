@@ -6,7 +6,11 @@ unit tests and the evaluator share one implementation."""
 # windowing, ledger) — analysis-only commits must not invalidate dumps.
 # v3: per-group doc attribution over the charged byte interval (straddling
 # groups are doc=-1 uniformly).
-MEASUREMENT_SCHEMA_VERSION = 3
+# v4: meta must carry harness_hash (eval_incontext+layout content) and
+# env_fingerprint (canonical all-distribution software identity); eval
+# refuses on environment mismatch and cell_done requires both to match
+# current — mixed-harness / mixed-environment raw grids are impossible.
+MEASUREMENT_SCHEMA_VERSION = 4
 
 # The V2 paired-target driver (eval_paired, G3.5+) versions its schema
 # INDEPENDENTLY so V2 evolution never invalidates G3-path artifacts;

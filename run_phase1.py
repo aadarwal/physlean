@@ -123,10 +123,15 @@ def cell_done(out, mid, ctx, flags, stream, mj):
     """Done = meta exists AND dump is readable gzip with the v2 header AND
     the meta matches the CURRENT measurement schema version, model,
     revision, stream+manifest hashes, ctx and flags, AND the byte ledger
-    held with positive scored rows/bytes. Schema version (layout.py) bumps
-    only on semantic measurement changes, so analysis-only commits do not
-    invalidate dumps."""
+    held with positive scored rows/bytes, AND (schema v4) the recorded
+    measurement-harness hash and environment fingerprint equal the
+    CURRENT ones — a grid can never silently mix cells produced by
+    different evaluator code or different software environments. Schema
+    version (layout.py) bumps only on semantic measurement changes, so
+    analysis/design-only commits do not invalidate dumps; GPU/driver are
+    informational and deliberately NOT part of this identity."""
     from layout import MEASUREMENT_SCHEMA_VERSION
+    from provenance import env_fingerprint, harness_hash
     mp = out + ".meta.json"
     if not os.path.exists(mp):
         return False
@@ -164,6 +169,8 @@ def cell_done(out, mid, ctx, flags, stream, mj):
                 and m.get("manifest_sha256") == _stream_sha(man)
                 and m.get("byte_ledger_ok") is True
                 and m.get("source_unchanged_during_eval") is True
+                and m.get("harness_hash") == harness_hash()
+                and m.get("env_fingerprint") == env_fingerprint()
                 and (m.get("n_scored") or 0) > 0
                 and (m.get("bytes_scored") or 0) > 0
                 and isinstance(m.get("overall_bpb"), (int, float))

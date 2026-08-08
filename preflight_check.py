@@ -310,29 +310,24 @@ def gate_g1():
     except Exception as e:
         check("disk-headroom", False, repr(e))
 
-    fz = os.path.join(BASE, "results_v2", "env", "freeze-cluster.txt")
+    # environment identity (schema v4, shared provenance definition):
+    # the live environment must equal BOTH the committed lock (every pin
+    # + python contract) and the write-once software-only freeze — one
+    # implementation shared with eval refusal and cell_done, so the
+    # gate, the evaluator, and cell acceptance can never disagree.
+    # GPU/driver stay out of this by frozen decision (runtime-notes.txt
+    # is the informational record; the battery overlap item gates
+    # hardware effects).
     try:
-        import importlib
-        CORE = {"torch": "torch", "transformers": "transformers",
-                "huggingface_hub": "huggingface-hub", "numpy": "numpy",
-                "scipy": "scipy", "pandas": "pandas"}
-        frozen = {}
-        if os.path.exists(fz):
-            for line in open(fz):
-                if "==" in line:
-                    n, v = line.strip().split("==", 1)
-                    frozen[n.lower()] = v
-        drift = {}
-        for mod, pkg in CORE.items():
-            cur = importlib.import_module(mod).__version__
-            fro = frozen.get(pkg)
-            if fro != cur:  # exact core identity: unpinned installs can
-                drift[pkg] = dict(frozen=fro, current=cur)  # drift (review)
-        pinned_ok = importlib.import_module(
-            "transformers").__version__ == "5.14.1"
-        check("env-frozen", os.path.exists(fz) and pinned_ok and not drift,
-              dict(freeze_file=os.path.exists(fz), pin_ok=pinned_ok,
-                   core_drift=drift or "all six core versions match"))
+        sys.path.insert(0, BASE)
+        from provenance import (env_fingerprint, env_matches_freeze,
+                                env_matches_lock)
+        lock_ok, lock_probs = env_matches_lock()
+        frz_ok, frz_detail = env_matches_freeze()
+        check("env-frozen", lock_ok and frz_ok,
+              dict(lock_ok=lock_ok, lock_problems=lock_probs[:6],
+                   freeze_ok=frz_ok, freeze_detail=frz_detail,
+                   env_fingerprint=env_fingerprint()[:16]))
     except Exception as e:
         check("env-frozen", False, repr(e))
 
@@ -441,6 +436,17 @@ def gate_common_science():
         zr = b.get("B_zero_rows", {})
         from provenance import source_tree_hash
         src_match = b.get("source_tree_hash") == source_tree_hash()
+        # schema-v4 identities: battery evidence must have been produced
+        # by the CURRENT measurement harness in the CURRENT software
+        # environment (one shared definition with eval/cell_done)
+        from provenance import env_fingerprint, harness_hash
+        # identities must match current AND carry the completion
+        # guarantee — older battery evidence without the mid-run
+        # re-check (identities_unchanged_during_run) can never gate
+        ident_match = (b.get("harness_hash") == harness_hash()
+                       and b.get("env_fingerprint") == env_fingerprint()
+                       and b.get("identities_unchanged_during_run")
+                       is True)
         mj = json.load(open(os.path.join(BASE, "models.json"))) \
             if os.path.exists(os.path.join(BASE, "models.json")) else {}
         BATTERY_SET = {"Qwen/Qwen2.5-Coder-0.5B", "Qwen/Qwen3-0.6B-Base",
@@ -458,14 +464,15 @@ def gate_common_science():
               and zr.get("conservation_ok", False)
               and b.get("device") == "cuda"
               and b.get("gate_eligible") is True
-              and src_match and rev_match,
+              and src_match and rev_match and ident_match,
               dict(errors=errs, plumbing_pass=b.get("plumbing_pass"),
                    chunk_worst_delta=a.get("mean_abs_delta_nats"),
                    class_ok=a.get("all_class_ok"),
                    conservation=zr.get("conservation_ok"),
                    device=b.get("device"),
                    source_tree_match=src_match,
-                   revisions_match=rev_match))
+                   revisions_match=rev_match,
+                   harness_env_match=ident_match))
     except Exception as e:
         check("battery-plumbing", False, f"battery.json unreadable: {e!r}")
 

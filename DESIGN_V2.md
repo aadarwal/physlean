@@ -1,8 +1,9 @@
-# DESIGN_V2 — repository-context sufficiency on fixed targets (G2.5, DRAFT)
+# DESIGN_V2 — repository-context sufficiency on fixed targets (G2.5)
 
-Status: DRAFT for joint review; the confirmatory design PREREG §9 points
-to. The G3 sweep is exploratory/motivational; THIS design carries the
-claims. Nothing here runs before its own review and a piloted gate (§10).
+Status: **PRE-PILOT FROZEN after joint adversarial review**; V2-c still
+requires the post-pilot human scale approval in §10. The G3 sweep is
+exploratory/motivational; THIS design carries the claims. Nothing here
+runs before its own reviewed pilot gate (§10).
 
 NAMING (conceptual fork, recorded): this experiment manipulates AVAILABLE
 REPOSITORY CONTEXT for fixed targets. It does NOT manipulate codebase
@@ -94,9 +95,11 @@ CONTRAST-SPECIFIC (frozen estimand->arm map, §14.2): only the presence
 arms of THAT estimand must fill B, E3/E4 require their full budget grid,
 and the omnibus all-arm panel is a sensitivity — per-estimand N and the
 overlap matrix are always reported since populations differ. k5 matches
-the arm it controls for (k3/k4) at the same budget; the k1-vs-k3
-contrast uses k5 at the same budget as the named length control, so
-"context helps" is separated from "any tokens present". (For k2's local
+the arm it controls for (k3/k4) at the same budget; the k1-vs-k4
+contrast (E1a — "k1-vs-k3" here was a typo, resolved to k4 to match §1
+and §14.2, logged in PREREG §13) uses k5 at the same budget as the
+named length control, so "context helps" is separated from "any tokens
+present". (For k2's local
 suffix, containment is suffix containment, not string-prefix identity;)
 closures EXCLUDE the target itself and any declaration that
 (transitively) references the target (cycle leakage), and every (t,k,B)
@@ -113,9 +116,13 @@ semantic tokens separate from formatting predictability.
 
 ## 5. Behavioral arm
 
-- Generation: sample k=8 completions of the target body per (t, k1/k3/k4/
-  k6, B=16KB), temperature 0.8, per model (0.5B–7B ladder; big rungs only
-  if approved).
+- Generation: sample n completions of the target body per (t, k1/k3/k4/
+  k5/k6, B=16KB), temperature 0.8, per model (0.5B–7B ladder; big rungs
+  only if approved); n is pilot-selected per §14.22 (default 8), seeds
+  0..n−1. k5 is REQUIRED in the behavioral arm (§14.15):
+  without it a behavioral k4 gain cannot be attributed to dependency
+  RELEVANCE over generic same-corpus conditioning. max_new_tokens=512;
+  target eligibility and outcome classes are frozen in §14.15.
 - Verification: Lean — `lake env lean` check of the file with the
   generated body (mathlib/physlib toolchain pinned per corpus lock);
   Python — module import + targeted pytest subset where one exists;
@@ -127,8 +134,14 @@ semantic tokens separate from formatting predictability.
   reported as top-1/top-5 localization accuracy. Repair = constrained
   regeneration of the mutated declaration; success = verifier pass.
 - pass@k estimator (frozen): the unbiased combinatorial estimator
-  (Chen et al. 2021) with n=8 samples per (t, condition, model),
-  temperature 0.8, top-p 0.95, seeds 0–7, no early stopping, k in {1, 8}.
+  (Chen et al. 2021) with n samples per (t, condition, model) — n
+  pilot-selected per §14.22 (default 8), seeds 0..n−1 — temperature
+  0.8, top-p 0.95, no early stopping. Reported k is FIXED at {1, 8}
+  for every n >= 8: pass@8 (unbiased from n samples) is the constant
+  cross-tier comparison metric even when §14.22 raises n, so tiers
+  with different n stay comparable; pass@n may be reported as
+  DESCRIPTIVE but never replaces pass@8. F1's behavioral outcome
+  remains the per-target pass probability c/n (§8).
 - LICENSE: LeanPhysBench is NOT used (CC BY-NC, explicit no-AI-eval
   clause) absent written permission. lean-zip (Apache-2.0) and zlib
   (zlib license) are fine.
@@ -161,26 +174,41 @@ the lean-zip/zlib pair (per function/theorem pairing).
 
 ## 8. Preregistered falsifiers / decision rules
 
-- F1 (NLL-as-proxy): the context NLL gain is C(t|k1) − C(t|k3,16KB)
-  (positive = context helps). The behavioral outcome is the per-target
-  pass@1 gain estimated as c/n (c = verifier-passing samples of n=8) —
-  pass@8 with n=8 is tie-saturated/binary and cannot support a rank
-  correlation (review fix). REJECT NLL as the working proxy for a model
-  family if the within-target Spearman correlation between NLL gain and
-  pass@1 gain has an UPPER 95% CI bound below 0.3 (one frozen one-sided
-  null); CO-PRIMARY with it (per §12) is the trial-level hierarchical
-  logistic model
+- F1 (NLL-as-proxy): the context NLL gain is C(t|k1) − C(t|k4,16KB)
+  (positive = context helps; k4 matches the E1a headline contrast —
+  the earlier k3 here was the same resolved typo; the k3-gain variant
+  is reported as a sensitivity only). The behavioral outcome is the per-target
+  pass@1 gain estimated as c/n (c = verifier-passing samples of the
+  pilot-selected n per §14.22, default 8) — pass@n at the full n is
+  tie-saturated/binary and cannot support a rank correlation (review
+  fix). Decision levels (harmonized with §14.16/§14.25): REJECTION
+  uses one-sided 97.5% bounds (alpha=0.025 per co-primary, Bonferroni
+  so union rejection controls FWER <= 0.05); SUPPORT uses one-sided
+  95% bounds (intersection-union, no correction needed). REJECT NLL as
+  the working proxy for a model family if the within-target Spearman
+  correlation between NLL gain and pass@1 gain has a 97.5% UPPER bound
+  below 0.3; CO-PRIMARY with it (per §12) is the trial-level
+  hierarchical logistic model
   success ~ condition * target_NLL_gain + (1|target) — the INTERACTION
   carries the proxy question (does NLL improvement predict behavioral
   improvement?); condition + gain alone would only model target
-  difficulty (review fix). F1 outcomes are three-way: REJECTED (upper
-  95% CI < 0.3), SUPPORTED (lower 95% CI > 0.3), else INCONCLUSIVE —
-  failing rejection is never itself evidence of support. The pilot
-  (V2-b) tunes the design and is NEVER pooled into this confirmatory
-  test. V2-b additionally gates a BEHAVIORAL FLOOR/CEILING viability
-  rule, predeclared: if the pilot pass@1 rate under k4 at 16KB lies
-  outside [0.05, 0.95] for a model tier, that tier is swapped for the
-  next capability tier by this rule alone — never by outcome direction.
+  difficulty (review fix); its rejection bound is the 97.5% upper
+  bound below 0. F1 outcomes are three-way per co-primary: REJECTED
+  (97.5% upper bound below the null bound), SUPPORTED (95% lower bound
+  above it), else INCONCLUSIVE — failing rejection is never itself
+  evidence of support; the JOINT rule is §14.16. The pilot (V2-b)
+  tunes the design and is NEVER pooled into this confirmatory test.
+  V2-b additionally gates a DIRECTIONAL floor/ceiling viability rule,
+  predeclared: if the pilot pass@1 rate under k4 at 16KB is below 0.05
+  for a model tier, that tier moves ONE capability tier UP; above
+  0.95, ONE tier DOWN; if the needed adjacent tier does not exist, F1
+  is INFEASIBLE for that slot — by this rule alone, never by
+  condition-contrast direction. Confirmatory F1 uses ONLY the semantic
+  outcome strata (§14.23): lean-theorem-proof and
+  python-semantic-covered targets, analyzed per (repo, class)
+  separately — lean-def-typecheck and compile-only NEVER enter F1,
+  and the k4 floor/ceiling aggregate is computed on the applicable
+  semantic stratum.
 - F2 (consistency, NOT identification): with only ~3 Lean and ~2 Python
   repos, language and repo are weakly identified; NO confirmatory
   language-level effect is claimed from this design regardless of
@@ -232,15 +260,25 @@ Behavioral power is ILLUSTRATIVE ONLY until the V2-b pilot estimates
 the per-target pass@1 variance; no detectability claim is asserted
 pre-pilot (review fix).
 
-Compute (explicit call accounting): NLL arm ~200 targets x 6 presence
-conditions x 3 budgets x ~4k tok ~= 14M scored tokens/model/corpus.
-Generation arm: 200 x 4 conditions x 8 samples = 6,400 generations/model
-/corpus (~2.5M generated tokens at 400-token bodies). Mutation arm:
-200 x 3 mutations x (1 scoring + 8 repair samples) x 4 conditions ~=
-2,400 scorings + 19,200 repair generations/model/corpus — repair is the
-dominant cost and runs ONLY for the 1.5B sentinel model unless the pilot
-justifies more. Lean checking ~11k-30k `lake` invocations/corpus on CPU
-Slurm arrays.
+Compute (explicit call accounting, corrected with §14.21-14.24): NLL
+arm ~200 targets x 6 presence conditions x 3 budgets x ~4k tok ~= 14M
+scored tokens/model/corpus, plus the k5 seed-sensitivity (2 extra
+seeds at B* only: +400 cells ~= +1.6M tokens), the k6-realistic
+sensitivity (§14.26: +200 cells at B* ~= +0.8M tokens), and, for
+physlib only, the k4x arm (+1 condition on its grid). Generation arm:
+200 x 5 conditions (k1/k3/k4/k5/k6, §14.24) x n samples = 1,000n
+generations/model/corpus (8,000 at the default n=8, ~3.2M generated
+tokens at 400-token bodies; the §14.22 rule may set n=16 or 32,
+scaling linearly to 16,000 or 32,000). Mutation arm: DETECTION 200 x
+3 mutations x 5 conditions = 3,000 scorings; REPAIR 200 x 3 x 2
+conditions (k1/k4) x 4 samples = 4,800 repair generations/model/corpus
+— repair is FROZEN to the 1.5B sentinel model; any expansion requires
+its own preregistered gate (there is no pilot-justifies-more clause).
+Lean checking = generation + repair verifications:
+~12.8k `lake` checks/corpus at n=8 (8,000 + 4,800) up to ~36.8k at
+n=32 (32,000 + 4,800), on CPU Slurm arrays; baseline-pass and
+mutant-kill screening (§14.23, §12) add ~200 + ~600 checks/corpus on
+top.
 
 ## 10. Pipeline, compute, and gates
 
@@ -248,9 +286,12 @@ Extraction (CPU, login/compute nodes): Lean .ilean/LeanDojo caches on
 POOL; AST extraction for Python. Driver `eval_paired.py` (to be built,
 reusing layout.py + the evaluator's chunked-NLL core; same schema
 discipline, schema_version bump). Generation determinism: fixed seeds
-0–7, max 512 new tokens per sample, deterministic stop at the first
-complete declaration (elaborator/AST-detected) or the token cap —
-whichever first; no other stopping heuristics. Compute accounting lives
+0..n−1 (n pilot-selected per §14.22, default 8), max 512 new tokens
+per sample, run to the token cap with NO stop sequences
+(decoding-level no-early-stopping); the declaration boundary is
+applied by the frozen deterministic post-hoc extraction rule of
+§14.24 (this supersedes the earlier stop-at-first-declaration
+wording). Compute accounting lives
 in §9 only (the earlier duplicate estimate is removed).
 Gates: V2-a extraction validated on 20 targets/corpus (spans compile
 standalone; closures verified against elaborator output);
@@ -390,3 +431,211 @@ not enlarged.
 (layout.py), independent of MEASUREMENT_SCHEMA_VERSION, so V2 evolution
 never invalidates G3-path artifacts (PREREG §11 sequencing rule; G3b
 requires a battery rerun whenever the source tree hash moved).
+
+14.12 HEADLINE BUDGET: B* = 16 KiB is the single confirmatory budget
+for E1a/E1b/E2 (frozen pre-implementation to close budget
+selection-after-results). Every other budget on the grid is E3/E4
+descriptive or sensitivity. Eligibility at B* under the §14.2 map
+defines the primary populations; per-estimand N at B* is always
+reported.
+
+14.13 TOKEN-CAP ELIGIBILITY + EQUAL-TOKEN SENSITIVITY: a (target,
+condition, budget, model) cell is eligible only if prefix + context +
+target fits the model's position budget with ZERO truncation (asserted
+at assembly; a truncated cell is invalid, never silently clipped).
+Byte-matched B remains primary; an EQUAL-TOKEN sensitivity re-runs the
+B* contrasts with context truncated to a fixed token count T* = 4096
+tokens under each scoring model's tokenizer (equal bytes put the
+target at different token positions per tokenizer x corpus — this
+separates that mechanical confound from the linguistic claim). Target
+token-position distributions are reported per corpus x tokenizer.
+
+14.14 CANDIDATE UNIVERSE (one, target-relative, leak-free): U(t) =
+corpus declaration units minus the target's file, minus its
+near-duplicates (§14.6), minus the TRANSITIVE REVERSE dependency
+closure of the target (reverse dependencies quote the target's
+name/signature/usage — leaving them in k5 biases E2 toward null and
+inflates k6; excluded mass recorded per target). k3/k4 draw the forward
+closure; k5 draws from U(t) minus the forward closure; k6 retrieves
+over U(t) WITH forward deps allowed (retrieval realism; retrieved
+overlap with the closure recorded); k7 uses the §14.7 prefix, which is
+reverse-dep-free by topology, and additionally drops same-SCC members
+(cycle-mates are mutual dependencies). Post-hoc repair was considered
+and REJECTED: it makes k5's realized sampling outcome-correlated and
+cannot fix the frozen BM25 IDF universe.
+
+14.15 BEHAVIORAL FREEZES: (a) k5 joins generation at B* only. (b)
+Decoding as §5 (n samples with n pilot-selected per §14.22, default 8;
+seeds 0..n-1; temperature 0.8, top-p 0.95, max_new_tokens=512, no
+early stopping). (c) Eligibility: reference
+body <= 448 tokens under the generating model's tokenizer (headroom
+under the 512 cap; longer targets are structural failures in every arm
+and length correlates with closure richness — an arm-correlated bias,
+not just power loss); ineligible targets recorded. (d) Outcome
+classes: Lean verification = re-elaboration of the UNMODIFIED repo
+file with the generated body in the target's exact environment;
+forbidden escapes are the UNIFIED §12 list as frozen in §14.23
+(sorry/sorryAx/admit, new axioms, native_decide, implemented_by,
+unsafe — no new trusted surface); a fixed 300s elaboration timeout
+counts as FAILURE (never exclusion — timeouts correlate with
+difficulty and exclusion would be arm-correlated missingness). Class
+structure, baseline-pass, and coverage requirements are frozen in
+§14.23 (four classes, never pooled).
+
+14.16 JOINT F1 DECISION RULE + INFERENCE SPEC: the two co-primaries
+(within-target Spearman; hierarchical logistic interaction, §8) form
+ONE decision by intersection-union — PROXY SUPPORTED only if BOTH
+support (Spearman one-sided 95% LOWER bound > 0.3 AND interaction
+one-sided 95% LOWER bound > 0); PROXY REJECTED if EITHER rejects at
+its Bonferroni level (Spearman one-sided 97.5% UPPER bound < 0.3 OR
+interaction one-sided 97.5% UPPER bound < 0, per §14.25); else
+INCONCLUSIVE. Union-rejection is
+deliberate: any failing co-primary disqualifies NLL as the working
+proxy. No alpha adjustment is needed for the IUT support claim; all
+other §8 tests keep §7's Holm control within repo, and the F1 family
+is per (repo, model family) with results reported for ALL families
+(no family selection). CIs for both co-primaries: cluster bootstrap by
+FILE (targets nested in files; 2000 resamples, seed 20260808); the
+logistic keeps (1|target) random intercepts. Generation samples are
+never resampled as independent units.
+
+14.17 RENDERING FREEZE: context units are joined by ONE blank line;
+each unit carries a single one-line comment banner in the language's
+comment leader ("-- ctx: <repo-relative-path>", "# ctx: ...",
+"// ctx: ..."). Banners NEVER contain the target's own path, module
+name, or declaration name (a banner on a leaking unit is itself a leak
+channel). Identical rendering machinery across k2-k7 — a delimiter
+difference would be a hidden condition. Banner and delimiter bytes
+count toward B and are recorded per cell.
+
+14.18 SHORT-TARGET DEDUP: identifier-normalized EXACT-hash duplicate
+detection applies at ALL lengths (the 5-gram Jaccard floor of §14.6
+stays at 20 tokens — lowering it floods). Targets under 20 tokens form
+a recorded stratum with a predeclared exclusion sensitivity; their
+rename-variant near-duplicates are acknowledged as residually
+uncontrolled below the floor.
+
+14.19 DETERMINISTIC TARGET SAMPLING: within each §2 stratum, targets
+are ranked by SHA256("v2a:20260808:<repo>:<fully-qualified-name>") and
+quotas filled in ascending priority order — corpus-size-independent,
+rerun-stable, and blind to outcomes (same discipline as the G3
+seeded-priority selection). Under-filled strata are recorded and never
+rebalanced after any data peek.
+
+14.20 PHYSLIB EXTERNAL-CONTEXT HARD GATE: physlib closure results
+(E1a/E1b and any physlib-vs-mathlib reading) are UNINTERPRETABLE until
+the k4x arm exists: k4 plus the build-pinned EXTERNAL closure rendered
+under the same rules, drawn from the mathlib REVISION pinned in
+physlib's lake-manifest (recorded and locked; NOT the corpus-lock
+mathlib HEAD — version skew would leak anachronistic content).
+physlib's mathematical spine is external, so same-repo k4 is
+structurally handicapped relative to mathlib's internally-complete k4;
+§14.3's warning is upgraded to this hard gate. Python external
+closures stay recorded-only (asymmetry logged, §14.3).
+
+14.21 k5 SEED POLICY: the k5 draw for target t ranks U(t) minus the
+forward closure by per-(target, seed) hash priorities —
+SHA256("k5:<seed>:<repo>:<target-fqname>:<unit-id>") — so draws are
+independent ACROSS targets by construction (no shared global
+permutation; the one draw per target is genuinely dispersed).
+Primary = seed 0 everywhere. Seeds 1 and 2 re-run the k5 NLL ARM ONLY,
+at B* over the full eligible set, as a frozen seed-sensitivity;
+behavioral k5 is seed 0 only. Statistical note (recorded): E2 rests on
+N independent per-target draws, and draw variance propagates through
+target-level resampling — the multi-seed arm is a diagnostic, not a
+repair.
+
+14.22 V2-b PILOT GOVERNANCE: pilot analysis is BLINDED to contrasts —
+arm labels are anonymized before analysis, and only nuisance
+quantities are computed (eligibility yields, ICC/cluster variances,
+per-target pass-probability reliability, timeout and
+extraction-failure rates). Two design constants are then set
+MECHANICALLY: (a) confirmatory target N per repo, in [200, 400] = the
+MAXIMUM across E1a, E1b, and E2 of each estimand's smallest N whose
+projected CI half-width at B* meets the frozen 0.02 b/B precision
+figure under pilot-estimated nuisance; (b) completion n = the
+smallest of {8, 16, 32} whose ARM-ANONYMOUS target-level
+pass-probability reliability is >= 0.8 — made empirically
+IDENTIFIABLE by generating (or adaptively accumulating) UP TO 32
+pilot completions per (pilot target, arm) under masked labels;
+reliability at each candidate n = REPEATED random half-splits (200
+resplits, seed 20260808) of n draws subsampled from those masked
+completions, computed SEPARATELY inside each anonymized arm and the
+applicable semantic outcome stratum. Each resplit uses the Pearson
+correlation of per-target pass proportions across halves and the
+SPEARMAN-BROWN correction to project the half-split (length n/2)
+estimate to full length n; the gate uses the MINIMUM median corrected
+reliability across arms, so pooling arm-level rate differences cannot
+inflate it. A raw 32-draw split would estimate n=16 reliability, not
+n=32. If no N <= 400 meets precision for all
+three estimands, or no n <= 32 meets reliability, F1 is DECLARED
+INFEASIBLE and reported as such — never discretionarily redesigned.
+The ONLY unblinded pilot aggregate is the k4-arm aggregate pass rate
+per model tier, exposed solely for the frozen DIRECTIONAL
+floor/ceiling tier rule (§8: <0.05 moves one tier UP, >0.95 one tier
+DOWN, missing adjacent tier -> infeasible for that slot); no condition
+contrasts or contrast directions are exposed. Pilot data
+never pools into confirmatory tests (§8).
+
+14.23 OUTCOME CLASSES (supersedes the §14.15(d) two-way split): FOUR
+classes, never pooled, per-class N always reported —
+lean-theorem-proof (kernel-checked proof), lean-def-typecheck
+(well-typed body; semantically weaker, stated as such),
+python-semantic-covered, compile-only (any language). Lean passes use
+the UNIFIED §12 forbidden-escape list: sorry/sorryAx/admit, new
+axioms, native_decide, implemented_by, unsafe — a pass adds NO new
+trusted surface. BASELINE-PASS is required: the reference body must
+pass the same harness verifier or the item is excluded as
+HARNESS-INVALID (excluded counts reported per corpus). The
+python-semantic class requires MEASURED execution coverage of the
+target span by the selected test subset; without it the item demotes
+to compile-only.
+
+14.24 GENERATION-ARM CONSISTENCY: five behavioral arms
+{k1, k3, k4, k5, k6} at B* (§9 cost accounting corrected to match).
+Mutation DETECTION scores all five arms; mutation REPAIR runs only
+{k1, k4} at B* with n=4 samples, same decoding. "No early stopping" is
+DECODING-LEVEL only: every sample runs to the fixed 512-token budget
+with no stop sequences (stop-strings tokenize differently per model
+and would bias across families); the declaration boundary is applied
+by a frozen deterministic POST-HOC EXTRACTION rule — first complete
+declaration body via the language's parser; extraction failure =
+outcome failure. §10's earlier stop-at-first-declaration wording is
+superseded by this rule.
+
+14.25 AGGREGATION + FWER: within-repo confirmatory estimates weight
+targets EQUALLY (the estimand is per-target sufficiency; byte
+weighting would let a few long targets dominate); byte-weighted is a
+reported sensitivity. F1 REJECTION arms are Bonferroni-corrected: each
+co-primary rejection test is one-sided at alpha = 0.025 (97.5% CI
+bounds), so union rejection controls FWER <= 0.05; SUPPORT is
+unchanged (intersection-union with 95% one-sided lower bounds needs no
+correction).
+
+14.26 k6-REALISTIC SENSITIVITY: a labeled reverse-deps-allowed
+retrieval variant (BM25 over U(t) plus the transitive reverse closure)
+runs as a SENSITIVITY only — it never enters any §14.2 estimand
+contrast — with retrieved reverse-dependency mass reported per target.
+Primary k6 stays leak-free (§14.14).
+
+14.27 k4x CONSTRUCTION: no special-casing — the §14.1 selection rule
+runs over the COMBINED internal + external dependency graph at the
+lake-manifest-pinned external snapshot (§14.20); identical
+distance/SCC/tie-break and rendering rules, same budgets and §14.2
+map; internal vs external context mass recorded per cell.
+
+14.28 TRUNCATION GATE: exact-B far-boundary truncation stays PRIMARY
+(whole-unit-primary REJECTED: arms differ systematically in unit-size
+distributions, so whole-unit matching reintroduces directional
+per-arm byte shortfalls — a first-order confound traded for a smaller
+symmetric artifact at the maximally distant boundary; content-aware
+cleanup is rejected on the same grounds). Per-cell truncation
+reporting: truncated-unit fraction and partial-unit bytes, per arm.
+Predeclared gate on the frozen whole-unit sensitivity, computed on
+the COMMON eligible-target set (targets eligible under BOTH the
+exact-B and whole-unit schemes; per-scheme eligible N reported — a
+population shift must never masquerade as a truncation effect): a
+sign flip on a confirmatory contrast, or divergence exceeding
+max(0.005 b/B, 50% of the absolute primary point estimate) — the
+floor keeps the gate well-defined for near-zero estimates — labels
+the result TRUNCATION-SENSITIVE in all reporting, both numbers shown.

@@ -191,6 +191,30 @@ def main():
                              "cpu")
     dtype = getattr(torch, args.dtype)
 
+    # environment identity gate (PREREG §4, schema v4): a PRODUCTION
+    # eval refuses BEFORE loading the model unless the live environment
+    # matches both the committed lock and the write-once freeze — never
+    # burn GPU hours producing cells that cell_done must reject.
+    # Production = non-dev, non-random (review fix: keying on
+    # device=='cuda' would let a clean real CPU/MPS run bypass the
+    # gate). Dev/random-init runs skip it but still record identities.
+    # Hardware (GPU/driver) is recorded informationally and NEVER gated
+    # (frozen decision: mixed L40S/H200 grids are by design; the
+    # battery overlap item characterizes them).
+    from provenance import (env_fingerprint, env_matches_freeze,
+                            env_matches_lock, gpu_info, harness_hash)
+    harness = harness_hash()
+    env_fp_start = env_fingerprint()
+    if not (args.random_init or args.allow_dirty):
+        lock_ok, lock_probs = env_matches_lock()
+        frz_ok, frz_detail = env_matches_freeze()
+        if not (lock_ok and frz_ok):
+            raise SystemExit(
+                "FATAL: environment does not match the committed lock/"
+                f"frozen record — lock: {lock_probs[:4] or 'ok'}; "
+                f"freeze: {frz_detail} (fix_cluster syncs the lock; "
+                "REFREEZE=1 adopts a new environment explicitly)")
+
     import hashlib as _hl
     _man = args.stream.replace(".txt", ".manifest.jsonl")
     stream_sha_start = _hl.sha256(
@@ -372,8 +396,9 @@ def main():
                 transformers_version=__import__(
                     "transformers").__version__,
                 cuda_build=getattr(torch.version, "cuda", None),
-                gpu_name=(torch.cuda.get_device_name(0)
-                          if device == "cuda" else None),
+                harness_hash=harness,
+                env_fingerprint=env_fp_start,
+                **gpu_info(),  # gpu_name + gpu_driver: informational only
                 harness_commit=subprocess.run(
                     ["git", "-C", repo_dir, "rev-parse", "HEAD"],
                     capture_output=True, text=True).stdout.strip() or None,
@@ -393,6 +418,14 @@ def main():
         raise SystemExit("FATAL: source tree changed DURING eval — meta "
                          "not written; artifact will be quarantined by "
                          "the runner")
+    if env_fingerprint() != env_fp_start:
+        raise SystemExit("FATAL: environment changed DURING eval — meta "
+                         "not written; artifact will be quarantined by "
+                         "the runner")
+    if harness_hash() != harness:
+        raise SystemExit("FATAL: measurement harness changed DURING eval "
+                         "— meta not written; artifact will be "
+                         "quarantined by the runner")
     with open(meta_path, "w") as f:
         json.dump(meta, f, indent=1)
     LOG(f"[done] bpb={bpb:.4f} per-token={per_tok_nats:.3f} nats "

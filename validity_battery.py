@@ -440,6 +440,16 @@ def item_E(model, tok, device, res):
         f"dep wins {adv}/{len(rows)}")
 
 
+def identity_drift(start, now):
+    """Schema-v4 completion re-check (pure, testable): names of the
+    identity components that moved between battery start and completion.
+    ANY non-empty result forbids publishing gate-eligible evidence —
+    the record would not describe what executed."""
+    return [k for k in ("source_clean", "source_tree_hash",
+                        "harness_hash", "env_fingerprint")
+            if start.get(k) != now.get(k)]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="Qwen/Qwen2.5-Coder-0.5B")
@@ -468,9 +478,35 @@ def main():
     gate_eligible = (device == "cuda") and clean
     if args.allow_non_cuda or args.dev_dirty:
         LOCAL_ONLY[0] = False  # dev escape may fetch; gate runs stay local
+    # schema-v4 environment refusal (review blocker): every run WITHOUT
+    # a dev escape must match the committed lock AND the write-once
+    # freeze, checked BEFORE any tokenizer/model load — battery evidence
+    # produced in an unlocked environment must never exist. Dev-escape
+    # runs skip the refusal; their output is already gate-ineligible.
+    if not (args.allow_non_cuda or args.dev_dirty):
+        from provenance import env_matches_freeze, env_matches_lock
+        lock_ok, lock_probs = env_matches_lock()
+        frz_ok, frz_detail = env_matches_freeze()
+        if not (lock_ok and frz_ok):
+            LOG("BATTERY-INCOMPLETE: environment does not match the "
+                f"committed lock/frozen record — lock: "
+                f"{lock_probs[:4] or 'ok'}; freeze: {frz_detail} "
+                "(fix_cluster syncs the lock; REFREEZE=1 adopts a new "
+                "environment explicitly)")
+            sys.exit(1)
+    # START identities (review blocker): captured BEFORE tokenizer/model
+    # load so the record describes what actually ran, recorded verbatim
+    # in battery.json, and RE-CHECKED at completion — a battery whose
+    # source/harness/environment moved mid-run never publishes
+    # gate-eligible evidence.
+    from provenance import (env_fingerprint, gpu_info, harness_hash,
+                            head_commit, source_tree_hash)
+    ident_start = dict(source_clean=clean,
+                       source_tree_hash=source_tree_hash(),
+                       harness_hash=harness_hash(),
+                       env_fingerprint=env_fingerprint())
     tok = tok_of(args.model)  # pinned; rev_of raises when unpinned
     model, _, _, _ = load_text_model(args.model, device)
-    from provenance import source_tree_hash, head_commit
     os.makedirs(OUT, exist_ok=True)
     res = dict(model=args.model, device=device,
                gate_eligible=gate_eligible,
@@ -483,8 +519,15 @@ def main():
                transformers_version=__import__("transformers").__version__,
                harness_commit=head_commit(),
                # evidence commits move HEAD; the SOURCE tree hash proves
-               # "no source diff since measurement" (review fix)
-               source_tree_hash=source_tree_hash())
+               # "no source diff since measurement" (review fix). All
+               # three identities are the EXACT pre-load start values
+               # (re-checked at completion); preflight gates them
+               # against the current state, so battery and cells share
+               # one measurement environment; GPU/driver informational
+               source_tree_hash=ident_start["source_tree_hash"],
+               harness_hash=ident_start["harness_hash"],
+               env_fingerprint=ident_start["env_fingerprint"],
+               **gpu_info())
     errors = []
     for fn in (item_A, item_B, item_C, item_D, item_E):
         try:
@@ -500,6 +543,26 @@ def main():
             and A.get("all_class_ok", False))
     b_ok = res.get("B_zero_rows", {}).get("conservation_ok", False)
     res["plumbing_pass"] = bool(not errors and a_ok and b_ok)
+    # completion re-check (review blocker): the recorded start
+    # identities must still hold NOW, or battery.json is never written
+    # — a battery whose source cleanliness/tree hash, harness, or
+    # environment moved mid-run publishes NO gate-eligible evidence
+    # (dev-escape runs skip this; they are already gate-ineligible).
+    if not (args.allow_non_cuda or args.dev_dirty):
+        from provenance import source_clean as _sc
+        drift = identity_drift(ident_start, dict(
+            source_clean=_sc(),
+            source_tree_hash=source_tree_hash(),
+            harness_hash=harness_hash(),
+            env_fingerprint=env_fingerprint()))
+        if drift:
+            LOG(f"BATTERY-INCOMPLETE: {', '.join(drift)} changed DURING "
+                "the run — battery.json NOT written (the evidence would "
+                "not describe what executed)")
+            sys.exit(1)
+        res["identities_unchanged_during_run"] = True
+    else:
+        res["identities_unchanged_during_run"] = False  # dev: unchecked
     bj = os.path.join(OUT, "battery.json")
     if os.path.exists(bj):  # evidence is never overwritten: a failed
         ts = f"{time.strftime('%Y%m%d-%H%M%S')}-{os.getpid()}"  # survives rerun, collision-proof

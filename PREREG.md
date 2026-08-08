@@ -1,7 +1,8 @@
 # PREREG — shared design document (source of truth)
 
-Status: **v1 DRAFT — pending adversarial review sign-off** (both agents +
-human). Supersedes any single pane's summary. Changes to this document are
+Status: **v1 FROZEN THROUGH THE PRE-PILOT GATES after joint adversarial
+review**; V2-c/full-grid scale still requires the explicit human approval
+below. Supersedes any single pane's summary. Changes to this document are
 themselves review boundaries. Gates below; nothing past G3 runs without
 explicit human approval. Open disagreements are logged in §13 and must be
 resolved or explicitly accepted before the affected gate.
@@ -158,6 +159,28 @@ Reproducibility pinning: evaluator loads model weights at the revision
 recorded in models.json (resolved SHA in cell meta); meta also records the
 SHA256 of the stream and its manifest, the harness commit, and whether the
 working tree was clean.
+
+**Measurement identity (schema v4, adopted pre-launch)**: every cell
+additionally records (a) the MEASUREMENT-HARNESS HASH — sha256 over
+exactly eval_incontext.py + layout.py, the files whose code determines
+dump content given identical inputs (orchestration and provenance
+plumbing are deliberately excluded: their changes cannot alter measured
+bytes and gates always execute from current code) — and (b) the
+canonical SOFTWARE-ENVIRONMENT FINGERPRINT: python runtime + torch CUDA
+build + every installed distribution as sorted name==version lines (one
+shared implementation in provenance.py used by the evaluator,
+cell_done, the battery, and preflight). A production eval (non-dev,
+non-random-init, any device) REFUSES before model load unless the live
+environment equals both the committed wheel lock
+(requirements-cluster.lock, python contract included) and the
+write-once software-only freeze, and re-checks harness and environment
+at end of run; cell_done requires both recorded identities to equal
+the CURRENT ones, so a grid can never silently mix cells from
+different evaluator code or environments. GPU model and driver are
+recorded INFORMATIONALLY and are never part of any gate (frozen
+decision: mixed L40S/H200 grids are by design; the battery overlap
+item is the cross-hardware instrument). The freeze file is evidence:
+replacing it requires explicit REFREEZE=1 and quarantines the old one.
 
 ## 5. Contamination protocol
 
@@ -359,7 +382,9 @@ G3a SENTINEL run (Qwen2.5-Coder-0.5B only; 44 frozen cells: full+clean,
    analysis (same content under shifted window positions — the direct
    probe of content-position confounding in the phase-0 curve), and
    sampling-seed sensitivity. Never on whether any language looks
-   favorable ->
+   favorable. Sequencing (schema v4): the environment freeze must exist
+   and preflight env-frozen must pass BEFORE the first sentinel dump —
+   every G3a cell is produced and accepted at v4 identity (§4) ->
 G3.5 v2 EXTRACTION VALIDATION + PILOT (V2-a/V2-b) — adopted strategic
    ordering: the paired fixed-target experiment that directly identifies
    repository-context sufficiency precedes any grid expansion, because
@@ -398,6 +423,73 @@ arxiv_manifest) must be committed before measurement.
 
 ## 13. Disagreement log
 
+- ADOPTED (pre-launch, at acquisition boundary 132fb5a): measurement
+  identity package — MEASUREMENT_SCHEMA_VERSION 3->4 (harness hash over
+  eval_incontext.py+layout.py; canonical all-distribution software
+  fingerprint incl. python runtime and torch CUDA build; GPU/driver
+  informational only, never gated), committed 66-pin wheel lock with a
+  python==3.12.13 runtime contract, lock-synced installs (uv pip sync
+  --strict), write-once software-only freeze with REFREEZE quarantine +
+  separate informational runtime notes, eval refusal before model load
+  keyed on non-dev status (NOT device), end-of-run harness/environment
+  re-checks, and identity gating in cell_done/battery/preflight. Cost
+  recorded: the bump invalidates any pre-v4 dump; the sentinel runs
+  once, at v4, after the freeze exists.
+- ADOPTED (pre-implementation, same boundary): V2-a freeze additions
+  DESIGN_V2 §14.12-14.20 — 16KiB headline budget; token-cap
+  eligibility + equal-token sensitivity; single leak-free candidate
+  universe with transitive-reverse-closure and same-SCC exclusions
+  (post-hoc repair REJECTED); behavioral k5 arm, <=448-token
+  eligibility, outcome classes with compile-only Python barred from
+  semantic pooling, Lean sorry/axiom/native_decide bars and
+  timeout=failure; joint F1 intersection-union decision rule with
+  file-cluster bootstrap; frozen unit rendering (target-name-free
+  banners, delimiter bytes counted); short-target exact-hash dedup
+  rule; deterministic seeded-priority target sampling; physlib
+  external-mathlib (lake-manifest-pinned revision) hard interpretation
+  gate. The k1-vs-k3 inconsistency in DESIGN_V2 §3/§8 is resolved to
+  k4 (matching E1a and the §14.2 map).
+- ADOPTED (pre-pilot, adversarial design review of V2-a): DESIGN_V2
+  §14.21-14.28 — k5 per-(target,seed) hash priorities with seeds 1-2 as
+  NLL-only sensitivity (reviewer's multi-seed-everywhere form DECLINED:
+  one independent draw per target already disperses; recorded); blinded
+  V2-b pilot governance with mechanical caps (N in [200,400] from
+  blinded nuisance precision; n = smallest of {8,16,32} with
+  arm-anonymous pass-probability reliability >= 0.8; either cap
+  unmeetable -> F1 declared INFEASIBLE, never redesigned; only the
+  k4 aggregate exposed, solely for the frozen floor/ceiling tier
+  rule); four never-pooled outcome classes with baseline-pass and
+  measured-coverage requirements and the UNIFIED §12 Lean
+  forbidden-escape list; five behavioral arms with corrected §9 cost
+  arithmetic, detection over all five arms, repair only {k1,k4} at
+  n=4, decoding-level no-early-stopping + deterministic post-hoc
+  extraction (supersedes §10 stop wording); target-equal primary
+  aggregation; F1 rejection arms Bonferroni at 0.025 (FWER <= 0.05
+  under union rejection; support IUT unchanged); k6-realistic
+  reverse-deps-allowed labeled sensitivity; k4x via the §14.1 rule
+  over the combined internal+external graph; exact-B truncation kept
+  PRIMARY (whole-unit-primary REJECTED as reintroducing directional
+  byte confounds) with per-cell truncation reporting and a
+  max(0.005 b/B, 50% of |primary|) divergence gate. Final consistency
+  pass (same boundary): §8/§14.16/§14.25 harmonized — rejection at
+  one-sided 97.5% upper bounds, support at one-sided 95% lower bounds;
+  §5/§10/§14.15 harmonized to pilot-selected n with seeds 0..n-1;
+  pilot reliability made empirically identifiable (up to 32 masked
+  pilot completions; repeated half-splits with the SPEARMAN-BROWN
+  correction per candidate n — a raw 32-draw split estimates n=16, not
+  n=32); N = MAXIMUM requirement across E1a/E1b/E2; floor/ceiling
+  tier rule made DIRECTIONAL (<0.05 one capability tier UP, >0.95 one
+  tier DOWN, missing adjacent tier -> F1 infeasible for that slot;
+  "never by condition-contrast direction"); confirmatory F1 restricted
+  to SEMANTIC outcome strata (lean-theorem-proof,
+  python-semantic-covered; per (repo, class); def-typecheck and
+  compile-only never enter; the k4 floor/ceiling aggregate uses the
+  applicable semantic stratum); mutation repair FROZEN to the 1.5B
+  sentinel (expansion requires its own preregistered gate); pass@8
+  FIXED as the cross-tier metric for every n >= 8 (pass@n descriptive
+  only; F1 remains c/n); §9 costs corrected (k6-realistic sensitivity
+  included; Lean checks ~12.8k at n=8 to ~36.8k at n=32); whole-unit
+  truncation gate computed on the common eligible-target set.
 - ADOPTED (pre-outcomes, at manifest adoption): arXiv arm DEMOTED to
   optional preserved artifact + separately-gated format diagnostic; all
   9 sentinel / 43 total core cells removed BEFORE any outcomes existed
