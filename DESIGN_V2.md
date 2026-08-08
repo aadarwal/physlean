@@ -285,9 +285,9 @@ top.
 ## 10. Pipeline, compute, and gates
 
 Extraction (CPU, login/compute nodes): Lean .ilean/LeanDojo caches on
-POOL; AST extraction for Python. Driver `eval_paired.py` (to be built,
-reusing layout.py + the evaluator's chunked-NLL core; same schema
-discipline, schema_version bump). Generation determinism: fixed seeds
+POOL; AST extraction for Python. Driver `eval_paired.py` reuses
+`layout.py` + the evaluator's chunked-NLL core under §15.A9's exact
+harness binding and schema discipline. Generation determinism: fixed seeds
 0..n−1 (n pilot-selected per §14.22, default 8), max 512 new tokens
 per sample, run to the token cap with NO stop sequences
 (decoding-level no-early-stopping); the declaration boundary is

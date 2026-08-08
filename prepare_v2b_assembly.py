@@ -17,12 +17,13 @@ re-lex-and-verify term source: every document is re-lexed with the
 frozen A6 lexer and its verbatim hash must equal the sealed near-dup
 table's), k7 (the committed §15.A8 order artifact, per-target filtered
 by target file / near-dup docs / reverse-closure docs / unit-level
-cycle-mate docs, one path-banner chunk per admitted FILE), and the
+cycle-mate docs, one path-banner chunk per admitted FILE), the
 §15.A10 k3s/k4s same-dependency-set sensitivities, and (physlib only,
 §14.20 hard gate) k4x over the §15.A13 combined physlib +
 pinned-mathlib graph with sealed-A6 cross-corpus screening. The §14.26
-k6-realistic variant is DEFERRED. Token-level assertions (§14.13/T*) belong to the scoring side per the
-frozen B6 decision. Exclusion sets are bound as counts + byte masses +
+k6-realistic variant is DEFERRED. Token-level assertions (§14.13/T*)
+belong to the scoring side per the frozen B6 decision. Exclusion sets
+are bound as counts + byte masses +
 set hashes; k5/k6 orders over the full universe are bound by
 order/score hashes with every in-budget identity recorded explicitly.
 
