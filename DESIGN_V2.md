@@ -985,8 +985,9 @@ fixtures pinned.
   from the corresponding multi-token sequence.
   COLLISION AUDIT (blind, group-sampled). Collision group = maximal
   within-corpus unit set sharing one normalized hash with >= 2
-  distinct verbatim-token hashes; a group's normalized token count
-  fixes its length band (under20 / geq20). Per (language, band):
+  distinct verbatim-token hashes; a group's FULL normalized typed-record
+  count INCLUDING layout sentinels fixes its length band (under20 / geq20),
+  distinct from the lexical-record-only Jaccard floor. Per (language, band):
   within each corpus rank groups by ascending
   SHA256(json(["a6hashgrp:v2b:20260808", <repo>, <normalized-hash>]));
   interleave corpora round-robin (ascending repo name); take up to 8
