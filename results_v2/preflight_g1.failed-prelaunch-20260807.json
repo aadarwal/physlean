@@ -1,0 +1,146 @@
+{
+ "checks": {
+  "env-imports": {
+   "ok": true,
+   "detail": {
+    "torch": "2.13.0+cu130",
+    "transformers": "5.14.1",
+    "huggingface_hub": "1.27.0",
+    "numpy": "2.5.1",
+    "scipy": "1.18.0",
+    "pandas": "3.0.5"
+   }
+  },
+  "streams-nonzero": {
+   "ok": true,
+   "detail": "all full_topo >= 500KB"
+  },
+  "budget-targets": {
+   "ok": true,
+   "detail": {
+    "full": 2400000,
+    "c2024_11": 393198,
+    "c2025_04": 291075,
+    "c2026_02": 1498325
+   }
+  },
+  "byte-match-tolerance": {
+   "ok": true,
+   "detail": {
+    "full_topo": {
+     "ok": true,
+     "worst_rel": 0.0006,
+     "spread_rel": 0.0006
+    },
+    "full_topo_s2": {
+     "ok": true,
+     "worst_rel": 0.0001,
+     "spread_rel": 0.0001
+    },
+    "clean_c2024_11": {
+     "ok": true,
+     "worst_rel": 0.0008,
+     "spread_rel": 0.0008
+    },
+    "clean_c2025_04": {
+     "ok": true,
+     "worst_rel": 0.0008,
+     "spread_rel": 0.0008
+    },
+    "clean_c2026_02": {
+     "ok": true,
+     "worst_rel": 0.0,
+     "spread_rel": 0.0
+    }
+   }
+  },
+  "clean-matched-cells": {
+   "ok": false,
+   "detail": {
+    "c2024_11": 4,
+    "c2025_04": 4,
+    "c2026_02": 2
+   }
+  },
+  "corpus-shas": {
+   "ok": true,
+   "detail": {
+    "keys": [
+     "geant4",
+     "mathlib4",
+     "physlib",
+     "qutip",
+     "sympy"
+    ],
+    "expected": [
+     "geant4",
+     "mathlib4",
+     "physlib",
+     "qutip",
+     "sympy"
+    ],
+    "gitless": [],
+    "era_presence": {
+     "old": true,
+     "new": true
+    },
+    "arxiv_rows_in_stats": [
+     "arxiv_new",
+     "arxiv_old"
+    ],
+    "arxiv_sha": "36c82e884064"
+   }
+  },
+  "stream-integrity": {
+   "ok": true,
+   "detail": "all pass"
+  },
+  "disk-headroom": {
+   "ok": false,
+   "detail": "0GB free on POOL"
+  },
+  "env-frozen": {
+   "ok": true,
+   "detail": {
+    "lock_ok": true,
+    "lock_problems": [],
+    "freeze_ok": true,
+    "freeze_detail": "environment matches freeze",
+    "env_fingerprint": "bf63eb37e2a4342f"
+   }
+  },
+  "arxiv-validated": {
+   "ok": true,
+   "detail": {
+    "expected": 265,
+    "disk_rehash_ok": true,
+    "missing": [],
+    "extra": [],
+    "hash_mismatch": [],
+    "bytes_mismatch": [],
+    "byte_only_pins": 0,
+    "ledger_bad": []
+   }
+  },
+  "corpus-worktrees": {
+   "ok": true,
+   "detail": {
+    "status": "required subset present, clean+full-history, lock-verified",
+    "extras_preserved": [
+     "ase",
+     "lean4",
+     "plasmapy",
+     "pymatgen",
+     "scipy",
+     "sunpy",
+     "yt"
+    ]
+   }
+  },
+  "streams-inputs-current": {
+   "ok": true,
+   "detail": "current"
+  }
+ },
+ "gate": "g1"
+}

@@ -1,0 +1,308 @@
+{
+ "checks": {
+  "env-imports": {
+   "ok": true,
+   "detail": {
+    "torch": "2.13.0+cu130",
+    "transformers": "5.14.1",
+    "huggingface_hub": "1.27.0",
+    "numpy": "2.5.1",
+    "scipy": "1.18.0",
+    "pandas": "3.0.5"
+   }
+  },
+  "streams-nonzero": {
+   "ok": true,
+   "detail": "all full_topo >= 500KB"
+  },
+  "budget-targets": {
+   "ok": true,
+   "detail": {
+    "full": 2400000,
+    "c2024_11": 393198,
+    "c2025_04": 291075,
+    "c2026_02": 1498325
+   }
+  },
+  "byte-match-tolerance": {
+   "ok": true,
+   "detail": {
+    "full_topo": {
+     "ok": true,
+     "worst_rel": 0.0006,
+     "spread_rel": 0.0006
+    },
+    "full_topo_s2": {
+     "ok": true,
+     "worst_rel": 0.0001,
+     "spread_rel": 0.0001
+    },
+    "clean_c2024_11": {
+     "ok": true,
+     "worst_rel": 0.0008,
+     "spread_rel": 0.0008
+    },
+    "clean_c2025_04": {
+     "ok": true,
+     "worst_rel": 0.0008,
+     "spread_rel": 0.0008
+    },
+    "clean_c2026_02": {
+     "ok": true,
+     "worst_rel": 0.0,
+     "spread_rel": 0.0
+    }
+   }
+  },
+  "clean-matched-cells": {
+   "ok": true,
+   "detail": {
+    "realized": {
+     "c2024_11": [
+      "geant4",
+      "mathlib",
+      "physlib",
+      "sympy"
+     ],
+     "c2025_04": [
+      "geant4",
+      "mathlib",
+      "physlib",
+      "sympy"
+     ],
+     "c2026_02": [
+      "mathlib",
+      "physlib"
+     ]
+    },
+    "frozen": {
+     "c2024_11": [
+      "geant4",
+      "mathlib",
+      "physlib",
+      "sympy"
+     ],
+     "c2025_04": [
+      "geant4",
+      "mathlib",
+      "physlib",
+      "sympy"
+     ],
+     "c2026_02": [
+      "mathlib",
+      "physlib"
+     ]
+    }
+   }
+  },
+  "corpus-shas": {
+   "ok": true,
+   "detail": {
+    "keys": [
+     "geant4",
+     "mathlib4",
+     "physlib",
+     "qutip",
+     "sympy"
+    ],
+    "expected": [
+     "geant4",
+     "mathlib4",
+     "physlib",
+     "qutip",
+     "sympy"
+    ],
+    "gitless": [],
+    "era_presence": {
+     "old": true,
+     "new": true
+    },
+    "arxiv_rows_in_stats": [
+     "arxiv_new",
+     "arxiv_old"
+    ],
+    "arxiv_sha": "36c82e884064"
+   }
+  },
+  "stream-integrity": {
+   "ok": true,
+   "detail": "all pass"
+  },
+  "disk-headroom": {
+   "ok": true,
+   "detail": {
+    "path": "/orcd/pool/008/aadarwal/physlean",
+    "free_gb": 775,
+    "total_gb": 1100,
+    "inodes_free": 1514011683
+   }
+  },
+  "env-frozen": {
+   "ok": true,
+   "detail": {
+    "lock_ok": true,
+    "lock_problems": [],
+    "freeze_ok": true,
+    "freeze_detail": "environment matches freeze",
+    "env_fingerprint": "bf63eb37e2a4342f"
+   }
+  },
+  "arxiv-validated": {
+   "ok": true,
+   "detail": {
+    "expected": 265,
+    "disk_rehash_ok": true,
+    "missing": [],
+    "extra": [],
+    "hash_mismatch": [],
+    "bytes_mismatch": [],
+    "byte_only_pins": 0,
+    "ledger_bad": []
+   }
+  },
+  "corpus-worktrees": {
+   "ok": true,
+   "detail": {
+    "status": "required subset present, clean+full-history, lock-verified",
+    "extras_preserved": [
+     "ase",
+     "lean4",
+     "plasmapy",
+     "pymatgen",
+     "scipy",
+     "sunpy",
+     "yt"
+    ]
+   }
+  },
+  "streams-inputs-current": {
+   "ok": true,
+   "detail": "current"
+  },
+  "arm-feasibility-frozen": {
+   "ok": true,
+   "detail": {
+    "mismatches": null,
+    "frozen": {
+     "c2024_11": {
+      "masking": [
+       "mathlib",
+       "physlib"
+      ],
+      "allnew": [
+       "geant4",
+       "mathlib",
+       "physlib",
+       "sympy"
+      ]
+     },
+     "c2025_04": {
+      "masking": [
+       "mathlib",
+       "physlib"
+      ],
+      "allnew": [
+       "geant4",
+       "mathlib",
+       "physlib",
+       "sympy"
+      ]
+     },
+     "c2026_02": {
+      "masking": [
+       "physlib"
+      ],
+      "allnew": [
+       "mathlib",
+       "physlib"
+      ]
+     }
+    },
+    "realized_rows": {
+     "c2024_11": {
+      "physlib": {
+       "masking_docs": 132,
+       "masking_bytes": 1869164,
+       "allnew_bytes": 5821822
+      },
+      "mathlib": {
+       "masking_docs": 95,
+       "masking_bytes": 739283,
+       "allnew_bytes": 28518241
+      },
+      "qutip": {
+       "masking_docs": 14,
+       "masking_bytes": 117747,
+       "allnew_bytes": 119988
+      },
+      "sympy": {
+       "masking_docs": 3,
+       "masking_bytes": 56833,
+       "allnew_bytes": 393198
+      },
+      "geant4": {
+       "masking_docs": 8,
+       "masking_bytes": 77072,
+       "allnew_bytes": 3331913
+      }
+     },
+     "c2025_04": {
+      "physlib": {
+       "masking_docs": 96,
+       "masking_bytes": 1438542,
+       "allnew_bytes": 4194613
+      },
+      "mathlib": {
+       "masking_docs": 72,
+       "masking_bytes": 524152,
+       "allnew_bytes": 17152713
+      },
+      "qutip": {
+       "masking_docs": 10,
+       "masking_bytes": 89508,
+       "allnew_bytes": 91749
+      },
+      "sympy": {
+       "masking_docs": 3,
+       "masking_bytes": 56833,
+       "allnew_bytes": 291075
+      },
+      "geant4": {
+       "masking_docs": 7,
+       "masking_bytes": 72306,
+       "allnew_bytes": 3152282
+      }
+     },
+     "c2026_02": {
+      "physlib": {
+       "masking_docs": 47,
+       "masking_bytes": 632246,
+       "allnew_bytes": 1498325
+      },
+      "mathlib": {
+       "masking_docs": 25,
+       "masking_bytes": 167496,
+       "allnew_bytes": 5000507
+      },
+      "qutip": {
+       "masking_docs": 2,
+       "masking_bytes": 8416,
+       "allnew_bytes": 8416
+      },
+      "sympy": {
+       "masking_docs": 1,
+       "masking_bytes": 3868,
+       "allnew_bytes": 54843
+      },
+      "geant4": {
+       "masking_docs": 1,
+       "masking_bytes": 7975,
+       "allnew_bytes": 130834
+      }
+     }
+    }
+   }
+  }
+ },
+ "gate": "g1"
+}
