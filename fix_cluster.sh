@@ -21,6 +21,12 @@ export CUDA_CACHE_PATH="$POOL_BASE/cuda-cache"
 # elan/Lake install lands on POOL (XDG_CACHE_HOME already covers ~/.cache)
 export ELAN_HOME="$POOL_BASE/elan"
 mkdir -p "$CUDA_CACHE_PATH" "$ELAN_HOME"
+# uv-MANAGED interpreter only (incident 19900858: a venv on the OS
+# /usr/bin/python3.12 had no Python.h on ORCD — Triton JIT failed
+# closed): only-managed makes a system interpreter structurally
+# impossible to select, and the install dir lives on POOL.
+export UV_PYTHON_INSTALL_DIR="${UV_PYTHON_INSTALL_DIR:-$POOL_BASE/uv-python}"
+export UV_PYTHON_PREFERENCE=only-managed
 # hf-xet (in the lock) is the current transfer backend; the deprecated
 # hf_transfer flag is gone (review fix)
 export HF_XET_HIGH_PERFORMANCE=1
@@ -39,8 +45,55 @@ echo "=== [fix 2/6] env (lock-synced; install must succeed) ==="
 # (review fix: unpinned torch made reruns silently change the
 # measurement environment). The '# python==' contract line is a
 # comment, so uv/pip consume the same file provenance verifies.
-[ -d .venv ] || "$HOME/.local/bin/uv" venv --python 3.12.13 .venv \
+# fail-closed venv identity: an EXISTING venv must sit on the managed
+# interpreter WITH headers; a wrong-base venv (the incident state)
+# refuses and requires the explicit migration flag REBUILD_VENV=1
+# (quarantines the old venv) — never a silent rebuild. Idempotent:
+# a healthy managed venv passes untouched on every rerun.
+# idempotent managed-interpreter install; --no-bin is REQUIRED — without
+# it uv symlinks ~/.local/bin/python3.12 into HOME, which sits at ~98%
+# FILE quota (observed on the probe install). The exact executable is
+# then resolved and passed to uv venv — never a bare version string.
+"$HOME/.local/bin/uv" python install 3.12.13 --no-bin \
+  --install-dir "$UV_PYTHON_INSTALL_DIR" \
+  || { echo "MANAGED-PYTHON-INSTALL-FAILED"; exit 1; }
+PYBIN="$("$HOME/.local/bin/uv" python find --managed-python 3.12.13)" \
+  || { echo "MANAGED-PYTHON-FIND-FAILED"; exit 1; }
+echo "[venv] managed interpreter: $PYBIN"
+VENV_ID='import os, sys, sysconfig
+base = os.path.realpath(getattr(sys, "_base_executable", None)
+                        or sys.executable)
+inc = sysconfig.get_config_var("INCLUDEPY") or ""
+hdr = os.path.exists(os.path.join(inc, "Python.h"))
+mdir = os.environ.get("UV_PYTHON_INSTALL_DIR")
+try:  # realpath+commonpath containment (audit fix: string startswith
+    # is spoofable by sibling paths like .../uv-python-evil)
+    mng = bool(mdir) and os.path.commonpath(
+        [os.path.realpath(mdir), base]) == os.path.realpath(mdir)
+except ValueError:
+    mng = False
+print(f"[venv-id] base={base}")
+print(f"[venv-id] headers={hdr} ({inc})")
+print(f"[venv-id] managed={mng}")
+sys.exit(0 if (hdr and mng) else 1)'
+if [ -d .venv ]; then
+  if ! .venv/bin/python -c "$VENV_ID"; then
+    if [ "${REBUILD_VENV:-0}" = "1" ]; then
+      TS="$(date +%Y%m%d-%H%M%S)-$$"   # pid-suffixed: same-second safe
+      mv .venv ".venv.quarantine-$TS"
+      echo "[REBUILD_VENV] old venv -> .venv.quarantine-$TS"
+    else
+      echo "[VENV-BASE-INVALID] existing venv is not on the managed"
+      echo "interpreter with headers; rerun with REBUILD_VENV=1 (the"
+      echo "fingerprint change also needs REFREEZE=1) to migrate"
+      exit 1
+    fi
+  fi
+fi
+[ -d .venv ] || "$HOME/.local/bin/uv" venv --python "$PYBIN" .venv \
   || { echo "VENV-CREATE-FAILED"; exit 1; }
+# post-create identity assert: headers + managed base, BEFORE any sync
+.venv/bin/python -c "$VENV_ID" || { echo "VENV-IDENTITY-FAILED"; exit 1; }
 # --strict: the venv must equal the lock EXACTLY (extras removed).
 # torch's CUDA build is fingerprint-gated (torch-cuda line in the
 # canonical text), so a wrong-backend wheel fails closed downstream; if
@@ -57,10 +110,11 @@ assert ok, probs[:8]
 print("environment matches requirements-cluster.lock (66 pins + python)")
 PYEOF
 # WRITE-ONCE software-only freeze (PREREG §4): the canonical SOFTWARE
-# identity (python runtime + torch CUDA build + every distribution; no
-# hardware) is frozen at first success; any later mismatch REFUSES (the
-# freeze is evidence, not a scratchpad). REFREEZE=1 quarantines the old
-# freeze and writes anew — an explicit, logged act.
+# identity (python runtime + resolved interpreter BINARY hash + torch
+# CUDA build + every distribution; no hardware) is frozen at first
+# success; any later mismatch REFUSES (the freeze is evidence, not a
+# scratchpad). REFREEZE=1 quarantines the old freeze and writes anew —
+# an explicit, logged act.
 mkdir -p results_v2/env
 FREEZE=results_v2/env/freeze-cluster.txt
 .venv/bin/python -c "import sys, os; sys.path.insert(0, os.getcwd());

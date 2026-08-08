@@ -138,6 +138,30 @@ def test_arxiv_scan_era_qualified():
             "NESTED:old/sub/c.tex", "new/b"]              # extras
 
 
+def test_topo_edges_counted_and_import_all_resolved():
+    """topo_order returns the resolved intra-corpus edge count (recorded
+    in streams_stats — an import-sparse corpus must be VISIBLE), and the
+    Lean parser resolves `import all Foo` (>= 4.9 syntax) like a plain
+    import. With zero edges the order is index order — production
+    indices follow the collect-time rel-path sort, i.e. LEXICOGRAPHIC
+    path order, the disclosed physlib degradation (PREREG §2)."""
+    from prep_streams import LEAN_IMPORT, topo_order
+    assert LEAN_IMPORT.findall("import all A.B\nimport C\n") == ["A.B",
+                                                                 "C"]
+    assert LEAN_IMPORT.findall("  import X\n-- import Y\n") == []
+    cfg = dict(lang="lean", exts=[".lean"])
+    mk = lambda rel, text: dict(rel=rel, text=text, bytes=len(text),
+                                date=None)
+    files = [mk("A.lean", ""), mk("B.lean", "import A\n"),
+             mk("C.lean", "import all B\n")]
+    order, cyc, edges = topo_order(files, cfg)
+    assert (order, cyc, edges) == ([0, 1, 2], 0, 2)
+    # zero-edge corpus: pure index (= collect-time lexicographic) order
+    order2, cyc2, edges2 = topo_order(
+        [mk("Z.lean", ""), mk("A.lean", ""), mk("M.lean", "")], cfg)
+    assert (order2, cyc2, edges2) == ([0, 1, 2], 0, 0)
+
+
 def test_cell_done_trust_boundary():
     """The resume/analyzer trust boundary: accept one fully valid tiny
     artifact, then reject (a) one-byte dump tampering, (b) a changed

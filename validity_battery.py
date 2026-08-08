@@ -362,6 +362,25 @@ def trunc_bytes(s, nbytes):
     return b.decode("utf-8", errors="ignore")
 
 
+# item E designated corpus (PREREG §7/§13 amendment): the pinned
+# physlib snapshot exposes only 8 source import directives across 538
+# files (QuantumInfo 0; `import all` support still yields zero eligible)
+# — its dependency graph lives at the ELABORATED level and is reserved
+# for the V2-a extractor. The identical parser on pinned mathlib finds
+# 81 eligible files, so mathlib is the designated LITE-E corpus. E is
+# MACHINERY VALIDATION ONLY: not physlib evidence, not the V2-b
+# grounding pilot (DESIGN_V2 §9). Floor = E's own sample size — the
+# smallest non-vacuous value, fixed structurally, not outcome-driven: a
+# run that cannot FILL its sample fails closed, never silently shrinks.
+E_CORPUS = "mathlib"
+E_REPO_DIR = "mathlib4"
+E_SCAN_DIR = "Mathlib"
+E_SAMPLE = 8
+E_MIN_ELIGIBLE = E_SAMPLE
+# `import all Foo` (Lean >= 4.9) resolves the same module dependency
+E_IMPORT_RE = re.compile(r"^import\s+(?:all\s+)?([A-Za-z0-9_.]+)", re.M)
+
+
 def item_E(model, tok, device, res):
     """Dependency vs equal-BYTE random context, scored on the
     POST-FIRST-DECLARATION SUFFIX of each target file (the accurate name:
@@ -370,11 +389,19 @@ def item_E(model, tok, device, res):
     seeded-sampled from all eligible files; random context is drawn
     WITHOUT replacement from eligible non-target/non-dependency files
     (with-replacement could duplicate files, which dependency context
-    cannot — review fix), and insufficiency is recorded, never padded."""
-    imp = re.compile(r"^import\s+([A-Za-z0-9_.]+)", re.M)
-    root = os.path.join(BASE, "corpora/physlib")
+    cannot — review fix), and insufficiency is recorded, never padded.
+    Runs on the DESIGNATED corpus with a non-vacuous eligibility floor
+    AND exact realized-row gating (see E_CORPUS block above): an
+    empty/thin/under-filled E raises. Pool sufficiency is judged
+    against the bytes ACTUALLY SHOWN — min(dep bytes, 16KB cap) — not
+    the full closure (review fix: full-closure sufficiency skipped
+    targets over pool bytes the arm never uses, a latent
+    closure-size-correlated selection bias). E is MACHINERY VALIDATION
+    ONLY — never physlib evidence, never the V2-b grounding pilot."""
+    imp = E_IMPORT_RE
+    root = os.path.join(BASE, "corpora", E_REPO_DIR)
     mods = {}
-    for dp, _, ns in os.walk(os.path.join(root, "Physlib")):
+    for dp, _, ns in os.walk(os.path.join(root, E_SCAN_DIR)):
         for n in ns:
             if n.endswith(".lean"):
                 p = os.path.join(dp, n)
@@ -390,8 +417,18 @@ def item_E(model, tok, device, res):
         if len(deps) >= 2 and m and 4000 < len(text.encode()) < 20000:
             eligible.append((p, deps, text[m.start():]))
     rng.shuffle(eligible)          # seeded target sampling, not lexicographic
-    pairs = eligible[:8]
-    res.setdefault("E_meta", {})["n_eligible_targets"] = len(eligible)
+    pairs = eligible[:E_SAMPLE]
+    res.setdefault("E_meta", {}).update(
+        corpus=E_CORPUS, scan_root=E_SCAN_DIR, parser=imp.pattern,
+        n_files_scanned=len(mods), n_eligible_targets=len(eligible),
+        eligibility_floor=E_MIN_ELIGIBLE,
+        scope=("machinery validation only — not physlib evidence, not "
+               "the V2-b grounding pilot (DESIGN_V2 §9)"))
+    if len(eligible) < E_MIN_ELIGIBLE:
+        raise RuntimeError(
+            f"item E: {len(eligible)} eligible targets on {E_CORPUS} < "
+            f"floor {E_MIN_ELIGIBLE} — an empty/thin E must fail, never "
+            "pass vacuously")
     rows = []
     skipped = []
     MAX_CTX_TOK = 8192
@@ -400,12 +437,15 @@ def item_E(model, tok, device, res):
         pool = [q for q in allpaths if q != p and q not in deps]
         rng.shuffle(pool)          # WITHOUT replacement
         rand_full = ""
-        need = len(dep_full.encode()) + 40000
+        # sufficiency vs bytes ACTUALLY SHOWN (min of closure and the
+        # 16KB cap), never the full closure (review fix — see docstring)
+        shown = min(len(dep_full.encode()), 16000)
+        need = shown + 40000       # margin for the truncation loop
         for q in pool:
             if len(rand_full.encode()) >= need:
                 break
             rand_full += open(q, encoding="utf-8").read()
-        if len(rand_full.encode()) < len(dep_full.encode()):
+        if len(rand_full.encode()) < shown:
             skipped.append(os.path.basename(p))
             continue
         # adaptive equal-BYTE cap: shrink until BOTH tokenize within the
@@ -432,10 +472,16 @@ def item_E(model, tok, device, res):
         rows.append(row)
     adv = sum(1 for r in rows if r["dep"] < r["rand"])
     res["E_dep_vs_random_context"] = dict(
-        rows=rows, dep_wins=adv, n=len(rows),
+        corpus=E_CORPUS, rows=rows, dep_wins=adv, n=len(rows),
         skipped_insufficient_pool=skipped,
         mean_delta_nats=float(sum(r["rand"] - r["dep"] for r in rows)
                               / max(len(rows), 1)))
+    if len(rows) < E_SAMPLE:
+        # exact realized-row gating (review fix: skips could shrink a
+        # "passing" E below its sample — the 0-row masquerade at n=1)
+        raise RuntimeError(
+            f"item E: only {len(rows)}/{E_SAMPLE} realized rows "
+            f"(skipped: {skipped}) — an under-filled E must fail")
     LOG("E:", res["E_dep_vs_random_context"]["mean_delta_nats"],
         f"dep wins {adv}/{len(rows)}")
 

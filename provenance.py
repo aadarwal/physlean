@@ -35,13 +35,37 @@ def _canon_name(name):
     return re.sub(r"[-_.]+", "-", name).lower()  # PEP 503 normalization
 
 
+def python_binary_hash():
+    """sha256 (chunked) of the RESOLVED base interpreter binary (through
+    the venv symlink to the real file). The version string alone cannot
+    separate two builds of '3.12.13' — the ORCD incident was exactly
+    that: an OS interpreter without headers and a uv-managed one with
+    them, indistinguishable at 'python==3.12.13'. An unreadable binary
+    RAISES (audit fix: a sentinel value could be frozen into the record
+    and would then match itself — fail-open; raising fails every
+    consumer closed instead)."""
+    import sys
+    base = os.path.realpath(getattr(sys, "_base_executable", None)
+                            or sys.executable)
+    h = hashlib.sha256()
+    try:
+        with open(base, "rb") as f:
+            for chunk in iter(lambda: f.read(1 << 20), b""):
+                h.update(chunk)
+    except OSError as e:
+        raise RuntimeError(
+            f"cannot hash interpreter binary {base!r}: {e}") from e
+    return h.hexdigest()
+
+
 def env_canonical():
-    """Canonical software-environment text: python runtime + torch CUDA
-    BUILD + every installed distribution as sorted 'name==version'
-    lines (tokenizers included by construction). GPU model and driver
-    are EXCLUDED by frozen decision: mixed L40S/H200 grids are by
-    design and the battery overlap item is the cross-hardware
-    instrument — hardware is recorded informationally, never gated."""
+    """Canonical software-environment text: python runtime + resolved
+    interpreter BINARY hash + torch CUDA BUILD + every installed
+    distribution as sorted 'name==version' lines (tokenizers included
+    by construction). GPU model and driver are EXCLUDED by frozen
+    decision: mixed L40S/H200 grids are by design and the battery
+    overlap item is the cross-hardware instrument — hardware is
+    recorded informationally, never gated."""
     import platform
     try:
         import torch
@@ -53,6 +77,7 @@ def env_canonical():
                     for d in metadata.distributions()
                     if d.metadata["Name"]})
     lines = [f"python=={platform.python_version()}",
+             f"python-binary=={python_binary_hash()}",
              f"torch-cuda=={cuda_build or 'none'}"] + dists
     return "\n".join(lines) + "\n"
 

@@ -573,6 +573,18 @@ def gate_common_science():
                        and b.get("env_fingerprint") == env_fingerprint()
                        and b.get("identities_unchanged_during_run")
                        is True)
+        # item E must be NON-VACUOUS on its designated corpus (PREREG
+        # §7/§13: physlib source-imports structurally infeasible — an
+        # empty E once reached the gate as n_eligible_targets=0; the
+        # expected values are PINNED here, never read from the evidence)
+        e_meta = b.get("E_meta") or {}
+        e_res = b.get("E_dep_vs_random_context") or {}
+        e_ok = (e_meta.get("corpus") == "mathlib"
+                and e_res.get("corpus") == "mathlib"
+                and e_meta.get("eligibility_floor") == 8
+                and (e_meta.get("n_eligible_targets") or 0) >= 8
+                and e_res.get("n") == 8  # exact realized rows, no skips
+                and e_res.get("skipped_insufficient_pool") == [])
         mj = json.load(open(os.path.join(BASE, "models.json"))) \
             if os.path.exists(os.path.join(BASE, "models.json")) else {}
         BATTERY_SET = {"Qwen/Qwen2.5-Coder-0.5B", "Qwen/Qwen3-0.6B-Base",
@@ -590,7 +602,7 @@ def gate_common_science():
               and zr.get("conservation_ok", False)
               and b.get("device") == "cuda"
               and b.get("gate_eligible") is True
-              and src_match and rev_match and ident_match,
+              and src_match and rev_match and ident_match and e_ok,
               dict(errors=errs, plumbing_pass=b.get("plumbing_pass"),
                    chunk_worst_delta=a.get("mean_abs_delta_nats"),
                    class_ok=a.get("all_class_ok"),
@@ -598,7 +610,10 @@ def gate_common_science():
                    device=b.get("device"),
                    source_tree_match=src_match,
                    revisions_match=rev_match,
-                   harness_env_match=ident_match))
+                   harness_env_match=ident_match,
+                   e_designated_nonvacuous=e_ok,
+                   e_corpus=e_meta.get("corpus"),
+                   e_eligible=e_meta.get("n_eligible_targets")))
     except Exception as e:
         check("battery-plumbing", False, f"battery.json unreadable: {e!r}")
 

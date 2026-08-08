@@ -59,7 +59,9 @@ CORPORA = {
     "arxiv_new": dict(repo="arxiv",    dirs=["new"],     exts=[".tex"],  lang="latex", dated_by="manifest"),
 }
 
-LEAN_IMPORT = re.compile(r"^import\s+([A-Za-z0-9_.À-￿]+)", re.M)
+# `import all Foo` (Lean >= 4.9 private-imports syntax) resolves to the
+# same module dependency (review fix: the plain form missed it)
+LEAN_IMPORT = re.compile(r"^import\s+(?:all\s+)?([A-Za-z0-9_.À-￿]+)", re.M)
 PY_IMPORT = re.compile(r"^\s*(?:from\s+([\w.]+)\s+import|import\s+([\w.]+))", re.M)
 CPP_INCLUDE = re.compile(r'^\s*#\s*include\s+"([^"]+)"', re.M)
 
@@ -224,10 +226,17 @@ def imports_of(text, cfg):
 
 
 def topo_order(files, cfg):
+    """Returns (order, n_cycle_nodes, n_edges). n_edges is the RESOLVED
+    intra-corpus dependency-edge count — recorded in streams_stats so an
+    import-sparse corpus is visible in the record: with ~zero edges,
+    Kahn's min-heap pops indices in file-sort order, i.e. the 'topo'
+    order degrades to LEXICOGRAPHIC PATH ORDER (physlib: 8 source
+    import directives / 538 files — its order ablation cannot be
+    interpreted like mathlib's; PREREG §2/§13)."""
     import heapq
     if cfg["lang"] == "latex":  # chronological (submission date)
         return sorted(range(len(files)),
-                      key=lambda i: files[i]["date"] or ""), 0
+                      key=lambda i: files[i]["date"] or ""), 0, 0
     if cfg["lang"] == "cpp":    # includes resolve by basename
         key2idx = {}
         for i, f in enumerate(files):
@@ -264,7 +273,7 @@ def topo_order(files, cfg):
                 heapq.heappush(heap, v)
     cyc = [i for i in range(len(files)) if i not in seen]
     order.extend(cyc)
-    return order, len(cyc)
+    return order, len(cyc), sum(len(v) for v in adj.values())
 
 
 SELECT_SEED = 20260808
@@ -331,10 +340,10 @@ def emit_stream(name, kind, files, idxs):
 
 
 def build(name, cfg, files, targets):
-    order, n_cyc = topo_order(files, cfg)
+    order, n_cyc, n_edges = topo_order(files, cfg)
     stats = dict(corpus=name, lang=cfg["lang"], n_files=len(files),
                  total_bytes=sum(f["bytes"] for f in files), cycles=n_cyc,
-                 streams={})
+                 dependency_edges=n_edges, streams={})
     if name in OPTIONAL_CORPORA:
         # optional diagnostic corpus: ONE self-budgeted stream, always
         # unmatched — no clean/shuffled/s2/XL, no target_delta, and by

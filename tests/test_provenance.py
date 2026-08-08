@@ -29,21 +29,38 @@ def test_harness_set_is_frozen_and_content_hashed():
 
 
 def test_env_canonical_shape_and_determinism():
-    """Canonical text: python runtime line, torch-cuda build line, then
-    sorted name==version lines for every installed distribution —
-    tokenizers-class packages are covered by construction, hardware
-    never appears."""
+    """Canonical text: python runtime line, resolved interpreter BINARY
+    hash line, torch-cuda build line, then sorted name==version lines
+    for every installed distribution — tokenizers-class packages are
+    covered by construction, hardware never appears."""
     text = env_canonical()
     lines = text.splitlines()
     assert lines[0].startswith("python==")
-    assert lines[1].startswith("torch-cuda==")
-    dists = lines[2:]
+    assert lines[1].startswith("python-binary==")
+    assert lines[2].startswith("torch-cuda==")
+    dists = lines[3:]
     assert dists == sorted(dists) and len(dists) == len(set(dists))
     assert all("==" in l for l in dists)
     assert not any(l.lower().startswith(("gpu", "driver", "nvidia-smi"))
                    for l in lines)
     assert text == env_canonical()  # deterministic
     assert env_fingerprint() == hashlib.sha256(text.encode()).hexdigest()
+
+
+def test_python_binary_hash_tracks_real_interpreter():
+    """The python-binary line is the sha256 of the RESOLVED base
+    interpreter binary (incident 19900858: two '3.12.13' builds — OS
+    without headers, managed with — were indistinguishable by version
+    string; the binary hash separates them). Verified independently
+    against the file on disk."""
+    import sys
+    from provenance import python_binary_hash
+    h = python_binary_hash()
+    base = os.path.realpath(getattr(sys, "_base_executable", None)
+                            or sys.executable)
+    want = hashlib.sha256(open(base, "rb").read()).hexdigest()
+    assert h == want and len(h) == 64
+    assert f"python-binary=={h}" in env_canonical().splitlines()[1]
 
 
 def test_lock_contract_matches_committed_lock():
@@ -107,6 +124,22 @@ def test_freeze_matching_is_exact():
             "python==", "python==9.", 1))
         ok, detail = env_matches_freeze(p)
         assert ok is False and detail["only_in_freeze"]
+
+
+def test_item_E_designation_frozen():
+    """Item E's designated corpus, floor, and parser are FROZEN (PREREG
+    §7/§13): mathlib lite-E with floor == its own sample size (8) —
+    empty/thin E fails, never passes vacuously — and the import parser
+    resolves `import all` while never matching indented/commented
+    lines."""
+    from validity_battery import (E_CORPUS, E_IMPORT_RE, E_MIN_ELIGIBLE,
+                                  E_REPO_DIR, E_SAMPLE, E_SCAN_DIR)
+    assert (E_CORPUS, E_REPO_DIR, E_SCAN_DIR) == \
+        ("mathlib", "mathlib4", "Mathlib")
+    assert E_SAMPLE == 8 and E_MIN_ELIGIBLE == E_SAMPLE
+    assert E_IMPORT_RE.findall("import all Foo.Bar\nimport Baz\n") \
+        == ["Foo.Bar", "Baz"]
+    assert E_IMPORT_RE.findall("  import X\n-- import Y\n") == []
 
 
 def test_battery_identity_drift_detection():

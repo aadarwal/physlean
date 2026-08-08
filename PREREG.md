@@ -90,8 +90,9 @@ historical arm's "extant at submission" reading exact for every file
 except the documented v4 case above.
 batteries and astropy are staged now and enter as v2 corpora at G3.5;
 a second C++ repo (e.g. LAMMPS) is DEFERRED and currently unstaged. Until
-multi-repo cells exist, all corpus-level claims are labeled single-repo. Known artifact confound: Lean cells are theorem/proof corpora,
-Python cells executable libraries; domain-matched, not artifact-matched.
+multi-repo cells exist, all corpus-level claims are labeled single-repo.
+Known artifact confound: Lean cells are theorem/proof corpora, Python
+cells executable libraries; domain-matched, not artifact-matched.
 
 Budgets: byte-matched across corpora within each stream kind (min
 available, cap 2.4MB) via ONE corpus-independent selection policy —
@@ -103,7 +104,16 @@ every-kth stride made sampling POLICY a function of corpus size —
 mathlib at ~1/40 vs QuTiP near-complete — a corpus-dependent bias
 invisible to byte tolerance; review fix.) Stated limitation: sampled
 corpora have INCOMPLETE dependency closures by construction; the topo
-order orders the selected set only. Corpus-sampling sensitivity is a
+order orders the selected set only. Second stated limitation (§13
+amendment): topo ordering resolves SOURCE-LEVEL imports, and streams
+record their resolved `dependency_edges` count — physlib exposes only
+8 source import directives across 538 files, so with ~zero edges
+Kahn's min-heap pops file-sort indices and physlib's `full_topo`
+degrades to mostly LEXICOGRAPHIC PATH ORDER (selection stays seeded;
+the ORDER does not). Its order ablation (`full_topo` vs
+`full_shuffled`) therefore compares two nearly-arbitrary orders and
+CANNOT be interpreted like mathlib's richly-constrained one; a null
+physlib order effect must never be read as "order doesn't matter". Corpus-sampling sensitivity is a
 sentinel item: `full_topo_s2` re-runs the same rule under a second seed.
 Streams: `full_topo` (headline), `full_shuffled` (order ablation, same
 selected set), `full_topo_s2` (sampling sensitivity), `full_topo_xl`
@@ -166,10 +176,12 @@ exactly eval_incontext.py + layout.py, the files whose code determines
 dump content given identical inputs (orchestration and provenance
 plumbing are deliberately excluded: their changes cannot alter measured
 bytes and gates always execute from current code) — and (b) the
-canonical SOFTWARE-ENVIRONMENT FINGERPRINT: python runtime + torch CUDA
-build + every installed distribution as sorted name==version lines (one
-shared implementation in provenance.py used by the evaluator,
-cell_done, the battery, and preflight). A production eval (non-dev,
+canonical SOFTWARE-ENVIRONMENT FINGERPRINT: python runtime + the sha256
+of the RESOLVED base interpreter binary (two builds of the same version
+string are different environments — see the §13 Triton incident) +
+torch CUDA build + every installed distribution as sorted name==version
+lines (one shared implementation in provenance.py used by the
+evaluator, cell_done, the battery, and preflight). A production eval (non-dev,
 non-random-init, any device) REFUSES before model load unless the live
 environment equals both the committed wheel lock
 (requirements-cluster.lock, python contract included) and the
@@ -345,6 +357,19 @@ scientific outcomes reported against predeclared relative expectations
 collapse by ≥ 5x vs copy 1; E: direction reported, no threshold) — surprises
 there inform interpretation and the G3.5 design, and only a plumbing-level
 anomaly (e.g. NLL non-conservation) blocks.
+**Item E designated corpus = mathlib (amendment, §13)**: the pinned
+physlib snapshot exposes only 8 source import directives across 538
+files (QuantumInfo 0; `import all` support still yields zero eligible)
+— its dependency graph lives at the ELABORATED level and is reserved
+for the V2-a extractor. The identical parser on pinned mathlib finds
+81 eligible files under the unchanged criteria (>= 2 internal imports,
+declaration present, 4-20KB). E carries a NON-VACUOUS eligibility
+floor equal to its own sample size (8) — the smallest structurally
+defensible value, fixed before any E outcome existed — and fails
+closed below it; battery.json records corpus/parser/counts and
+preflight rejects an empty or wrong-corpus E. SCOPE: E is machinery
+validation only — it is not physlib evidence and not the §9/V2-b
+grounding pilot.
 
 Big-gate extension (planned; the `big` preflight FAILS CLOSED until it
 exists and passes): a battery `--big` mode running (1) the DeepSeek-
@@ -385,9 +410,12 @@ implementations (lean-zip vs zlib; FormalScience pairs); within-Lean
 formality ablations; blame-hunk clean targets; hierarchical multi-repo
 models. This is the confirmatory experiment; the G3
 sweep is its motivation section. Per review: the full design doc is written
-and reviewed at **G2.5, before G3 submission**, and the battery includes a
-minimal paired-target pilot probe (item E) so the design is grounded in
-measured behavior rather than speculation.
+and reviewed at **G2.5, before G3 submission**. The battery's item E is
+MACHINERY VALIDATION ONLY of the paired-context measurement path (on
+its designated corpus, §7) — it does not ground this design; the
+paired grounding pilot is V2-b (DESIGN_V2 §9/§14.22), whose blinded
+nuisance estimates set N and n. (Earlier wording calling item E the
+grounding probe is superseded; the §13 log retains it historically.)
 
 Falsifiers / decision rules (preregistered):
 - NLL-as-proxy is REJECTED if paired context gains fail to predict
@@ -509,6 +537,66 @@ arxiv_manifest) must be committed before measurement.
   external-mathlib (lake-manifest-pinned revision) hard interpretation
   gate. The k1-vs-k3 inconsistency in DESIGN_V2 §3/§8 is resolved to
   k4 (matching E1a and the §14.2 map).
+- ADOPTED (item-E infeasibility + transparency, before any E outcome —
+  E aborted at eligibility determination): the pinned physlib snapshot
+  has 8 source import directives / 538 files (QuantumInfo 0; only two
+  files with any internal direct import, max one; optional
+  `import all` support still yields zero eligible), so lite E is
+  STRUCTURALLY infeasible on physlib. Adopted: (a) designated E corpus
+  = mathlib (81 eligible under unchanged criteria; the unique
+  alternative Lean corpus — a forced feasibility switch, not corpus
+  shopping); (b) non-vacuous floor = E's sample size (8), fail-closed
+  in the battery AND pinned in preflight (corpus, floor, counts all
+  gated; an empty E once reached the gate); (c) E scoped as machinery
+  validation only — not physlib evidence, not the §9/V2-b grounding
+  pilot; (d) physlib dependency structure reserved for the ELABORATED
+  V2-a extractor, which this finding validates as the load-bearing
+  instrument (§2's regex-imports-as-coarse-baseline stands); (e) Lean
+  import parser extended for `import all` (prep + battery); (f)
+  streams_stats records per-corpus resolved dependency_edges, and §2
+  discloses that physlib's full_topo order degrades to lexicographic
+  path order — its order ablation is not interpretable like mathlib's;
+  (g) second-pass audit: EXACT realized-row gating (an E with skips
+  could pass under-filled — the 0-row masquerade at n=1; battery
+  raises below E_SAMPLE rows and preflight pins n==8 with an empty
+  skip list), pool sufficiency judged against bytes ACTUALLY SHOWN
+  (min(closure, 16KB cap), not the full closure — full-closure
+  sufficiency was a latent closure-size-correlated selection bias),
+  and the live §9 sentence calling item E the design-grounding probe
+  corrected (V2-b is the grounding pilot; machinery-only scope). The
+  realized 81-eligible count is VERIFIED documentary-exact by a
+  read-only scan of the pinned mathlib snapshot: zero indented import
+  lines; every ^import...import candidate is one prose line or a
+  normal import whose trailing comment contains the word "import" —
+  never a second command; `import all` occurs and the amended parser
+  resolves it (nothing gated depends on the 81 — gates pin corpus,
+  floor, eligibility, and exact rows).
+  Grid counts, floors, and the measurement harness unchanged. Note:
+  `import all` is CONFIRMED present in the pinned mathlib snapshot, so
+  the parser fix WILL alter mathlib topo edges and stream content at
+  the next re-prep; deterministic re-prep at the next fix_cluster
+  run re-locks stream identity, and no accepted cell predates it.
+- ADOPTED (incident + amendment, before any accepted battery item or
+  grid cell): battery job 19900858 FAILED CLOSED at its first Triton
+  JIT compile — the venv was built on the OS /usr/bin/python3.12,
+  whose headers (/usr/include/python3.12) do not exist on ORCD
+  compute images. Fix adopted, A-over-B (header/CPATH injection
+  REJECTED: it marries one build's binary to another build's
+  pyconfig.h and leaves the interpreter silently OS-mutable): venv
+  rebuilt on a uv-MANAGED CPython 3.12.13 on POOL;
+  UV_PYTHON_PREFERENCE=only-managed + UV_PYTHON_INSTALL_DIR make a
+  system interpreter structurally unselectable; fix_cluster verifies
+  venv identity (managed base + Python.h via INCLUDEPY) fail-closed
+  and idempotently, with migration requiring EXPLICIT REBUILD_VENV=1
+  (old venv quarantined) alongside the existing REFREEZE=1. The
+  environment fingerprint gains a python-binary line (sha256 of the
+  resolved base interpreter binary) — the incident showed two builds
+  of '3.12.13' are different environments invisible to the version
+  string. Composition change only: no MEASUREMENT_SCHEMA_VERSION bump
+  (meta still carries one fingerprint hash), no accepted artifact
+  predates it, the measurement harness (eval_incontext.py, layout.py)
+  is untouched, and Triton is never disabled (that would change the
+  kernel execution path and the measurement numerics).
 - ADOPTED (at the first G1 run on the cluster, before any battery/grid
   outcome): arm-feasibility amendment. Realized feasibility
   (deterministic dates/bytes; prior engineering smokes remain disclosed
@@ -621,6 +709,7 @@ arxiv_manifest) must be committed before measurement.
 
 Model-relative estimand; single repo per cell (until G4+); proofs-vs-
 software artifact confound; contiguous-stream packing is not dependency
-closure; window position/content confound (DIAGNOSED, not eliminated, by the same-group phase pairs; shuffles probe order, not position);
+closure; window position/content confound (DIAGNOSED, not eliminated,
+by the same-group phase pairs; shuffles probe order, not position);
 git dates bound only in-repo publication; exact-reference NLL misses
 set-valued correctness (v2 pass@k arm); Phase 2 budgets are fixed-D.
