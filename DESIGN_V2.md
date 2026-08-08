@@ -380,6 +380,23 @@ Imported-package context is a later sensitivity — and for physlib,
 whose mathematical spine is mathlib (external), that sensitivity is
 expected to be LOAD-BEARING for any physlib-vs-mathlib E1b reading;
 recorded here so no one is surprised at analysis time.
+  LEAN SOURCE-RENDERABILITY (amended 2026-08-08, PRE-OUTCOME): a
+  referenced constant with no declaration span first folds through an
+  explicit length-5 .ilean parentDecl. For a parentless length-4
+  definition location, it folds ONLY to the UNIQUE SMALLEST source
+  declaration span enclosing that definition range; ambiguity or no
+  enclosure remains recorded-unrenderable. This is geometric source
+  provenance, not a name heuristic. The independent Lean-4.32 core
+  machinery audit (2,433 modules; not a study corpus outcome) found
+  110,224/123,621 residue occurrences position-recoverable with ZERO
+  ambiguous smallest spans; the implemented full-tree replay reached
+  98.34% occurrence-weighted renderability, leaving 13,239 occurrences
+  explicit. Per-target internal renderability counts/coverage and
+  name-prefix-agreement diagnostics are always reported. Coverage is a
+  diagnostic covariate/stratum, NEVER a target-eligibility gate: gating
+  would structurally select against projection-/proof-heavy targets.
+  Coverage-floor analyses, if shown, are labeled sensitivities and do
+  not replace the full frozen target population.
 
 14.4 Python closures: declaration-level static name/import edges where
 resolvable; module-level fallback recorded with a per-target COVERAGE
@@ -422,6 +439,20 @@ universe.
 14.9 Common prefix = only the syntactically ACTIVE shell + the exact
 target header; all prompt overhead is separately recorded; appending the
 original body must round-trip byte-exactly in validation.
+  DOCSTRING ASYMMETRY (amended 2026-08-08, PRE-OUTCOME, PREREG §13):
+  the two languages place documentation on OPPOSITE sides of the
+  header/body split. A Python docstring is a literal expression INSIDE
+  the function suite, so its bytes remain in the SCORED BODY; a Lean
+  doc comment (/-- ... -/) precedes the declaration and lands in the
+  unscored shell/header side. Consequences, frozen: (a) the Python
+  extractor records a docstring_bytes diagnostic per target;
+  (b) any analysis touching body size or body NLL across languages
+  MUST stratify by (or explicitly condition on) docstring_bytes —
+  naive cross-language body-size or per-byte comparisons are FORBIDDEN
+  as confounded by documentation placement, not model capability;
+  (c) docstring bytes are NOT stripped from the scored body — the
+  round-trip byte-exactness rule above stays primary, and stripping
+  would silently change the scored object.
 
 14.10 lean-zip/zlib acquisition is DEFERRED to an explicit V2
 security-pair gate after the core extraction pilot; the G1 repo set is
@@ -516,11 +547,28 @@ rename-variant near-duplicates are acknowledged as residually
 uncontrolled below the floor.
 
 14.19 DETERMINISTIC TARGET SAMPLING: within each §2 stratum, targets
-are ranked by SHA256("v2a:20260808:<repo>:<fully-qualified-name>") and
-quotas filled in ascending priority order — corpus-size-independent,
-rerun-stable, and blind to outcomes (same discipline as the G3
-seeded-priority selection). Under-filled strata are recorded and never
-rebalanced after any data peek.
+are ranked by a seeded priority key and quotas filled in ascending
+priority order — corpus-size-independent, rerun-stable, and blind to
+outcomes (same discipline as the G3 seeded-priority selection).
+Under-filled strata are recorded and never rebalanced after any data
+peek.
+  PRIORITY KEY (amended 2026-08-08, PRE-OUTCOME — before any committed
+  extraction or pilot sample existed; PREREG §13): the target identity
+  is MODULE-QUALIFIED. Fully-elaborated Lean names are unique per
+  ENVIRONMENT, not per source tree — the live compiler-source stress
+  run hit `main` defined in both LakeMain and LeanChecker — so a bare
+  name does not identify a node. Frozen encoding: the key is
+    SHA256(UTF-8(json.dumps(["v2a:20260808", <repo>, <module>,
+                             <declName>],
+                            ensure_ascii=False,
+                            separators=(",",":"))))
+  i.e. SHA256 over the canonical compact-JSON array. JSON string
+  escaping length-delimits every field, so quoted Lean identifiers
+  («...») that may contain arbitrary punctuation (including ':')
+  cannot re-split into a different (repo, module, decl) — plain
+  delimiter concatenation could not guarantee this. The earlier
+  colon-concatenated, non-module-qualified form was never used to draw
+  any sample.
 
 14.20 PHYSLIB EXTERNAL-CONTEXT HARD GATE: physlib closure results
 (E1a/E1b and any physlib-vs-mathlib reading) are UNINTERPRETABLE until
@@ -534,10 +582,26 @@ structurally handicapped relative to mathlib's internally-complete k4;
 closures stay recorded-only (asymmetry logged, §14.3).
 
 14.21 k5 SEED POLICY: the k5 draw for target t ranks U(t) minus the
-forward closure by per-(target, seed) hash priorities —
-SHA256("k5:<seed>:<repo>:<target-fqname>:<unit-id>") — so draws are
+forward closure by per-(target, seed) hash priorities, so draws are
 independent ACROSS targets by construction (no shared global
 permutation; the one draw per target is genuinely dispersed).
+  KEY (amended 2026-08-08, PRE-OUTCOME — no k5 draw has ever been
+  made; same collision as §14.19, PREREG §13): the key is
+    SHA256(UTF-8(json.dumps(["k5:<seed>", <repo>,
+                             <target-identity...>,
+                             <unit-identity...>],
+                            ensure_ascii=False,
+                            separators=(",",":"))))
+  where the identity fields are spliced flat into the array. For LEAN
+  targets/units the identity is the pair <module>, <declName> (bare
+  fully-elaborated names collide across modules — LakeMain vs
+  LeanChecker `main`); for PYTHON it is the single module-qualified
+  fqname, which already embeds its module path. Canonical compact JSON
+  length-delimits every field, so quoted Lean identifiers containing
+  ':' cannot re-split (same rationale as §14.19); the prior
+  colon-concatenated form —
+  SHA256("k5:<seed>:<repo>:<target-fqname>:<unit-id>") — was never
+  used to draw anything.
 Primary = seed 0 everywhere. Seeds 1 and 2 re-run the k5 NLL ARM ONLY,
 at B* over the full eligible set, as a frozen seed-sensitivity;
 behavioral k5 is seed 0 only. Statistical note (recorded): E2 rests on

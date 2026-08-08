@@ -538,6 +538,88 @@ arxiv_manifest) must be committed before measurement.
 
 ## 13. Disagreement log
 
+- ADOPTED (V2-a structural-evidence boundary, 2026-08-08,
+  PRE-OUTCOME): source/artifact pairing schema is v2 and records
+  exact-vs-srcDir-suffix match kind, absolute paths, both file hashes,
+  repository HEAD, and an optional hard expected-HEAD check; consumers
+  reject v1 and rehash both files. Lean/Python extraction artifacts are
+  atomic new-file-only. Selected targets are live-reparsed rather than
+  trusting recorded kind/split metadata; any Python source parse
+  failure makes the structural gate fail. Two separate audits are
+  required for each selected Lean target: (1) a stdlib-only raw-.ilean
+  parser, sharing no extractor code, must reproduce the exact resolved /
+  external / unrenderable partition and occurrence counts; (2) the
+  unchanged file and a full-source copy with an inert comment inserted
+  at the extracted body boundary must both compile in the pinned Lake
+  environment. These checks are CPU-only structural validation, not a
+  scored pilot result; the validation report remains gate_complete=false
+  until their reports are combined and reviewed.
+- ADOPTED (V2-a Lean source-renderability amendment, 2026-08-08,
+  PRE-OUTCOME — compiler-core machinery audit only, no study-corpus or
+  model outcome): the first module-qualified live sweep left 123,621
+  internal source-reference occurrences unrenderable after explicit
+  length-5 parent folds. Independent raw-.ilean audit classified
+  110,224 (89.2%; 6,686 identities) as parentless length-4 definition
+  sites inside a UNIQUE smallest enclosing declaration, 0 ambiguous,
+  7,483 with no enclosing span, 4,348 with null definition, and 1,566
+  with no definition entry. DESIGN_V2 §14.3 now permits only the unique
+  smallest geometric fold (no name heuristic); the full implemented
+  replay recovered 7,071 definition sites, raised occurrence-weighted
+  renderability from 84.50% to 98.34%, and left 13,239 occurrences
+  explicit. Per-target coverage and position/name-prefix diagnostics
+  are mandatory. Reviewer recommendation adopted: STRATIFY/diagnose,
+  never gate target eligibility on coverage, because such a gate would
+  select against the projection-/proof-heavy code under study.
+- ADOPTED (V2-a docstring-asymmetry amendment, 2026-08-08, PRE-OUTCOME
+  — no scored pilot output exists; from the adversarial read-only
+  review of the extractors): Python docstrings are literal expressions
+  inside the function suite and so remain in the SCORED BODY, while
+  Lean doc comments (/-- ... -/) precede the declaration and fall on
+  the unscored shell/header side of the §14.9 split. DESIGN_V2 §14.9
+  is amended: the Python extractor records a per-target
+  docstring_bytes diagnostic (implemented in extract_python.py);
+  cross-language body-size / body-NLL analyses
+  MUST stratify by or condition on docstring_bytes, and naive
+  cross-language body-size comparisons are FORBIDDEN as confounded by
+  documentation placement; docstring bytes are NOT stripped from the
+  scored body (byte-exact round-trip stays primary — stripping would
+  silently change the scored object).
+- ADOPTED (G3.5 V2-a pre-outcome identity amendment, 2026-08-08 —
+  BEFORE any committed extraction, any pilot sample draw, or any use of
+  the §14.19 priority key): Lean graph node identity is MODULE-
+  QUALIFIED (module, declName), not bare fully-elaborated name. Cause:
+  the live compiler-source stress run (2,433 modules of the installed
+  v4.32 toolchain) raised `ExtractError: decl main in both LakeMain and
+  LeanChecker` — fully-elaborated names are unique per ENVIRONMENT, not
+  per source tree, so a corpus containing more than one executable (or
+  any legitimate cross-module name reuse) is unrepresentable under bare
+  names. Adopted contract (Lean extraction schema v1 -> v2,
+  "v2a_lean_extract_v2"; consumers MUST reject v1): graph edges and the
+  preserved external_reference_edges / internal_unrenderable_references
+  lists are QUADRUPLES [src_module, src_decl, dst_module, dst_decl];
+  external reference counts nest {module: {decl: count}};
+  generated-parent (definition-parent) maps are per-module and folding
+  chases parents strictly WITHIN the defining module; transitive
+  closure roots and returns (module, decl) pairs. The §14.19 priority
+  key is amended pre-outcome to SHA256 of the canonical compact-JSON
+  array ["v2a:20260808", repo, module, declName] (UTF-8,
+  ensure_ascii=False) — reviewer strictness adopted: JSON escaping
+  length-delimits fields so quoted Lean identifiers containing ':'
+  cannot re-split; plain colon concatenation could not guarantee this,
+  and the prior colon form never drew any sample. Second reviewer
+  strictness adopted: duplicate module records in a corpus fail closed
+  (ExtractError) instead of silently overwriting decls_by_module.
+  Cross-module duplicate DECL names are now legal by construction and
+  regression-tested (LakeMain/LeanChecker `main`); the old corpus-wide
+  bare-name duplicate check is removed as unrepresentable. FOLLOW-UP
+  ADOPTED same day (2026-08-08, still pre-outcome — no k5 draw has
+  ever been made): §14.21's k5 key had the identical collision
+  (colon-concatenated bare fqname) and is amended to the same
+  canonical compact-JSON encoding — SHA256 over ["k5:<seed>", repo,
+  <target-identity...>, <unit-identity...>] with identities spliced
+  flat: Lean targets AND units carry the (module, declName) pair;
+  Python keeps its single module-qualified fqname (module path is
+  already embedded). The prior colon form never drew anything.
 - ADOPTED (post-G3a boundary, evidence commit 570c433; first grid
   outcomes): the Qwen2.5-Coder-0.5B sentinel is an INSTRUMENT PASS but
   provides NO POWER-LAW SUPPORT. Slurm 19904528 completed all 44/44
