@@ -152,6 +152,10 @@ def test_lean_gate_checks_raw_partition_and_physlib_pin():
         _add_physlib_pin(td, fields)
         report = finalize(td, "lean", expected_n=2)
         assert report["gate_complete"] is True
+        assert report["input_hashes"]["pinned_mathlib_pairs"] == \
+            fields["pinned_mathlib_pairs_sha256"]
+        assert report["input_hashes"]["pinned_mathlib_extraction"] == \
+            fields["pinned_mathlib_extraction_sha256"]
 
 
 def test_unknown_repo_tag_cannot_skip_physlib_pin_gate():

@@ -569,12 +569,25 @@ arxiv_manifest) must be committed before measurement.
   source commit, all five corpus revisions, the Lean artifact-report hash,
   the Python interpreter binary, and PhysLib's manifest-pinned mathlib
   revision; format-valid or mutually self-consistent substitute identities
-  fail closed. This evidence cohort is explicitly job commit
-  `1791909cd8a5c08ac5a5a352799afb16306db1f1`; PhysLib's derived nested
+  fail closed. The superseded diagnostic cohort was job commit
+  `1791909cd8a5c08ac5a5a352799afb16306db1f1`. Following the logged
+  boundary-marker correction and before any scored pilot, the admissible
+  structural cohort was explicitly rebound to
+  `999cc282836d63ab386a4e8b3007dde909aa9143`: mathlib job `19915851_0`,
+  Batteries job `19915851_1`, PhysLib full replay job `19916781_2`, SymPy
+  job `19915852_0`, and Astropy job `19915852_1`; boundary signoff verifies
+  those job identities from the cohort report's recorded run directories.
+  PhysLib's derived nested
   mathlib revision is
   `81a5d257c8e410db227a6665ed08f64fea08e997`. These identify the older
   structural jobs, not the newer finalizer commit. Any future rerun requires
   a logged, reviewed rebind rather than a quiet constant edit.
+  The new-only `v2a_structural_cohort_v1` combiner is the second and final
+  boundary: exactly {mathlib4, batteries, physlib, sympy, astropy} must have
+  independently passing, rehashed gates from the one bound source cohort;
+  every gate's transitive evidence files are rehashed again at cohort time,
+  and missing, duplicate, drifted, mixed-revision, or partially passing sets
+  fail closed.
 - ADOPTED (V2-a Lean source-renderability amendment, 2026-08-08,
   PRE-OUTCOME — compiler-core machinery audit only, no study-corpus or
   model outcome): the first module-qualified live sweep left 123,621
@@ -635,11 +648,34 @@ arxiv_manifest) must be committed before measurement.
   PHYSICAL COLUMN, so it was not inert under Lean's layout grammar. The audit
   marker now ends its line and restores the exact original indentation when
   the delimiter begins an otherwise-whitespace layout line; an inline
-  delimiter is moved to a two-space continuation line. Regression tests cover
+  delimiter is moved to a continuation line at the declaration's relative
+  indentation plus two spaces. Regression tests cover
   both forms. Job 19914765_1 remains diagnostic-only and no completion
   envelope exists for it. The corrected audit is first replayed on the same
   frozen 20 targets, then all five structural jobs are rerun under one source
   commit so the final gate never mixes evidence cohorts.
+- ADOPTED (third live V2-a Lean structural-array incident, jobs
+  `19915851_2` / `19916781_2`, 2026-08-08, PRE-OUTCOME — CPU-only boundary
+  audit, no model score or pilot draw): the clean-cohort PhysLib task passed
+  extraction (20/20) and raw closure (20/20), then produced 19/20 passing
+  boundary pairs because the unchanged-source control for
+  `_private.QuantumInfo.ResourceTheory.SteinsLemma.0.SteinsLemma.σ''`
+  reached the fixed 300-second subprocess timeout; its marked copy passed.
+  The same target's unchanged and marked copies had both passed in prior job
+  `19914765_2`, so this single runtime observation cannot identify a marker or
+  extraction defect. The task failed closed and wrote no `complete.tsv`.
+  Before observing a replay outcome, a full same-source, same-revision,
+  same-target PhysLib replay was submitted as job `19916781_2` on a different
+  node (excluding the first node); cherry-picking one pair or raising the
+  timeout after seeing its identity is forbidden. The replay is admissible
+  only if all 20 controls and marked copies pass and its completion envelope
+  binds the same frozen source and corpus identities; otherwise the entire
+  five-corpus cohort must be revised and rerun under a newly logged policy.
+  RESULT OF THAT PREDECLARED REPLAY: job `19916781_2` completed 20/20
+  boundary pairs with zero failures and atomically recorded `complete.tsv`
+  at source `999cc282836d63ab386a4e8b3007dde909aa9143` and PhysLib revision
+  `e882411d1b6bcbdfdd336d4c509c6cc72e96842d`; it is therefore the retained
+  PhysLib member of the clean cohort. The failed task remains diagnostic-only.
 - ADOPTED (V2-a docstring-asymmetry amendment, 2026-08-08, PRE-OUTCOME
   — no scored pilot output exists; from the adversarial read-only
   review of the extractors): Python docstrings are literal expressions

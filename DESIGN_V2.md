@@ -304,6 +304,10 @@ The combiner also hard-binds the frozen extraction-code commit, corpus
 revisions, Lean artifact report, Python interpreter binary, and the
 PhysLib-manifest-pinned mathlib revision; merely well-formed or mutually
 self-consistent revision claims are insufficient.
+`finalize_v2a_cohort.py` then requires exactly the five frozen corpus gates,
+rehashes each gate report and every transitive evidence file, and refuses a
+missing, duplicate, drifted, mixed-commit, or partially passing cohort; that
+cohort artifact is V2-b's structural input.
 V2-b pilot (20 targets, q25c-1.5b, all conditions) reviewed against §8
 metric definitions — pilot data NEVER pools into confirmatory tests;
 V2-c full run (human approves scale);

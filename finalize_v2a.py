@@ -23,7 +23,7 @@ GATE_SCHEMA = "v2a_structural_gate_v1"
 # commit.  A future structural rerun requires an explicit reviewed rebind;
 # silently replacing any value would destroy the evidence boundary.
 EVIDENCE_SOURCE_COMMIT = \
-    "1791909cd8a5c08ac5a5a352799afb16306db1f1"
+    "999cc282836d63ab386a4e8b3007dde909aa9143"
 LEAN_ARTIFACT_REPORT_SHA = \
     "ec2279ef1b8c171996f020f6acf5b5d9847ad2e910e538b3142686909bb9bbc6"
 PYTHON_BINARY_SHA = \
@@ -282,6 +282,7 @@ def finalize(run_dir, language, expected_n=20):
                 if os.path.isfile(path):
                     pin_values[name] = _load_json(path)
                     got = _sha256(path)
+                    actual_hashes[f"pinned_mathlib_{name}"] = got
                     check(f"pinned-mathlib-{name}-hash",
                           got == complete.get(pin_hash_fields[name]), got)
                 else:
