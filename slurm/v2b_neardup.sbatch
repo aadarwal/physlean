@@ -1,0 +1,136 @@
+#!/bin/bash
+#SBATCH -J physlean-v2b-neardup
+#SBATCH -o logs/slurm-%x-%A_%a.out
+#SBATCH --nodes=1
+#SBATCH -c 16
+#SBATCH --mem=128G
+#SBATCH -t 12:00:00
+# CPU-only exact-five array. Start with small-corpus tasks as the frozen
+# scale check; submit task 0 only after their peak RSS/runtime is reviewed.
+#   sbatch -p mit_normal --array=1-4 \
+#     --export=ALL,V2B_KEYWORD_FREEZE=<freeze.json> slurm/v2b_neardup.sbatch
+#   sbatch -p mit_normal --array=0 \
+#     --export=ALL,V2B_KEYWORD_FREEZE=<freeze.json> slurm/v2b_neardup.sbatch
+set -euo pipefail
+cd "$SLURM_SUBMIT_DIR"
+
+V2B_POOL_BASE="/orcd/pool/008/${USER:?USER is required}"
+export XDG_CACHE_HOME="$V2B_POOL_BASE/xdg-cache"
+export TMPDIR="$V2B_POOL_BASE/tmp"
+mkdir -p "$TMPDIR" logs results_v2/v2b/neardup
+V2B_PY="$SLURM_SUBMIT_DIR/.venv/bin/python"
+[[ -x "$V2B_PY" ]] || {
+  echo "missing locked project Python: $V2B_PY" >&2
+  exit 1
+}
+
+V2B_SOURCE_DIRT=$(git status --porcelain -- . ':(exclude)results_v2')
+[[ -z "$V2B_SOURCE_DIRT" ]] || {
+  echo "source tree dirty outside results_v2; refusing V2-b A6" >&2
+  printf '%s\n' "$V2B_SOURCE_DIRT" >&2
+  exit 1
+}
+V2B_SOURCE_COMMIT=$(git rev-parse HEAD)
+v2b_assert_source_identity() {
+  V2B_CURRENT_COMMIT=$(git rev-parse HEAD)
+  V2B_CURRENT_DIRT=$(git status --porcelain -- . ':(exclude)results_v2')
+  [[ "$V2B_CURRENT_COMMIT" == "$V2B_SOURCE_COMMIT" ]] || {
+    echo "source commit changed during V2-b A6 job" >&2
+    exit 1
+  }
+  [[ -z "$V2B_CURRENT_DIRT" ]] || {
+    echo "source tree changed during V2-b A6 job" >&2
+    exit 1
+  }
+}
+v2b_assert_source_identity
+
+V2B_TASK="${SLURM_ARRAY_TASK_ID:?submit as array indices 0-4}"
+case "$V2B_TASK" in
+  0)
+    V2B_TAG="mathlib4"
+    V2B_LANGUAGE="lean"
+    V2B_EXPECTED_SHA="87adeaebd370a3b6a41ac4f044fddd4bf81803ad"
+    V2B_EXTRACTION="results_v2/v2a/job19915851_0_mathlib4/extraction.json"
+    ;;
+  1)
+    V2B_TAG="batteries"
+    V2B_LANGUAGE="lean"
+    V2B_EXPECTED_SHA="76e1c118b0700b4ceafe99532e887d6431625e1a"
+    V2B_EXTRACTION="results_v2/v2a/job19915851_1_batteries/extraction.json"
+    ;;
+  2)
+    V2B_TAG="physlib"
+    V2B_LANGUAGE="lean"
+    V2B_EXPECTED_SHA="e882411d1b6bcbdfdd336d4c509c6cc72e96842d"
+    V2B_EXTRACTION="results_v2/v2a/job19916781_2_physlib/extraction.json"
+    ;;
+  3)
+    V2B_TAG="sympy"
+    V2B_LANGUAGE="python"
+    V2B_EXPECTED_SHA="c0a595d78fb2a2c4b0dfa7f2ee720fde84918c6c"
+    V2B_EXTRACTION="results_v2/v2a/job19915852_0_sympy/extraction.json"
+    ;;
+  4)
+    V2B_TAG="astropy"
+    V2B_LANGUAGE="python"
+    V2B_EXPECTED_SHA="440fe546589c4e496235d712bc29783ecf5a5fec"
+    V2B_EXTRACTION="results_v2/v2a/job19915852_1_astropy/extraction.json"
+    ;;
+  *)
+    echo "invalid V2-b A6 array task: $V2B_TASK" >&2
+    exit 1
+    ;;
+esac
+V2B_KEYWORD_ARGS=()
+if [[ "$V2B_LANGUAGE" == "lean" ]]; then
+  V2B_KEYWORD_FREEZE="${V2B_KEYWORD_FREEZE:?export sealed Lean keyword freeze path}"
+  [[ -f "$V2B_KEYWORD_FREEZE" ]] || {
+    echo "missing sealed Lean keyword freeze: $V2B_KEYWORD_FREEZE" >&2
+    exit 1
+  }
+  V2B_KEYWORD_ARGS=(--lean-keyword-freeze "$V2B_KEYWORD_FREEZE")
+fi
+V2B_REPO="$SLURM_SUBMIT_DIR/corpora/$V2B_TAG"
+V2B_ACTUAL_SHA=$(git -C "$V2B_REPO" rev-parse HEAD)
+[[ "$V2B_ACTUAL_SHA" == "$V2B_EXPECTED_SHA" ]] || {
+  echo "$V2B_TAG revision drift: $V2B_ACTUAL_SHA != $V2B_EXPECTED_SHA" >&2
+  exit 1
+}
+v2b_assert_corpus_identity() {
+  V2B_CURRENT_REPO_SHA=$(git -C "$V2B_REPO" rev-parse HEAD)
+  V2B_CORPUS_DIRT=$(git -C "$V2B_REPO" status --porcelain \
+    --untracked-files=all)
+  [[ "$V2B_CURRENT_REPO_SHA" == "$V2B_ACTUAL_SHA" ]] || {
+    echo "$V2B_TAG revision changed during V2-b A6 job" >&2
+    exit 1
+  }
+  [[ -z "$V2B_CORPUS_DIRT" ]] || {
+    echo "$V2B_TAG source tree is dirty" >&2
+    printf '%s\n' "$V2B_CORPUS_DIRT" >&2
+    exit 1
+  }
+}
+v2b_assert_corpus_identity
+
+V2B_COHORT="results_v2/v2a/cohort_job19915851_19916781_19915852.json"
+[[ -f "$V2B_COHORT" && -f "$V2B_EXTRACTION" ]] || {
+  echo "missing sealed V2-a cohort/extraction for $V2B_TAG" >&2
+  exit 1
+}
+V2B_ARRAY_ID="${SLURM_ARRAY_JOB_ID:-${SLURM_JOB_ID:-manual}}"
+V2B_RUN_ID="${V2B_ARRAY_ID}_${V2B_TASK}"
+V2B_OUT="results_v2/v2b/neardup/job${V2B_RUN_ID}_${V2B_TAG}.json"
+"$V2B_PY" prepare_v2b_neardup.py \
+  --structural-cohort "$V2B_COHORT" \
+  --extraction "$V2B_EXTRACTION" \
+  --corpus-root "$V2B_REPO" \
+  --repo "$V2B_TAG" \
+  --language "$V2B_LANGUAGE" \
+  --expected-corpus-sha "$V2B_EXPECTED_SHA" \
+  "${V2B_KEYWORD_ARGS[@]}" \
+  --out "$V2B_OUT"
+
+v2b_assert_corpus_identity
+v2b_assert_source_identity
+echo "V2B-NEARDUP-DONE $V2B_OUT $(sha256sum "$V2B_OUT" | cut -d' ' -f1)"

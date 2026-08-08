@@ -128,6 +128,9 @@ def _collector_audit(corpus_root, cfg, admitted):
         raise V2BError("audited k7 admission set diverges from collect_files")
     records = {}
     n_appended_lf = 0
+    n_normalize_changed_files = 0
+    n_normalize_removed_lf = 0
+    n_normalize_appended_lf = 0
     for rel, row in admitted_by_rel.items():
         raw = raw_by_rel[rel]
         emitted = row["text"].encode("utf-8")
@@ -137,14 +140,20 @@ def _collector_audit(corpus_root, cfg, admitted):
         if not raw.endswith(b"\n"):
             n_appended_lf += 1
         normalized, audit = normalize_payload(emitted)
-        if normalized != emitted or audit != dict(
-                n_removed_terminal_lf=0, n_appended_terminal_lf=0):
-            raise V2BError(f"k7 admitted file is not normalize()-stable: {rel}")
+        if not normalized.endswith(b"\n") or normalized.endswith(b"\n\n") \
+                or normalized != emitted.rstrip(b"\n") + b"\n":
+            raise V2BError(f"k7 payload normalization drift for {rel}")
+        n_normalize_changed_files += normalized != emitted
+        n_normalize_removed_lf += audit["n_removed_terminal_lf"]
+        n_normalize_appended_lf += audit["n_appended_terminal_lf"]
         records[rel] = dict(
             raw_bytes=len(raw), emitted_bytes=len(emitted),
+            normalized_bytes=len(normalized),
             source_sha256=hashlib.sha256(raw).hexdigest(),
             emitted_sha256=hashlib.sha256(emitted).hexdigest(),
-            collector_appended_terminal_lf=not raw.endswith(b"\n"))
+            normalized_sha256=hashlib.sha256(normalized).hexdigest(),
+            collector_appended_terminal_lf=not raw.endswith(b"\n"),
+            normalization=audit)
     return records, dict(
         n_extension_candidates=len(candidate_paths),
         n_admitted=len(admitted),
@@ -152,8 +161,13 @@ def _collector_audit(corpus_root, cfg, admitted):
                                  for row in records.values()),
         n_admitted_emitted_bytes=sum(row["emitted_bytes"]
                                      for row in records.values()),
+        n_admitted_normalized_bytes=sum(row["normalized_bytes"]
+                                        for row in records.values()),
         n_pruned_directories=pruned_directories,
         n_terminal_lf_appended=n_appended_lf,
+        n_normalize_changed_files=n_normalize_changed_files,
+        n_normalize_removed_terminal_lf=n_normalize_removed_lf,
+        n_normalize_appended_terminal_lf=n_normalize_appended_lf,
         nonmatching_extension=nonmatching,
         skipped=skipped)
 
@@ -184,7 +198,7 @@ def build_k7_order(corpus_root, repo, expected_corpus_sha, cfg=None):
         rel = files[index]["rel"]
         record = audit_records[rel]
         scc_id = scc_name[component_of[index]]
-        ordered_rows.append([rel, record["emitted_bytes"],
+        ordered_rows.append([rel, record["normalized_bytes"],
                              record["source_sha256"], scc_id])
         diagnostics.append(dict(relpath=rel, file_scc_id=scc_id, **record))
     return dict(schema=K7_ORDER_SCHEMA, repo=repo, language=cfg["lang"],

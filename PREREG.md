@@ -554,8 +554,23 @@ arxiv_manifest) must be committed before measurement.
   no real A6 artifact had run. A6 is hardened to a sequential nested-comment
   lexer retaining ordinary/raw/char literals, flat-spliced canonical identity
   seeds, exact packet-bound label application, and the literal eight-label
-  collision cap. These are adverse implementation counterexamples, not
-  responses to model or behavioral data.
+  collision cap. Final pre-artifact review also found the hand-written Lean
+  keyword exemption incomplete (`by simp` and `by omega` normalized together
+  because contextual tactic heads were absent). Rather than patching a
+  subjective list, the freeze is now the exact identifier-shaped union of
+  Lean's own parser token tables after the three pinned umbrella imports,
+  with source tables, revisions, list SHA, and A6 binding recorded. These are
+  adverse implementation counterexamples, not responses to model or
+  behavioral data; no real A6 corpus artifact, packet, or label existed.
+- ADOPTED (V2-b k7 terminal-LF correction, 2026-08-08, PRE-OUTCOME — no
+  sample, near-duplicate packet/label, assembly, score, or behavioral outcome
+  existed): first k7 array `19920847` failed closed because one tracked PhysLib
+  file ends in two LFs and one generated SymPy file ends in three. The frozen
+  renderer already defines canonical payload normalization to exactly one
+  terminal LF; k7 now applies it after the unchanged prep_streams collector,
+  records raw/emitted/normalized bytes and hashes plus LF deltas, and binds
+  normalized bytes for budgets. The partial first array is quarantined and
+  all five corpora rerun under the amended generator.
 - ADOPTED (V2-b implementation-blocker resolution, 2026-08-08,
   PRE-OUTCOME — no near-duplicate label, target sample, assembly artifact,
   model score, or behavioral result exists): implementation of the frozen

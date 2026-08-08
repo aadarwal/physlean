@@ -35,7 +35,8 @@ def test_collector_bytes_cycles_edges_and_sccs_are_bound():
         _write(os.path.join(root, "Pkg/A.lean"), b"import Pkg.B" + pad)
         _write(os.path.join(root, "Pkg/B.lean"), b"import Pkg.A" + pad + b"\n")
         _write(os.path.join(root, "Pkg/C.lean"), b"import Pkg.A" + pad)
-        _write(os.path.join(root, "Pkg/D.lean"), b"def d := 1" + pad)
+        _write(os.path.join(root, "Pkg/D.lean"),
+               b"def d := 1" + pad + b"\n\n")
         _write(os.path.join(root, "Pkg/short.lean"), b"def s := 1\n")
         _write(os.path.join(root, "Pkg/bad.lean"), b"\xff" * 80)
         _write(os.path.join(root, "Pkg/Skip/X.lean"), b"def x := 1" + pad)
@@ -51,7 +52,10 @@ def test_collector_bytes_cycles_edges_and_sccs_are_bound():
         assert artifact["n_cycle_nodes"] == 3  # A/B cycle blocks C
         assert artifact["n_cycle_sccs"] == 1
         assert artifact["collector"]["n_admitted"] == 4
-        assert artifact["collector"]["n_terminal_lf_appended"] == 3
+        assert artifact["collector"]["n_terminal_lf_appended"] == 2
+        assert artifact["collector"]["n_normalize_changed_files"] == 1
+        assert artifact["collector"]["n_normalize_removed_terminal_lf"] == 1
+        assert artifact["collector"]["n_normalize_appended_terminal_lf"] == 0
         assert artifact["collector"]["skipped"] == {
             "read_error": {"count": 0, "stat_bytes": 0,
                            "stat_errors": 0},
@@ -59,8 +63,10 @@ def test_collector_bytes_cycles_edges_and_sccs_are_bound():
             "under_64_bytes": {"count": 1, "raw_bytes": 11}}
         assert artifact["collector"]["nonmatching_extension"] == {
             "count": 1, "stat_bytes": 10, "stat_errors": 0}
-        assert artifact["collector"]["n_admitted_raw_bytes"] + 3 == \
+        assert artifact["collector"]["n_admitted_raw_bytes"] + 2 == \
             artifact["collector"]["n_admitted_emitted_bytes"]
+        assert artifact["collector"]["n_admitted_emitted_bytes"] - 1 == \
+            artifact["collector"]["n_admitted_normalized_bytes"]
         ordered = [row[0] for row in artifact["files"]]
         assert ordered[0] == "Pkg/D.lean"
         assert ordered[1:] == ["Pkg/A.lean", "Pkg/B.lean", "Pkg/C.lean"]
@@ -69,10 +75,14 @@ def test_collector_bytes_cycles_edges_and_sccs_are_bound():
         assert diag["Pkg/B.lean"]["file_scc_id"] == "Pkg/A.lean"
         assert diag["Pkg/C.lean"]["file_scc_id"] == "Pkg/C.lean"
         for row in artifact["files"]:
-            assert row[1] == diag[row[0]]["emitted_bytes"]
+            assert row[1] == diag[row[0]]["normalized_bytes"]
             assert row[2] == diag[row[0]]["source_sha256"]
             if diag[row[0]]["collector_appended_terminal_lf"]:
                 assert diag[row[0]]["emitted_sha256"] != row[2]
+        assert diag["Pkg/D.lean"]["normalization"] == {
+            "n_removed_terminal_lf": 1, "n_appended_terminal_lf": 0}
+        assert diag["Pkg/D.lean"]["normalized_sha256"] != \
+            diag["Pkg/D.lean"]["emitted_sha256"]
         _write(os.path.join(root, "Pkg/untracked.lean"),
                b"def untracked := true" + pad)
         try:

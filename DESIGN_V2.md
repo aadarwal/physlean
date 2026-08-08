@@ -971,8 +971,19 @@ fixtures pinned.
   TOKEN hash — identifiers retained — is self-validating and ALWAYS
   PRIMARY at all lengths. (2) IDENTIFIER-NORMALIZED hash — each
   non-keyword identifier record replaced by a typed ["IDRANK", <k>]
-  integer record, k = first-occurrence rank (frozen per-language
-  keyword lists, test-pinned) — conflates rename-clones with
+  integer record, k = first-occurrence rank. Python exempts the pinned
+  runtime's exact `keyword.kwlist ∪ keyword.softkwlist`. Lean does NOT use a
+  curated vocabulary: before any A6 corpus hash, dump
+  `Lean.Parser.getTokenTable` after the pinned `Mathlib`, `Batteries`, and
+  `Physlib` umbrella imports; retain exactly the values satisfying the same
+  pinned isIdFirst/isIdRest predicates; seal the sorted union and its canonical
+  JSON SHA256 as a write-once language-wide keyword freeze. Both the three
+  source tables and union are source/revision bound and test-pinned. This
+  includes contextual tactic heads such as `rfl`, `simp`, and `omega` without
+  pretending Lean has a small static reserved-word list. Exempting a spelling
+  later used as an ordinary binder can only under-normalize that rename-clone
+  (recall/sensitivity), never make two unequal token streams collide.
+  Identifier normalization — conflates rename-clones with
   same-skeleton distinct entities (sin-vs-cos wrappers; Lean
   same-skeleton proofs) and is therefore a CANDIDATE rule requiring
   its own validation. Jaccard 5-grams remain over the LEXICAL
@@ -1163,8 +1174,12 @@ older sentence.
   n_cycle_break_events—no forced-pop event exists). file_scc_id is
   diagnostic, computed on the same resolved edge set and named by the SCC's
   lexicographically smallest relpath; it never changes topo_order. Every
-  admitted file must be a zero-change input to §15.A4 normalize(), asserted
-  as a cross-implementation tripwire.
+  admitted file is then passed through §15.A4 normalize() before its k7 byte
+  count/hash is bound. The raw bytes, collector-emitted bytes, normalized
+  bytes, all three hashes, and appended/removed terminal-LF counts are
+  recorded. This preserves the exact collector universe while handling real
+  tracked files with multiple terminal LFs; every non-terminal-LF byte is
+  unchanged and the canonical payload has exactly one terminal LF.
 
   FINAL SEPARATOR AND k1. For every nonempty arm, ONE separator LF is
   appended to the arm's core maximal rendering BEFORE any byte/token suffix
@@ -1193,10 +1208,10 @@ older sentence.
   Because prefix tail and body bytes are arm-identical and equality is hard
   asserted, neither convention can introduce an arm-specific boundary rule.
 
-15.A12 PRE-SAMPLE HARDENING (adopted after the first metadata-only candidate
-array began, but before any target sample, near-duplicate corpus artifact or
-label, assembly artifact, model score, or behavioral outcome). This resolves
-two fail-closed implementation discoveries; neither uses outcome information.
+15.A12 PRE-SAMPLE HARDENING (adopted during the metadata/k7/A6 pre-sample
+gates, but before any target sample, near-duplicate packet or label, assembly
+artifact, model score, or behavioral outcome). This resolves the fail-closed
+implementation discoveries recorded below; none uses outcome information.
 
   ZERO-ADD MERGE TOPOLOGY. The exact §15.A2 all-add rule remains primary. If
   and only if it returns zero records for a tracked file in a full, clean
@@ -1228,3 +1243,22 @@ two fail-closed implementation discoveries; neither uses outcome information.
   activation accepts exactly the capped eight labels and requires 8/8 clones;
   >8 is invalid rather than a way around the cap. Jaccard outcomes likewise
   reject labels not forming the packet's exact selected set.
+
+  A6 KEYWORD FREEZE. A hand-enumerated Lean exemption draft omitted core
+  contextual parser heads (the minimal counterexample was `by simp` versus
+  `by omega`). No real A6 corpus artifact or label existed. The definitive
+  list is therefore derived mechanically before A6: exact parser token tables
+  after each of the three pinned umbrella imports, filtered by the same
+  identifier predicates, then exact-unioned into one write-once, hash-bound
+  language freeze. A6 generation requires and records that freeze; missing or
+  drifted tables/list/hash fail closed. There is no manual token addition or
+  deletion between dump and union.
+
+  k7 TERMINAL-LF NORMALIZATION. The first k7 array (job 19920847) failed
+  closed on one PhysLib file with two terminal LFs and one SymPy file with
+  three; the earlier zero-change tripwire had assumed such tracked files did
+  not exist. No sample, packet/label, assembly, or score existed. Keep the
+  exact collector universe and apply the already-frozen §15.A4 normalizer to
+  each collector-emitted file, binding normalized bytes for budgets while
+  recording raw/emitted/normalized hashes and LF deltas. The incomplete array
+  is quarantined and all five corpora rerun under one amended generator.
