@@ -95,6 +95,8 @@ def test_first_add_min_over_all_records_and_signals():
         _commit(root, "a.py", "x", "add a",
                 "2023-05-01T00:00:00 +0000", "2024-06-01T00:00:00 +0000")
         rec = first_add_record(root, "a.py", ident["first_commit"], cache)
+        assert rec["provenance_mode"] == "exact-add"
+        assert rec["exact_add_unresolved"] is False
         assert rec["timestamp_utc"].startswith("2023-05-01")
         assert rec["timestamp_source"] == "author"
         assert rec["n_add_records"] == 1
@@ -135,6 +137,61 @@ def test_first_add_min_over_all_records_and_signals():
         rece = first_add_record(root, "edge.py", ident["first_commit"],
                                 cache)
         assert cohort_of(rece) == "pre"     # boundary instant is PRE
+
+
+def _merge_add_without_nonmerge_add(root, rel, stamp, tag):
+    """Add rel only while recording a merge, then modify it normally.
+
+    Git's ordinary single-path history suppresses the merge diff, reproducing
+    the no-A topology observed in SymPy while leaving a dated existence
+    witness in the later modification.
+    """
+    main = _git(root, "branch", "--show-current").strip()
+    branch = f"side-{tag}"
+    _git(root, "checkout", "-q", "-b", branch)
+    _commit(root, f"side-{tag}.txt", "s", f"side {tag}", stamp)
+    _git(root, "checkout", "-q", main)
+    _commit(root, f"main-{tag}.txt", "m", f"main {tag}", stamp)
+    _git(root, "merge", "--no-ff", "--no-commit", branch)
+    path = os.path.join(root, rel)
+    os.makedirs(os.path.dirname(path) or root, exist_ok=True)
+    open(path, "w").write("merge-created")
+    _git(root, "add", rel)
+    _git(root, "commit", "-q", "-m", f"merge {tag}",
+         author_date=stamp, commit_date=stamp)
+    return _commit(root, rel, "later modification", f"modify {tag}", stamp)
+
+
+def test_no_add_merge_topology_uses_only_pre_witness():
+    with tempfile.TemporaryDirectory() as td:
+        root = _repo(td)
+        _commit(root, "base.txt", "b", "root", "2020-01-01T00:00:00 +0000")
+        _merge_add_without_nonmerge_add(
+            root, "old.py", "2021-06-07T00:00:00 +0000", "old")
+        # Pin the triggering condition: ordinary --follow sees no A record.
+        assert not _git(root, "log", "--follow", "--find-renames=50%",
+                        "--diff-filter=A", "--format=%H|%aI|%cI", "--",
+                        "old.py").strip()
+        head = _git(root, "rev-parse", "HEAD").strip()
+        ident = corpus_git_identity(root, expected_sha=head)
+        record = first_add_record(root, "old.py", ident["first_commit"], {})
+        assert record["provenance_mode"] == "no-add-pre-witness"
+        assert record["exact_add_unresolved"] is True
+        assert record["n_add_records"] == 0
+        assert record["n_history_records"] >= 1
+        assert record["history_witness"]["commit"] == record["commit"]
+        assert record["vendor_flagged"] and record["vendor_unknown"]
+        assert cohort_of(record) == "pre"
+
+        _merge_add_without_nonmerge_add(
+            root, "unknown.py", "2025-06-07T00:00:00 +0000", "new")
+        head = _git(root, "rev-parse", "HEAD").strip()
+        ident = corpus_git_identity(root, expected_sha=head)
+        try:
+            first_add_record(root, "unknown.py", ident["first_commit"], {})
+            assert False, "post-only no-add history was accepted"
+        except V2BError as err:
+            assert "after cohort cutoff" in str(err)
 
 
 def test_anomaly_recorded_not_acted_on_and_vendor_signals():
@@ -256,6 +313,9 @@ def test_lean_candidate_table_end_to_end():
         head = _git(root, "rev-parse", "HEAD").strip()
         table = build_candidate_table(ex_path, root, "mathlib4",
                                       expected_corpus_sha=head)
+        assert table["first_add_provenance_file_counts"] == {
+            "exact-add": 3, "no-add-pre-witness": 0}
+        assert table["no_add_pre_witness_files"] == []
         assert table["n_candidates"] == 4
         by = {tuple(t["identity"]): t for t in table["targets"]}
         # module centrality: M.A imported by M.B and M.C -> 2; M.B by M.C
@@ -408,6 +468,14 @@ def test_python_candidate_table_and_duplicates():
             assert False, "accepted duplicate candidate identity"
         except V2BError:
             pass
+        bad_provenance_summary = json.loads(json.dumps(table))
+        bad_provenance_summary["first_add_provenance_file_counts"][
+            "exact-add"] -= 1
+        try:
+            build_sample_plan(bad_provenance_summary, 3)
+            assert False, "accepted first-add provenance summary drift"
+        except V2BError as err:
+            assert "provenance summary drift" in str(err)
 
 
 if __name__ == "__main__":

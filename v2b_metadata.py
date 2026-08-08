@@ -52,7 +52,11 @@ def _git(corpus_root, *args):
 
 def _parse_iso(text, where):
     try:
-        stamp = datetime.fromisoformat(text)
+        # Python 3.9 does not accept the ISO-8601 UTC designator while newer
+        # runtimes do. Git may emit either spelling for %aI/%cI; they denote
+        # the same instant and must not make provenance runtime-dependent.
+        normalized = text[:-1] + "+00:00" if text.endswith("Z") else text
+        stamp = datetime.fromisoformat(normalized)
     except ValueError as err:
         raise V2BError(f"{where}: bad ISO timestamp {text!r}: {err}") from err
     if stamp.tzinfo is None:
@@ -73,9 +77,9 @@ def corpus_git_identity(corpus_root, expected_sha=None):
         raise V2BError(f"corpus revision drift: HEAD {head} != "
                        f"expected {expected_sha}")
     dirty = _git(corpus_root, "status", "--porcelain",
-                 "--untracked-files=no")
+                 "--untracked-files=all")
     if dirty.strip():
-        raise V2BError(f"corpus has tracked modifications: {corpus_root}")
+        raise V2BError(f"corpus checkout is dirty: {corpus_root}")
     version = _git(corpus_root, "--version").strip()
     roots = [_parse_iso(line, "root-commit")
              for line in _git(corpus_root, "log", "--max-parents=0",
@@ -114,40 +118,80 @@ def first_add_record(corpus_root, rel, first_commit, commit_cache,
     """§15.A2: ALL add records; min over every author+committer timestamp;
     ties -> lexicographically smallest commit; anomaly RECORD-ONLY; vendor
     signals OR'd across every add commit."""
-    out = _git(corpus_root, "log", "--follow", "--find-renames=50%",
-               "--diff-filter=A", "--format=%H|%aI|%cI",
-               "--", rel)
-    records = []
-    for line in out.splitlines():
-        if not line.strip():
-            continue
-        parts = line.split("|")
-        if len(parts) != 3:
-            raise V2BError(f"{rel}: malformed add record {line!r}")
-        commit, a_raw, c_raw = parts
-        records.append(dict(
-            commit=commit, author_date=a_raw, committer_date=c_raw,
-            author_stamp=_parse_iso(a_raw, f"{rel}:{commit}:author"),
-            committer_stamp=_parse_iso(c_raw, f"{rel}:{commit}:committer")))
-    if not records:
-        raise V2BError(f"{rel}: no add record in git history (--follow)")
+    def parse_records(out, mode):
+        parsed = []
+        for line in out.splitlines():
+            if not line.strip():
+                continue
+            parts = line.split("|")
+            if len(parts) != 3:
+                raise V2BError(f"{rel}: malformed {mode} record {line!r}")
+            commit, a_raw, c_raw = parts
+            parsed.append(dict(
+                commit=commit, author_date=a_raw, committer_date=c_raw,
+                author_stamp=_parse_iso(a_raw, f"{rel}:{commit}:author"),
+                committer_stamp=_parse_iso(c_raw,
+                                           f"{rel}:{commit}:committer")))
+        return parsed
 
-    candidates = []
-    for r in records:
-        candidates.append((r["author_stamp"], r["commit"], 0,
-                           "author", r["author_date"]))
-        candidates.append((r["committer_stamp"], r["commit"], 1,
-                           "committer", r["committer_date"]))
-    min_stamp = min(stamp for stamp, _, _, _, _ in candidates)
-    tied = sorted({commit for stamp, commit, _, _, _ in candidates
-                   if stamp == min_stamp})
-    chosen = min((row for row in candidates if row[0] == min_stamp),
-                 key=lambda row: (row[1], row[2], row[4]))
+    def minimum_record(records):
+        candidates = []
+        for record in records:
+            candidates.append((record["author_stamp"], record["commit"], 0,
+                               "author", record["author_date"]))
+            candidates.append((record["committer_stamp"], record["commit"],
+                               1, "committer", record["committer_date"]))
+        min_stamp = min(stamp for stamp, _, _, _, _ in candidates)
+        tied = sorted({commit for stamp, commit, _, _, _ in candidates
+                       if stamp == min_stamp})
+        chosen = min((row for row in candidates if row[0] == min_stamp),
+                     key=lambda row: (row[1], row[2], row[4]))
+        return min_stamp, tied, chosen
+
+    out = _git(corpus_root, "log", "--follow", "--find-renames=50%",
+               "--diff-filter=A", "--format=%H|%aI|%cI", "--", rel)
+    records = parse_records(out, "add")
+    path_flag = bool(VENDOR_PATH_SEGMENTS
+                     & set(p.lower() for p in rel.split("/")))
+    if not records:
+        history_out = _git(
+            corpus_root, "log", "--follow", "--find-renames=50%",
+            "--format=%H|%aI|%cI", "--", rel)
+        history = parse_records(history_out, "history-witness")
+        if not history:
+            raise V2BError(f"{rel}: no add record and no history witness")
+        min_stamp, tied, chosen = minimum_record(history)
+        if min_stamp > COHORT_CUTOFF:
+            raise V2BError(
+                f"{rel}: no add record and earliest history witness "
+                f"{min_stamp.isoformat()} is after cohort cutoff")
+        _, chosen_commit, _, chosen_source, chosen_raw = chosen
+        witness_row = next(row for row in history
+                           if row["commit"] == chosen_commit)
+        anomalous = any(row["author_stamp"] < first_commit
+                        for row in history)
+        return dict(
+            timestamp=chosen_raw,
+            timestamp_utc=min_stamp.astimezone(timezone.utc).isoformat(),
+            timestamp_source=chosen_source, commit=chosen_commit,
+            provenance_mode="no-add-pre-witness",
+            exact_add_unresolved=True, n_add_records=0,
+            n_history_records=len(history), n_tied_commits=len(tied),
+            history_witness=dict(
+                commit=chosen_commit,
+                author_date=witness_row["author_date"],
+                committer_date=witness_row["committer_date"],
+                selected_timestamp=chosen_raw,
+                selected_source=chosen_source),
+            author_date_anomalous=anomalous,
+            # Unknown add provenance is conservatively excluded by every
+            # vendor-clean sensitivity; it can never look falsely clean.
+            vendor_flagged=True, vendor_unknown=True,
+            path_vendor=path_flag, per_commit_signals=[])
+    min_stamp, tied, chosen = minimum_record(records)
     _, chosen_commit, _, chosen_source, chosen_raw = chosen
 
     anomalous = any(r["author_stamp"] < first_commit for r in records)
-    path_flag = bool(VENDOR_PATH_SEGMENTS
-                     & set(p.lower() for p in rel.split("/")))
     per_commit = []
     for r in records:
         signals = _commit_signals(corpus_root, r["commit"], commit_cache,
@@ -162,10 +206,12 @@ def first_add_record(corpus_root, rel, first_commit, commit_cache,
         timestamp=chosen_raw,
         timestamp_utc=min_stamp.astimezone(timezone.utc).isoformat(),
         timestamp_source=chosen_source, commit=chosen_commit,
+        provenance_mode="exact-add", exact_add_unresolved=False,
         n_add_records=len(records),
+        n_history_records=0, history_witness=None,
         n_tied_commits=len(tied),
         author_date_anomalous=anomalous,
-        vendor_flagged=vendor, path_vendor=path_flag,
+        vendor_flagged=vendor, vendor_unknown=False, path_vendor=path_flag,
         per_commit_signals=per_commit)
 
 
@@ -175,7 +221,22 @@ def cohort_of(record):
             or not isinstance(record.get("timestamp_utc"), str):
         raise V2BError("first-add record lacks timestamp_utc")
     stamp = _parse_iso(record["timestamp_utc"], "first_add")
-    return "post" if stamp > COHORT_CUTOFF else "pre"
+    mode = record.get("provenance_mode")
+    if mode == "exact-add":
+        if record.get("exact_add_unresolved") is not False \
+                or not isinstance(record.get("n_add_records"), int) \
+                or isinstance(record.get("n_add_records"), bool) \
+                or record["n_add_records"] < 1:
+            raise V2BError("malformed exact-add provenance record")
+        return "post" if stamp > COHORT_CUTOFF else "pre"
+    if mode == "no-add-pre-witness":
+        if record.get("exact_add_unresolved") is not True \
+                or record.get("n_add_records") != 0 \
+                or not isinstance(record.get("history_witness"), dict) \
+                or stamp > COHORT_CUTOFF:
+            raise V2BError("malformed no-add PRE witness record")
+        return "pre"
+    raise V2BError(f"unknown first-add provenance mode {mode!r}")
 
 
 # --------------------------------------------------- extraction -> targets
@@ -343,6 +404,7 @@ def build_sample_plan(candidates, n):
         raise V2BError("candidate tercile cutpoints do not recompute")
     by_cell = {label: [] for label in CELL_LABELS}
     seen = set()
+    provenance_by_file = {}
     for t in targets:
         if not isinstance(t, dict):
             raise V2BError("candidate target is not an object")
@@ -362,6 +424,13 @@ def build_sample_plan(candidates, n):
                 or isinstance(module_degree, bool) or module_degree < 0:
             raise V2BError(f"candidate covariate drift for {identity!r}")
         cohort = cohort_of(t.get("first_add", {}))
+        source_rel = t.get("source_rel")
+        if not isinstance(source_rel, str) or not source_rel:
+            raise V2BError(f"candidate lacks source_rel for {identity!r}")
+        provenance = t["first_add"]
+        previous = provenance_by_file.setdefault(source_rel, provenance)
+        if previous != provenance:
+            raise V2BError(f"first-add provenance differs within {source_rel}")
         expected_strata = dict(
             length_tercile=tercile(body_bytes, *length_cuts),
             centrality_tercile=tercile(module_degree, *degree_cuts),
@@ -376,6 +445,17 @@ def build_sample_plan(candidates, n):
         if t.get("priority") != expected_priority:
             raise V2BError(f"candidate priority drift for {identity!r}")
         by_cell[cell].append(t)
+    expected_mode_counts = {"exact-add": 0, "no-add-pre-witness": 0}
+    for provenance in provenance_by_file.values():
+        expected_mode_counts[provenance["provenance_mode"]] += 1
+    expected_fallback_files = sorted(
+        rel for rel, provenance in provenance_by_file.items()
+        if provenance["provenance_mode"] == "no-add-pre-witness")
+    if candidates.get("first_add_provenance_file_counts") != \
+            expected_mode_counts \
+            or candidates.get("no_add_pre_witness_files") != \
+            expected_fallback_files:
+        raise V2BError("candidate first-add provenance summary drift")
     populations = {label: len(rows) for label, rows in by_cell.items()}
     quotas = allocate_quotas(populations, n)
     chosen, fills, shortfalls = [], {}, {}
@@ -467,6 +547,13 @@ def build_candidate_table(extraction_path, corpus_root, repo,
         row["cohort"] = cohort_of(first_add_cache[rel])
         del row["source"]
 
+    first_add_mode_counts = {"exact-add": 0, "no-add-pre-witness": 0}
+    for record in first_add_cache.values():
+        first_add_mode_counts[record["provenance_mode"]] += 1
+    no_add_pre_witness_files = sorted(
+        rel for rel, record in first_add_cache.items()
+        if record["provenance_mode"] == "no-add-pre-witness")
+
     q1_len, q2_len = tercile_cutpoints([r["body_bytes"] for r in rows])
     q1_deg, q2_deg = tercile_cutpoints([r["module_in_degree"] for r in rows])
     for row in rows:
@@ -482,6 +569,8 @@ def build_candidate_table(extraction_path, corpus_root, repo,
                 corpus_git_sha=ident["corpus_git_sha"],
                 git_version=ident["git_version"],
                 first_add_workers=workers,
+                first_add_provenance_file_counts=first_add_mode_counts,
+                no_add_pre_witness_files=no_add_pre_witness_files,
                 repository_first_commit_utc=(
                     ident["first_commit"].astimezone(timezone.utc).isoformat()),
                 cohort_cutoff=COHORT_CUTOFF.isoformat(),
