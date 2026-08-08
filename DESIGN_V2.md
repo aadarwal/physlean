@@ -53,8 +53,10 @@ falsifier (§8) ties them together.
   condition. Target = the declaration's source span; scoring covers the
   BODY ONLY — the signature and local syntactic shell are the common
   unscored query prefix of every arm (§3), never scored anywhere.
-- Python: top-level functions/classes; closure from AST +
-  resolved import graph (jedi/ast; same-repo only).
+- Python: direct module-body functions/classes, including legitimate repeated
+  bindings of the same name; closure from the stdlib AST resolved-import
+  graph (same-repo only). A declaration is a source span, so Python identity
+  is `(module, name, start_byte)`, not merely `module.name`.
 - C++ (stretch): function definitions; include-graph closure; only if
   Lean+Python land cleanly.
 
@@ -402,7 +404,30 @@ recorded here so no one is surprised at analysis time.
 resolvable; module-level fallback recorded with a per-target COVERAGE
 metric = fraction of static references resolved to declaration level
 (reported per target and per corpus); high-coverage subset is a
-sensitivity, and no exact-closure claim is ever made for Python.
+sensitivity, and no exact-closure claim is ever made for Python. Python may
+legitimately bind the same module/name more than once (overload stubs,
+dispatch registrations, compatibility definitions), so extraction schema v3
+identifies every direct module-body declaration by
+`[module, name, start_byte]`; graph edges are source/destination identity
+sextuples. Ordinary name references resolve to the final source-order
+module-body def/class binding; accordingly a same-name call in an earlier
+twin points to the final twin, while final-twin self-recursion is removed.
+This is an explicit best-effort convention: decorators, defaults,
+annotations, class-body execution, later imports/assignments, conditional
+rebinding, alias capture, and dynamic dispatch can observe a different
+temporal binding. Each declaration
+records binding count/ordinal/finality and duplicate-stratum membership;
+these are diagnostics, never a V2-a eligibility gate. Within each Python
+repo, every headline V2 estimand MUST also be reported after excluding
+duplicate-stratum targets, as a mandatory sensitivity, because
+identical/similar sibling declarations can
+make the query-only prompt ambiguous or affect arms asymmetrically. The
+primary remains the frozen per-declaration target population. §3's
+near-duplicate removal still applies to EVERY arm, including local/topological
+arms; the duplicate sensitivity covers same-name siblings below that lexical
+threshold. For behavioral outcomes, §14.23's measured target-span test
+coverage—not lexical finality or underscore naming—determines whether a
+Python target enters the semantic-covered class.
 
 14.5 Lean k3 rendering: extractor-derived verbatim declaration
 header/body boundary plus an explicit FIXED body-omitted marker; prompt
@@ -554,10 +579,10 @@ Under-filled strata are recorded and never rebalanced after any data
 peek.
   PRIORITY KEY (amended 2026-08-08, PRE-OUTCOME — before any committed
   extraction or pilot sample existed; PREREG §13): the target identity
-  is MODULE-QUALIFIED. Fully-elaborated Lean names are unique per
+  is source-tree-qualified. Fully-elaborated Lean names are unique per
   ENVIRONMENT, not per source tree — the live compiler-source stress
   run hit `main` defined in both LakeMain and LeanChecker — so a bare
-  name does not identify a node. Frozen encoding: the key is
+  name does not identify a node. Frozen LEAN encoding: the key is
     SHA256(UTF-8(json.dumps(["v2a:20260808", <repo>, <module>,
                              <declName>],
                             ensure_ascii=False,
@@ -568,7 +593,13 @@ peek.
   cannot re-split into a different (repo, module, decl) — plain
   delimiter concatenation could not guarantee this. The earlier
   colon-concatenated, non-module-qualified form was never used to draw
-  any sample.
+  any sample. Python schema v3 uses the analogous key
+    SHA256(UTF-8(json.dumps(["v2a:20260808", <repo>, <module>,
+                             <name>, <start_byte>],
+                            ensure_ascii=False,
+                            separators=(",",":"))))
+  because repeated module/name bindings are legal; the preceding v2
+  module-qualified-fqname key was never used to draw a Python sample.
 
 14.20 PHYSLIB EXTERNAL-CONTEXT HARD GATE: physlib closure results
 (E1a/E1b and any physlib-vs-mathlib reading) are UNINTERPRETABLE until
@@ -595,8 +626,9 @@ permutation; the one draw per target is genuinely dispersed).
   where the identity fields are spliced flat into the array. For LEAN
   targets/units the identity is the pair <module>, <declName> (bare
   fully-elaborated names collide across modules — LakeMain vs
-  LeanChecker `main`); for PYTHON it is the single module-qualified
-  fqname, which already embeds its module path. Canonical compact JSON
+  LeanChecker `main`); for PYTHON schema v3 it is the triple <module>,
+  <name>, <start_byte> (module-qualified names can be rebound). Canonical
+  compact JSON
   length-delimits every field, so quoted Lean identifiers containing
   ':' cannot re-split (same rationale as §14.19); the prior
   colon-concatenated form —

@@ -19,6 +19,27 @@ def _write(td, rel, text):
     return p
 
 
+def _matches(file_rec, name):
+    return [t for t in file_rec["targets"] if t["name"] == name]
+
+
+def _target(file_rec, name):
+    matches = _matches(file_rec, name)
+    assert len(matches) == 1, (name, matches)
+    return matches[0]
+
+
+def _node(file_rec, name):
+    return tuple(_target(file_rec, name)["identity"])
+
+
+def _coverage(graph, node):
+    matches = [row for row in graph["target_coverage"]
+               if tuple(row["identity"]) == tuple(node)]
+    assert len(matches) == 1
+    return matches[0]
+
+
 def test_module_name_and_relative_resolution():
     assert module_name(os.path.join("pkg", "mod.py")) == "pkg.mod"
     assert module_name(os.path.join("pkg", "__init__.py")) == "pkg"
@@ -68,7 +89,7 @@ def test_partitions_byte_exact_all_forms():
             "C": ("class C:", "def m(self):"),
         }
         for name, (h_start, b_start) in expect.items():
-            t = rec["targets"][name]
+            t = _target(rec, name)
             span = by[t["start_byte"]:t["end_byte"]]
             header = span[:t["header_bytes"]].decode()
             body = span[t["header_bytes"]:].decode()
@@ -80,13 +101,13 @@ def test_partitions_byte_exact_all_forms():
                 t["header_bytes"]
         # The suite colon belongs to the signature; everything after it,
         # including leading comments/newlines/indentation, is scored body.
-        fspan = by[rec["targets"]["f"]["start_byte"]:
-                   rec["targets"]["f"]["end_byte"]]
-        fh = rec["targets"]["f"]["header_bytes"]
+        ft = _target(rec, "f")
+        fspan = by[ft["start_byte"]:ft["end_byte"]]
+        fh = ft["header_bytes"]
         assert fspan[:fh].decode().endswith("def f(a):")
         assert fspan[fh:].decode().startswith("\n    # this is")
-        assert rec["targets"]["f"]["docstring_bytes"] > 0
-        assert rec["targets"]["g"]["docstring_bytes"] == 0
+        assert ft["docstring_bytes"] > 0
+        assert _target(rec, "g")["docstring_bytes"] == 0
 
 
 def test_cr_and_syntax_fail_closed():
@@ -138,16 +159,19 @@ def test_declaration_level_resolution():
         files = _corpus(td)
         g = build_graph(files)
         edges = {tuple(e) for e in g["edges"]}
-        assert ("pkg.a.top", "pkg.b.helper") in edges      # decl hit
-        assert ("pkg.a.top", "pkg.a.aux") in edges         # same-file
-        assert not any(dst.startswith("numpy") for _, dst in edges)
+        top = _node(files[0], "top")
+        aux_node = _node(files[0], "aux")
+        helper = _node(files[1], "helper")
+        assert top + helper in edges                         # decl hit
+        assert top + aux_node in edges                       # same-file
+        assert not any(e[3].startswith("numpy") for e in edges)
         # c.VALUE: relative import binds c -> pkg.c (corpus module),
         # VALUE is not a top-level decl -> module fallback, NO edge
-        assert not any(dst == "pkg.c" or dst.endswith("c.VALUE")
-                       for _, dst in edges)
+        assert not any(e[3] == "pkg.c" or e[4] == "VALUE"
+                       for e in edges)
         assert g["n_cross_file"] == 1 and g["n_same_file"] == 1
         assert g["external_by_root"] == {"numpy": 1}
-        cov = g["target_coverage"]["pkg.a.top"]
+        cov = _coverage(g, top)
         # occurrences: helper x2, np.dot, aux, c.VALUE = 5
         assert cov["n_refs"] == 5
         assert cov["n_resolved_decl"] == 3      # helper, helper, aux
@@ -155,9 +179,9 @@ def test_declaration_level_resolution():
         assert cov["n_external"] == 1           # np.dot
         assert cov["n_unresolved"] == 0
         assert cov["coverage"] == 3 / 5         # decl-level ONLY
-        aux = g["target_coverage"]["pkg.a.aux"]
+        aux = _coverage(g, aux_node)
         assert aux["n_unresolved"] == 1 and aux["coverage"] == 0.0
-        assert g["target_coverage"]["pkg.b.helper"]["coverage"] is None
+        assert _coverage(g, helper)["coverage"] is None
 
 
 def test_attribute_deref_hits_exact_decl():
@@ -169,11 +193,13 @@ def test_attribute_deref_hits_exact_decl():
                    "def use(x):\n"
                    "    return B.helper(x)\n")
         b = _write(td, "pkg/b.py", "def helper(v):\n    return v\n")
-        g = build_graph([extract_file(a, os.path.join("pkg", "u.py")),
-                         extract_file(b, os.path.join("pkg", "b.py"))])
-        assert (("pkg.u.use", "pkg.b.helper")
-                in {tuple(e) for e in g["edges"]})
-        cov = g["target_coverage"]["pkg.u.use"]
+        files = [extract_file(a, os.path.join("pkg", "u.py")),
+                 extract_file(b, os.path.join("pkg", "b.py"))]
+        g = build_graph(files)
+        use = _node(files[0], "use")
+        helper = _node(files[1], "helper")
+        assert use + helper in {tuple(e) for e in g["edges"]}
+        cov = _coverage(g, use)
         assert cov["n_resolved_decl"] == 1 and cov["coverage"] == 1.0
 
 
@@ -190,12 +216,37 @@ def test_unaliased_dotted_import_and_deep_attribute_resolve_exact_decl():
         files = [extract_file(a, os.path.join("pkg", "u.py")),
                  extract_file(b, os.path.join("pkg", "b", "deep.py"))]
         assert files[0]["imports"] == {"pkg": "pkg"}
-        assert files[0]["targets"]["use"]["refs"] == \
+        assert _target(files[0], "use")["refs"] == \
             [["pkg", "b.deep.helper"]]
         g = build_graph(files)
-        assert (("pkg.u.use", "pkg.b.deep.helper")
-                in {tuple(e) for e in g["edges"]})
-        assert g["target_coverage"]["pkg.u.use"]["coverage"] == 1.0
+        use, helper = _node(files[0], "use"), _node(files[1], "helper")
+        assert use + helper in {tuple(e) for e in g["edges"]}
+        assert _coverage(g, use)["coverage"] == 1.0
+
+
+def test_attribute_candidate_precedes_ambiguous_bare_symbol():
+    """When both ``pkg.b`` and ``pkg.b.helper`` are declaration symbols,
+    a use of imported ``b.helper`` must choose the attribute-qualified
+    declaration, not silently collapse to the bare imported binding."""
+    with tempfile.TemporaryDirectory() as td:
+        init = _write(td, "pkg/__init__.py",
+                      "def b():\n    return 0\n")
+        sub = _write(td, "pkg/b.py",
+                     "def helper(x):\n    return x\n")
+        use_path = _write(td, "pkg/u.py",
+                          "from pkg import b\n"
+                          "def use(x):\n"
+                          "    return b.helper(x)\n")
+        files = [extract_file(init, os.path.join("pkg", "__init__.py")),
+                 extract_file(sub, os.path.join("pkg", "b.py")),
+                 extract_file(use_path, os.path.join("pkg", "u.py"))]
+        graph = build_graph(files)
+        use = _node(files[2], "use")
+        helper = _node(files[1], "helper")
+        bare_b = _node(files[0], "b")
+        edges = {tuple(edge) for edge in graph["edges"]}
+        assert use + helper in edges
+        assert use + bare_b not in edges
 
 
 def test_duplicate_module_fails_closed():
@@ -211,6 +262,45 @@ def test_duplicate_module_fails_closed():
             assert "duplicate Python module" in str(err)
 
 
+def test_duplicate_top_level_names_have_source_position_identities():
+    """Repeated module bindings are ordinary Python (overloads,
+    singledispatch registrations, compatibility branches).  Preserve every
+    declaration unit while resolving ordinary module-name references to the
+    final source-order binding as an explicitly best-effort graph policy."""
+    with tempfile.TemporaryDirectory() as td:
+        p = _write(td, "pkg/dup.py",
+                   "def f(x):\n"
+                   "    return f(x - 1) if x else 0\n"
+                   "def use(x):\n"
+                   "    return f(x)\n"
+                   "def f(x):\n"
+                   "    return x + 2\n")
+        rec = extract_file(p, os.path.join("pkg", "dup.py"))
+        defs = _matches(rec, "f")
+        assert len(defs) == 2
+        assert defs[0]["identity"] != defs[1]["identity"]
+        assert [d["binding_ordinal"] for d in defs] == [0, 1]
+        assert all(d["is_duplicate_binding"] for d in defs)
+        assert [d["is_final_module_binding"] for d in defs] == [False, True]
+        assert rec["duplicate_target_name_counts"] == {"f": 2}
+        assert rec["n_duplicate_target_names"] == 1
+        assert rec["n_duplicate_target_declarations"] == 2
+
+        g = build_graph([rec])
+        use = _node(rec, "use")
+        first_f, final_f = (tuple(d["identity"]) for d in defs)
+        assert use + tuple(defs[1]["identity"]) in {
+            tuple(edge) for edge in g["edges"]}
+        # The earlier body's f(...) is not self-recursion after normal module
+        # import completion: it resolves to the later binding under the
+        # documented approximation.
+        assert first_f + final_f in {tuple(edge) for edge in g["edges"]}
+        assert g["duplicate_module_bindings"] == [dict(
+            symbol="pkg.dup.f",
+            identities=[d["identity"] for d in defs])]
+        assert "final source-order" in g["reference_binding_policy"]
+
+
 def test_known_package_root_is_not_misclassified_external():
     """Even if an imported submodule has no successfully parsed file, a
     known corpus package root makes it module fallback, not external."""
@@ -221,7 +311,7 @@ def test_known_package_root_is_not_misclassified_external():
                    "    return missing.value\n")
         rec = extract_file(p, os.path.join("pkg", "use.py"))
         g = build_graph([rec])
-        cov = g["target_coverage"]["pkg.use.use"]
+        cov = _coverage(g, _node(rec, "use"))
         assert cov["n_module_fallback"] == 1
         assert cov["n_external"] == 0
         assert g["external_by_root"] == {}
@@ -234,7 +324,7 @@ def test_self_and_bound_names_excluded():
                    "    inner = 2\n"
                    "    return rec(n - 1) + inner\n")
         rec = extract_file(p, os.path.join("pkg", "r.py"))
-        assert rec["targets"]["rec"]["refs"] == []   # self + bound only
+        assert _target(rec, "rec")["refs"] == []   # self + bound only
 
 
 def test_source_path_recorded_absolute():
@@ -270,7 +360,7 @@ def test_collection_order_is_deterministic_and_output_is_new_only():
                 assert "overwrite" in str(err)
         assert open(out, "rb").read() == first
         parsed = json.loads(first)
-        assert parsed["schema"] == "v2a_python_extract_v2"
+        assert parsed["schema"] == "v2a_python_extract_v3"
         assert parsed["n_files"] == 2
 
 

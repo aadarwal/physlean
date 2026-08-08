@@ -5,6 +5,12 @@ metric — fraction of static references resolved to declaration level.
 No exact-closure claim is ever made for Python (§14.4); low coverage is
 RECORDED, never hidden.
 
+Python schema v3 treats each direct module-body declaration as a source-span
+unit with identity (module, name, start_byte), so repeated top-level bindings
+are preserved rather than overwritten. Static name edges use the documented
+final-source-order binding convention; temporal/dynamic exceptions remain a
+recorded best-effort limitation.
+
 Spans are byte-exact by construction: CPython's ast col_offset /
 end_col_offset are UTF-8 BYTE offsets into the source line, so span
 recovery needs no UTF-16 conversion (unlike the Lean side). Round-trip
@@ -14,6 +20,7 @@ import argparse, ast, bisect, builtins, hashlib, io, json, os, sys, tempfile
 import tokenize
 
 V2A_SEED = "v2a:20260808"                    # §14.19 (shared constant)
+SCHEMA = "v2a_python_extract_v3"
 _BUILTINS = frozenset(dir(builtins))
 
 
@@ -178,7 +185,7 @@ def extract_file(path, rel):
             for a in node.names:
                 if a.name != "*":
                     imports[a.asname or a.name] = f"{base}.{a.name}"
-    targets = {}
+    targets = []
     toplevel = {n.name for n in tree.body
                 if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef,
                                   ast.ClassDef))}
@@ -249,10 +256,7 @@ def extract_file(path, rel):
             elif isinstance(sub, ast.arg):
                 bound.add(sub.arg)
         refs = [(n, a) for n, a in occ
-                if n not in bound and n not in _BUILTINS
-                and n != node.name]
-        if node.name in targets:
-            raise ExtractError(f"{rel}: duplicate top-level {node.name}")
+                if n not in bound and n not in _BUILTINS]
         docstring_bytes = 0
         if (node.body and isinstance(node.body[0], ast.Expr)
                 and isinstance(node.body[0].value, ast.Constant)
@@ -261,17 +265,47 @@ def extract_file(path, rel):
             ds = _abs_byte(starts, doc.lineno, doc.col_offset)
             de = _abs_byte(starts, doc.end_lineno, doc.end_col_offset)
             docstring_bytes = de - ds
-        targets[node.name] = dict(
+        targets.append(dict(
+            name=node.name, identity=[module, node.name, s],
             start_byte=s, end_byte=e, body_start_byte=body_start,
             header_bytes=header_bytes, body_bytes=body_bytes,
             docstring_bytes=docstring_bytes,
             kind=type(node).__name__,
             n_ref_occurrences=len(refs),
-            refs=[list(r) for r in refs])
+            refs=[list(r) for r in refs]))
+    bindings = {}
+    for target in targets:
+        bindings.setdefault(target["name"], []).append(target)
+    duplicate_name_counts = {}
+    for name, definitions in bindings.items():
+        definitions.sort(key=lambda t: t["start_byte"])
+        count = len(definitions)
+        if count > 1:
+            duplicate_name_counts[name] = count
+        for ordinal, target in enumerate(definitions):
+            target["binding_ordinal"] = ordinal
+            target["binding_count"] = count
+            target["is_duplicate_binding"] = count > 1
+            target["is_final_module_binding"] = ordinal == count - 1
+            # A same-name reference in the final (or only) declaration is
+            # ordinary self-recursion and contributes no context edge. In an
+            # earlier repeated binding, however, the documented post-import
+            # approximation resolves that name to the later final binding.
+            # Preserve it so a real cross-twin edge is not erased as "self".
+            if target["is_final_module_binding"]:
+                target["refs"] = [
+                    ref for ref in target["refs"] if ref[0] != name]
+                target["n_ref_occurrences"] = len(target["refs"])
     return dict(rel=rel, source=path, module=module,
                 source_sha256=hashlib.sha256(by).hexdigest(),
                 imports=imports, import_errors=import_errors,
-                toplevel=sorted(toplevel), targets=targets)
+                toplevel=sorted(toplevel),
+                n_duplicate_target_names=len(duplicate_name_counts),
+                n_duplicate_target_declarations=sum(
+                    duplicate_name_counts.values()),
+                duplicate_target_name_counts=dict(
+                    sorted(duplicate_name_counts.items())),
+                targets=targets)
 
 
 def build_graph(files):
@@ -292,17 +326,29 @@ def build_graph(files):
     Coverage = decl hits / occurrences (occurrence counts and the
     deduplicated edge set are kept separately)."""
     seen_modules = set()
-    fq_decls = set()
+    seen_identities = set()
+    final_binding = {}
+    all_bindings = {}
     for f in files:
         module = f["module"]
         if module in seen_modules:
             raise ExtractError(f"duplicate Python module: {module}")
         seen_modules.add(module)
-        for t in f["toplevel"]:
-            fq = f"{module}.{t}"
-            if fq in fq_decls:
-                raise ExtractError(f"duplicate Python declaration: {fq}")
-            fq_decls.add(fq)
+        for target in f["targets"]:
+            identity = tuple(target["identity"])
+            if not (len(identity) == 3 and identity[0] == module
+                    and identity[1] == target["name"]
+                    and identity[2] == target["start_byte"]):
+                raise ExtractError(f"invalid Python target identity: {identity}")
+            if identity in seen_identities:
+                raise ExtractError(
+                    f"duplicate Python target identity: {identity}")
+            seen_identities.add(identity)
+            symbol = f"{module}.{target['name']}"
+            all_bindings.setdefault(symbol, []).append(identity)
+    for symbol, identities in all_bindings.items():
+        identities.sort(key=lambda x: x[2])
+        final_binding[symbol] = identities[-1]
     corpus_modules = seen_modules
     # A failed/missing package __init__.py must not make imports under a
     # known corpus package look external. Namespace-package roots are also
@@ -316,27 +362,31 @@ def build_graph(files):
     edges = set()
     same_file = cross_file = 0
     external = {}
-    per_target = {}
+    per_target = []
     for f in files:
-        top = set(f["toplevel"])
-        for tname, t in f["targets"].items():
-            src = f"{f['module']}.{tname}"
+        top = {name: final_binding[f"{f['module']}.{name}"]
+               for name in f["toplevel"]}
+        for t in f["targets"]:
+            src = tuple(t["identity"])
             n_hit = n_fallback = n_external = n_unresolved = 0
             for name, attr in (tuple(r) for r in t["refs"]):
                 if name in top:
-                    e = (src, f"{f['module']}.{name}")
-                    if e not in edges:
+                    dst = top[name]
+                    e = src + dst
+                    if dst != src and e not in edges:
                         edges.add(e)
                         same_file += 1
                     n_hit += 1
                 elif name in f["imports"]:
                     dotted = f["imports"][name]
-                    cands = [dotted] + ([f"{dotted}.{attr}"]
-                                        if attr else [])
-                    hit = next((c for c in cands if c in fq_decls), None)
+                    cands = (([f"{dotted}.{attr}"] if attr else [])
+                             + [dotted])
+                    hit = next((c for c in cands
+                                if c in final_binding), None)
                     if hit:
-                        e = (src, hit)
-                        if e not in edges:
+                        dst = final_binding[hit]
+                        e = src + dst
+                        if dst != src and e not in edges:
                             edges.add(e)
                             cross_file += 1
                         n_hit += 1
@@ -349,14 +399,28 @@ def build_graph(files):
                 else:
                     n_unresolved += 1
             total = n_hit + n_fallback + n_external + n_unresolved
-            per_target[src] = dict(
+            per_target.append(dict(
+                identity=list(src), name=t["name"],
                 n_refs=total, n_resolved_decl=n_hit,
                 n_module_fallback=n_fallback, n_external=n_external,
                 n_unresolved=n_unresolved,
-                coverage=(n_hit / total) if total else None)
-    return dict(edges=sorted(edges), n_same_file=same_file,
+                coverage=(n_hit / total) if total else None))
+    duplicate_bindings = [
+        dict(symbol=symbol, identities=[list(x) for x in identities])
+        for symbol, identities in sorted(all_bindings.items())
+        if len(identities) > 1]
+    return dict(edges=[list(e) for e in sorted(edges)],
+                n_same_file=same_file,
                 n_cross_file=cross_file, external_by_root=external,
-                target_coverage=per_target,
+                target_coverage=sorted(
+                    per_target, key=lambda row: tuple(row["identity"])),
+                duplicate_module_bindings=duplicate_bindings,
+                reference_binding_policy=(
+                    "module-body references resolve to the final "
+                    "source-order top-level def/class binding; decorator/"
+                    "default evaluation timing, later assignment/import, "
+                    "and conditional rebinding remain best-effort "
+                    "limitations"),
                 coverage_definition=(
                     "exact-declaration hits / extracted static reference "
                     "occurrences; stdlib-AST best effort, not an exact "
@@ -421,13 +485,13 @@ def main():
     good = [f for f in files if "error" not in f]
     bad = [f for f in files if "error" in f]
     graph = build_graph(good)
-    out = dict(schema="v2a_python_extract_v2", repo=args.repo,
+    out = dict(schema=SCHEMA, repo=args.repo,
                pkg=args.pkg, n_files=len(good), n_failed=len(bad),
                failed=[dict(rel=f["rel"], error=f["error"])
                        for f in bad],
                files=good, graph=graph)
     write_new_json(args.out, out)
-    cov = [t["coverage"] for t in graph["target_coverage"].values()
+    cov = [t["coverage"] for t in graph["target_coverage"]
            if t["coverage"] is not None]
     cov_text = f"{sum(cov)/len(cov):.3f}" if cov else "NA"
     print(f"[extract_python] {len(good)} files ({len(bad)} failed), "

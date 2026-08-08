@@ -626,8 +626,43 @@ arxiv_manifest) must be committed before measurement.
   canonical compact-JSON encoding — SHA256 over ["k5:<seed>", repo,
   <target-identity...>, <unit-identity...>] with identities spliced
   flat: Lean targets AND units carry the (module, declName) pair;
-  Python keeps its single module-qualified fqname (module path is
-  already embedded). The prior colon form never drew anything.
+  At that boundary Python kept its single module-qualified fqname (module
+  path is already embedded); this is superseded by the immediately following
+  amendment before any use. The prior colon form never drew anything.
+- ADOPTED (G3.5 V2-a Python source-identity amendment, 2026-08-08,
+  PRE-OUTCOME — the first CPU-only corpus extraction computed no model
+  score and drew no §14.19 sample): the fail-closed v2 extractor stopped
+  on 52 SymPy and 6 Astropy files. Postmortem classified every one as a
+  syntactically valid repeated direct top-level-name condition and found zero
+  syntax/CR
+  failures. Python permits this in overload, singledispatch-registration,
+  and compatibility patterns; a `module.name` dictionary therefore erased
+  real declaration units. Adopted contract (Python extraction schema v2 ->
+  v3, `v2a_python_extract_v3`; consumers reject v2): targets are a list and
+  each declaration identity is `[module, name, start_byte]`; graph edges are
+  sextuples containing the source and destination triples; target-coverage
+  rows carry the same explicit identity; binding count, ordinal, and finality
+  plus duplicate-name counts are recorded. The §14.19 priority key is
+  SHA256 of canonical compact JSON
+  `["v2a:20260808", repo, module, name, start_byte]`; §14.21 Python target
+  and unit identities use the same triple. Neither preceding key was ever
+  used to draw a Python sample. Ordinary static references resolve to the
+  final source-order module-body def/class binding, explicitly as BEST-EFFORT:
+  decorators, defaults, annotations, class bodies, later imports/assignments,
+  alias capture, conditional rebinding, and dynamic dispatch may observe
+  other temporal bindings, so §14.4's
+  no-exact-Python-closure claim remains unchanged. All direct module-body
+  declarations remain V2-a eligible; excluding shadowed or underscore-named
+  declarations would silently redefine the frozen per-declaration population
+  and discard dispatch registrations. Duplicate-stratum status is a mandatory
+  fixed report column, and within each Python repo every headline V2 estimand
+  is repeated excluding that stratum as a predeclared sensitivity. §3's
+  every-arm near-duplicate
+  exclusion handles lexically detected twins; the sensitivity handles
+  same-name siblings below that threshold and identical-header query
+  ambiguity. Semantic behavioral pooling still requires measured execution
+  coverage of the exact target span under §14.23, so lexical finality is not
+  substituted for runtime evidence.
 - ADOPTED (post-G3a boundary, evidence commit 570c433; first grid
   outcomes): the Qwen2.5-Coder-0.5B sentinel is an INSTRUMENT PASS but
   provides NO POWER-LAW SUPPORT. Slurm 19904528 completed all 44/44

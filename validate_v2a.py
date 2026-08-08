@@ -31,18 +31,35 @@ OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                        "results_v2", "v2a")
 N_TARGETS = 20
 LEAN_SCHEMA = "v2a_lean_extract_v2"
-PYTHON_SCHEMA = "v2a_python_extract_v2"
+PYTHON_SCHEMA = "v2a_python_extract_v3"
 
 
-def _python_priority(repo, fqname):
-    """Frozen §14.19 Python identity (module is already in fqname)."""
-    return hashlib.sha256(
-        f"v2a:20260808:{repo}:{fqname}".encode()).hexdigest()
+def _python_priority(repo, identity):
+    """Frozen §14.19 priority for (module, name, start_byte).
+
+    Python permits repeated top-level bindings with the same module/name, so
+    the source byte is part of declaration identity.  Canonical JSON avoids
+    delimiter collisions and matches the Lean priority-key discipline.
+    """
+    if (not isinstance(identity, (list, tuple)) or len(identity) != 3
+            or not isinstance(identity[0], str)
+            or not isinstance(identity[1], str)
+            or not isinstance(identity[2], int)
+            or isinstance(identity[2], bool)):
+        raise ValueError(f"invalid Python identity: {identity!r}")
+    payload = ["v2a:20260808", repo, *identity]
+    encoded = json.dumps(payload, ensure_ascii=False,
+                         separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def _python_transitive_closure(edges, root):
     adj = {}
-    for src, dst in edges:
+    root = tuple(root)
+    for edge in edges:
+        if len(edge) != 6:
+            raise ValueError(f"invalid Python graph edge: {edge!r}")
+        src, dst = tuple(edge[:3]), tuple(edge[3:])
         adj.setdefault(src, set()).add(dst)
     seen, stack = set(), [root]
     while stack:
@@ -94,8 +111,13 @@ def lean_exclusions(ex):
 
 def _py_eligible(ex):
     for f in ex["files"]:
-        for name, t in f["targets"].items():
-            yield f"{f['module']}.{name}", f, t
+        for t in f["targets"]:
+            identity = tuple(t.get("identity", ()))
+            if (len(identity) != 3 or identity[0] != f["module"]
+                    or identity[1] != t.get("name")
+                    or identity[2] != t.get("start_byte")):
+                raise ValueError(f"invalid Python target identity: {identity}")
+            yield identity, f, t
 
 
 def validate(ex, repo, n_targets):
@@ -118,6 +140,14 @@ def validate(ex, repo, n_targets):
             f"{ex.get('k4_closure_definition')!r}!="
             f"{K4_CLOSURE_DEFINITION!r}")
     elig = list(_lean_eligible(ex) if lean else _py_eligible(ex))
+    eligible_identities = [
+        (row[1]["module"], row[0]) if lean else tuple(row[0])
+        for row in elig]
+    n_duplicate_eligible = (len(eligible_identities)
+                            - len(set(eligible_identities)))
+    if n_duplicate_eligible:
+        failures.append(
+            f"duplicate-eligible-identities:{n_duplicate_eligible}")
     ranked = sorted(
         elig,
         key=(lambda x: target_priority(repo, x[1]["module"], x[0]))
@@ -138,10 +168,20 @@ def validate(ex, repo, n_targets):
         len(f.get("import_errors", [])) for f in ex.get("files", [])))
     py_live_cache = {}
     targets = []
-    for fq, f, d in chosen:
+    coverage_by_identity = ({} if lean else {
+        tuple(row.get("identity", ())): row
+        for row in g.get("target_coverage", [])})
+    for selected_identity, f, d in chosen:
         module = f.get("module")
-        rec = dict(name=fq, module=module,
-                   identity=([module, fq] if lean else fq),
+        if lean:
+            fq = selected_identity
+            identity = [module, fq]
+            failure_identity = fq
+        else:
+            identity = list(selected_identity)
+            fq = f"{identity[0]}.{identity[1]}"
+            failure_identity = f"{fq}@{identity[2]}"
+        rec = dict(name=fq, module=module, identity=identity,
                    diagnostics=[])
         try:
             src = f.get("source") or f.get("rel")
@@ -207,21 +247,31 @@ def validate(ex, repo, n_targets):
                     raise RuntimeError("span re-encode mismatch")
                 if src not in py_live_cache:
                     py_live_cache[src] = reextract_python_file(src, f["rel"])
-                local_name = fq[len(module) + 1:] \
-                    if fq.startswith(module + ".") else None
-                live_target = py_live_cache[src]["targets"].get(local_name)
-                if live_target is None:
+                live_matches = [
+                    target for target in py_live_cache[src]["targets"]
+                    if target.get("identity") == identity]
+                if len(live_matches) != 1:
                     raise RuntimeError(
-                        "selected Python target absent on live reparse")
+                        "selected Python target absent/duplicate on live "
+                        f"reparse: {identity!r}")
+                live_target = live_matches[0]
                 for field in ("start_byte", "end_byte", "body_start_byte",
                               "header_bytes", "body_bytes", "docstring_bytes",
-                              "kind"):
+                              "kind", "binding_ordinal", "binding_count",
+                              "is_duplicate_binding",
+                              "is_final_module_binding"):
                     if live_target.get(field) != d.get(field):
                         raise RuntimeError(
                             f"live Python {field} differs from extraction")
                 rec.update(header_bytes=hb, body_bytes=bb,
                            body_start_byte=body_start,
-                           docstring_bytes=d.get("docstring_bytes", 0))
+                           docstring_bytes=d.get("docstring_bytes", 0),
+                           binding_ordinal=d.get("binding_ordinal"),
+                           binding_count=d.get("binding_count"),
+                           is_duplicate_binding=d.get(
+                               "is_duplicate_binding"),
+                           is_final_module_binding=d.get(
+                               "is_final_module_binding"))
             if lean:
                 root = (module, fq)
                 clo = transitive_closure(edges, root)
@@ -229,13 +279,11 @@ def validate(ex, repo, n_targets):
                           if (sm, sd) == root}
                 same = sum(1 for dm, _ in clo if dm == module)
             else:
-                clo = _python_transitive_closure(edges, fq)
-                direct = {b for a, b in edges if a == fq}
-                mod_of = {}
-                for ff in ex["files"]:
-                    for nn in ff.get("targets", {}):
-                        mod_of[f"{ff['module']}.{nn}"] = ff["module"]
-                same = sum(1 for c in clo if mod_of.get(c) == module)
+                root = tuple(identity)
+                clo = _python_transitive_closure(edges, root)
+                direct = {tuple(edge[3:]) for edge in edges
+                          if tuple(edge[:3]) == root}
+                same = sum(1 for c in clo if c[0] == module)
             rec.update(n_direct=len(direct), n_transitive=len(clo),
                        n_same_file_in_closure=same,
                        n_cross_file_in_closure=len(clo) - same,
@@ -252,11 +300,11 @@ def validate(ex, repo, n_targets):
                             n_unrenderable_occurrences=0,
                             coverage=None))
             else:
-                rec["reference_coverage"] = \
-                    g.get("target_coverage", {}).get(fq)
+                rec["reference_coverage"] = coverage_by_identity.get(
+                    tuple(identity))
         except Exception as err:
             rec.update(roundtrip_ok=False, error=repr(err))
-            failures.append(fq)
+            failures.append(failure_identity)
         targets.append(rec)
     summary = dict(
         repo=repo, schema=ex["schema"],
@@ -284,6 +332,13 @@ def validate(ex, repo, n_targets):
         target_coverage_mean=(None if lean else _mean_cov(g)),
         n_failed_source_files=(None if lean else ex.get("n_failed")),
         n_import_errors=n_import_errors,
+        n_duplicate_python_bindings=(None if lean else len(
+            g.get("duplicate_module_bindings", []))),
+        n_duplicate_python_declarations=(None if lean else sum(
+            len(row.get("identities", []))
+            for row in g.get("duplicate_module_bindings", []))),
+        python_reference_binding_policy=(None if lean else g.get(
+            "reference_binding_policy")),
         n_failures=len(failures), failures=failures,
         # HONEST §10 accounting (review fix): extraction validation is
         # a PARTIAL gate; these stay NOT-RUN until they truly execute
@@ -298,7 +353,7 @@ def validate(ex, repo, n_targets):
 
 
 def _mean_cov(g):
-    vals = [t["coverage"] for t in g.get("target_coverage", {}).values()
+    vals = [t["coverage"] for t in g.get("target_coverage", [])
             if t.get("coverage") is not None]
     return (sum(vals) / len(vals)) if vals else None
 

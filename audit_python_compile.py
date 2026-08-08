@@ -16,7 +16,7 @@ import sys
 import tempfile
 
 
-EXTRACT_SCHEMA = "v2a_python_extract_v2"
+EXTRACT_SCHEMA = "v2a_python_extract_v3"
 AUDIT_SCHEMA = "v2a_python_boundary_compile_audit_v1"
 BLOCK_MARKER = b" # V2A_BODY_BOUNDARY"
 INLINE_MARKER = b' "V2A_BODY_BOUNDARY";'
@@ -106,16 +106,29 @@ def audit(extraction, validation, repo_root, work_dir, python=sys.executable,
 
     identities = {}
     for file_rec in extraction.get("files", []):
-        module = file_rec.get("module")
-        for name, target in file_rec.get("targets", {}).items():
-            fqname = f"{module}.{name}"
-            if fqname in identities:
-                raise CompileAuditError(f"duplicate target: {fqname}")
-            identities[fqname] = (file_rec, target)
+        for target in file_rec.get("targets", []):
+            raw_identity = target.get("identity")
+            identity = tuple(raw_identity) \
+                if isinstance(raw_identity, list) else ()
+            if (len(identity) != 3
+                    or identity[0] != file_rec.get("module")
+                    or identity[1] != target.get("name")
+                    or identity[2] != target.get("start_byte")):
+                raise CompileAuditError(
+                    f"invalid target identity: {raw_identity!r}")
+            if identity in identities:
+                raise CompileAuditError(f"duplicate target: {identity!r}")
+            identities[identity] = (file_rec, target)
 
-    selected = [t.get("identity") for t in validation.get("targets", [])]
+    selected_raw = [t.get("identity")
+                    for t in validation.get("targets", [])]
+    selected = [tuple(x) if isinstance(x, list) else ()
+                for x in selected_raw]
     if (not selected or len(set(selected)) != len(selected)
-            or not all(isinstance(x, str) and x for x in selected)):
+            or not all(len(x) == 3 and isinstance(x[0], str)
+                       and isinstance(x[1], str)
+                       and isinstance(x[2], int)
+                       and not isinstance(x[2], bool) for x in selected)):
         raise CompileAuditError("selected identities are empty/invalid/duplicate")
 
     baseline_cache = {}
@@ -159,9 +172,9 @@ def audit(extraction, validation, repo_root, work_dir, python=sys.executable,
             os.path.join(work_dir, f"marked_{i:04d}.pyc"), timeout, runner)
         passed = baseline["pass_compile"] and marked_compile["pass_compile"]
         if not passed:
-            failures.append(identity)
+            failures.append(list(identity))
         rows.append(dict(
-            identity=identity, source=source_path,
+            identity=list(identity), source=source_path,
             source_sha256=file_rec["source_sha256"],
             start_byte=start, end_byte=end, boundary_byte=boundary,
             marker_mode=marker_mode,
