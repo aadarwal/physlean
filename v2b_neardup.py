@@ -324,9 +324,8 @@ def lex_python(text):
             else:
                 raise V2BError(
                     f"unexpected python token {tokenize.tok_name[tok.type]}")
-    except tokenize.TokenizeError as err:
-        raise V2BError(f"python unit does not tokenize: {err}") from err
-    except (IndentationError, SyntaxError) as err:
+    except (tokenize.TokenError, IndentationError, SyntaxError,
+            ValueError) as err:
         raise V2BError(f"python unit does not tokenize: {err}") from err
     if not records:
         raise V2BError("python unit produced no tokens")

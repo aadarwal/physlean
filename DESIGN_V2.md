@@ -1105,8 +1105,9 @@ pre-generation): projected stage-2 cost = sum over targets of
 completions) measured on the 20 structural targets; > 200 CPU-hours
 => that repo's python-semantic behavioral pilot is INFEASIBLE before
 any generation — generation and compile-only verification still run,
-NLL proceeds, §14.22 reliability uses the outcome classes that exist,
-Python confirmatory F1 is infeasible for that repo (§14.23). No
+NLL proceeds, §14.22 emits descriptive reliability for the outcome classes
+that exist while only python-semantic-covered governs semantic-F1 completion
+n, and Python confirmatory F1 is infeasible for that repo (§14.23). No
 per-target caps or exceptions.
 
 15.A8 k7 ORDER + FILTER. Order: the G3 regex source-import graph and
@@ -1570,3 +1571,213 @@ masked pilot data, never an analyst choice.
   variance-component uncertainty is only partially covered by the
   t(G-1) quantile; both are governance conservatism trade-offs frozen
   here, not tunable knobs.
+
+15.A15 FORMAL PILOT UNBLINDING (§14.22 sequencing made operational;
+adopted PRE-SCORE — no model score, behavioral completion, masked delta,
+governance artifact, or contrast mean exists). Setting N is necessary but
+NOT sufficient to open the V2-b pilot. The private NLL salt remains sealed
+until BOTH mechanically chosen constants exist: per-repo target N from
+§15.A14 and behavioral completion n from §14.22's arm-anonymous reliability
+gate. The sole earlier disclosure remains the already-frozen k4 aggregate
+pass rate used only for the floor/ceiling tier rule. An NLL reveal after N
+governance alone would be a separately amended exploratory analysis, never
+completion of the preregistered V2-b pilot; this study does not schedule it.
+
+  RECONSTRUCTION. The formal unblinder re-runs the exact B3 producer over
+  every hash-bound paired completion under the opened salt and requires the
+  reconstructed public masked object to equal the committed object exactly
+  (generator stamp excluded; committed file bytes remain hash-bound). It
+  also re-runs the frozen N-governance analyzer and requires exact object
+  equality with every committed governance artifact. B3's two-pass
+  floating centering publishes, at reveal, removed_mean, fsum_correction,
+  and total_centering = their sum; raw delta = sign * published residual +
+  total_centering to floating roundoff and is exact under forward replay of
+  B3. The reveal records the salt, contrast-to-opaque-family mapping, signs,
+  centering values, and all input bindings in one write-once artifact.
+
+  BEHAVIORAL ANTI-FORGERY GATE. Five JSON files merely carrying a future
+  behavioral-governance schema do not satisfy §14.22. The production reveal
+  entry point is mechanically DISABLED until the behavioral generator,
+  parser/verifier evidence chain, reliability estimator (including all edge
+  rules), and deterministic governance recomputation check are implemented,
+  tested, and committed. Enabling that entry point is itself an auditable
+  source amendment; hand-written schema-shaped artifacts cannot open the
+  salt under the frozen code.
+
+15.A16 SOURCE-TOKEN NLL ATTRIBUTION (prospectively supersedes the §5 phrase
+"AST-class split" for the implemented analysis; adopted PRE-SCORE — no
+model score or contrast mean exists). The current implementation makes NO
+AST-node claim. A future parser-derived AST map may be added as a separately
+named analysis, but the frozen primary here is additive lexical SOURCE-TOKEN
+attribution over the exact scored declaration body.
+
+  SOURCE PARTITION. Before scoring, each exact assembly body is strictly
+  UTF-8 decoded and partitioned without gaps or overlaps in both codepoint
+  and byte coordinates into six source classes:
+    word    = Lean IDENT or Python NAME, INCLUDING keyword/tactic-head
+              spellings (there is no semantic identifier claim);
+    literal = Lean NUM/STR/CHAR or Python NUMBER/STRING/f-string literal
+              pieces;
+    symbol  = Lean/Python OP (operator, delimiter, or punctuation);
+    comment = explicit language-lexer comment span;
+    layout  = spaces, tabs, newlines, indentation, and token gaps;
+    other   = any positive-width source token not covered above.
+  Lean uses a span-aware transcription of the audited A6 scanner, including
+  Unicode/quoted identifiers, nested comments, raw/interpolated strings,
+  character literals, and the frozen apostrophe ambiguity rule; projecting
+  its lexical records and layout sentinels MUST equal v2b_neardup.lex_lean
+  exactly. Python uses the frozen Python runtime's stdlib tokenize positions;
+  projecting its A6-relevant records MUST equal v2b_neardup.lex_python.
+  Lean interpolated strings remain whole literals and are tagged as compound
+  rather than silently attributing their embedded term. Every span carries
+  char/byte bounds, raw kind, source class, and a spelling hash. The
+  source-only write-once ledger binds the assembly and classifier/harness
+  hashes, records the exact char-to-UTF8-byte boundary table and runtime,
+  explicitly states ast_node_attribution=false, and contains no score or arm
+  contrast.
+
+  MODEL GROUPS AND BOUNDARY. Attribution consumes eval_paired's existing
+  raw_body_token_rows, so it needs no GPU rerun. The excluded prefix/body
+  straddling group remains excluded exactly as in §15.A11. Starting at that
+  excluded body's codepoint extent, primary tokenizer tokens are grouped by
+  layout.token_spans' frozen transitive-overlap rule; offset gaps charge to
+  the next opener. Charged groups must partition the primary scored-body
+  complement exactly, conserve scored bytes, reproduce the stored token
+  layout signature in every arm, and their raw token NLL fsum must equal the
+  stored primary NLL exactly.
+
+  PRIMARY GROUP LABEL. One model overlap-group is atomic; its NLL is never
+  split across primary classes. Let core support be the positive-byte subset
+  of {word,literal,symbol,other}. Exactly one core class labels the group,
+  even when layout/comment bytes carry that lexical core. More than one core
+  class is retained as mixed_core. With no core, comment only -> comment,
+  layout only -> layout, and both -> comment_layout. Thus the eight primary
+  model-group classes are word, literal, symbol, other, mixed_core, comment,
+  layout, and comment_layout. No mixed group is redistributed. A separately
+  named noncausal byte_overlap_apportionment_sensitivity allocates group NLL
+  in proportion to charged source-byte overlaps; it never replaces primary.
+
+  ADDITIVE ESTIMAND. For target t, cell j, group g, let L_tjg be group NLL
+  in nats, S_t the TOTAL primary scored-body bytes shared across arms, and
+  ell(g) its primary class. Then
+
+      C_tjc = sum_{g:ell(g)=c} L_tjg / (ln(2) * S_t),
+      C_tj  = sum_c C_tjc + explicit_roundoff_residual = primary BPB.
+
+  A within-class byte denominator is not a primary estimand and may appear
+  only as a labeled sensitivity. Nested floating summation may differ by at
+  most 16 ulps of max(|primary NLL|,1); the residual is published and no
+  scientific class absorbs it. At B*=16 KiB, the ONLY preregistered source
+  contrasts retain B3's orientations and complete-case target sets:
+  E1a=k1-k4, E1b=k3-k4, E2=k5:0-k4. For a-b,
+
+      Delta_t,c = C_ta,c - C_tb,c,
+      Delta_t   = sum_c Delta_t,c + roundoff residual.
+
+  Repo summaries are target-equal means over the SAME contrast-specific
+  targets for every class. Classes never introduce their own exclusions.
+  Contrast reconstruction has a frozen 32-ulp bound. Percentage effect
+  shares are not computed: they are unstable near zero and when class
+  contributions cancel. Descriptive class totals at other cells never become
+  additional confirmatory contrasts.
+
+  BLIND EXECUTION ORDER. The source-only ledger is safe to generate and
+  commit before scoring. The classification, group reconstruction, additive
+  denominator, residual rules, contrasts, and adversarial tests are likewise
+  committed before any contrast is opened. Production attributed outcomes
+  are not generated or inspected until §15.A15's formal joint N+behavioral-n
+  unblinding; freezing the postprocessor now prevents class definitions from
+  being chosen after seeing class or aggregate effects.
+
+15.A17 ARM-ANONYMOUS BEHAVIORAL n GOVERNANCE (reliability estimator frozen
+PRE-GENERATION and PRE-SCORE — no model score, generated completion,
+verification outcome, pass rate, or contrast exists). This subsection fixes
+the mathematical half of §14.22's behavioral gate. It does NOT claim that the
+still-required generation, post-hoc completion parser, Lean/Python verifier,
+masking producer, or k4 tier revealer has run.
+
+  INPUT AND BLINDNESS. One artifact governs one exact (repo, final model)
+  SLOT; reliability is never pooled across repos or model tiers. The final
+  tier is selected first by §8's sole permitted k4 floor/ceiling aggregate,
+  and reliability is then measured at that exact tier; reliability from the
+  initial 1.5B tier cannot substitute after a move to 0.5B or 3B. If execution
+  later needs one shared draw count, operational_n is the maximum chosen n
+  across FEASIBLE slots; an infeasible slot remains infeasible. Model name and
+  40-hex revision must equal one of the pinned q25c 0.5B/1.5B/3B bindings.
+
+  The governance input carries exactly five opaque arm ids arm-<16 hex> for
+  the exact named set {k1,k3,k4,k5,k6}. Under a behavioral salt/commitment
+  distinct from the NLL salt,
+
+    arm_id = "arm-" + HMAC-SHA256(
+      salt, canonical_json(["v2bbehavior-arm:v1",named_arm]))[:16 hex].
+
+  The salt commitment is committed BEFORE generation; collisions fail, and
+  the mapping plus the complete masked object must replay exactly at joint
+  reveal. Every opaque arm has the identical canonical target-key/outcome-
+  class table and exactly 32 INTEGER {0,1} verifier outcomes per target;
+  position i is both draw index and generation seed i. Target keys are the
+  exact keys in the committed 20-target sample/eligibility table (never
+  outcome-aware aliases), and class assignment is the arm-independent result
+  of the committed baseline/coverage gate. Missing, duplicate, float/bool,
+  unequal-length, unsorted, extra-field, or cross-arm target/class drift fails
+  closed. Exact top-level, binding, model, generator, and row key sets exclude
+  free-form metadata channels. Public bindings carry only frozen schemas and
+  hashes (no paths/notes) for behavior plan, sample, assembly, baseline-
+  coverage, completion/verifier evidence, behavioral salt commitment, and the
+  repo's NLL masked artifact. The output is constructed from validated fields;
+  it records only reliability nuisance quantities under opaque ids and never
+  a pass-rate mean or copied arbitrary metadata.
+
+  STRATUM SEMANTICS. Allowed Lean classes are {lean-theorem-proof,
+  lean-def-typecheck}; allowed Python classes are {python-semantic-covered,
+  compile-only}. Consistent with §8/§14.23, ONLY lean-theorem-proof governs a
+  Lean slot's semantic-F1 n and ONLY python-semantic-covered governs a Python
+  slot's semantic-F1 n. Other allowed classes receive explicitly
+  descriptive-only reliability cells and never make semantic F1 feasible or
+  set its n. A missing or underfilled governing semantic class makes that
+  repo-model slot infeasible even if a descriptive class is reliable.
+
+  RESPLITS. Candidate n is evaluated in the frozen order {8,16,32}. For each
+  n, each of 200 resplits, each opaque arm x outcome class x target, rank draw
+  indices 0..31 by ascending
+
+    SHA256(canonical_json(["v2brel:v1",20260808,opaque_arm,
+                            outcome_class,n,resplit,target_key,draw_index]))
+
+  with draw index as the collision tie-break. The first n/2 ranks form half A,
+  the next n/2 form half B, and the remaining draws are unused. Compute each
+  target's pass proportion in A and B, then Pearson correlation ACROSS targets
+  inside that opaque arm and outcome class. The raw half-length correlation r
+  is projected to full length n by Spearman-Brown 2r/(1+r). Thus a 32-draw
+  split's raw correlation describes 16-draw halves; the correction is what
+  projects it to n=32.
+
+  EDGE RULES (frozen because they change n). At least EIGHT independent pilot
+  targets are required in the governing semantic class; 200 resplits reduce
+  draw-split Monte Carlo noise but do not manufacture target replication, and
+  eight remains a pragmatic lower bound for a 20-target pilot. Fewer than
+  eight makes that repo-model semantic-F1 slot infeasible. Descriptive-only
+  cells require three targets to display a reliability number but never enter
+  the gate. Pearson with zero variance is defined as zero; nonpositive Pearson
+  maps to zero; Spearman-Brown is clamped to [0,1]. Each cell's 200 corrected
+  values use the ordinary median (average of the middle pair). For candidate n
+  the semantic-F1 gate is the MINIMUM cell median across the five opaque arms
+  in the single governing class. Completion n is the first candidate whose
+  minimum is >=0.8. If none meets, behavioral F1 is infeasible exactly as
+  §14.22 says. One complete governance-contract object hashes the candidate
+  set, draw/resplit counts, seed/domain/key fields, threshold, class-gating and
+  small-cell rules, split construction, and edge rules; the future production
+  artifact additionally binds the committed analyzer source tree.
+
+  REMAINING EXECUTION BOUNDARY. A schema-shaped table cannot satisfy this
+  gate. Before any behavioral generation, the study must still commit: exact
+  512-token/no-EOS generation; language-parser-based declaration extraction;
+  baseline/forbidden-escape verification; §15.A7 executable target-line
+  coverage; a separate behavioral commit-reveal masker; the narrow k4-only
+  tier aggregate; and a file-based producer that duplicate-key-rejects and
+  re-materializes the exact target/class/pass table from all hash-bound
+  completion/verifier evidence. The current canonical-object self-hash is not
+  an exact file binding and is never sufficient by itself. §15.A15's
+  production unblinder stays disabled until the producer binds the exact
+  committed masked-outcomes file and deterministic recomputation succeeds.

@@ -141,18 +141,24 @@ def family_sign(salt, repo, contrast):
 
 
 def blind_rows(rows, sign):
-    """sign * (delta - family mean), fsum-centered with one final
-    correction pass: the published family mean is zero to within one
-    ulp-scale residue, and the §15.A14 MoM components are invariant up
-    to floating-point roundoff."""
+    """(published rows, centering): published = sign * (delta - mean -
+    fsum_correction), so the published family mean is zero to within one
+    ulp-scale residue and the §15.A14 MoM components are invariant up to
+    floating-point roundoff. The centering record exposes BOTH removed
+    terms plus their sum (total_centering = mean + correction): raw
+    deltas reconstruct as sign * published + total_centering to FP
+    roundoff, and reconstruct EXACTLY by forward replay of this
+    function over the hash-bound raw deltas."""
     if not rows:
-        return []
+        return [], None
     mean = math.fsum(delta for _, delta in rows) / len(rows)
     residuals = [(key, delta - mean) for key, delta in rows]
     correction = math.fsum(residual for _, residual in residuals) \
         / len(residuals)
-    return [[key, sign * (residual - correction)]
-            for key, residual in sorted(residuals)]
+    published = [[key, sign * (residual - correction)]
+                 for key, residual in sorted(residuals)]
+    return published, dict(removed_mean=mean, fsum_correction=correction,
+                           total_centering=mean + correction)
 
 
 def _grid_metadata(rows):
@@ -330,9 +336,15 @@ def build_masked_deltas(complete_path, manifest_path, sample_path,
         if fid in families:
             raise V2BError("opaque family id collision")
         sign = family_sign(salt, repo, name)
-        families[fid] = blind_rows(raw_by_contrast[name], sign)
-        private[name] = dict(fid=fid, sign=sign,
-                             n_rows=len(raw_by_contrast[name]))
+        raw_rows = raw_by_contrast[name]
+        families[fid], centering = blind_rows(raw_rows, sign)
+        private[name] = dict(
+            fid=fid, sign=sign, n_rows=len(raw_rows),
+            removed_mean=centering["removed_mean"] if centering else None,
+            fsum_correction=centering["fsum_correction"]
+            if centering else None,
+            total_centering=centering["total_centering"]
+            if centering else None)
     masked = dict(
         schema=MASKED_DELTAS_SCHEMA, repo=repo,
         language=manifest.get("language"),

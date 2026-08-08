@@ -39,6 +39,15 @@ def test_python_layout_sentinels_make_nestings_distinct():
     assert verbatim_hash(c) == verbatim_hash(d)
 
 
+def test_python_malformed_token_stream_is_typed_fail_closed():
+    for text in ('x = """unterminated', "if True:\n  x = 1\n y = 2\n"):
+        try:
+            lex_python(text)
+            assert False, "malformed Python unit tokenized"
+        except V2BError as err:
+            assert "does not tokenize" in str(err)
+
+
 def test_python_normalization_collides_renames_not_keywords():
     sin = lex_python("def f(x):\n    return sin(x)\n")
     cos = lex_python("def f(x):\n    return cos(x)\n")

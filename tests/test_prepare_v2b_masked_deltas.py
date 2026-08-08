@@ -34,22 +34,32 @@ SALT = bytes(range(32))
 
 def test_blind_rows_center_flip_and_invariance():
     raw = [("k-b", 3.0), ("k-a", 1.0), ("k-c", 5.0)]
-    rows = blind_rows(raw, -1)
+    rows, centering = blind_rows(raw, -1)
     assert [row[0] for row in rows] == ["k-a", "k-b", "k-c"]  # sorted
     # fsum-corrected centering: zero to within one ulp-scale residue
     assert abs(math.fsum(row[1] for row in rows)) < 1e-12
     assert rows[0][1] == 2.0 and rows[2][1] == -2.0           # flipped
-    assert blind_rows([], 1) == []
+    assert centering["removed_mean"] == 3.0
+    assert centering["total_centering"] == \
+        centering["removed_mean"] + centering["fsum_correction"]
+    assert blind_rows([], 1) == ([], None)
     # awkward floats: the correction pass still centers to ~ulp scale
     awkward = [(f"k{i}", 0.1 + 1e-9 * i) for i in range(7)]
-    centered = blind_rows(awkward, 1)
+    centered, awk_centering = blind_rows(awkward, 1)
     assert abs(math.fsum(row[1] for row in centered)) < 1e-18
+    # MULTI-ROW RECONSTRUCTION: raw = sign*published + total_centering
+    # to FP roundoff; exact by forward replay of blind_rows itself
+    raw_map = dict(awkward)
+    for key, published in centered:
+        rebuilt = 1 * published + awk_centering["total_centering"]
+        assert abs(rebuilt - raw_map[key]) < 1e-15
+    assert blind_rows(awkward, 1) == (centered, awk_centering)  # replay
     # MoM components are invariant to the translation + flip
     raw_by_module = {"A": [1.0, 2.0, 3.0], "B": [2.0, 4.0],
                      "C": [7.0, 7.5]}
     flat = [(f"{m}{i}", v) for m, vs in raw_by_module.items()
             for i, v in enumerate(vs)]
-    blinded = dict((row[0], row[1]) for row in blind_rows(flat, -1))
+    blinded = dict((row[0], row[1]) for row in blind_rows(flat, -1)[0])
     blind_by_module = {m: [blinded[f"{m}{i}"] for i in range(len(vs))]
                        for m, vs in raw_by_module.items()}
     a = variance_components(raw_by_module)
