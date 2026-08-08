@@ -24,6 +24,7 @@ export LEAN_NUM_THREADS="${SLURM_CPUS_PER_TASK:-16}"
 # Lake, corpus revisions, and all elaboration artifacts unchanged.
 export LEAN_CC="/bin/cc"
 export PATH="$ELAN_HOME/bin:$PATH"
+V2_BASE_LIBRARY_PATH="${LIBRARY_PATH-}"
 V2_BOOTSTRAP_DIR="$V2_POOL_BASE/bootstrap/elan-4.2.3"
 mkdir -p "$ELAN_HOME" "$XDG_CACHE_HOME" "$TMPDIR" \
   "$V2_BOOTSTRAP_DIR" results_v2/v2a
@@ -96,6 +97,7 @@ v2_build_corpus() {
   local V2_CORPUS_DIR="corpora/$V2_CORPUS"
   local V2_ACTUAL_TOOLCHAIN V2_REPO_SHA V2_SOURCE_COUNT
   local V2_OLEAN_COUNT V2_ILEAN_COUNT V2_LAKE_VERSION
+  local V2_LEAN_BIN V2_TOOLCHAIN_ROOT
 
   [[ -d "$V2_CORPUS_DIR/.git" || -f "$V2_CORPUS_DIR/.git" ]] || {
     echo "missing corpus checkout: $V2_CORPUS_DIR" >&2
@@ -112,6 +114,17 @@ v2_build_corpus() {
       grep -Fqx "$V2_ACTUAL_TOOLCHAIN"; then
     "$ELAN_HOME/bin/elan" toolchain install "$V2_ACTUAL_TOOLCHAIN"
   fi
+  V2_LEAN_BIN=$(ELAN_TOOLCHAIN="$V2_ACTUAL_TOOLCHAIN" \
+    "$ELAN_HOME/bin/elan" which lean)
+  V2_TOOLCHAIN_ROOT=$(dirname "$(dirname "$V2_LEAN_BIN")")
+  [[ -d "$V2_TOOLCHAIN_ROOT/lib" ]] || {
+    echo "$V2_CORPUS toolchain has no library directory: $V2_TOOLCHAIN_ROOT" >&2
+    return 1
+  }
+  # LEAN_CC removes bundled Clang's implicit root/lib search path. GCC's
+  # LIBRARY_PATH restores exactly that shipped, version-matched library set
+  # (libc++, libc++abi, gmp, uv) without executing the incompatible Clang.
+  export LIBRARY_PATH="$V2_TOOLCHAIN_ROOT/lib${V2_BASE_LIBRARY_PATH:+:$V2_BASE_LIBRARY_PATH}"
   V2_LAKE_VERSION=$(cd "$V2_CORPUS_DIR" && \
     "$ELAN_HOME/bin/lake" --version)
   printf '%s: %s; %s\n' "$V2_CORPUS" "$V2_ACTUAL_TOOLCHAIN" \
@@ -139,6 +152,7 @@ v2_build_corpus() {
   {
     printf '%s.repo_sha\t%s\n' "$V2_CORPUS" "$V2_REPO_SHA"
     printf '%s.toolchain\t%s\n' "$V2_CORPUS" "$V2_ACTUAL_TOOLCHAIN"
+    printf '%s.toolchain_root\t%s\n' "$V2_CORPUS" "$V2_TOOLCHAIN_ROOT"
     printf '%s.lake\t%s\n' "$V2_CORPUS" "$V2_LAKE_VERSION"
     printf '%s.source_lean_count\t%s\n' "$V2_CORPUS" "$V2_SOURCE_COUNT"
     printf '%s.olean_count\t%s\n' "$V2_CORPUS" "$V2_OLEAN_COUNT"

@@ -39,6 +39,10 @@ def test_old_glibc_nodes_use_the_system_c_compiler():
     assert 'export LEAN_CC="/bin/cc"' in src
     assert '[[ -x "$LEAN_CC" ]]' in src
     assert "lean_cc_version" in src
+    assert 'V2_BASE_LIBRARY_PATH="${LIBRARY_PATH-}"' in src
+    assert 'ELAN_TOOLCHAIN="$V2_ACTUAL_TOOLCHAIN"' in src
+    assert '"$ELAN_HOME/bin/elan" which lean' in src
+    assert 'export LIBRARY_PATH="$V2_TOOLCHAIN_ROOT/lib' in src
     # The compiler override must not alter or update a pinned Lean toolchain.
     assert '"$ELAN_HOME/bin/elan" toolchain install' in src
 
