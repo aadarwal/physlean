@@ -18,8 +18,8 @@ import json
 import math
 import re
 
-from v2b_common import (ASSEMBLY_SCHEMA, BOUND_SAMPLE_SCHEMA,
-                        MASKED_DELTAS_SCHEMA, V2BError,
+from v2b_common import (ASSEMBLY_SCHEMA, BEHAVIOR_SALT_COMMITMENT_SCHEMA,
+                        BOUND_SAMPLE_SCHEMA, MASKED_DELTAS_SCHEMA, V2BError,
                         canonical_json_bytes, identity_key, sha256_json,
                         validate_identity)
 
@@ -27,7 +27,6 @@ from v2b_common import (ASSEMBLY_SCHEMA, BOUND_SAMPLE_SCHEMA,
 BEHAVIOR_MASKED_SCHEMA = "v2b_behavior_masked_outcomes_v1"
 BEHAVIOR_GOVERNANCE_SCHEMA = "v2b_behavioral_governance_v1"
 BEHAVIOR_EVIDENCE_SCHEMA = "v2b_behavior_verified_complete_v1"
-BEHAVIOR_SALT_COMMITMENT_SCHEMA = "v2b_behavior_salt_commitment_v1"
 BEHAVIOR_PLAN_SCHEMA = "v2b_behavior_plan_v1"
 BEHAVIOR_BASELINE_COVERAGE_SCHEMA = "v2b_behavior_baseline_coverage_v1"
 BEHAVIOR_MASKED_STATE = "arm-anonymous-behavioral-pilot"
