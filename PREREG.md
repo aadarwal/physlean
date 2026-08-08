@@ -573,9 +573,13 @@ arxiv_manifest) must be committed before measurement.
   floor, eligibility, and exact rows).
   Grid counts, floors, and the measurement harness unchanged. Note:
   `import all` is CONFIRMED present in the pinned mathlib snapshot, so
-  the parser fix WILL alter mathlib topo edges and stream content at
-  the next re-prep; deterministic re-prep at the next fix_cluster
-  run re-locks stream identity, and no accepted cell predates it.
+  the parser fix raises mathlib's recorded dependency_edges at the
+  next re-prep; topo order and stream bytes change ONLY where a newly
+  resolved edge contradicts the previously realized order within the
+  selected subset — either outcome is valid, and doc_set_sha256 is
+  invariant by construction (selection is order-independent).
+  Deterministic re-prep at the next fix_cluster run re-locks stream
+  identity in all cases, and no accepted cell predates it.
 - ADOPTED (incident + amendment, before any accepted battery item or
   grid cell): battery job 19900858 FAILED CLOSED at its first Triton
   JIT compile — the venv was built on the OS /usr/bin/python3.12,
