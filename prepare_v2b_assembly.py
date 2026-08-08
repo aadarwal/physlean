@@ -18,9 +18,10 @@ frozen A6 lexer and its verbatim hash must equal the sealed near-dup
 table's), k7 (the committed §15.A8 order artifact, per-target filtered
 by target file / near-dup docs / reverse-closure docs / unit-level
 cycle-mate docs, one path-banner chunk per admitted FILE), and the
-§15.A10 k3s/k4s same-dependency-set sensitivities. k4x (physlib
-combined graph) and the §14.26 k6-realistic variant are DEFERRED.
-Token-level assertions (§14.13/T*) belong to the scoring side per the
+§15.A10 k3s/k4s same-dependency-set sensitivities, and (physlib only,
+§14.20 hard gate) k4x over the §15.A13 combined physlib +
+pinned-mathlib graph with sealed-A6 cross-corpus screening. The §14.26
+k6-realistic variant is DEFERRED. Token-level assertions (§14.13/T*) belong to the scoring side per the
 frozen B6 decision. Exclusion sets are bound as counts + byte masses +
 set hashes; k5/k6 orders over the full universe are bound by
 order/score hashes with every in-budget identity recorded explicitly.
@@ -41,26 +42,30 @@ import sys
 
 from finalize_v2b_a6 import EXPECTED
 from finalize_v2b_sample import N_PER_CORPUS
+from prepare_v2b_k4x_graph import (K4X_EXTERNAL_EXTRACTION_REPO,
+                                   K4X_EXTERNAL_REPO,
+                                   K4X_EXTERNAL_REVISION)
 from provenance import head_commit, source_clean, source_tree_hash
 from v2b_assemble import (bm25_scores, canonical_dependency_order,
                           interface_payload, k5_unit_order, k6_unit_order,
                           normalize_payload, render_chunks,
                           splice_local_prefix, utf8_budget_suffix)
 from v2b_common import (ASSEMBLY_SCHEMA, BOUND_SAMPLE_SCHEMA,
-                        CANDIDATES_SCHEMA, K7_ORDER_SCHEMA, NEARDUP_SCHEMA,
-                        V2BError, artifact_binding, identity_key,
-                        sha256_bytes, sha256_json, validate_identity,
-                        write_new_json)
-from v2b_neardup import (LEAN_EXTRACT_SCHEMA, PYTHON_EXTRACT_SCHEMA,
-                         lex_unit, lexical_records, load_lean_keyword_freeze,
-                         meets, verbatim_hash)
+                        CANDIDATES_SCHEMA, K4X_GRAPH_SCHEMA,
+                        K7_ORDER_SCHEMA, NEARDUP_SCHEMA, V2BError,
+                        artifact_binding, identity_key, sha256_bytes,
+                        sha256_json, validate_identity, write_new_json)
+from v2b_neardup import (LEAN_EXTRACT_SCHEMA, LEXICAL_FLOOR,
+                         PYTHON_EXTRACT_SCHEMA, five_grams, lex_unit,
+                         lexical_records, load_lean_keyword_freeze, meets,
+                         normalized_hash, verbatim_hash)
 
 BUDGET_GRID = (4096, 16384, 65536)        # §14.12/§1: {4,16,64} KiB
 B_STAR = 16384                            # §1: B* primary budget
 K5_SEEDS = (0, 1, 2)                      # §14.21: primary 0; 1-2 NLL @ B*
 K7_ORDER_RULE = "g3_full_topo_kahn_minheap_v1"
 SLICE_ARMS = ("k1", "k2", "k3", "k4", "k3s", "k4s", "k5", "k6", "k7")
-DEFERRED_ARMS = ("k4x", "k6-realistic")
+DEFERRED_ARMS = ("k6-realistic",)         # k4x: physlib-only, §15.A13
 JACCARD_THRESHOLDS = {"0.70": (7, 10), "0.80": (4, 5), "0.90": (9, 10)}
 
 
@@ -97,9 +102,42 @@ def _load_k7_order(k7_path, repo, language, corpus_sha):
     return binding, rows
 
 
+def _load_k4x(k4x_graph_path, external_extraction_path, repo,
+              extraction_sha):
+    """§14.20 hard gate: physlib REQUIRES the sealed §15.A13 external
+    graph + snapshot extraction; any other corpus must not receive one."""
+    if repo != "physlib":
+        if k4x_graph_path or external_extraction_path:
+            raise V2BError("k4x inputs are physlib-only (§15.A13)")
+        return None
+    if not k4x_graph_path or not external_extraction_path:
+        raise V2BError("physlib assembly requires the k4x external graph "
+                       "and snapshot extraction (§14.20 hard gate)")
+    binding, k4x = artifact_binding(k4x_graph_path, K4X_GRAPH_SCHEMA)
+    resolution = k4x.get("resolution")
+    if k4x.get("repo") != "physlib" \
+            or k4x.get("external_repo") != K4X_EXTERNAL_REPO \
+            or k4x.get("external_revision") != K4X_EXTERNAL_REVISION \
+            or not isinstance(k4x.get("physlib_extraction"), dict) \
+            or k4x["physlib_extraction"].get("sha256") != extraction_sha \
+            or not isinstance(k4x.get("external_extraction"), dict) \
+            or not isinstance(resolution, dict) \
+            or not isinstance(resolution.get("resolved_edges"), list) \
+            or not isinstance(resolution.get("unresolved_by_target"), dict):
+        raise V2BError("k4x graph artifact binding drift")
+    ext_binding, ext_extraction = artifact_binding(external_extraction_path)
+    if ext_binding["sha256"] != k4x["external_extraction"].get("sha256") \
+            or ext_extraction.get("schema") != LEAN_EXTRACT_SCHEMA \
+            or ext_extraction.get("repo") != K4X_EXTERNAL_EXTRACTION_REPO:
+        raise V2BError("k4x snapshot extraction is not the sealed input")
+    return dict(binding=binding, value=k4x, external_binding=ext_binding,
+                external_extraction=ext_extraction)
+
+
 def _load_chain(sample_path, repo, candidates_path, extraction_path,
                 neardup_path, outcome_path, keyword_freeze_path,
-                k7_order_path):
+                k7_order_path, k4x_graph_path=None,
+                external_extraction_path=None):
     if repo not in EXPECTED:
         raise V2BError(f"unexpected assembly corpus {repo!r}")
     language, corpus_sha = EXPECTED[repo]
@@ -147,22 +185,30 @@ def _load_chain(sample_path, repo, candidates_path, extraction_path,
         raise V2BError("A6 outcome content hash drift at assembly")
 
     freeze_binding = None
+    lean_tokens = None
     if language == "lean":
         if not keyword_freeze_path:
             raise V2BError("Lean assembly requires the keyword freeze")
-        _, freeze_binding = load_lean_keyword_freeze(keyword_freeze_path)
+        lean_tokens, freeze_binding = \
+            load_lean_keyword_freeze(keyword_freeze_path)
         if neardup.get("keyword_evidence") != freeze_binding:
             raise V2BError("near-dup table keyword freeze binding drift")
     k7_binding, k7_rows = _load_k7_order(k7_order_path, repo, language,
                                          corpus_sha)
+    k4x_bundle = _load_k4x(k4x_graph_path, external_extraction_path, repo,
+                           extraction_binding["sha256"])
     return dict(language=language, corpus_git_sha=corpus_sha,
                 sample=sample_binding, plan=plan,
                 candidates=cand_binding,
                 extraction=dict(extraction_binding,
                                 schema=extraction.get("schema")),
                 neardup=neardup_binding, outcome=outcome_binding,
-                keyword_freeze=freeze_binding, k7_order=k7_binding), \
-        sample, candidates, extraction, neardup, outcome, k7_rows
+                keyword_freeze=freeze_binding, k7_order=k7_binding,
+                k4x_graph=k4x_bundle["binding"] if k4x_bundle else None,
+                k4x_external_extraction=k4x_bundle["external_binding"]
+                if k4x_bundle else None), \
+        sample, candidates, extraction, neardup, outcome, k7_rows, \
+        lean_tokens, k4x_bundle
 
 
 # --------------------------------------------------------- corpus index
@@ -528,7 +574,7 @@ def _bm25_query_terms(language, prefix):
 
 def _assemble_target(language, repo, target_identity, units, edges,
                      adjacency, cache, budgets, external_index, bm25, k7,
-                     collect=None):
+                     k4x_ctx=None, collect=None):
     target_key = identity_key(language, target_identity)
     if target_key not in units:
         raise V2BError(f"sampled target lacks an extraction unit: "
@@ -630,6 +676,10 @@ def _assemble_target(language, repo, target_identity, units, edges,
                          bm25, collect)
     arms["k7"] = _k7_arm(language, target, target_key, units, near_dups,
                          reverse, order["target_scc"], k7, budgets, collect)
+    if k4x_ctx is not None:
+        arms["k4x"] = _k4x_arm(repo, target, target_key, target_identity,
+                               units, edges, near_dups, cache, budgets,
+                               k4x_ctx, collect)
     return dict(
         identity=list(target_identity), key=target_key,
         prefix_sha256=sha256_bytes(prefix), prefix_bytes=len(prefix),
@@ -847,15 +897,151 @@ def _k7_arm(language, target, target_key, units, near_dups, reverse,
         cells=cells)
 
 
+# ----------------------------------------------------------------- k4x
+
+def _lex_stats(payload, tokens):
+    """A6-lexer statistics for one Lean unit payload (screening basis)."""
+    try:
+        text = payload.decode("utf-8")
+    except UnicodeDecodeError as err:
+        raise V2BError(f"k4x unit payload is not UTF-8: {err}") from err
+    records = lex_unit("lean", text)
+    return dict(verbatim=verbatim_hash(records),
+                normalized=normalized_hash(records, "lean",
+                                           lean_keywords=tokens),
+                n_records=len(records),
+                n_lexical=len(lexical_records(records)),
+                grams=five_grams(records))
+
+
+def _screen_external(target_stats, stats, k4x_ctx):
+    """§15.A13 target-to-external screening under the SEALED A6 rules:
+    verbatim always; normalized only in sealed-activated bands (band by
+    the frozen full-record-count literal); Jaccard at the sealed
+    calibrated threshold with the frozen lexical floor on BOTH sides.
+    Returns the screening reason or None."""
+    if stats["verbatim"] == target_stats["verbatim"]:
+        return "verbatim"
+    if stats["normalized"] == target_stats["normalized"]:
+        band = "under20" if stats["n_records"] < LEXICAL_FLOOR else "geq20"
+        activation = k4x_ctx["activation"].get(band)
+        if isinstance(activation, dict) \
+                and activation.get("active") is True:
+            return "normalized"
+    threshold = k4x_ctx["threshold"]
+    if threshold is not None \
+            and target_stats["n_lexical"] >= LEXICAL_FLOOR \
+            and target_stats["grams"] \
+            and stats["n_lexical"] >= LEXICAL_FLOOR and stats["grams"]:
+        intersection = len(stats["grams"] & target_stats["grams"])
+        union = len(stats["grams"] | target_stats["grams"])
+        if meets(intersection, union, threshold):
+            return "jaccard"
+    return None
+
+
+def _k4x_arm(repo, target, target_key, target_identity, units, edges,
+             near_dups, cache, budgets, k4x_ctx, collect=None):
+    """§14.27/§15.A4/§15.A13 k4x: identical construction over the
+    combined physlib + pinned-mathlib graph. Same-file and A6 near-dup
+    filters apply to physlib units exactly as in k4; snapshot units are
+    instead screened target-to-external under the sealed A6 outcome.
+    Snapshot units cannot be same-file or reverse dependencies by
+    construction (asserted upstream via edge-endpoint checks)."""
+    language = "lean"
+    ext_units = k4x_ctx["units"]
+    combined_units = dict(units)
+    combined_units.update(ext_units)
+    combined_edges = [list(edge) for edge in edges] \
+        + [list(edge) for edge in k4x_ctx["edges"]]
+    order = canonical_dependency_order(
+        language, repo, list(target_identity),
+        [unit["identity"] for unit in combined_units.values()],
+        combined_edges)
+    target_stats = _lex_stats(_unit_payload(units[target_key], cache),
+                              k4x_ctx["tokens"])
+    rendered = []
+    screened = []
+    excluded_same_file = excluded_near_dup = 0
+    n_internal = n_external = 0
+    for identity in order["unit_order"]:
+        key = identity_key(language, identity)
+        if key in ext_units:
+            unit = ext_units[key]
+            stats = k4x_ctx["screen_cache"].get(key)
+            if stats is None:
+                stats = _lex_stats(_unit_payload(unit, cache),
+                                   k4x_ctx["tokens"])
+                k4x_ctx["screen_cache"][key] = stats
+            reason = _screen_external(target_stats, stats, k4x_ctx)
+            if reason is not None:
+                screened.append(dict(identity=unit["identity"],
+                                     reason=reason,
+                                     bytes=_span_bytes(unit)))
+                continue
+            n_external += 1
+        else:
+            if unit_same_file(units, key, target):
+                excluded_same_file += 1
+                continue
+            if key in near_dups:
+                excluded_near_dup += 1
+                continue
+            unit = units[key]
+            n_internal += 1
+        rendered.append(dict(identity=unit["identity"],
+                             relpath=unit["source_rel"],
+                             payload=_unit_payload(unit, cache)))
+    cells = _render_unit_arm(language, rendered, target["source_rel"],
+                             budgets, collect=collect, collect_key="k4x")
+    _annotate_cells(cells, language, "external",
+                    {key: True for key in ext_units})
+    for cell in cells.values():
+        external_rows = [row for row in cell["selected_units"]
+                         if row.get("external")]
+        cell["n_external_units"] = len(external_rows)
+        cell["n_external_bytes"] = sum(row["included_bytes"]
+                                       for row in external_rows)
+        cell["n_internal_units"] = \
+            len(cell["selected_units"]) - len(external_rows)
+        cell["n_internal_bytes"] = sum(
+            row["included_bytes"] for row in cell["selected_units"]) \
+            - cell["n_external_bytes"]
+    unresolved = k4x_ctx["unresolved"].get(
+        target_identity[0], {}).get(target_identity[1], 0)
+    return dict(
+        external_repo=K4X_EXTERNAL_REPO,
+        external_revision=K4X_EXTERNAL_REVISION,
+        n_combined_closure=len(order["unit_order"]),
+        n_internal_units=n_internal,
+        n_external_units=n_external,
+        n_same_file_excluded=excluded_same_file,
+        n_near_dup_excluded=excluded_near_dup,
+        n_screened_external=len(screened),
+        screened_external=screened,
+        screened_external_bytes=sum(row["bytes"] for row in screened),
+        n_unresolved_external_references=unresolved,
+        cells=cells)
+
+
+def unit_same_file(units, key, target):
+    return units[key]["source"] == target["source"] \
+        and units[key]["key"] != target["key"]
+
+
 # -------------------------------------------------------------- driver
 
 def build_assembly(sample_path, repo, candidates_path, extraction_path,
                    neardup_path, outcome_path, keyword_freeze_path=None,
-                   k7_order_path=None, budgets=BUDGET_GRID, collect=None):
-    bindings, sample, candidates, extraction, neardup, outcome, k7_rows = \
+                   k7_order_path=None, k4x_graph_path=None,
+                   external_extraction_path=None, budgets=BUDGET_GRID,
+                   collect=None):
+    bindings, sample, candidates, extraction, neardup, outcome, k7_rows, \
+        lean_tokens, k4x_bundle = \
         _load_chain(sample_path, repo, candidates_path, extraction_path,
                     neardup_path, outcome_path, keyword_freeze_path,
-                    k7_order_path)
+                    k7_order_path, k4x_graph_path,
+                    external_extraction_path)
     language = bindings["language"]
     units, _ = _unit_index(extraction, language)
     edges = _edges(extraction, language)
@@ -867,6 +1053,10 @@ def build_assembly(sample_path, repo, candidates_path, extraction_path,
         {unit["key"]: unit["verbatim_sha256"]
          for unit in neardup.get("units", [])}, cache)
     k7 = dict(rows=k7_rows, root=_corpus_root(extraction), cache={})
+    k4x_ctx = None
+    if k4x_bundle is not None:
+        k4x_ctx = _k4x_context(k4x_bundle, units, edges, outcome,
+                               lean_tokens)
     targets = []
     for row in bindings["plan"].get("targets", []):
         identity = validate_identity(language, row.get("identity"))
@@ -877,6 +1067,7 @@ def build_assembly(sample_path, repo, candidates_path, extraction_path,
         targets.append(_assemble_target(language, repo, list(identity),
                                         units, edges, adjacency, cache,
                                         budgets, external_index, bm25, k7,
+                                        k4x_ctx=k4x_ctx,
                                         collect=target_collect))
     if not targets:
         raise V2BError("bound sample plan has no targets for this corpus")
@@ -888,22 +1079,72 @@ def build_assembly(sample_path, repo, candidates_path, extraction_path,
         k5_seeds=list(K5_SEEDS),
         bm25=dict(k1=1.2, b=0.75, n_corpus_units=bm25["n_docs"],
                   avgdl=bm25["avgdl"]),
-        arms_included=list(SLICE_ARMS),
+        arms_included=list(SLICE_ARMS)
+        + (["k4x"] if k4x_ctx is not None else []),
         arms_deferred=list(DEFERRED_ARMS),
+        k4x=dict(applicable=k4x_ctx is not None,
+                 external_repo=K4X_EXTERNAL_REPO if k4x_ctx else None,
+                 external_revision=K4X_EXTERNAL_REVISION
+                 if k4x_ctx else None),
         bindings=dict(sample=bindings["sample"],
                       candidates=bindings["candidates"],
                       extraction=bindings["extraction"],
                       neardup=bindings["neardup"],
                       a6_outcome=bindings["outcome"],
                       keyword_freeze=bindings["keyword_freeze"],
-                      k7_order=bindings["k7_order"]),
+                      k7_order=bindings["k7_order"],
+                      k4x_graph=bindings["k4x_graph"],
+                      k4x_external_extraction=bindings[
+                          "k4x_external_extraction"]),
         n_targets=len(targets), targets=targets,
         targets_sha256=sha256_json(targets))
 
 
+def _k4x_context(k4x_bundle, units, edges, outcome, lean_tokens):
+    """Corpus-level §15.A13 context: prefixed external unit index,
+    combined-edge additions, sealed screening parameters, hard checks."""
+    ext_units, _ = _unit_index(k4x_bundle["external_extraction"], "lean")
+    physlib_rels = {unit["source_rel"] for unit in units.values()}
+    for unit in ext_units.values():
+        unit["source_rel"] = f"{K4X_EXTERNAL_REPO}/{unit['source_rel']}"
+    collision = set(units) & set(ext_units)
+    if collision:
+        raise V2BError(f"physlib/external unit identity collision: "
+                       f"{sorted(collision)[:2]}")
+    banner_collision = {unit["source_rel"]
+                        for unit in ext_units.values()} & physlib_rels
+    if banner_collision:
+        raise V2BError(f"external banner path collides with physlib: "
+                       f"{sorted(banner_collision)[:2]}")
+    ext_edges = _edges(k4x_bundle["external_extraction"], "lean")
+    resolved = []
+    for index, edge in enumerate(
+            k4x_bundle["value"]["resolution"]["resolved_edges"]):
+        if not isinstance(edge, list) or len(edge) != 5 \
+                or edge[4] not in ("direct", "folded"):
+            raise V2BError(f"malformed resolved k4x edge[{index}]")
+        src, dst = [edge[0], edge[1]], [edge[2], edge[3]]
+        if identity_key("lean", src) not in units \
+                or identity_key("lean", dst) not in ext_units:
+            raise V2BError(f"resolved k4x edge endpoint missing: {edge!r}")
+        resolved.append((src, dst))
+    jaccard_out = outcome["outcomes"]["jaccard"].get("lean", {})
+    return dict(
+        units=ext_units,
+        edges=ext_edges + resolved,
+        unresolved=k4x_bundle["value"]["resolution"][
+            "unresolved_by_target"],
+        tokens=lean_tokens,
+        threshold=JACCARD_THRESHOLDS.get(jaccard_out.get("outcome")),
+        activation=outcome["outcomes"]["collision_activation"].get(
+            "lean", {}),
+        screen_cache={})
+
+
 def materialize(manifest_path, sample_path, repo, candidates_path,
                 extraction_path, neardup_path, outcome_path,
-                keyword_freeze_path=None, k7_order_path=None):
+                keyword_freeze_path=None, k7_order_path=None,
+                k4x_graph_path=None, external_extraction_path=None):
     """Deterministic evaluator materialization API (§15.A9 handoff).
 
     Re-runs the exact assembly construction from the same bound
@@ -924,6 +1165,7 @@ def materialize(manifest_path, sample_path, repo, candidates_path,
     rebuilt = build_assembly(sample_path, repo, candidates_path,
                              extraction_path, neardup_path, outcome_path,
                              keyword_freeze_path, k7_order_path,
+                             k4x_graph_path, external_extraction_path,
                              budgets=tuple(budgets), collect=collect)
     def _paths_stripped(bindings):
         if not isinstance(bindings, dict):
@@ -945,13 +1187,15 @@ def materialize(manifest_path, sample_path, repo, candidates_path,
 
 def prepare(sample_path, repo, candidates_path, extraction_path,
             neardup_path, outcome_path, keyword_freeze_path=None,
-            k7_order_path=None):
+            k7_order_path=None, k4x_graph_path=None,
+            external_extraction_path=None):
     if not source_clean():
         raise V2BError("measurement source tree is dirty outside results_v2")
     commit_start, tree_start = head_commit(), source_tree_hash()
     manifest = build_assembly(sample_path, repo, candidates_path,
                               extraction_path, neardup_path, outcome_path,
-                              keyword_freeze_path, k7_order_path)
+                              keyword_freeze_path, k7_order_path,
+                              k4x_graph_path, external_extraction_path)
     if not source_clean() or head_commit() != commit_start \
             or source_tree_hash() != tree_start:
         raise V2BError("measurement source drifted during assembly")
@@ -971,11 +1215,16 @@ def main():
     ap.add_argument("--a6-outcome", required=True)
     ap.add_argument("--lean-keyword-freeze")
     ap.add_argument("--k7-order", required=True)
+    ap.add_argument("--k4x-graph",
+                    help="§15.A13 external graph (required for physlib)")
+    ap.add_argument("--k4x-external-extraction",
+                    help="pinned-mathlib v3 extraction (physlib only)")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     manifest = prepare(args.sample, args.repo, args.candidates,
                        args.extraction, args.neardup, args.a6_outcome,
-                       args.lean_keyword_freeze, args.k7_order)
+                       args.lean_keyword_freeze, args.k7_order,
+                       args.k4x_graph, args.k4x_external_extraction)
     digest = write_new_json(args.out, manifest)
     print(f"[v2b-assembly] {args.repo}: {manifest['n_targets']} targets, "
           f"arms {'/'.join(manifest['arms_included'])} "

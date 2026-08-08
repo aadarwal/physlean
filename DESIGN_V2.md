@@ -1393,3 +1393,64 @@ implementation discoveries recorded below; none uses outcome information.
   each collector-emitted file, binding normalized bytes for budgets while
   recording raw/emitted/normalized hashes and LF deltas. The incomplete array
   is quarantined and all five corpora rerun under one amended generator.
+
+15.A13 k4x EXTERNAL SNAPSHOT CONTRACT (adopted pre-artifact: no k4x graph,
+assembly cell, or score exists; resolves §14.20/§14.27/§15.A4 operationally
+after the cluster lake-manifest read).
+
+  PINNED SNAPSHOT. physlib e882411d1b6bcbdfdd336d4c509c6cc72e96842d's
+  lake-manifest pins mathlib at
+  81a5d257c8e410db227a6665ed08f64fea08e997, which DIFFERS from the
+  corpus-lock mathlib HEAD 87adeaebd370a3b6a41ac4f044fddd4bf81803ad, so the
+  no-skew reuse case is unavailable: k4x binds a bounded v3 extraction of
+  exactly `.lake/packages/mathlib` at that revision (verified checked-out
+  clean at generation). That exact extraction ALREADY exists: V2-a job
+  19916781_2 emitted it from the same 81a5 pin (repo tag
+  `physlib_pinned_mathlib`, 8,275 files, whole-file SHA256
+  9f4a192059ede347093c4f424940198e45cc93b9140f0ef8e5b8a465e0b6f796); it is
+  REUSED, never rerun, and the production generator gate refuses any other
+  bytes. The repo TAG never enters k4x ordering keys (those carry
+  repo="physlib") and stays distinct from the CONCEPTUAL banner prefix,
+  which remains "mathlib4/<rel>". The snapshot binds the pinned mathlib
+  package ONLY; physlib references to any other external root (Lean core,
+  Std, batteries, ...) remain §14.3 counts-only with bytes null.
+
+  RESOLUTION. The physlib v3 extraction's preserved external reference
+  quadruples [src_module, src_decl, defining_module, const_name] resolve
+  against the snapshot extraction's decl tables under the IDENTICAL fold
+  rule (a const with a span; else the definition_parents chain within the
+  defining module, bounded 8 and cycle-guarded; None = recorded-
+  unresolved). Resolved edges with direct/folded provenance, per-target
+  unresolved counts, and out-of-snapshot counts by root are sealed into one
+  artifact {schema: "v2b_k4x_external_graph_v1"} that hash-binds the
+  physlib extraction, the snapshot extraction, the exact lake-manifest
+  bytes, and the frozen revision constant.
+
+  COMBINED GRAPH AND RENDERING. §14.27/§15.A4 unchanged: nodes = physlib
+  units + snapshot units (module-qualified identity; a key collision is a
+  hard error, unrepresentable under disjoint module namespaces), edges =
+  physlib-internal + resolved external + snapshot-internal; identical
+  Kahn/SCC/distance/tie-break with repo="physlib" in the frozen k4sel key;
+  identical chunk/budget machinery and the §15.A11 empty-rendering rule.
+  Snapshot units render with banner path "mathlib4/<rel>"; equality with
+  any physlib relpath is a hard error. Snapshot units can never be reverse
+  dependencies or same-file (no mathlib->physlib edge exists; asserted, not
+  assumed). Internal vs external unit counts and byte masses are recorded
+  per cell; §14.3's external byte mass is definable for this arm only.
+
+  CROSS-CORPUS NEAR-DUP SCREENING (supersedes any reading that defines
+  target-to-external duplication away). For each sampled physlib target,
+  every snapshot unit in its combined closure is screened target-to-
+  external under the SAME sealed label-resolved A6 rules: verbatim-hash
+  twins always excluded; normalized-hash collisions excluded exactly in the
+  bands the sealed Lean collision activation activated (band by the frozen
+  full-record-count literal); 5-gram Jaccard pairs excluded at the sealed
+  calibrated threshold, hash-only when the sealed outcome is lexically
+  inconclusive or either side is under the frozen 20-lexical floor.
+  Normalization of snapshot units uses the SAME sealed corpus-lock Lean
+  keyword freeze; non-re-derivation at the pin is a RECORDED limitation
+  (token-set skew across the two revisions affects only the normalized
+  channel and is visible in the freeze provenance, never silent). Screened
+  units and their byte mass are recorded per target. This closes the
+  recorded cross-repo duplication threat FOR k4x; the full cross-corpus
+  duplication diagnostic remains a separate pre-interpretation boundary.

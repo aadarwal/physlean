@@ -206,9 +206,10 @@ def empty_cell_arms(target):
     if not isinstance(arms, dict):
         raise V2BError("assembly target lacks arms")
     empty = []
-    for arm in ("k2", "k3", "k4", "k6", "k7"):
+    for arm in ("k2", "k3", "k4", "k6", "k7") \
+            + (("k4x",) if "k4x" in arms else ()):
         row = arms.get(arm)
-        cells = row.get("cells") if arm in ("k6", "k7") \
+        cells = row.get("cells") if arm in ("k6", "k7", "k4x") \
             and isinstance(row, dict) else row
         if isinstance(cells, dict) and not cells:
             empty.append(arm)
@@ -302,7 +303,9 @@ def target_cell_specs(target, blobs):
             add("k5", f"k5:{seed}:{key}", cells[key],
                 budget=budget, seed=int(seed), estimand_role=role)
 
-    for arm in ("k6", "k7"):
+    # k4x is physlib-only (§14.20/§15.A13): present iff the manifest
+    # carries it; when present it contributes its full budget grid.
+    for arm in ("k6", "k7") + (("k4x",) if "k4x" in arms else ()):
         arm_row = arms.get(arm)
         cells = arm_row.get("cells") if isinstance(arm_row, dict) else None
         for budget, key in _budget_cells(cells, arm):
@@ -426,7 +429,11 @@ def _chain_paths(manifest, args):
         "a6_outcome": "a6_outcome",
         "keyword_freeze": "lean_keyword_freeze",
         "k7_order": "k7_order",
+        "k4x_graph": "k4x_graph",
+        "k4x_external_extraction": "k4x_external_extraction",
     }
+    k4x_applicable = isinstance(manifest.get("k4x"), dict) \
+        and manifest["k4x"].get("applicable") is True
     out = {}
     for binding_name, arg_name in names.items():
         override = getattr(args, arg_name)
@@ -435,6 +442,10 @@ def _chain_paths(manifest, args):
                             if isinstance(binding, dict) else None)
         if binding_name == "keyword_freeze" \
                 and manifest.get("language") != "lean":
+            out[binding_name] = None
+            continue
+        if binding_name in ("k4x_graph", "k4x_external_extraction") \
+                and not k4x_applicable:
             out[binding_name] = None
             continue
         if not isinstance(path, str) or not path:
@@ -538,7 +549,8 @@ def evaluate(args):
             args.manifest, paths["sample"], manifest["repo"],
             paths["candidates"], paths["extraction"], paths["neardup"],
             paths["a6_outcome"], paths["keyword_freeze"],
-            paths["k7_order"])
+            paths["k7_order"], paths["k4x_graph"],
+            paths["k4x_external_extraction"])
         if set(materialized) != {row["key"] for row in targets}:
             raise V2BError("materialization target set differs from manifest")
         _check_guard(source_hash, harness, environment, args.manifest,
@@ -675,6 +687,8 @@ def main():
     ap.add_argument("--a6-outcome")
     ap.add_argument("--lean-keyword-freeze")
     ap.add_argument("--k7-order")
+    ap.add_argument("--k4x-graph")
+    ap.add_argument("--k4x-external-extraction")
     args = ap.parse_args()
     try:
         evaluate(args)

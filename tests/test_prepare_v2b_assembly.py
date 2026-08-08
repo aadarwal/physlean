@@ -858,6 +858,263 @@ def test_source_drift_fails_closed():
             assert "hash drift" in str(err)
 
 
+def _physlib_chain(td, jaccard="0.80", active_bands=()):
+    """physlib fixture with a §15.A13 external snapshot: an internal dep,
+    a verbatim external twin, a Jaccard-near external (last identifier
+    renamed: normalized-equal AND J~0.815), and a transitive external
+    dependency. The k4x graph artifact is built by the REAL generator."""
+    from prepare_v2b_k4x_graph import (K4X_EXTERNAL_EXTRACTION_REPO,
+                                       K4X_EXTERNAL_REVISION,
+                                       build_k4x_graph)
+    repo = "physlib"
+    corpus_sha = EXPECTED[repo][1]
+    root = os.path.join(td, "corpus")
+    snapshot = os.path.join(td, "snapshot")
+    terms = " + ".join(f"a{i}" for i in range(1, 25))
+    t_text = f"def t : Nat :=\n  {terms}\n"
+    # middle-token rename: 5 gram windows change (J = 44/54 ~ 0.815 —
+    # inside [0.80, 0.90)); a LAST-token rename would touch only one
+    # window (J ~ 0.96) and defeat the calibration-sensitivity case
+    near_text = t_text.replace("a12", "zz9")
+    pdep_text = "def pdep : Nat :=\n  1\n"
+    p_text = t_text
+    q_text = pdep_text
+    mfoo_text = "def mfoo : Nat :=\n  2\n"
+    mbase_text = "def mbase : Nat :=\n  3\n"
+    mx_text = mfoo_text + t_text + near_text + mbase_text
+    p_path = os.path.join(root, "P.lean")
+    q_path = os.path.join(root, "Q.lean")
+    mx_path = os.path.join(snapshot, "MX.lean")
+    p_sha, q_sha = _write(p_path, p_text), _write(q_path, q_text)
+    mx_sha = _write(mx_path, mx_text)
+
+    def decl(start, text, header, shell=()):
+        return dict(start_byte=start, end_byte=start + len(text),
+                    header_bytes=header, split_kind=":=",
+                    shell=list(shell))
+
+    physlib_extraction = dict(
+        schema="v2a_lean_extract_v3", repo=repo,
+        files=[dict(module="Physlib.P", source=p_path, rel="P.lean",
+                    source_sha256=p_sha,
+                    decls={
+                        "Physlib.P.t": decl(0, t_text, len("def t : Nat "),
+                                            shell=["open Nat"])}),
+               dict(module="Physlib.Q", source=q_path, rel="Q.lean",
+                    source_sha256=q_sha,
+                    decls={
+                        "Physlib.Q.pdep": decl(0, pdep_text,
+                                               len("def pdep : Nat "))})],
+        graph=dict(
+            edges=[["Physlib.P", "Physlib.P.t",
+                    "Physlib.Q", "Physlib.Q.pdep"]],
+            external_reference_edges=[
+                ["Physlib.P", "Physlib.P.t", "Mathlib.X", "Mathlib.X.mfoo"],
+                ["Physlib.P", "Physlib.P.t", "Mathlib.X",
+                 "Mathlib.X.mtwin"],
+                ["Physlib.P", "Physlib.P.t", "Mathlib.X",
+                 "Mathlib.X.mnear"],
+                ["Physlib.P", "Physlib.P.t", "Mathlib.X",
+                 "Mathlib.X.loopA"],
+                ["Physlib.P", "Physlib.P.t", "Std.Y", "Std.Y.z"]]))
+    m_offsets = dict(mfoo=0, mtwin=len(mfoo_text),
+                     mnear=len(mfoo_text) + len(t_text),
+                     mbase=len(mfoo_text) + len(t_text) + len(near_text))
+    external_extraction = dict(
+        schema="v2a_lean_extract_v3", repo=K4X_EXTERNAL_EXTRACTION_REPO,
+        files=[dict(module="Mathlib.X", source=mx_path, rel="MX.lean",
+                    source_sha256=mx_sha,
+                    decls={
+                        "Mathlib.X.mfoo": decl(m_offsets["mfoo"], mfoo_text,
+                                               len("def mfoo : Nat ")),
+                        "Mathlib.X.mtwin": decl(m_offsets["mtwin"], t_text,
+                                                len("def t : Nat ")),
+                        "Mathlib.X.mnear": decl(m_offsets["mnear"],
+                                                near_text,
+                                                len("def t : Nat ")),
+                        "Mathlib.X.mbase": decl(m_offsets["mbase"],
+                                                mbase_text,
+                                                len("def mbase : Nat "))},
+                    definition_parents={
+                        "Mathlib.X.loopA": "Mathlib.X.loopB",
+                        "Mathlib.X.loopB": "Mathlib.X.loopA"})],
+        graph=dict(edges=[["Mathlib.X", "Mathlib.X.mfoo",
+                           "Mathlib.X", "Mathlib.X.mbase"]]))
+    physlib_extraction_path = os.path.join(td, "extraction.json")
+    json.dump(physlib_extraction, open(physlib_extraction_path, "w"))
+    extraction_sha = _sha(open(physlib_extraction_path, "rb").read())
+    external_extraction_path = os.path.join(td, "external_extraction.json")
+    json.dump(external_extraction, open(external_extraction_path, "w"))
+
+    manifest_bytes = json.dumps(dict(packages=[
+        dict(name="mathlib", rev=K4X_EXTERNAL_REVISION)])).encode("utf-8")
+    k4x_artifact = build_k4x_graph(physlib_extraction_path,
+                                   external_extraction_path,
+                                   manifest_bytes)
+    k4x_path = os.path.join(td, "k4x_graph.json")
+    json.dump(k4x_artifact, open(k4x_path, "w"))
+
+    freeze_path = _freeze(td)
+    _, freeze_binding = load_lean_keyword_freeze(freeze_path)
+    units = []
+    for module, name, text in (("Physlib.P", "Physlib.P.t", t_text),
+                               ("Physlib.Q", "Physlib.Q.pdep", pdep_text)):
+        identity = [module, name]
+        units.append(dict(identity=identity,
+                          key=identity_key("lean", identity),
+                          verbatim_sha256=_lexed("lean", text),
+                          normalized_sha256="b" * 64))
+    neardup = dict(schema=NEARDUP_SCHEMA, repo=repo, language="lean",
+                   extraction=dict(path=physlib_extraction_path,
+                                   sha256=extraction_sha),
+                   keyword_evidence=freeze_binding,
+                   units=units, jaccard_pairs=[], collision_groups=[])
+    neardup_path = os.path.join(td, "neardup.json")
+    json.dump(neardup, open(neardup_path, "w"))
+
+    outcome_path = _outcome(td, jaccard=jaccard,
+                            active_bands=active_bands)
+    outcome_sha = _sha(open(outcome_path, "rb").read())
+    candidates = dict(schema=CANDIDATES_SCHEMA, repo=repo,
+                      corpus_git_sha=corpus_sha,
+                      extraction=dict(path=physlib_extraction_path,
+                                      sha256=extraction_sha))
+    candidates_path = os.path.join(td, "candidates.json")
+    json.dump(candidates, open(candidates_path, "w"))
+    candidates_sha = _sha(open(candidates_path, "rb").read())
+    sample = dict(schema=BOUND_SAMPLE_SCHEMA, sampling_state="drawn",
+                  n_requested_per_corpus=20,
+                  a6_outcome=dict(sha256=outcome_sha),
+                  plans={repo: dict(candidates_sha256=candidates_sha,
+                                    targets=[dict(identity=[
+                                        "Physlib.P", "Physlib.P.t"])])})
+    sample_path = os.path.join(td, "sample.json")
+    json.dump(sample, open(sample_path, "w"))
+    k7_path = _k7_artifact(td, repo, "lean",
+                           [("Q.lean", q_path), ("P.lean", p_path)])
+    return dict(sample=sample_path, repo=repo, candidates=candidates_path,
+                extraction=physlib_extraction_path, neardup=neardup_path,
+                outcome=outcome_path, freeze=freeze_path, k7=k7_path,
+                k4x=k4x_path, external=external_extraction_path)
+
+
+def _build_physlib(chain):
+    return build_assembly(chain["sample"], chain["repo"],
+                          chain["candidates"], chain["extraction"],
+                          chain["neardup"], chain["outcome"],
+                          chain["freeze"], chain["k7"],
+                          chain["k4x"], chain["external"])
+
+
+def test_k4x_combined_graph_and_cross_screening():
+    with tempfile.TemporaryDirectory() as td:
+        chain = _physlib_chain(td)
+        manifest = _build_physlib(chain)
+        assert manifest["arms_included"][-1] == "k4x"
+        assert manifest["k4x"]["applicable"] is True
+        row = manifest["targets"][0]
+        arm = row["arms"]["k4x"]
+        # closure: pdep + mfoo + mtwin + mnear + mbase (via mfoo)
+        assert arm["n_combined_closure"] == 5
+        reasons = {tuple(r["identity"]): r["reason"]
+                   for r in arm["screened_external"]}
+        assert reasons == {("Mathlib.X", "Mathlib.X.mtwin"): "verbatim",
+                           ("Mathlib.X", "Mathlib.X.mnear"): "jaccard"}
+        assert arm["n_internal_units"] == 1                 # pdep
+        assert arm["n_external_units"] == 2                 # mfoo, mbase
+        assert arm["n_unresolved_external_references"] == 1  # loopA
+        assert arm["screened_external_bytes"] > 0
+        cell = arm["cells"][str(65536)]
+        assert cell["n_external_units"] == 2
+        assert cell["n_internal_units"] == 1
+        assert cell["n_external_bytes"] > 0
+        # sealed-band activation flips the SAME pair to the normalized
+        # channel (checked before Jaccard)
+    with tempfile.TemporaryDirectory() as td:
+        chain = _physlib_chain(td, active_bands=("geq20",))
+        arm = _build_physlib(chain)["targets"][0]["arms"]["k4x"]
+        reasons = {tuple(r["identity"]): r["reason"]
+                   for r in arm["screened_external"]}
+        assert reasons[("Mathlib.X", "Mathlib.X.mnear")] == "normalized"
+    # under the sealed 0.90 calibration J~0.815 no longer screens
+    with tempfile.TemporaryDirectory() as td:
+        chain = _physlib_chain(td, jaccard="0.90")
+        arm = _build_physlib(chain)["targets"][0]["arms"]["k4x"]
+        reasons = {tuple(r["identity"]): r["reason"]
+                   for r in arm["screened_external"]}
+        assert reasons == {("Mathlib.X", "Mathlib.X.mtwin"): "verbatim"}
+        assert arm["n_external_units"] == 3                 # mnear renders
+
+
+def test_k4x_materializes_with_snapshot_banners():
+    with tempfile.TemporaryDirectory() as td:
+        chain = _physlib_chain(td)
+        manifest = _build_physlib(chain)
+        manifest_path = os.path.join(td, "manifest.json")
+        json.dump(manifest, open(manifest_path, "w"))
+        blobs = materialize(manifest_path, chain["sample"], chain["repo"],
+                            chain["candidates"], chain["extraction"],
+                            chain["neardup"], chain["outcome"],
+                            chain["freeze"], chain["k7"],
+                            chain["k4x"], chain["external"])
+        row = manifest["targets"][0]
+        blob = blobs[identity_key("lean", ["Physlib.P", "Physlib.P.t"])]
+        context = blob["k4x:65536"]
+        assert _sha(context) == \
+            row["arms"]["k4x"]["cells"][str(65536)]["context_sha256"]
+        assert b"-- ctx: mathlib4/MX.lean" in context
+        assert b"-- ctx: Q.lean" in context                 # internal dep
+        assert b"zz9" not in context                        # mnear screened
+
+
+def test_k4x_gate_fails_closed():
+    # physlib without the k4x inputs: §14.20 hard gate
+    with tempfile.TemporaryDirectory() as td:
+        chain = _physlib_chain(td)
+        try:
+            build_assembly(chain["sample"], chain["repo"],
+                           chain["candidates"], chain["extraction"],
+                           chain["neardup"], chain["outcome"],
+                           chain["freeze"], chain["k7"])
+            assert False, "physlib assembly without k4x accepted"
+        except V2BError as err:
+            assert "hard gate" in str(err)
+    # k4x inputs offered to a non-physlib corpus
+    with tempfile.TemporaryDirectory() as td:
+        chain = _lean_chain(td)
+        try:
+            build_assembly(chain["sample"], chain["repo"],
+                           chain["candidates"], chain["extraction"],
+                           chain["neardup"], chain["outcome"],
+                           chain["freeze"], chain["k7"],
+                           os.path.join(td, "k4x.json"), chain["neardup"])
+            assert False, "k4x inputs for non-physlib corpus accepted"
+        except V2BError as err:
+            assert "physlib-only" in str(err)
+    # frozen external revision drift in the sealed artifact
+    with tempfile.TemporaryDirectory() as td:
+        chain = _physlib_chain(td)
+        value = json.load(open(chain["k4x"]))
+        value["external_revision"] = "2" * 40
+        json.dump(value, open(chain["k4x"], "w"))
+        try:
+            _build_physlib(chain)
+            assert False, "external revision drift accepted"
+        except V2BError as err:
+            assert "binding drift" in str(err)
+    # snapshot extraction file differs from the sealed binding
+    with tempfile.TemporaryDirectory() as td:
+        chain = _physlib_chain(td)
+        value = json.load(open(chain["external"]))
+        value["n_files"] = 999
+        json.dump(value, open(chain["external"], "w"))
+        try:
+            _build_physlib(chain)
+            assert False, "unsealed snapshot extraction accepted"
+        except V2BError as err:
+            assert "sealed input" in str(err)
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):

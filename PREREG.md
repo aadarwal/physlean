@@ -1319,6 +1319,34 @@ arxiv_manifest) must be committed before measurement.
   marginal cost of delay exceeds the marginal risk given the G2 plumbing
   gates. Recorded 2026-08-07; open for human override.
 
+- ADOPTED (2026-08-08, k4x external snapshot contract; pre-artifact — no
+  k4x graph, assembly cell, or score exists): physlib e882411d's
+  lake-manifest pins mathlib 81a5d257c8e410db227a6665ed08f64fea08e997,
+  differing from corpus-lock 87adeaeb, so k4x binds a v3 extraction of
+  `.lake/packages/mathlib` at exactly that revision — the extraction V2-a
+  job 19916781_2 already emitted (repo tag physlib_pinned_mathlib, 8,275
+  files, SHA256
+  9f4a192059ede347093c4f424940198e45cc93b9140f0ef8e5b8a465e0b6f796),
+  reused never rerun, with the
+  production gate refusing any other bytes; the tag never enters k4x
+  ordering keys and banners stay "mathlib4/<rel>" (the pinned mathlib
+  package only; other external roots stay §14.3 counts-only). The preserved physlib external quadruples
+  resolve against the snapshot decl tables under the identical
+  definition-parents fold; resolved/unresolved/out-of-snapshot are sealed
+  in one v2b_k4x_external_graph_v1 artifact hash-binding both extractions,
+  the lake-manifest bytes, and the frozen revision. Combined-graph
+  construction, rendering, keys, and budgets are §14.27/§15.A4 unchanged,
+  with "mathlib4/<rel>" banners and hard-checked identity/banner
+  disjointness. Cross-corpus target-to-external near-duplicates are NOT
+  defined away: snapshot units in a target's closure are screened under
+  the sealed A6 outcome (verbatim always; normalized per sealed band
+  activation using the sealed corpus-lock keyword freeze, whose
+  non-re-derivation at the pin is a recorded limitation; Jaccard at the
+  sealed calibrated threshold with the frozen 20-lexical floor), screened
+  mass recorded per target. Internal-vs-external mass per cell; external
+  bytes definable for this arm only (§14.3). Full detail: DESIGN_V2
+  §15.A13.
+
 ## 14. Known limitations (standing list)
 
 Model-relative estimand; single repo per cell (until G4+); proofs-vs-

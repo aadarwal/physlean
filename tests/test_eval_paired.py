@@ -22,7 +22,8 @@ from eval_paired import (_model_max_positions, body_token_ledger,
                          paired_harness_hash, score_prompt,
                          target_cell_specs)
 from prepare_v2b_assembly import build_assembly, materialize
-from test_prepare_v2b_assembly import _build, _lean_chain, _python_chain
+from test_prepare_v2b_assembly import (_build, _build_physlib, _lean_chain,
+                                       _physlib_chain, _python_chain)
 from v2b_common import V2BError, identity_key
 
 
@@ -249,6 +250,38 @@ def test_target_cell_specs_includes_ineligible_empty_cells():
         # arms with content keep real cells alongside
         assert by_id["k4:4096"]["context_bytes"] > 0
         assert empty_cell_arms(target) == []    # grid never cell-less now
+
+
+def test_target_cell_specs_covers_k4x_when_applicable():
+    """physlib manifests carry the §15.A13 k4x grid: 23 base cells + 3
+    k4x budget cells, materialized and hash-bound like every other arm;
+    non-physlib manifests carry no k4x cell at all (already pinned by the
+    23-cell lean/python coverage tests)."""
+    with tempfile.TemporaryDirectory() as td:
+        chain = _physlib_chain(td)
+        manifest = _build_physlib(chain)
+        manifest_path = os.path.join(td, "manifest.json")
+        json.dump(manifest, open(manifest_path, "w"))
+        blobs = materialize(manifest_path, chain["sample"], chain["repo"],
+                            chain["candidates"], chain["extraction"],
+                            chain["neardup"], chain["outcome"],
+                            chain["freeze"], chain["k7"],
+                            chain["k4x"], chain["external"])
+        target = manifest["targets"][0]
+        specs = target_cell_specs(
+            target,
+            blobs[identity_key("lean", ["Physlib.P", "Physlib.P.t"])])
+        by_id = {spec["cell_id"]: spec for spec in specs}
+        assert len(specs) == 26
+        for budget in ("4096", "16384", "65536"):
+            spec = by_id[f"k4x:{budget}"]
+            assert spec["arm"] == "k4x"
+            assert spec["context_bytes"] == len(spec["context"])
+            assert hashlib.sha256(spec["context"]).hexdigest() == \
+                spec["context_sha256"]
+        assert by_id["k4x:65536"]["context_bytes"] > 0
+        # the empty-grid representation means no arm is ever cell-less
+        assert empty_cell_arms(target) == []
 
 
 def test_empty_cell_arms_recorded_not_silent():
