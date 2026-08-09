@@ -4,10 +4,15 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
+from v2b_s5_visibility import normalize_expanded_setup
+
+
 FIXTURE = os.path.join(ROOT, "tests", "fixtures", "s5_setup_project")
 DRIVER_SOURCE = os.path.join(
     ROOT, "lean_drivers", "V2BS5ExpandSetup.lean")
@@ -96,6 +101,11 @@ def _exercise(toolchain):
         assert set(import_arts) == {"Probe.Direct", "Probe.Transitive"}, setup
         assert all(os.path.isfile(path)
                    for paths in import_arts.values() for path in paths)
+        projected = normalize_expanded_setup(
+            setup, "Probe.Target", sorted(import_arts))
+        assert {module for _, role, module in projected
+                if role == "import-artifact"} == {
+                    "Probe.Direct", "Probe.Transitive"}
 
         # `noBuild := true` must turn a missing dependency into a failure and
         # must not recreate it.  This is the mutation barrier production uses.
