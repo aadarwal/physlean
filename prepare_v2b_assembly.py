@@ -57,7 +57,8 @@ from v2b_common import (A6_OUTCOME_SCHEMA, ASSEMBLY_SCHEMA,
                         CANDIDATES_SCHEMA, K4X_GRAPH_SCHEMA,
                         K7_ORDER_SCHEMA, NEARDUP_SCHEMA, V2BError,
                         artifact_binding, identity_key, sha256_bytes,
-                        sha256_json, sha256_sorted_json, validate_identity,
+                        relative_source_path, sha256_json,
+                        sha256_sorted_json, validate_identity,
                         write_new_json)
 from v2b_neardup import (LEAN_EXTRACT_SCHEMA, LEXICAL_FLOOR,
                          PYTHON_EXTRACT_SCHEMA, five_grams, lex_unit,
@@ -120,9 +121,14 @@ def _load_k4x(k4x_graph_path, external_extraction_path, repo,
                        "and snapshot extraction (§14.20 hard gate)")
     binding, k4x = artifact_binding(k4x_graph_path, K4X_GRAPH_SCHEMA)
     resolution = k4x.get("resolution")
+    snapshot_root = k4x.get("snapshot_root")
     if k4x.get("repo") != "physlib" \
             or k4x.get("external_repo") != K4X_EXTERNAL_REPO \
             or k4x.get("external_revision") != K4X_EXTERNAL_REVISION \
+            or not isinstance(snapshot_root, str) or not snapshot_root \
+            or not os.path.isabs(snapshot_root) \
+            or os.path.normpath(snapshot_root) != snapshot_root \
+            or not os.path.isdir(snapshot_root) \
             or not isinstance(k4x.get("physlib_extraction"), dict) \
             or k4x["physlib_extraction"].get("sha256") != extraction_sha \
             or not isinstance(k4x.get("external_extraction"), dict) \
@@ -136,7 +142,8 @@ def _load_k4x(k4x_graph_path, external_extraction_path, repo,
             or ext_extraction.get("repo") != K4X_EXTERNAL_EXTRACTION_REPO:
         raise V2BError("k4x snapshot extraction is not the sealed input")
     return dict(binding=binding, value=k4x, external_binding=ext_binding,
-                external_extraction=ext_extraction)
+                external_extraction=ext_extraction,
+                snapshot_root=snapshot_root)
 
 
 def _load_chain(sample_path, repo, candidates_path, extraction_path,
@@ -260,24 +267,72 @@ def _load_chain(sample_path, repo, candidates_path, extraction_path,
 
 # --------------------------------------------------------- corpus index
 
-def _unit_index(extraction, language, lean_boundaries=None):
+def _source_rel_from_root(corpus_root, source):
+    """Canonical relative source path with lexical and real containment."""
+    if not isinstance(corpus_root, str) or not corpus_root \
+            or not isinstance(source, str) or not source:
+        raise V2BError("source/root path binding is missing")
+    root = os.path.normpath(corpus_root)
+    if not os.path.isabs(root) or root == os.path.sep \
+            or corpus_root not in (root, root + os.sep) \
+            or not os.path.isdir(root) \
+            or not os.path.isabs(source) \
+            or os.path.normpath(source) != source:
+        raise V2BError("source/root path binding is noncanonical")
+    try:
+        if source == root or os.path.commonpath((root, source)) != root:
+            raise V2BError("source is outside corpus root")
+        real_root, real_source = os.path.realpath(root), os.path.realpath(source)
+        if real_source == real_root \
+                or os.path.commonpath((real_root, real_source)) != real_root:
+            raise V2BError("source realpath escapes corpus root")
+    except ValueError as err:
+        raise V2BError(f"source/root path mismatch: {err}") from err
+    rel = relative_source_path(root, source)
+    round_trip = os.path.normpath(os.path.join(
+        root, *rel.split("/")))
+    if os.path.isabs(rel) or rel in ("", ".", "..") \
+            or rel.startswith("../") or round_trip != source:
+        raise V2BError("source relative path does not round-trip")
+    return rel
+
+
+def _unit_index(extraction, language, lean_boundaries=None,
+                corpus_root=None):
     """identity_key -> unit record with source, span, and split fields.
 
     Main-corpus Lean assembly supplies the parser-backed overlay.  The
     separately pinned k4x snapshot deliberately calls this without an
     overlay because it is implementation-only context and is never
-    interface-rendered by the current k4x arm.
+    interface-rendered by the current k4x arm.  A supplied corpus root
+    canonicalizes production Lean v3 rows whose optional `rel` is null.
     """
     if language == "python" and lean_boundaries is not None:
         raise V2BError("Python unit index received Lean boundaries")
     units = {}
     sources = {}
+    source_by_rel = {}
     for f in extraction.get("files", []):
         source = f.get("source")
         source_sha = f.get("source_sha256")
-        rel = f.get("rel") or source
         if not isinstance(source, str) or not _hex(source_sha):
             raise V2BError("extraction file lacks source binding")
+        raw_rel = f.get("rel")
+        if raw_rel is None:
+            if language != "lean" or corpus_root is None:
+                raise V2BError("extraction file lacks canonical source_rel")
+            rel = _source_rel_from_root(corpus_root, source)
+        else:
+            if not isinstance(raw_rel, str) or not raw_rel:
+                raise V2BError("extraction file lacks canonical source_rel")
+            rel = raw_rel
+            if corpus_root is not None \
+                    and _source_rel_from_root(corpus_root, source) != rel:
+                raise V2BError("extraction source_rel disagrees with the "
+                               "sealed corpus root")
+        if rel in source_by_rel:
+            raise V2BError(f"duplicate extraction source_rel {rel}")
+        source_by_rel[rel] = source
         sources[source] = source_sha
         if language == "lean":
             rows = [((f["module"], name), d) for name, d in
@@ -1166,7 +1221,9 @@ def build_assembly(sample_path, repo, candidates_path, extraction_path,
                     k7_order_path, k4x_graph_path,
                     external_extraction_path, lean_boundaries_path)
     language = bindings["language"]
-    units, _ = _unit_index(extraction, language, boundary_index)
+    corpus_root = _corpus_root(extraction, k7_rows)
+    units, _ = _unit_index(extraction, language, boundary_index,
+                           corpus_root=corpus_root)
     edges = _edges(extraction, language)
     adjacency = _a6_exclusion_sets(neardup, outcome, language, set(units))
     external_index = _external_index(extraction, language)
@@ -1175,7 +1232,7 @@ def build_assembly(sample_path, repo, candidates_path, extraction_path,
         language, units,
         {unit["key"]: unit["verbatim_sha256"]
          for unit in neardup.get("units", [])}, cache)
-    k7 = dict(rows=k7_rows, root=_corpus_root(extraction, k7_rows), cache={})
+    k7 = dict(rows=k7_rows, root=corpus_root, cache={})
     k4x_ctx = None
     if k4x_bundle is not None:
         k4x_ctx = _k4x_context(k4x_bundle, units, edges, outcome,
@@ -1242,7 +1299,9 @@ def build_assembly(sample_path, repo, candidates_path, extraction_path,
 def _k4x_context(k4x_bundle, units, edges, outcome, lean_tokens):
     """Corpus-level §15.A13 context: prefixed external unit index,
     combined-edge additions, sealed screening parameters, hard checks."""
-    ext_units, _ = _unit_index(k4x_bundle["external_extraction"], "lean")
+    ext_units, _ = _unit_index(
+        k4x_bundle["external_extraction"], "lean",
+        corpus_root=k4x_bundle["snapshot_root"])
     physlib_rels = {unit["source_rel"] for unit in units.values()}
     for unit in ext_units.values():
         unit["source_rel"] = f"{K4X_EXTERNAL_REPO}/{unit['source_rel']}"

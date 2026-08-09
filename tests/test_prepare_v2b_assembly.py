@@ -19,7 +19,7 @@ from collections import Counter
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from finalize_v2b_a6 import EXPECTED
 from prepare_v2b_assembly import (B_STAR, K7_ORDER_RULE, _corpus_root,
-                                  build_assembly, materialize)
+                                  _unit_index, build_assembly, materialize)
 from v2b_assemble import normalize_payload
 from v2b_common import (ASSEMBLY_SCHEMA, BOUND_SAMPLE_SCHEMA,
                         A6_OUTCOME_SCHEMA, CANDIDATES_SCHEMA, K7_ORDER_SCHEMA,
@@ -52,13 +52,21 @@ def test_corpus_root_joins_production_lean_null_rel_to_k7():
             schema=LEAN_EXTRACT_SCHEMA,
             files=[
                 dict(module="Batteries", source=top, rel=None,
-                     source_sha256=_sha(open(top, "rb").read())),
+                     source_sha256=_sha(open(top, "rb").read()), decls={}),
                 dict(module="Batteries.Classes.Cast", source=nested,
                      rel=None,
-                     source_sha256=_sha(open(nested, "rb").read())),
+                     source_sha256=_sha(open(nested, "rb").read()),
+                     decls={}),
                 # The module is deliberately not the filesystem relpath.
                 dict(module="runLinter", source=script, rel=None,
-                     source_sha256=_sha(open(script, "rb").read())),
+                     source_sha256=_sha(open(script, "rb").read()),
+                     decls={
+                         "runLinter": dict(
+                             start_byte=0,
+                             end_byte=len(open(script, "rb").read()),
+                             header_bytes=len("def runLinter : IO Unit "),
+                             body_bytes=len(":= pure ()\n"),
+                             split_kind=":=", shell=[])}),
             ])
         k7_rows = [
             ["Batteries.lean", 1, extraction["files"][0]["source_sha256"],
@@ -70,7 +78,29 @@ def test_corpus_root_joins_production_lean_null_rel_to_k7():
         # The script is intentionally absent from k7, as are a small number
         # of production extraction files.  The two exact anchors still prove
         # one root and the unmatched source is contained beneath it.
-        assert _corpus_root(extraction, k7_rows) == root + os.sep
+        corpus_root = _corpus_root(extraction, k7_rows)
+        assert corpus_root == root + os.sep
+        units, _ = _unit_index(extraction, "lean",
+                               corpus_root=corpus_root)
+        assert units[identity_key("lean", ["runLinter", "runLinter"])][
+            "source_rel"] == "scripts/runLinter.lean"
+
+        extraction["files"][0]["rel"] = "Wrong.lean"
+        try:
+            _unit_index(extraction, "lean", corpus_root=corpus_root)
+            assert False, "declared rel inconsistent with root accepted"
+        except V2BError as err:
+            assert "disagrees" in str(err)
+        extraction["files"][0]["rel"] = None
+
+        duplicate = dict(extraction["files"][0], module="Duplicate")
+        extraction["files"].append(duplicate)
+        try:
+            _unit_index(extraction, "lean", corpus_root=corpus_root)
+            assert False, "duplicate derived source_rel accepted"
+        except V2BError as err:
+            assert "duplicate extraction source_rel" in str(err)
+        extraction["files"].pop()
 
         k7_rows[0][2] = "0" * 64
         k7_rows[1][2] = "0" * 64
@@ -1128,7 +1158,7 @@ def _physlib_chain(td, jaccard="0.80", active_bands=()):
                      mbase=len(mfoo_text) + len(t_text) + len(near_text))
     external_extraction = dict(
         schema="v2a_lean_extract_v3", repo=K4X_EXTERNAL_EXTRACTION_REPO,
-        files=[dict(module="Mathlib.X", source=mx_path, rel="MX.lean",
+        files=[dict(module="Mathlib.X", source=mx_path, rel=None,
                     source_sha256=mx_sha,
                     decls={
                         "Mathlib.X.mfoo": decl(m_offsets["mfoo"], mfoo_text,
@@ -1160,6 +1190,7 @@ def _physlib_chain(td, jaccard="0.80", active_bands=()):
     k4x_artifact = build_k4x_graph(physlib_extraction_path,
                                    external_extraction_path,
                                    manifest_bytes)
+    k4x_artifact["snapshot_root"] = snapshot
     k4x_path = os.path.join(td, "k4x_graph.json")
     json.dump(k4x_artifact, open(k4x_path, "w"))
 
@@ -1336,6 +1367,29 @@ def test_k4x_gate_fails_closed():
         try:
             _build_physlib(chain)
             assert False, "external revision drift accepted"
+        except V2BError as err:
+            assert "binding drift" in str(err)
+    # the external source universe is canonicalized only against the exact
+    # snapshot root sealed into the k4x artifact.
+    with tempfile.TemporaryDirectory() as td:
+        chain = _physlib_chain(td)
+        value = json.load(open(chain["k4x"]))
+        value["snapshot_root"] = os.path.join(td, "wrong-snapshot")
+        os.makedirs(value["snapshot_root"])
+        json.dump(value, open(chain["k4x"], "w"))
+        try:
+            _build_physlib(chain)
+            assert False, "wrong k4x snapshot root accepted"
+        except V2BError as err:
+            assert "outside corpus root" in str(err)
+    with tempfile.TemporaryDirectory() as td:
+        chain = _physlib_chain(td)
+        value = json.load(open(chain["k4x"]))
+        value["snapshot_root"] = "relative/snapshot"
+        json.dump(value, open(chain["k4x"], "w"))
+        try:
+            _build_physlib(chain)
+            assert False, "relative k4x snapshot root accepted"
         except V2BError as err:
             assert "binding drift" in str(err)
     # snapshot extraction file differs from the sealed binding
