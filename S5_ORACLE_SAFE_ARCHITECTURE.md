@@ -253,6 +253,49 @@ with corpus search-root contents absent and no fallback lookup. Prefix resource
 discovery may be used only to propose a frozen allowlist; a
 candidate-triggered lazy load must fail rather than widen visibility.
 
+### 7.1 Exact-file visibility producer
+
+`v2b_s5_visibility.py` is the first bounded production implementation of this
+projection.  Its `v2b_s5_visibility_v1` artifact content-binds the target
+module/source, raw expanded setup bytes and normalized semantics, toolchain pin
+and Lean executable, native expansion helper, visibility-producer bytes,
+explicit runtime closure, frozen broad setup index, and every projected file.
+The child-facing table contains only exact regular files and content-bound
+internal symlinks.  It contains no search directory, corpus root, source, setup
+JSON, helper, producer, index, or closure evidence.  The mount policy explicitly
+forbids binding the workspace, toolchain, or search roots; source remains framed
+stdin data.
+
+There is no sound way to infer an omitted transitive import from a
+potentially-truncated `ModuleSetup` object alone.  The narrow fail-closed choice
+is therefore to require a separately frozen `v2b_s5_import_closure_v1`
+artifact, bound to the exact module and source hash, and require exact equality
+between that module set and `importArts`.  Each member must contribute at least
+one `.olean` artifact.  Direct `imports`, when present, must be a subset.  The
+real helper integration independently checks the known direct-plus-transitive
+three-module fixture on both pins.  Production still needs a prospective
+closure-artifact producer whose output is joined to the frozen dependency
+graph; deriving that artifact from the same untrusted setup would defeat this
+check.
+
+Both Lake encodings are accepted only in their homogeneous form: a 4.32 flat
+path list or a 4.33 list of nonempty path groups.  Empty/mixed groups,
+duplicates, relative/noncanonical paths, missing files, current-module
+artifacts, source files, and paths outside the workspace `.lake` or exact
+toolchain root fail closed.  Every setup/runtime path and safe symlink target
+must match the path and live content hash in the frozen broad setup index.
+Safe symlinks bind both their literal link text and resolved regular target;
+link chains, `..`, unindexed links/targets, and root escapes are rejected.
+
+The producer intentionally does not claim that an explicit runtime file list
+is a sufficient dynamic-loader closure or that individual mounts work under
+Engaging's bubblewrap/kernel configuration.  Those remain empirical release
+gates: generate the graph-derived closure, trace/freeze the native driver and
+loader closure, instantiate only the manifest allowlist in bubblewrap, prove
+all broad lookup roots are absent, and run positive/negative probes on both
+pinned cluster toolchains.  The live validator deterministically rebuilds the
+entire manifest from its content-bound inputs before a launcher may consume it.
+
 ## 8. Release gates
 
 No behavioral S5 outcome is scientific until all are true:
