@@ -921,7 +921,8 @@ def main():
         OUT, PILOT_BATTERY_FILE if args.pilot else "battery.json")
     if args.pilot and subprocess.run(
             ["git", "ls-files", "--error-unmatch", bj],
-            capture_output=True).returncode == 0:
+            capture_output=True,
+            cwd=os.path.dirname(os.path.abspath(__file__))).returncode == 0:
         # Pilot-tier batteries are write-once committed evidence (grid
         # battery.json keeps its rerun-at-current-hash semantics). A
         # committed tier battery is NEVER replaced by this program.

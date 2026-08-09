@@ -1,8 +1,17 @@
 # Prospective V2-b amendment: exploratory NLL model ladder
 
-Date: 2026-08-09 EDT. Status: DRAFT — adoption requires independent
-adversarial review; nothing below authorizes a paired score until that
-review is recorded and the frozen ladder analyzer exists.
+Date: 2026-08-09 EDT. Status: **ADOPTED** after independent adversarial
+review (fresh-context reviewer with no shared session state: initial
+verdict FIX-FIRST with 3 blockers / 6 concerns / 3 nits; all blockers and
+concerns fixed at commit 780c3ae — completion ledger, pinned
+reveal/manifest anchors, full-tier-set refusal, tier-set-frozen rule,
+sealed completion binding, battery filename rule, H200 checks in both
+launchers, write-once committed batteries, sequencing disclosure;
+re-review verdict ADOPTABLE; the remaining nits — CWD-robust write-once
+guard, torch-free analyzer import — are applied in the adoption commit).
+The PREREG §13 entry accompanying this commit records the boundary. The
+frozen ladder analyzer and this file must be committed ancestors of every
+ladder battery and score.
 
 Adoption boundary: the sealed five-corpus pilot has been scored, masked,
 governed, and revealed at exactly one checkpoint (`Qwen/Qwen2.5-Coder-1.5B`

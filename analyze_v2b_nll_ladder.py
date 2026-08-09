@@ -32,7 +32,6 @@ import sys
 from analyze_v2b_nll_exploratory import (
     CONTRAST_NAMES, NLL_EXPLORATORY_REVEAL_SCHEMA, _analyze_repo_rows,
     _reconstruct_family)
-from eval_paired import COMPLETE_SCHEMA
 from layout import PRODUCTION_CHUNK_TOKENS
 from provenance import head_commit, source_clean, source_tree_hash
 from v2b_a6_blind import require_committed
@@ -40,6 +39,10 @@ from v2b_common import V2BError, artifact_binding, sha256_file, \
     write_new_json
 from validity_battery import PILOT_TIERS
 
+# Frozen upstream constant repeated (eval_paired.COMPLETE_SCHEMA) so this
+# CPU analyzer never imports the tokenizer/model stack at module import —
+# same pattern as analyze_v2b_nll_exploratory's repeated constants.
+COMPLETE_SCHEMA = "v2b_paired_nll_complete_v2"
 LADDER_ANALYSIS_SCHEMA = "v2b_nll_ladder_analysis_v1"
 LADDER_LEDGER_SCHEMA = "v2b_ladder_completion_ledger_v1"
 LADDER_CLAIM_STATUS = "exploratory-nll-only-multi-checkpoint-pilot"

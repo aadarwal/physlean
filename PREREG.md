@@ -538,6 +538,45 @@ arxiv_manifest) must be committed before measurement.
 
 ## 13. Disagreement log
 
+- ADOPTED (2026-08-09, exploratory NLL model ladder; POST-1.5B-REVEAL,
+  PRE-LADDER-OUTCOME — the sealed 1.5B exploratory reveal and analysis were
+  public at drafting; NO other tier's battery, paired score, masked
+  artifact, or analysis existed; model snapshot acquisition was
+  outcome-free): results_v2/v2b/NLL_LADDER_EXPLORATORY_AMENDMENT.md extends
+  the exploratory NLL-only route to Qwen2.5-Coder {0.5B, 3B, 7B, 14B} at
+  models.json-pinned revisions on the SAME committed job19991210 assembly
+  manifests and sealed sample (14B human-authorized 2026-08-09). Frozen
+  content: per-tier write-once instrument batteries (1.5B semantics,
+  predeclared loader param ranges, 14b H200-only launch in BOTH launchers;
+  GPU stays informational-never-gated in evidence per the frozen §4
+  decision); PILOT_TIERS registry + tier-resolved battery validation in
+  eval_paired (cross-tier battery filenames rejected); frozen ladder
+  analyzer analyze_v2b_nll_ladder.py — the unchanged B3 producer under a
+  DECLARED PUBLIC 32-zero-byte salt (no blind exists or is claimed since
+  the reveal), reveal-frozen row reconstruction, unchanged
+  _analyze_repo_rows inference, full-frozen-tier-set-or-nothing, a
+  REQUIRED committed completion ledger (per repo x tier path/sha256/job
+  id, one scoring submission per tier), pinned committed-reveal and
+  five-manifest sha256 anchors, non-sealed completions must be scored at
+  the analyzer's exact source tree, the sealed q25c-1.5b tier must BE the
+  reveal-bound completion and reproduce its salt-independent centering
+  exactly, governance verdict not-run-ladder-exploratory. Claim status:
+  exploratory-nll-only-multi-checkpoint-pilot; cross-tier reading is a
+  descriptive five-tier forest with NO pooled trend statistic; PhysLib
+  stays uninterpretable-pending-k4x-sensitivity per tier. SEQUENCING
+  DISCLOSURE: ladder reveals precede the behavioral arm and formal V2-b
+  unblinding; any later behavioral/unblinding amendment must list the
+  ladder artifacts existing at its adoption. INDEPENDENT REVIEW: a
+  fresh-context reviewer (no shared session state) returned FIX-FIRST
+  (3 blockers: completion shopping, unpinned anchors/subsets, tier-set
+  extensibility; 6 concerns; 3 nits); every blocker and concern was fixed
+  at 780c3ae and verified by re-review verdict ADOPTABLE; the remaining
+  nits are applied in the adoption commit. Scope note: the V2-c
+  feasibility DRAFT (results_v2/v2b/V2C_FEASIBILITY_AMENDMENT_DRAFT.md)
+  rode along in 780c3ae; it is a separate, UNADOPTED draft authorizing
+  nothing. Ladder batteries and scores run only at or after the adoption
+  commit, at one frozen source tree; results are read only through the
+  committed analyzer artifacts.
 - ADOPTED (V2-b empty-rendering representation resolution, 2026-08-08,
   PRE-LABEL/PRE-SAMPLE/PRE-SCORE — the unlabeled A6 packet and sanitized
   presentation existed, but no human label, target draw, assembly artifact,
