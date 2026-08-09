@@ -211,7 +211,7 @@ class _Fixture:
             tier_completions=dict(self.completions),
             tier_batteries=dict(self.batteries),
             ledger=self.ledger, reveal=self.reveal,
-            build_fn=self.build_fn, current_tree_hash=TREE)
+            build_fn=self.build_fn, expected_scoring_tree=TREE)
         kwargs.update(overrides)
         return lad.analyze_repo(**kwargs)
 
@@ -251,8 +251,8 @@ def test_analyze_repo_full_chain_and_gates():
             fx.analyze(manifest_path=other)
 
         # non-sealed completion scored on another tree refused
-        with _expect(V2BError, "not scored at this source tree"):
-            fx.analyze(current_tree_hash="u" * 64)
+        with _expect(V2BError, "pinned scoring tree"):
+            fx.analyze(expected_scoring_tree="u" * 64)
 
         # battery filename must match the registry
         bad_bat = dict(fx.batteries)
