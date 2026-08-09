@@ -161,6 +161,41 @@ def _seed_u64(label: str) -> int:
     return int(_seed(label)[:16], 16)
 
 
+def systematic_seed_u64(seed_sha256: str, repo: str, arm: str) -> int:
+    """Reference implementation of the frozen domain-separated seed rule."""
+    if not _hex(seed_sha256, 64) or not isinstance(repo, str) or not repo \
+            or arm not in {"a0", "a1"}:
+        raise V2BError("invalid direct-scaling systematic-seed inputs")
+    preimage = json.dumps(
+        ["v2c-systematic-offset-v1", seed_sha256, repo, arm],
+        sort_keys=True, separators=(",", ":"), ensure_ascii=True,
+    ).encode("utf-8")
+    return int.from_bytes(hashlib.sha256(preimage).digest()[:8], "big")
+
+
+def systematic_indices(population_size: int, planned: int,
+                       seed_u64: int) -> list[int]:
+    """Return the exact frozen, sorted systematic sample without top-up."""
+    if not isinstance(population_size, int) \
+            or isinstance(population_size, bool) or population_size < 0 \
+            or not isinstance(planned, int) or isinstance(planned, bool) \
+            or planned <= 0 \
+            or not isinstance(seed_u64, int) or isinstance(seed_u64, bool) \
+            or not 0 <= seed_u64 < 2 ** 64:
+        raise V2BError("invalid direct-scaling systematic-index inputs")
+    n = min(planned, population_size)
+    denominator = n * 2 ** 64
+    indices = [
+        population_size * (seed_u64 + j * 2 ** 64) // denominator
+        for j in range(n)
+    ]
+    if indices != sorted(set(indices)) \
+            or any(index < 0 or index >= population_size
+                   for index in indices):
+        raise V2BError("systematic-index invariant failure")
+    return indices
+
+
 def build_protocol(*, design_path: str | Path, corpora_lock_path: str | Path,
                    models_lock_path: str | Path,
                    model_config_index_path: str | Path,
@@ -239,11 +274,39 @@ def build_protocol(*, design_path: str | Path, corpora_lock_path: str | Path,
             "target_block_bytes": 4096,
             "minimum_realized_target_bytes": 2048,
             "primary_score_horizon_source_bytes": 512,
-            "delta_formula": (
-                "max(4096,floor((eligible_axis_bytes-4096)/"
-                "max(1,planned_per_repo-1)))"),
-            "systematic_offset_formula": (
-                "u64be(sha256(seed_sha256,repo,arm)[:8]) mod delta"),
+            "seed_u64_rule": {
+                "preimage": ["v2c-systematic-offset-v1", "$seed_sha256",
+                             "$repo", "$arm"],
+                "canonical_json": (
+                    "json.dumps(value,sort_keys=true,separators=[comma,"
+                    "colon],ensure_ascii=true) encoded UTF-8"),
+                "digest_decode": (
+                    "unsigned-big-endian-first-8-bytes-of-SHA256"),
+                "arm_enum": ["a0", "a1"],
+            },
+            "systematic_index_formula": (
+                "i_j=floor(P*(u+j*2^64)/(n*2^64));"
+                "j=0,...,n-1;n=min(planned_per_repo,P)"),
+            "a0_origin_rule": {
+                "population": (
+                    "lexicographically-sorted-eligible-file-identities"),
+                "population_size_symbol": "P=N_eligible_files",
+                "raw_index": "systematic_index_formula",
+                "anchor": "selected-file-exact-metadata-header-start",
+                "deduplicate_or_top_up": False,
+            },
+            "a1_coordinate_rule": {
+                "axis": (
+                    "concatenated-file-body-bytes-headers-excluded"),
+                "slot_population": "P=floor(axis_bytes/target_block_bytes)",
+                "raw_index": "systematic_index_formula",
+                "raw_coordinate": "target_block_bytes*i_j",
+                "processing_order": "ascending-raw-coordinate",
+                "post_mapping": (
+                    "map-to-containing-file-then-line-align;reject-cross-"
+                    "file-header-short-overlap-comment-blank-nearduplicate;"
+                    "never-top-up"),
+            },
             "alignment": "next-utf8-line-boundary-at-or-after-coordinate",
             "overlap_policy": "reject-pairwise-overlap-never-resample",
             "identity_reuse": "same-origins-targets-all-orderings-models-rungs",
@@ -462,6 +525,43 @@ def validate_protocol(protocol: dict) -> None:
         raise V2BError("direct-scaling protocol must bind 17 model checkpoints")
     if protocol["analysis"].get("rope_beta") != 0.02:
         raise V2BError("direct-scaling compatibility ROPE drift")
+    sampling = protocol.get("sampling")
+    _exact_keys(sampling, {
+        "seed_family", "a0_seed_sha256", "a1_seed_sha256",
+        "planned_per_repo", "target_block_bytes",
+        "minimum_realized_target_bytes",
+        "primary_score_horizon_source_bytes", "seed_u64_rule",
+        "systematic_index_formula", "a0_origin_rule",
+        "a1_coordinate_rule", "alignment", "overlap_policy",
+        "identity_reuse"}, "direct-scaling sampling")
+    if sampling["planned_per_repo"] != 200 \
+            or sampling["target_block_bytes"] != 4096 \
+            or not _hex(sampling["a0_seed_sha256"], 64) \
+            or not _hex(sampling["a1_seed_sha256"], 64) \
+            or sampling["systematic_index_formula"] != (
+                "i_j=floor(P*(u+j*2^64)/(n*2^64));"
+                "j=0,...,n-1;n=min(planned_per_repo,P)"):
+        raise V2BError("direct-scaling systematic sampling drift")
+    _exact_keys(sampling["seed_u64_rule"], {
+        "preimage", "canonical_json", "digest_decode", "arm_enum"},
+        "direct-scaling seed-u64 rule")
+    if sampling["seed_u64_rule"]["preimage"] != [
+            "v2c-systematic-offset-v1", "$seed_sha256", "$repo", "$arm"] \
+            or sampling["seed_u64_rule"]["arm_enum"] != ["a0", "a1"]:
+        raise V2BError("direct-scaling systematic seed rule drift")
+    _exact_keys(sampling["a0_origin_rule"], {
+        "population", "population_size_symbol", "raw_index", "anchor",
+        "deduplicate_or_top_up"}, "direct-scaling A0 origin rule")
+    _exact_keys(sampling["a1_coordinate_rule"], {
+        "axis", "slot_population", "raw_index", "raw_coordinate",
+        "processing_order", "post_mapping"},
+        "direct-scaling A1 coordinate rule")
+    if sampling["a0_origin_rule"]["deduplicate_or_top_up"] is not False \
+            or sampling["a1_coordinate_rule"]["slot_population"] != (
+                "P=floor(axis_bytes/target_block_bytes)") \
+            or sampling["a1_coordinate_rule"]["raw_coordinate"] != (
+                "target_block_bytes*i_j"):
+        raise V2BError("direct-scaling arm sampling-rule drift")
     minimum = protocol["power"].get(
         "minimum_correct_classification_probability")
     if not isinstance(minimum, (int, float)) or not math.isclose(minimum, .8):
