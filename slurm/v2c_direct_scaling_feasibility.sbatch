@@ -4,7 +4,7 @@
 #SBATCH --nodes=1
 #SBATCH -c 8
 #SBATCH --mem=64G
-#SBATCH -t 16:00:00
+#SBATCH -t 12:00:00
 #SBATCH --requeue
 # Model-free P1a structural census. No accelerator, tokenizer, or model load.
 set -euo pipefail
@@ -54,7 +54,11 @@ git diff --quiet HEAD -- "$V2C_PROTOCOL_REL" "corpora_lock.json" || {
   echo "protocol or corpus lock differs from HEAD" >&2
   exit 1
 }
-V2C_SOURCE_DIRTY=$(git status --porcelain -- . ':(exclude)results_v2')
+# `.venv` and `corpora` are read-only POOL links in the dedicated cluster
+# worktree. They are runtime inputs, not measurement source; their exact
+# corpus identities are validated by the producer against `corpora_lock.json`.
+V2C_SOURCE_DIRTY=$(git status --porcelain -- . \
+  ':(exclude)results_v2' ':(exclude).venv' ':(exclude)corpora')
 [[ -z "$V2C_SOURCE_DIRTY" ]] || {
   echo "source tree dirty outside results_v2; refusing P1a" >&2
   printf '%s\n' "$V2C_SOURCE_DIRTY" >&2
@@ -79,7 +83,8 @@ fi
   echo "source commit changed during P1a" >&2
   exit 1
 }
-V2C_SOURCE_DIRTY=$(git status --porcelain -- . ':(exclude)results_v2')
+V2C_SOURCE_DIRTY=$(git status --porcelain -- . \
+  ':(exclude)results_v2' ':(exclude).venv' ':(exclude)corpora')
 [[ -z "$V2C_SOURCE_DIRTY" ]] || {
   echo "source tree changed during P1a" >&2
   exit 1
