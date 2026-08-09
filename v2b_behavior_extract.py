@@ -105,13 +105,13 @@ LEAN_EXTRACTION_CONTRACT = dict(
                          "combined S4/S5 evidence producer"),
     preparation=("load an exact Lake ModuleSetup (package, imports, import "
                  "artifacts, plugins, dynamic libraries, and options), "
-                 "reparse imported/CLI option overrides, then parse and "
-                 "elaborate only commands strictly before the exact frozen "
-                 "target range with Elab.async forced false after every "
-                 "command; synchronously force complete residual snapshot-"
-                 "task trees from trusted commands, reject asynchronous "
-                 "error diagnostics, clear settled tasks before continuing, "
-                 "and isolate all trusted command streams"),
+                 "reparse imported/CLI option overrides using the pinned "
+                 "frontend's exact async default and setup/file precedence, "
+                 "then parse and elaborate only commands strictly before the "
+                 "exact frozen target range; inside isolated streams, "
+                 "synchronously force every complete residual snapshot-task "
+                 "tree from each trusted command, reject asynchronous error "
+                 "diagnostics, and clear settled tasks before continuing"),
     trusted_boundary=("the parser-backed effective original delimiter must "
                       "be an exact token "
                       "and replacing everything from its boundary with a "

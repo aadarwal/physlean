@@ -1568,12 +1568,18 @@ arxiv_manifest) must be committed before measurement.
   and bound option overrides. Matching the pinned frontend, raw CLI options
   precede the ModuleSetup merge and setup/file options win collisions before
   post-import reparse. It loads package/import/plugin/dynamic-library context,
-  forces async off before every command, and synchronously forces every
-  residual snapshot-task tree from trusted commands (including scoped option
-  commands), rejecting asynchronous error diagnostics and clearing settled
-  tasks before continuation. This outcome-free amendment follows the first
-  corpus integration attempt, where mathlib and Batteries produced legitimate
-  residual tasks before any boundary/model artifact existed. It
+  defaults `Elab.async=true` only when the pinned frontend leaves it unset,
+  preserves exact setup/file and scoped-command overrides, and synchronously
+  forces every residual snapshot-task tree from trusted commands (including
+  scoped option commands) inside isolated streams, rejecting asynchronous
+  error diagnostics and clearing settled tasks before continuation. Forcing
+  async false was prospectively removed after outcome-free boundary job
+  `19971284_0` showed that it changes Lean 4.33 module semantics: a valid
+  `@[expose] public section` with scoped private access failed only under the
+  override. Batteries/PhysLib outputs from that obsolete driver hash are not
+  reused; a fresh exact-three audit is required. No label, sample, generated
+  target token, S4/S5 result, behavioral/NLL contrast, or salt was inspected
+  for this amendment. It
   isolates trusted command streams, and parses/elaborates only commands
   strictly before the frozen
   target, and parses the original target once without elaboration to bind its
@@ -1638,8 +1644,9 @@ arxiv_manifest) must be committed before measurement.
   Exact canonical generated `sorry`/`admit`/`sorryAx`/`native_decide`/
   `implemented_by`/`unsafe` tokens are rejected before elaboration, without
   matching comments or strings, but post-elaboration replay/trust checks are
-  the certificate. Async, kernel-skip, and proof-as-sorry options are forced
-  false before every command. Residual snapshot tasks from trusted original
+  the certificate. The pinned frontend's async default/setup precedence is
+  preserved; kernel-skip and proof-as-sorry options are forced false before
+  every command. Residual snapshot tasks from trusted original
   prefix/suffix commands are synchronously forced,
   checked for asynchronous error diagnostics, and cleared; a generated target's
   drained asynchronous error is ordinary `elaboration-error`. After target

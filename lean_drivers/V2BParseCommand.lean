@@ -180,17 +180,10 @@ def headerProjection (stx : Syntax) (boundary : Nat) : IO String := do
     | hard "trusted target has no syntax projection before its body"
   pure projection.compress
 
-def disableAsync (state : Elab.Command.State) : Elab.Command.State :=
-  match state.scopes with
-  | [] => state
-  | scope :: scopes =>
-      let scope := { scope with opts := Elab.async.set scope.opts false }
-      { state with scopes := scope :: scopes }
-
 def parserContext (state : Elab.Command.State) : Parser.ParserModuleContext :=
   let scope := state.scopes.head!
   { env := state.env
-    options := Elab.async.set scope.opts false
+    options := scope.opts
     currNamespace := scope.currNamespace
     openDecls := scope.openDecls }
 
@@ -207,7 +200,7 @@ def settleTrustedSnapshotTasks (state : Elab.Command.State) : IO Elab.Command.St
 def elaboratePriorCommand (inputCtx : Parser.InputContext)
     (cmdPos : String.Pos.Raw) (stx : Syntax)
     (state : Elab.Command.State) : IO Elab.Command.State := do
-  let state := disableAsync { state with messages := {} }
+  let state := { state with messages := {} }
   let context : Elab.Command.Context := {
     cmdPos
     fileName := inputCtx.fileName
@@ -215,9 +208,14 @@ def elaboratePriorCommand (inputCtx : Parser.InputContext)
     snap? := none
     cancelTk? := none
   }
-  let (_, result) <- IO.FS.withIsolatedStreams (isolateStderr := true) <|
-    EIO.toIO' <|
+  let (_, result) <- IO.FS.withIsolatedStreams (isolateStderr := true) do
+    let result <- EIO.toIO' <|
       ((Elab.Command.elabCommandTopLevel stx #[]) context).run state
+    match result with
+    | Except.error _ => pure result
+    | Except.ok (value, nextState) =>
+        let nextState <- settleTrustedSnapshotTasks nextState
+        pure <| .ok (value, nextState)
   match result with
   | Except.error exception =>
       hard s!"prior-command elaboration raised: \
@@ -226,8 +224,7 @@ def elaboratePriorCommand (inputCtx : Parser.InputContext)
       if nextState.messages.hasErrors then
         hard "a trusted command before the target does not elaborate"
       else
-        let nextState <- settleTrustedSnapshotTasks nextState
-        pure <| disableAsync { nextState with messages := {} }
+        pure { nextState with messages := {} }
 
 def lineIndentBefore (source : String) (byteIdx : Nat) : String :=
   let before := slice source 0 byteIdx
@@ -275,7 +272,6 @@ partial def prepareAtTarget (inputCtx : Parser.InputContext)
     (targetStart targetEnd headerEnd : Nat) (bodyDelimiter : String)
     (parserState : Parser.ModuleParserState)
     (commandState : Elab.Command.State) (nPrior : Nat) : IO Prepared := do
-  let commandState := disableAsync commandState
   let cmdPos := parserState.pos
   let (stx, nextParserState, parseMessages) :=
     Parser.parseCommand inputCtx (parserContext commandState) parserState {}
@@ -531,7 +527,7 @@ def run (manifestPath : String) : IO Unit := do
       option.value
   commandLineOptions := Lean.internal.cmdlineSnapshots.setIfNotSet
     commandLineOptions true
-  commandLineOptions := Elab.async.set commandLineOptions false
+  commandLineOptions := Elab.async.setIfNotSet commandLineOptions true
   let options := commandLineOptions.mergeBy (fun _ _ setupValue => setupValue)
     setup.options.toOptions
   unsafe Lean.enableInitializersExecution
@@ -549,8 +545,7 @@ def run (manifestPath : String) : IO Unit := do
     for message in importMessages.reportedPlusUnreported do
       IO.eprintln (← message.toString)
     hard "trusted original module imports did not load"
-  let mut options <- Language.Lean.reparseOptions options
-  options := Elab.async.set options false
+  let options <- Language.Lean.reparseOptions options
   let commandState := Elab.Command.mkState environment {} options
   let prepared <- prepareAtTarget inputCtx manifest.targetStartByte
     manifest.targetEndByte manifest.headerEndByte manifest.bodyDelimiter

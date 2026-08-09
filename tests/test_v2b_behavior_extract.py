@@ -646,6 +646,66 @@ def test_real_lean_driver_settles_scoped_async_prefix_tasks():
         assert parsed["samples"][0]["status"] == "extracted"
 
 
+def test_real_lean_driver_preserves_module_private_prefix_semantics():
+    elan = shutil.which("elan")
+    if elan is None:
+        print("    [skip] elan is not installed")
+        return
+    listed = subprocess.run([elan, "toolchain", "list"],
+                            capture_output=True, text=True, check=False)
+    toolchain = "leanprover/lean4:v4.33.0-rc2"
+    if toolchain not in listed.stdout:
+        print("    [skip] pinned Lean 4.33 toolchain is not installed")
+        return
+    original = (
+        "module\n"
+        "public import Lean\n"
+        "@[expose] public section\n"
+        "structure Witness where\n"
+        "  proof : True\n"
+        "set_option backward.privateInPublic true in\n"
+        "private theorem hidden : True := by trivial\n"
+        "set_option backward.privateInPublic true in\n"
+        "set_option backward.privateInPublic.warn false in\n"
+        "def pairing : Witness where\n"
+        "  proof := hidden\n"
+        "theorem target : True := pairing.proof\n"
+    ).encode("utf-8")
+    target_start = original.index(b"theorem target")
+    header_end = original.index(b":=", target_start)
+    target_end = len(original.rstrip(b"\n"))
+    generation = b":= pairing.proof"
+    with tempfile.TemporaryDirectory() as td:
+        original_path = os.path.join(td, "Original.lean")
+        open(original_path, "wb").write(original)
+        setup_path = os.path.join(td, "setup.json")
+        json.dump(dict(
+            dynlibs=[], importArts={}, isModule=True,
+            name="V2BS4Private", options={}, plugins=[]),
+            open(setup_path, "w", encoding="utf-8"))
+        spliced = original[:header_end] + generation + original[target_end:]
+        spliced_path = os.path.join(td, "spliced.lean")
+        open(spliced_path, "wb").write(spliced)
+        manifest = bind_lean_driver_manifest(dict(
+            schema=LEAN_DRIVER_MANIFEST_SCHEMA,
+            originalFile=original_path, moduleSetupFile=setup_path,
+            moduleName="V2BS4Private", targetIdentity="target",
+            targetKind="theorem", targetStartByte=target_start,
+            targetEndByte=target_end, headerEndByte=header_end,
+            bodyDelimiter=":=", optionOverrides=[], samples=[dict(
+                id="module-private", splicedFile=spliced_path,
+                generatedEndByte=header_end + len(generation))]))
+        manifest_path = os.path.join(td, "manifest.json")
+        json.dump(manifest, open(manifest_path, "w", encoding="utf-8"))
+        result = subprocess.run(
+            [elan, "run", toolchain, "lean", "--run", LEAN_DRIVER,
+             manifest_path], cwd=ROOT, capture_output=True, text=True,
+            timeout=180, check=False)
+        assert result.returncode == 0, (result.stdout, result.stderr)
+        parsed = parse_lean_driver_stdout(result.stdout, manifest)
+        assert parsed["samples"][0]["status"] == "extracted"
+
+
 def test_real_lean_driver_rejects_type_preserving_header_continuation():
     elan = shutil.which("elan")
     if elan is None:

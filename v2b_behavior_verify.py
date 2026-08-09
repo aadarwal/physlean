@@ -84,9 +84,11 @@ LEAN_VERIFY_CONTRACT = dict(
                       "scratch paths never affect file-scoped names or "
                       "file-relative terms such as include_str"),
     preparation=("load exact ModuleSetup/import artifacts/plugins/dynlibs and "
-                 "option order; elaborate only trusted commands before the "
-                 "target synchronously; force Elab.async, "
-                 "debug.skipKernelTC, and debug.proofAsSorry false before "
+                 "option order and preserve the pinned frontend's async "
+                 "default/setup precedence; elaborate only trusted commands "
+                 "before the target and synchronously join/check every "
+                 "residual snapshot-task tree before continuation; force "
+                 "debug.skipKernelTC and debug.proofAsSorry false before "
                  "every command"),
     process_isolation=("baseline and candidate modes are separate fresh OS "
                        "processes; candidate mode never elaborates the original "

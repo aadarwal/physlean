@@ -124,20 +124,18 @@ def slice (source : String) (startByte endByte : Nat) : String :=
 def allMessageCount (messages : MessageLog) : Nat :=
   messages.reportedPlusUnreported.size
 
-def disableAsync (state : Elab.Command.State) : Elab.Command.State :=
+def hardenState (state : Elab.Command.State) : Elab.Command.State :=
   match state.scopes with
   | [] => state
   | scope :: scopes =>
-      let opts := Elab.async.set scope.opts false
-      let opts := debug.skipKernelTC.set opts false
+      let opts := debug.skipKernelTC.set scope.opts false
       let opts := opts.setBool `debug.proofAsSorry false
       let scope := { scope with opts }
       { state with scopes := scope :: scopes }
 
 def parserContext (state : Elab.Command.State) : Parser.ParserModuleContext :=
   let scope := state.scopes.head!
-  let options := Elab.async.set scope.opts false
-  let options := debug.skipKernelTC.set options false
+  let options := debug.skipKernelTC.set scope.opts false
   let options := options.setBool `debug.proofAsSorry false
   { env := state.env
     options
@@ -165,7 +163,7 @@ def settleTrustedSnapshotTasks (state : Elab.Command.State) :
 def elaboratePriorCommand (inputCtx : Parser.InputContext)
     (cmdPos : String.Pos.Raw) (stx : Syntax)
     (state : Elab.Command.State) : IO Elab.Command.State := do
-  let state := disableAsync { state with messages := {} }
+  let state := hardenState { state with messages := {} }
   let context : Elab.Command.Context := {
     cmdPos
     fileName := inputCtx.fileName
@@ -185,13 +183,13 @@ def elaboratePriorCommand (inputCtx : Parser.InputContext)
         hard "a trusted command before the target does not elaborate"
       else
         let nextState <- settleTrustedSnapshotTasks nextState
-        pure <| disableAsync { nextState with messages := {} }
+        pure <| hardenState { nextState with messages := {} }
 
 partial def prepareAtTarget (inputCtx : Parser.InputContext)
     (targetStart targetEnd : Nat)
     (parserState : Parser.ModuleParserState)
     (commandState : Elab.Command.State) (nPrior : Nat) : IO Prepared := do
-  let commandState := disableAsync commandState
+  let commandState := hardenState commandState
   let cmdPos := parserState.pos
   let (stx, nextParserState, parseMessages) :=
     Parser.parseCommand inputCtx (parserContext commandState) parserState {}
@@ -640,7 +638,7 @@ def elaborateTarget (source fileName : String) (stx : Syntax)
     (prepared : Prepared) (targetIdentity targetKind : String) :
     IO (Except (String × Bool) (Elab.Command.State × Verified)) := do
   let inputCtx := Parser.mkInputContext source fileName
-  let state := disableAsync { prepared.commandState with messages := {} }
+  let state := hardenState { prepared.commandState with messages := {} }
   let context : Elab.Command.Context := {
     cmdPos := prepared.parserState.pos
     fileName := inputCtx.fileName
@@ -666,7 +664,7 @@ def elaborateTarget (source fileName : String) (stx : Syntax)
         match ← settleSnapshotTasks nextState with
         | .error _ => pure <| .error ("elaboration-error", false)
         | .ok nextState =>
-            let nextState := disableAsync { nextState with messages := {} }
+            let nextState := hardenState { nextState with messages := {} }
             match ← verifyEnvironment state.env nextState.env targetIdentity
                 targetKind with
             | .error reason => pure <| .error (reason, true)
@@ -676,7 +674,7 @@ partial def elaborateSuffix (source fileName : String)
     (parserState : Parser.ModuleParserState)
     (commandState : Elab.Command.State) (nCommands : Nat := 0) :
     IO (Except String Nat) := do
-  let commandState := disableAsync commandState
+  let commandState := hardenState commandState
   let inputCtx := Parser.mkInputContext source fileName
   let cmdPos := parserState.pos
   let (stx, nextParserState, parseMessages) :=
@@ -708,7 +706,7 @@ partial def elaborateSuffix (source fileName : String)
           | .error _ => pure <| .error "suffix-elaboration-error"
           | .ok nextState =>
               elaborateSuffix source fileName nextParserState
-                (disableAsync { nextState with messages := {} })
+                (hardenState { nextState with messages := {} })
                 (nCommands + 1)
   catch _ =>
     pure <| .error "suffix-elaboration-exception"
@@ -905,7 +903,7 @@ def run (channelNonce manifestPath : String) : IO Unit := do
     commandLineOptions := commandLineOptions.set option.name.toName option.value
   commandLineOptions := Lean.internal.cmdlineSnapshots.setIfNotSet
     commandLineOptions true
-  commandLineOptions := Elab.async.set commandLineOptions false
+  commandLineOptions := Elab.async.setIfNotSet commandLineOptions true
   commandLineOptions := debug.skipKernelTC.set commandLineOptions false
   commandLineOptions := commandLineOptions.setBool `debug.proofAsSorry false
   let options := commandLineOptions.mergeBy (fun _ _ setupValue => setupValue)
@@ -923,7 +921,6 @@ def run (channelNonce manifestPath : String) : IO Unit := do
   if importMessages.hasErrors then
     hard "trusted original module imports did not load"
   let mut options <- Language.Lean.reparseOptions options
-  options := Elab.async.set options false
   options := debug.skipKernelTC.set options false
   options := options.setBool `debug.proofAsSorry false
   let commandState := Elab.Command.mkState environment {} options

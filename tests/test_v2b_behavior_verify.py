@@ -125,7 +125,7 @@ def _toolchain_available(toolchain="leanprover/lean4:v4.32.0"):
 def _invoke(original, module_name, target_name, target_kind, generations,
             logical_filename=None, logical_include_text=None,
             target_end_marker=None,
-            toolchain="leanprover/lean4:v4.32.0"):
+            toolchain="leanprover/lean4:v4.32.0", is_module=False):
     elan = _toolchain_available(toolchain)
     if elan is None:
         return None, None, None
@@ -150,7 +150,7 @@ def _invoke(original, module_name, target_name, target_kind, generations,
             handle.write(original)
         setup_path = os.path.join(td, "setup.json")
         with open(setup_path, "w", encoding="utf-8") as handle:
-            json.dump(dict(dynlibs=[], importArts={}, isModule=False,
+            json.dump(dict(dynlibs=[], importArts={}, isModule=is_module,
                            name=module_name, options={}, plugins=[]), handle)
         samples = []
         for sample_id, generation in generations.items():
@@ -278,6 +278,34 @@ def test_real_driver_accepts_kernel_valid_body_and_rejects_trust_escapes():
     assert rows["native"]["reason"] in (
         "new-axiom", "new-axiom-dependency", "native-reflection")
     assert rows["native"]["elaboration_attempted"] is False
+
+
+def test_s5_preserves_module_private_prefix_semantics():
+    toolchain = "leanprover/lean4:v4.33.0-rc2"
+    source = (
+        "module\n"
+        "public import Lean\n"
+        "@[expose] public section\n"
+        "structure Witness where\n"
+        "  proof : True\n"
+        "set_option backward.privateInPublic true in\n"
+        "private theorem hidden : True := by trivial\n"
+        "set_option backward.privateInPublic true in\n"
+        "set_option backward.privateInPublic.warn false in\n"
+        "def pairing : Witness where\n"
+        "  proof := hidden\n"
+        "theorem target : True := pairing.proof\n"
+    )
+    result, parsed, _ = _invoke(
+        source, "V2BS5Private", "target", "theorem",
+        {"module-private": ":= pairing.proof"}, toolchain=toolchain,
+        is_module=True)
+    if result is None:
+        print("    [skip] pinned Lean 4.33 toolchain is not installed")
+        return
+    assert result.returncode == 0, (result.stdout, result.stderr)
+    assert parsed["baseline"]["status"] == "verified"
+    assert parsed["samples"][0]["status"] == "verified"
 
 
 def test_forbidden_words_in_comments_and_strings_are_not_tokens():

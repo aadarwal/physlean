@@ -1968,16 +1968,18 @@ plugins, dynamic libraries, and package options. Matching `runFrontend` in
 the exact pinned frontend (Lean 4.33.0-rc2 for mathlib4/Batteries and Lean
 4.32.0 for PhysLib), raw bound CLI option strings are installed BEFORE the
 ModuleSetup merge, setup/file options win collisions, and the combined options
-are reparsed after imports register plugin options. The driver then forces
-`Elab.async=false` before every command even if setup, CLI, or source text
-attempted to set it true. If a trusted command (including a scoped
-`set_option ... in` or imported command elaborator) nevertheless leaves
+are reparsed after imports register plugin options. The driver preserves the
+pinned frontend's async policy: command-line `Elab.async` defaults to true only
+when unset, then exact setup/file options win. If a trusted command (including
+a scoped `set_option ... in` or imported command elaborator) leaves
 snapshot/asynchronous tasks, the driver synchronously forces every complete
 snapshot-task tree, rejects any asynchronous error diagnostic, clears the
-settled task list, and only then continues; it never continues from a running
-or failed asynchronous prefix. This rule was prospectively amended after the
-first outcome-free corpus audit attempt showed such tasks in
-`Mathlib.Algebra.Algebra.Defs` and `Batteries.Data.Array.Match`. It then
+settled task list inside isolated streams, and only then continues; it never
+continues from a running or failed asynchronous prefix. Forcing async false is
+not equivalent under Lean 4.33 module export semantics: outcome-free boundary
+job 19971284_0 exposed a valid `@[expose] public section` whose scoped private
+access failed only under that override. This rule was prospectively amended
+before any sample/generation/score; no module is whitelisted or skipped. It then
 repeatedly parses and ELABORATES only
 commands strictly before the target, with trusted
 stdout/stderr isolated. This reconstructs file-local parser extensions,
@@ -2079,9 +2081,10 @@ S5, masking, behavioral governance, and all GPU generation remain unrun.
   CORPUS BODY-BOUNDARY AUDIT (distinct from generated-sample S4). Before any
 candidate rebuild, one CPU-only per-module driver traverses the full trusted
 source under the exact `ModuleSetup` obtained with Lake's queryable
-`+Module:setup --json` facet. It elaborates trusted original commands
-synchronously to reconstruct file-local syntax state, but parses and never
-elaborates sentinels. Exact-keyed module manifests, raw stdout/stderr, exit
+`+Module:setup --json` facet. It elaborates trusted original commands under the
+exact frontend async policy and joins every task before reconstructing the next
+file-local syntax state, but parses and never elaborates sentinels. Exact-keyed
+module manifests, raw stdout/stderr, exit
 status, source/setup/driver/Lean executable hashes before and after execution,
 and marker-only transcripts are immutable and requeue-safe. The corpus fold
 deduplicates execution by `(module,source_sha,start,end)` while preserving all
@@ -2179,10 +2182,11 @@ baseline timeout/failure or candidate termination before `candidate-start` is
 malformed marker remains a hard evidence failure rather than being guessed.
 
   EXACT FRONTEND AND BASELINE. The driver loads the same exact Lake
-`ModuleSetup` and reconstructs the synchronous parser/command state immediately
-before the target by elaborating only the trusted original prefix. It forces
-`Elab.async=false`, `debug.skipKernelTC=false`, and
-`debug.proofAsSorry=false` before every command. Residual tasks from trusted
+`ModuleSetup` and reconstructs a fully settled parser/command state immediately
+before the target by elaborating only the trusted original prefix. It preserves
+the pinned frontend's async default/setup precedence while forcing
+`debug.skipKernelTC=false` and `debug.proofAsSorry=false` before every command.
+Residual tasks from trusted
 prefix, target, and suffix commands are synchronously forced, checked for
 asynchronous error diagnostics, and cleared before continuation; a generated
 target's drained asynchronous error maps to ordinary `elaboration-error`.

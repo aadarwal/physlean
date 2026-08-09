@@ -67,14 +67,15 @@ def _command_span(source, start_marker, next_marker=None):
     return start, end
 
 
-def _invoke(elan, source, spans, module="V2BBoundary", toolchain=TOOLCHAIN):
+def _invoke(elan, source, spans, module="V2BBoundary", toolchain=TOOLCHAIN,
+            is_module=False):
     with tempfile.TemporaryDirectory() as td:
         source_path = os.path.join(td, "Original.lean")
         with open(source_path, "wb") as handle:
             handle.write(source)
         setup_path = os.path.join(td, "setup.json")
         with open(setup_path, "w", encoding="utf-8") as handle:
-            json.dump(dict(dynlibs=[], importArts={}, isModule=False,
+            json.dump(dict(dynlibs=[], importArts={}, isModule=is_module,
                            name=module, options={}, plugins=[]), handle)
         manifest = dict(
             schema=MANIFEST_SCHEMA, invocationBinding="a" * 64,
@@ -209,6 +210,52 @@ def test_real_driver_rejects_settled_async_errors():
     assert result.returncode != 0
     assert "asynchronous error" in result.stderr
     assert _records(result.stdout) == []
+
+
+def test_real_driver_preserves_scoped_private_access_in_module_file():
+    elan = _lean_runner(TOOLCHAIN_433)
+    if elan is None:
+        print("    [skip] pinned Lean 4.33 toolchain is not installed")
+        return
+    source = (
+        "module\n"
+        "public import Lean\n"
+        "@[expose] public section\n"
+        "structure Witness where\n"
+        "  proof : True\n"
+        "set_option backward.privateInPublic true in\n"
+        "private theorem hidden : True := by trivial\n"
+        "set_option backward.privateInPublic true in\n"
+        "set_option backward.privateInPublic.warn false in\n"
+        "def pairing : Witness where\n"
+        "  proof := hidden\n"
+        "theorem target : True := pairing.proof\n"
+    ).encode("utf-8")
+    target = _command_span(source, b"theorem target")
+    result = _invoke(
+        elan, source, [dict(
+            id="target", startByte=target[0], endByte=target[1])],
+        module="V2BBoundaryPrivate", toolchain=TOOLCHAIN_433,
+        is_module=True)
+    assert result.returncode == 0, (result.stdout, result.stderr)
+    records = _records(result.stdout)
+    assert len(records) == 2
+    assert records[1]["status"] == "resolved"
+
+    first = source.index(b"set_option backward.privateInPublic true")
+    second = source.index(b"set_option backward.privateInPublic true",
+                          first + 1)
+    line_end = source.index(b"\n", second) + 1
+    without_override = source[:second] + source[line_end:]
+    target = _command_span(without_override, b"theorem target")
+    rejected = _invoke(
+        elan, without_override, [dict(
+            id="target", startByte=target[0], endByte=target[1])],
+        module="V2BBoundaryPrivateRejected", toolchain=TOOLCHAIN_433,
+        is_module=True)
+    assert rejected.returncode != 0
+    assert "asynchronous error" in rejected.stderr
+    assert _records(rejected.stdout) == []
 
 
 if __name__ == "__main__":
