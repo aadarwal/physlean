@@ -89,9 +89,12 @@ degrees of freedom:
 - `p_NI = P(T <= (mean_E1b-0.02)/SE_E1b)`;
 - `p_active = P(T >= (mean_E1a_intersection-0.02)/SE_intersection)`.
 
-The implementation uses `scipy.stats.t.cdf/sf` and refuses any SciPy version
-other than `1.18.0`; the version is recorded in the output and synthetic fixed
-vectors guard the calls. This is a prospective operational choice, not a
+The implementation evaluates the Student-t CDF without a runtime statistics
+library: the standard incomplete-beta identity, `math.lgamma`, and a frozen
+continued fraction with at most 256 iterations, tolerance `3e-14`, and floor
+`1e-300`. Survival probabilities use distributional symmetry rather than
+subtracting a positive-tail CDF from one. Synthetic fixed vectors guard the
+entire implementation. This is a prospective operational choice, not a
 post-outcome model selection.
 
 ## E1b active-assay rule and multiplicity
@@ -140,4 +143,3 @@ boundary-inclusive scores, extra k5 seeds, same-dependency-set arms, Python
 coverage/duplicate subsets, and PhysLib external-context sensitivities require
 their own prospectively frozen consumer before inspection and are absent from
 this primary exploratory artifact.
-
