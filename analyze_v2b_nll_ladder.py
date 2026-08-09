@@ -1,21 +1,24 @@
 #!/usr/bin/env python3
 """Frozen exploratory NLL ladder analyzer (NLL_LADDER_EXPLORATORY_AMENDMENT).
 
-One repository per invocation. For every supplied tier completion, raw
-E1a/E1b/E2 deltas are produced by the UNCHANGED B3 producer
+One repository per invocation. For every tier in the FROZEN FULL tier set,
+raw E1a/E1b/E2 deltas are produced by the UNCHANGED B3 producer
 (`prepare_v2b_masked_deltas.build_masked_deltas`) under the fixed PUBLIC
 32-zero-byte salt — the B3 blind is destroyed since the exploratory reveal
 and none is claimed — and target rows reconstruct through the reveal-frozen
 `_reconstruct_family` identity (sign * published + total_centering). Per-repo
 inference is the UNCHANGED `_analyze_repo_rows` (unequal-cluster MoM, frozen
 t-tables, Holm over E1a/E1b-IUT/E2, the E1b active-assay rule, and the
-PhysLib k4x forcing). Every tier's completion run identity must match the
-frozen PILOT_TIERS registry entry exactly and hash-bind that tier's
-committed instrument battery; every tier of one repo must bind the same
-assembly manifest. The q25c-1.5b tier is recomputed from its sealed
-completion and must reproduce the committed exploratory reveal's
-salt-independent centering values exactly.
+PhysLib k4x forcing).
 
+Anti-shopping hardening (adversarial review, 2026-08-09): the analyzer
+refuses tier subsets (the full frozen set or nothing); every completion must
+equal the row of ONE committed completion ledger written before any
+analysis; the committed exploratory reveal and the five per-repo assembly
+manifests are pinned by sha256 constants; the sealed q25c-1.5b completion
+must be the exact reveal-bound completion and must reproduce the reveal's
+salt-independent centering; non-sealed completions must have been scored at
+THIS source tree; tier batteries must carry their registry filenames.
 Ladder results may be read only through this analyzer's committed per-repo
 artifact. No pooled cross-tier trend statistic exists here by design.
 """
@@ -29,6 +32,7 @@ import sys
 from analyze_v2b_nll_exploratory import (
     CONTRAST_NAMES, NLL_EXPLORATORY_REVEAL_SCHEMA, _analyze_repo_rows,
     _reconstruct_family)
+from eval_paired import COMPLETE_SCHEMA
 from layout import PRODUCTION_CHUNK_TOKENS
 from provenance import head_commit, source_clean, source_tree_hash
 from v2b_a6_blind import require_committed
@@ -37,11 +41,35 @@ from v2b_common import V2BError, artifact_binding, sha256_file, \
 from validity_battery import PILOT_TIERS
 
 LADDER_ANALYSIS_SCHEMA = "v2b_nll_ladder_analysis_v1"
+LADDER_LEDGER_SCHEMA = "v2b_ladder_completion_ledger_v1"
 LADDER_CLAIM_STATUS = "exploratory-nll-only-multi-checkpoint-pilot"
 LADDER_GOVERNANCE_VERDICT = "not-run-ladder-exploratory"
 DELTA_METRIC = "bpb"
 DELTA_BUDGET_BYTES = 16384
 SEALED_TIER = "q25c-1.5b"
+# The tier set is FROZEN AT ADOPTION: exactly the PILOT_TIERS registry of
+# the adopted amendment. Later rungs require a NEW amendment adopted before
+# that tier is scored; this analyzer refuses subsets and supersets alike.
+FULL_TIER_SET = frozenset(
+    ("q25c-0.5b", "q25c-1.5b", "q25c-3b", "q25c-7b", "q25c-14b"))
+# Anchors pinned at adoption (adversarial-review finding 2): the committed
+# exploratory reveal and the five job19991210 assembly manifests.
+PINNED_REVEAL_SHA256 = \
+    "a2f88275381adbed8b52e17f9960e8fb6359055a867300179afd46837a4e2509"
+PINNED_MANIFEST_SHA256 = {
+    "mathlib4":
+        "e82c54b979ea31353defbda17eb8ed1b1d04d1b8f68056bc5e18f7dae517c7e1",
+    "batteries":
+        "56daa6151b0444888bfa39aaf7700ab135cf3d036a2290e236fd093fdadc4985",
+    "physlib":
+        "996febf3f7d9967cb0438a69c37757e4a6056d948df6ef254566cdc96daf7b7b",
+    "sympy":
+        "1f43e3263a11993a7bd55240aff392f8aaf9dae27ce1477295fafe0b45eed485",
+    "astropy":
+        "dab767e9947e069be7ff411a911cbbca3b5a395396dcd4c9e9020a3fbbc28f78",
+}
+# The adopted amendment file is bound into every artifact (finding 4).
+AMENDMENT_PATH = "results_v2/v2b/NLL_LADDER_EXPLORATORY_AMENDMENT.md"
 # Fixed PUBLIC salt: 32 zero bytes. Deliberately non-secret — the family
 # masking machinery is reused solely so the frozen B3 validation and delta
 # construction apply byte-identically to every tier; the reconstruction
@@ -134,12 +162,21 @@ def _tier_block(repo, tag, masked, private, battery_sha256):
 
 
 def _check_sealed_consistency(repo, block, reveal):
-    """The recomputed sealed tier must reproduce the committed reveal's
-    salt-independent centering values exactly."""
+    """The recomputed sealed tier must be the reveal-bound completion and
+    must reproduce the reveal's salt-independent centering exactly."""
     repos = reveal.get("repos")
     _require(isinstance(repos, dict) and isinstance(repos.get(repo), dict),
              f"reveal lacks repository {repo}")
-    reveal_mapping = repos[repo].get("mapping")
+    reveal_row = repos[repo]
+    reveal_completion = (reveal_row.get("bindings") or {}).get("completion")
+    _require(isinstance(reveal_completion, dict)
+             and isinstance(reveal_completion.get("sha256"), str),
+             f"reveal completion binding malformed: {repo}")
+    block_completion = (block.get("bindings") or {}).get("completion") or {}
+    _require(block_completion.get("sha256")
+             == reveal_completion.get("sha256"),
+             f"sealed tier is not the reveal-bound completion: {repo}")
+    reveal_mapping = reveal_row.get("mapping")
     _require(isinstance(reveal_mapping, dict),
              f"reveal mapping malformed: {repo}")
     for name in CONTRAST_NAMES:
@@ -154,47 +191,84 @@ def _check_sealed_consistency(repo, block, reveal):
                      f"{ours.get(field)!r} != {theirs.get(field)!r}")
 
 
-def analyze_repo(repo, manifest_path, sample_path, candidates_path,
-                 tier_completions, tier_batteries, reveal_path=None,
-                 build_fn=None):
-    """Analyze one repository across ladder tiers.
+def _check_ledger(repo, ledger, tier_completions):
+    """Every supplied completion must equal the committed ledger row; the
+    ledger row set must be exactly the frozen full tier set (finding 1)."""
+    repos = ledger.get("repos")
+    _require(isinstance(repos, dict) and isinstance(repos.get(repo), dict),
+             f"completion ledger lacks repository {repo}")
+    rows = repos[repo]
+    _require(set(rows) == FULL_TIER_SET,
+             f"completion ledger tier set is not the frozen full set: "
+             f"{repo} {sorted(rows)}")
+    for tag, path in tier_completions.items():
+        row = rows.get(tag)
+        _require(isinstance(row, dict)
+                 and isinstance(row.get("path"), str)
+                 and isinstance(row.get("sha256"), str),
+                 f"completion ledger row malformed: {repo} {tag}")
+        _require(os.path.abspath(path) == row["path"],
+                 f"completion path differs from the committed ledger: "
+                 f"{repo} {tag}")
+        _require(sha256_file(path) == row["sha256"],
+                 f"completion hash differs from the committed ledger: "
+                 f"{repo} {tag}")
 
-    tier_completions/tier_batteries: {tier tag: path}. The sealed tier
-    requires reveal_path (and reveal_path requires the sealed tier)."""
+
+def analyze_repo(repo, manifest_path, sample_path, candidates_path,
+                 tier_completions, tier_batteries, ledger, reveal,
+                 build_fn=None, current_tree_hash=None):
+    """Analyze one repository across the frozen full ladder tier set."""
     if build_fn is None:
         from prepare_v2b_masked_deltas import build_masked_deltas
         build_fn = build_masked_deltas
-    _require(isinstance(tier_completions, dict) and tier_completions,
-             "no tier completions supplied")
-    _require(set(tier_completions) <= set(PILOT_TIERS),
-             f"unknown tier tags: "
-             f"{sorted(set(tier_completions) - set(PILOT_TIERS))}")
-    _require(set(tier_batteries) == set(tier_completions),
-             "tier batteries must cover exactly the supplied completions")
-    _require((SEALED_TIER in tier_completions) == (reveal_path is not None),
-             "the sealed q25c-1.5b tier and --reveal are supplied together")
-
-    reveal = None
-    reveal_binding = None
-    if reveal_path is not None:
-        reveal_binding, reveal = artifact_binding(
-            reveal_path, NLL_EXPLORATORY_REVEAL_SCHEMA)
+    if current_tree_hash is None:
+        current_tree_hash = source_tree_hash()
+    _require(isinstance(tier_completions, dict)
+             and set(tier_completions) == FULL_TIER_SET,
+             f"ladder requires exactly the frozen full tier set "
+             f"{sorted(FULL_TIER_SET)}; got "
+             f"{sorted(tier_completions or ())}")
+    _require(set(tier_batteries) == FULL_TIER_SET,
+             "tier batteries must cover exactly the frozen full tier set")
+    _require(repo in PINNED_MANIFEST_SHA256,
+             f"unknown repository {repo!r}")
+    _require(sha256_file(manifest_path) == PINNED_MANIFEST_SHA256[repo],
+             f"assembly manifest does not match the pinned pilot manifest: "
+             f"{repo}")
+    _require(isinstance(reveal, dict),
+             "the committed exploratory reveal is required")
+    _check_ledger(repo, ledger, tier_completions)
 
     battery_shas = {}
     for tag in sorted(tier_batteries):
-        battery_shas[tag] = sha256_file(tier_batteries[tag])
+        path = tier_batteries[tag]
+        _require(os.path.basename(path)
+                 == PILOT_TIERS[tag]["battery_file"],
+                 f"battery filename does not match the {tag} registry "
+                 f"entry: {os.path.basename(path)!r}")
+        battery_shas[tag] = sha256_file(path)
 
     tiers = {}
     assembly_sha = None
     completion_bindings = {}
     for tag in sorted(tier_completions):
+        complete_path = tier_completions[tag]
+        complete_binding, complete = artifact_binding(
+            complete_path, COMPLETE_SCHEMA)
+        generator = complete.get("generator") or {}
+        if tag != SEALED_TIER:
+            _require(generator.get("source_tree_hash") == current_tree_hash,
+                     f"{tag} completion was not scored at this source "
+                     f"tree: {repo}")
         masked, private = build_fn(
-            tier_completions[tag], manifest_path, sample_path,
+            complete_path, manifest_path, sample_path,
             candidates_path, LADDER_PUBLIC_SALT, LADDER_PUBLIC_SALT_NOTE)
         block = _tier_block(repo, tag, masked, private, battery_shas[tag])
-        this_assembly = block["bindings"]["assembly"].get("sha256") \
-            if isinstance(block.get("bindings", {}).get("assembly"), dict) \
-            else masked["bindings"]["assembly"].get("sha256")
+        _require(masked["bindings"]["completion"].get("sha256")
+                 == complete_binding["sha256"],
+                 f"producer completion binding drift: {repo} {tag}")
+        this_assembly = masked["bindings"]["assembly"].get("sha256")
         _require(isinstance(this_assembly, str) and this_assembly,
                  f"missing assembly binding: {repo} {tag}")
         if assembly_sha is None:
@@ -224,7 +298,7 @@ def analyze_repo(repo, manifest_path, sample_path, candidates_path,
         bindings=dict(
             assembly_sha256=assembly_sha,
             manifest_path=os.path.abspath(manifest_path),
-            manifest_sha256=sha256_file(manifest_path),
+            manifest_sha256=PINNED_MANIFEST_SHA256[repo],
             sample_path=os.path.abspath(sample_path),
             sample_sha256=sha256_file(sample_path),
             candidates_path=os.path.abspath(candidates_path),
@@ -233,7 +307,10 @@ def analyze_repo(repo, manifest_path, sample_path, candidates_path,
                 path=os.path.abspath(tier_batteries[tag]),
                 sha256=battery_shas[tag]) for tag in sorted(tier_batteries)},
             completions=completion_bindings,
-            reveal=reveal_binding),
+            reveal_sha256=PINNED_REVEAL_SHA256,
+            amendment=dict(path=AMENDMENT_PATH,
+                           sha256=sha256_file(AMENDMENT_PATH)),
+            ledger_sha256=ledger.get("_binding_sha256")),
         generator=dict(source_commit=head_commit(),
                        source_tree_hash=source_tree_hash(),
                        program="analyze_v2b_nll_ladder.py"))
@@ -259,7 +336,8 @@ def main():
     ap.add_argument("--candidates", required=True)
     ap.add_argument("--completion", action="append", metavar="TIER=PATH")
     ap.add_argument("--battery", action="append", metavar="TIER=PATH")
-    ap.add_argument("--reveal", default=None)
+    ap.add_argument("--ledger", required=True)
+    ap.add_argument("--reveal", required=True)
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     if not source_clean():
@@ -268,13 +346,22 @@ def main():
     batteries = _parse_tier_args(args.battery, "battery")
     require_committed(args.manifest)
     require_committed(args.sample)
+    require_committed(args.ledger)
+    require_committed(args.reveal)
+    require_committed(AMENDMENT_PATH)
     for path in batteries.values():
         require_committed(path)
-    if args.reveal is not None:
-        require_committed(args.reveal)
+    reveal_binding, reveal = artifact_binding(
+        args.reveal, NLL_EXPLORATORY_REVEAL_SCHEMA)
+    if reveal_binding["sha256"] != PINNED_REVEAL_SHA256:
+        raise V2BError("reveal file does not match the pinned committed "
+                       "exploratory reveal")
+    ledger_binding, ledger = artifact_binding(
+        args.ledger, LADDER_LEDGER_SCHEMA)
+    ledger = dict(ledger, _binding_sha256=ledger_binding["sha256"])
     artifact = analyze_repo(
         args.repo, args.manifest, args.sample, args.candidates,
-        completions, batteries, reveal_path=args.reveal)
+        completions, batteries, ledger, reveal)
     digest = write_new_json(args.out, artifact)
     print(f"V2B-NLL-LADDER-ANALYZED {args.repo} {args.out} {digest}")
     return 0

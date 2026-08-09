@@ -62,7 +62,10 @@ def validate_pilot_battery(value, source_hash, numerical_harness_hash,
     defaults are the sealed q25c-1.5b pilot, so 1.5B behavior is
     byte-identical to the pre-ladder validator."""
     import validity_battery as vb
-    vb.activate_pilot_tier(vb.resolve_pilot_tier_for_model(model))
+    try:
+        vb.activate_pilot_tier(vb.resolve_pilot_tier_for_model(model))
+    except RuntimeError as err:
+        raise V2BError(f"pilot tier resolution failed: {err}") from err
     PILOT_FAMILIES = vb.PILOT_FAMILIES
     PILOT_MODEL = vb.PILOT_MODEL
     PILOT_REVISION = vb.PILOT_REVISION

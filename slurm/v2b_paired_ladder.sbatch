@@ -30,6 +30,12 @@ case "$V2B_MODEL_TIER" in
   q25c-14b)
     V2B_MODEL="Qwen/Qwen2.5-Coder-14B"
     V2B_TIER_BATTERY="results_v2/battery/battery_pilot_14b.json"
+    # amendment: 14b battery AND scoring both run on H200 (launch
+    # constraint; GPU stays informational-never-gated in evidence)
+    if ! nvidia-smi --query-gpu=name --format=csv,noheader | grep -qi h200; then
+      echo "q25c-14b scoring requires an H200 GPU per the amendment" >&2
+      exit 1
+    fi
     ;;
   q25c-0.5b)
     V2B_MODEL="Qwen/Qwen2.5-Coder-0.5B"
@@ -84,11 +90,10 @@ v2b_assert_source_identity() {
 }
 v2b_assert_source_identity
 
-V2B_ASSEMBLY_JOB="${V2B_ASSEMBLY_JOB:?export the committed assembly array job id}"
-[[ "$V2B_ASSEMBLY_JOB" =~ ^[0-9]+$ ]] || {
-  echo "V2B_ASSEMBLY_JOB must be a numeric Slurm job id" >&2
-  exit 1
-}
+# Pinned (adversarial review): the ladder scores ONLY the sealed pilot's
+# committed assembly manifests; the job id is a frozen constant, not an
+# operator input. The analyzer additionally pins each manifest's sha256.
+V2B_ASSEMBLY_JOB=19991210
 V2B_TASK="${SLURM_ARRAY_TASK_ID:?submit as array 0-4}"
 case "$V2B_TASK" in
   0)

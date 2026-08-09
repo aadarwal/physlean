@@ -919,6 +919,15 @@ def main():
         res["identities_unchanged_during_run"] = False  # dev: unchecked
     bj = os.path.join(
         OUT, PILOT_BATTERY_FILE if args.pilot else "battery.json")
+    if args.pilot and subprocess.run(
+            ["git", "ls-files", "--error-unmatch", bj],
+            capture_output=True).returncode == 0:
+        # Pilot-tier batteries are write-once committed evidence (grid
+        # battery.json keeps its rerun-at-current-hash semantics). A
+        # committed tier battery is NEVER replaced by this program.
+        LOG(f"REFUSED: {bj} is committed instrument evidence; a rerun "
+            "requires a reviewed rebind, never an overwrite")
+        sys.exit(1)
     if os.path.exists(bj):  # evidence is never overwritten: a failed
         ts = f"{time.strftime('%Y%m%d-%H%M%S')}-{os.getpid()}"  # survives rerun, collision-proof
         os.rename(bj, f"{bj}.quarantine-{ts}")

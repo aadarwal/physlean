@@ -95,9 +95,55 @@ reuse of already-frozen code paths rather than re-derivation:
   `not-run-ladder-exploratory` / `repo_n = null` (blind N governance was
   a 1.5B-pilot artifact and is not recomputed);
 - the q25c-1.5b tier is INCLUDED by recomputation from its sealed
-  completion and must reproduce the committed reveal's per-contrast
-  `removed_mean_bpb`/`fsum_correction`/`total_centering_bpb` exactly —
-  a standing consistency check tying the ladder to the sealed pilot.
+  completion, must BE the reveal-bound completion (equal completion
+  sha256), and must reproduce the committed reveal's per-contrast
+  `n_rows`/`removed_mean_bpb`/`fsum_correction`/`total_centering_bpb`
+  exactly — a standing consistency check tying the ladder to the sealed
+  pilot.
+
+Anti-shopping hardening (adopted with the adversarial review):
+
+- TIER SET FROZEN AT ADOPTION: exactly {q25c-0.5b, q25c-1.5b, q25c-3b,
+  q25c-7b, q25c-14b}. The analyzer refuses subsets and supersets; adding
+  a rung later requires a NEW amendment adopted before that tier is
+  scored. Interim ladder results never justify silently extending or
+  truncating the set.
+- ONE SCORING SUBMISSION PER TIER: each tier's paired array is submitted
+  once; a failed/preempted array may be requeued by Slurm but a fresh
+  re-submission of a tier that produced any complete.json quarantines
+  that tier (recorded in the ledger as void, tier reported as
+  not-analyzable) rather than choosing between runs.
+- COMPLETION LEDGER: before any analyzer run, one committed
+  `v2b_ladder_completion_ledger_v1` artifact lists, per repo x tier, the
+  exact completion path, sha256, and Slurm job id (executing GPU recorded
+  informationally). The analyzer accepts only completions equal to their
+  ledger row and requires full-set coverage.
+- PINNED ANCHORS: the analyzer pins by sha256 constant the committed
+  exploratory reveal (a2f88275...) and the five job19991210 assembly
+  manifests; the ladder launcher hardcodes assembly job 19991210.
+- SCORED-AT-THIS-TREE: every non-sealed completion's generator
+  source_tree_hash must equal the analyzer run's source tree hash, so a
+  completion scored on any other tree (side branch, doctored checkout)
+  is unusable. Evidence-only commits do not move the source tree hash.
+- BATTERY FILENAMES: the analyzer requires each tier battery's filename
+  to equal the frozen registry entry; committed pilot-tier battery files
+  are write-once (the battery program refuses to replace a committed
+  one).
+- The adopted amendment file itself is hash-bound into every ladder
+  artifact.
+
+Hardware note: GPU model remains informational-never-gated in evidence
+(frozen PREREG §4 decision). The 14b H200 requirement is therefore a
+LAUNCH constraint enforced by both launchers, and the executing GPU is
+recorded in the ledger, not gated in artifacts.
+
+Sequencing disclosure (behavioral arm): ladder reveals widen the
+pre-formal-unblinding information environment — five tiers of unmasked
+NLL results on the pilot targets will exist before the behavioral arm
+runs. The behavioral salt remains sealed; any later behavioral or
+formal-unblinding amendment MUST list the ladder artifacts existing at
+its adoption boundary. NLL-side knowledge cannot be un-known; it is
+disclosed, never laundered.
 
 Claim status string: `exploratory-nll-only-multi-checkpoint-pilot`.
 
@@ -108,7 +154,7 @@ two-sided 95% interval, one-sided p, Holm-adjusted p, and the same
 interpretation-status vocabulary as the 1.5B analysis, including the E1b
 active-assay rule and PhysLib's forced
 `uninterpretable-pending-k4x-sensitivity`. Cross-tier presentation is a
-DESCRIPTIVE forest plot per repo/contrast over the four tiers. No pooled
+DESCRIPTIVE forest plot per repo/contrast over the five frozen tiers. No pooled
 cross-tier trend statistic, no confirmatory scale claim, no
 language-pooled estimate, no behavioral claim, and no NLL-as-correctness
 claim is licensed. The motivating question — whether the Lean
