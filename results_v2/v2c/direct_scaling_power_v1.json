@@ -1,0 +1,1098 @@
+{
+ "adequacy_boundaries": [
+  {
+   "effective_repositories": 3,
+   "largest_contiguous_passing_repository_slope_sd": null,
+   "tested_repository_slope_sd": [
+    {
+     "minimum_gating_probability": 0.5238,
+     "passes": false,
+     "repository_slope_sd": 0.005
+    },
+    {
+     "minimum_gating_probability": 0.2394,
+     "passes": false,
+     "repository_slope_sd": 0.01
+    },
+    {
+     "minimum_gating_probability": 0.0492,
+     "passes": false,
+     "repository_slope_sd": 0.02
+    },
+    {
+     "minimum_gating_probability": 0.0192,
+     "passes": false,
+     "repository_slope_sd": 0.03
+    }
+   ],
+   "unit_slope_sd": 0.08
+  },
+  {
+   "effective_repositories": 3,
+   "largest_contiguous_passing_repository_slope_sd": null,
+   "tested_repository_slope_sd": [
+    {
+     "minimum_gating_probability": 0.3244,
+     "passes": false,
+     "repository_slope_sd": 0.005
+    },
+    {
+     "minimum_gating_probability": 0.175,
+     "passes": false,
+     "repository_slope_sd": 0.01
+    },
+    {
+     "minimum_gating_probability": 0.0492,
+     "passes": false,
+     "repository_slope_sd": 0.02
+    },
+    {
+     "minimum_gating_probability": 0.0156,
+     "passes": false,
+     "repository_slope_sd": 0.03
+    }
+   ],
+   "unit_slope_sd": 0.12
+  },
+  {
+   "effective_repositories": 4,
+   "largest_contiguous_passing_repository_slope_sd": 0.005,
+   "tested_repository_slope_sd": [
+    {
+     "minimum_gating_probability": 0.8738,
+     "passes": true,
+     "repository_slope_sd": 0.005
+    },
+    {
+     "minimum_gating_probability": 0.452,
+     "passes": false,
+     "repository_slope_sd": 0.01
+    },
+    {
+     "minimum_gating_probability": 0.0868,
+     "passes": false,
+     "repository_slope_sd": 0.02
+    },
+    {
+     "minimum_gating_probability": 0.0216,
+     "passes": false,
+     "repository_slope_sd": 0.03
+    }
+   ],
+   "unit_slope_sd": 0.08
+  },
+  {
+   "effective_repositories": 4,
+   "largest_contiguous_passing_repository_slope_sd": null,
+   "tested_repository_slope_sd": [
+    {
+     "minimum_gating_probability": 0.6224,
+     "passes": false,
+     "repository_slope_sd": 0.005
+    },
+    {
+     "minimum_gating_probability": 0.3326,
+     "passes": false,
+     "repository_slope_sd": 0.01
+    },
+    {
+     "minimum_gating_probability": 0.0764,
+     "passes": false,
+     "repository_slope_sd": 0.02
+    },
+    {
+     "minimum_gating_probability": 0.022,
+     "passes": false,
+     "repository_slope_sd": 0.03
+    }
+   ],
+   "unit_slope_sd": 0.12
+  },
+  {
+   "effective_repositories": 9,
+   "largest_contiguous_passing_repository_slope_sd": 0.01,
+   "tested_repository_slope_sd": [
+    {
+     "minimum_gating_probability": 1.0,
+     "passes": true,
+     "repository_slope_sd": 0.005
+    },
+    {
+     "minimum_gating_probability": 0.9888,
+     "passes": true,
+     "repository_slope_sd": 0.01
+    },
+    {
+     "minimum_gating_probability": 0.4604,
+     "passes": false,
+     "repository_slope_sd": 0.02
+    },
+    {
+     "minimum_gating_probability": 0.0902,
+     "passes": false,
+     "repository_slope_sd": 0.03
+    }
+   ],
+   "unit_slope_sd": 0.08
+  },
+  {
+   "effective_repositories": 9,
+   "largest_contiguous_passing_repository_slope_sd": 0.01,
+   "tested_repository_slope_sd": [
+    {
+     "minimum_gating_probability": 0.9992,
+     "passes": true,
+     "repository_slope_sd": 0.005
+    },
+    {
+     "minimum_gating_probability": 0.9562,
+     "passes": true,
+     "repository_slope_sd": 0.01
+    },
+    {
+     "minimum_gating_probability": 0.4006,
+     "passes": false,
+     "repository_slope_sd": 0.02
+    },
+    {
+     "minimum_gating_probability": 0.0768,
+     "passes": false,
+     "repository_slope_sd": 0.03
+    }
+   ],
+   "unit_slope_sd": 0.12
+  }
+ ],
+ "boundary_coverage_diagnostic": {
+  "coverage_probability": 0.9536,
+  "gating": false,
+  "scenario": "boundary"
+ },
+ "decision": {
+  "authorization_reason": "variance-calibration-not-yet-sealed",
+  "central_scenario_power_ok": true,
+  "declared_assumption_within_adequacy_boundary": true,
+  "language_general_scoring_authorized": false,
+  "power_simulation_ok_at_declared_assumption": true,
+  "structural_census_authorized": true,
+  "threshold": 0.8,
+  "variance_assumption_status": "assumption-only-pending-disjoint-calibration",
+  "variance_calibration_required": true
+ },
+ "generator": {
+  "program": "simulate_direct_scaling_power.py",
+  "source_commit": "bb630d1926bc4b28db2d755e4a35812c5c64825f",
+  "source_tree_hash": "3b91e164412b803500f8ef5a75aac8d66f0d1b416d1d4d1706746dcee7e9f2f4"
+ },
+ "power_binding": "f1841a6c1efe69e53993e766af0c95c431bb5201d5038bc22aa3bf80c3cddba6",
+ "primary_rows": [
+  {
+   "correct_classification_probability": 0.8712,
+   "effective_repositories": 4,
+   "median_ci_width": 0.021188523091381268,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.005,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.926,
+   "effective_repositories": 4,
+   "median_ci_width": 0.021252562038979635,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.005,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.9536,
+   "effective_repositories": 4,
+   "median_ci_width": 0.02171462453685096,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.005,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.08
+  }
+ ],
+ "protocol": {
+  "binding": "b6b637788d9555e7e1eee4f1eb7f06b7cfa678a77b242954e1786e1c5415a2ec",
+  "path": "direct_scaling_protocol_v1.json",
+  "sha256": "94fb55bd3aeac550cc227ad8a11cb2970640f2157e0c180002083e01ca04a4e6"
+ },
+ "schema": "v2c_direct_scaling_power_v1",
+ "sensitivity_rows": [
+  {
+   "correct_classification_probability": 0.5238,
+   "effective_repositories": 3,
+   "median_ci_width": 0.03148226938830125,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.005,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.6484,
+   "effective_repositories": 3,
+   "median_ci_width": 0.031567370747680824,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.005,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.9488,
+   "effective_repositories": 3,
+   "median_ci_width": 0.030986375936731987,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.005,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.2394,
+   "effective_repositories": 3,
+   "median_ci_width": 0.04765288637267963,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.01,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.4032,
+   "effective_repositories": 3,
+   "median_ci_width": 0.047295010776939414,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.01,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.9488,
+   "effective_repositories": 3,
+   "median_ci_width": 0.04734580823925079,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.01,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.0492,
+   "effective_repositories": 3,
+   "median_ci_width": 0.08585054002095978,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.02,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.1698,
+   "effective_repositories": 3,
+   "median_ci_width": 0.08688218220742679,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.02,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.9518,
+   "effective_repositories": 3,
+   "median_ci_width": 0.08650032977382889,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.02,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.0192,
+   "effective_repositories": 3,
+   "median_ci_width": 0.12779221443850858,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.03,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.1092,
+   "effective_repositories": 3,
+   "median_ci_width": 0.12680431608405884,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.03,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.956,
+   "effective_repositories": 3,
+   "median_ci_width": 0.12749468687307358,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.03,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.3244,
+   "effective_repositories": 3,
+   "median_ci_width": 0.04141098582910133,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.005,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.4912,
+   "effective_repositories": 3,
+   "median_ci_width": 0.04051732674784796,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.005,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.949,
+   "effective_repositories": 3,
+   "median_ci_width": 0.040814266037255305,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.005,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.175,
+   "effective_repositories": 3,
+   "median_ci_width": 0.054156351349609104,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.01,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.3262,
+   "effective_repositories": 3,
+   "median_ci_width": 0.053786423580035735,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.01,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.951,
+   "effective_repositories": 3,
+   "median_ci_width": 0.05518122537839483,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.01,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.0492,
+   "effective_repositories": 3,
+   "median_ci_width": 0.0894540617183956,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.02,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.1578,
+   "effective_repositories": 3,
+   "median_ci_width": 0.09039286522464285,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.02,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.9516,
+   "effective_repositories": 3,
+   "median_ci_width": 0.08992865700037991,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.02,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.0156,
+   "effective_repositories": 3,
+   "median_ci_width": 0.12975642444088042,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.03,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.1026,
+   "effective_repositories": 3,
+   "median_ci_width": 0.12851439055637465,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.03,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.946,
+   "effective_repositories": 3,
+   "median_ci_width": 0.12826758237521063,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.03,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.8738,
+   "effective_repositories": 4,
+   "median_ci_width": 0.02134434840868537,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.005,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.9304,
+   "effective_repositories": 4,
+   "median_ci_width": 0.021430613422173977,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.005,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.948,
+   "effective_repositories": 4,
+   "median_ci_width": 0.02133319254701637,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.005,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.452,
+   "effective_repositories": 4,
+   "median_ci_width": 0.03230404507004973,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.01,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.6446,
+   "effective_repositories": 4,
+   "median_ci_width": 0.03222382348969377,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.01,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.9456,
+   "effective_repositories": 4,
+   "median_ci_width": 0.0324715154715839,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.01,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.0868,
+   "effective_repositories": 4,
+   "median_ci_width": 0.05793225876966615,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.02,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.2734,
+   "effective_repositories": 4,
+   "median_ci_width": 0.05798707401318065,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.02,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.9512,
+   "effective_repositories": 4,
+   "median_ci_width": 0.058363229649205095,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.02,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.0216,
+   "effective_repositories": 4,
+   "median_ci_width": 0.0854994842625796,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.03,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.1584,
+   "effective_repositories": 4,
+   "median_ci_width": 0.08730873473439696,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.03,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.9478,
+   "effective_repositories": 4,
+   "median_ci_width": 0.08694818338973763,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.03,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.6224,
+   "effective_repositories": 4,
+   "median_ci_width": 0.027899966069007923,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.005,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.7626,
+   "effective_repositories": 4,
+   "median_ci_width": 0.02768577644565471,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.005,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.9482,
+   "effective_repositories": 4,
+   "median_ci_width": 0.027999313484285193,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.005,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.3326,
+   "effective_repositories": 4,
+   "median_ci_width": 0.03688117368616886,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.01,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.536,
+   "effective_repositories": 4,
+   "median_ci_width": 0.03698980115450861,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.01,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.9488,
+   "effective_repositories": 4,
+   "median_ci_width": 0.03744968043683369,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.01,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.0764,
+   "effective_repositories": 4,
+   "median_ci_width": 0.06140754171880508,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.02,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.252,
+   "effective_repositories": 4,
+   "median_ci_width": 0.06148291251501567,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.02,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.9462,
+   "effective_repositories": 4,
+   "median_ci_width": 0.062034092177814956,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.02,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.022,
+   "effective_repositories": 4,
+   "median_ci_width": 0.08882092943171155,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.03,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.1524,
+   "effective_repositories": 4,
+   "median_ci_width": 0.08816377493257971,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.03,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.9512,
+   "effective_repositories": 4,
+   "median_ci_width": 0.08775934411087156,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.03,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 1.0,
+   "effective_repositories": 9,
+   "median_ci_width": 0.011115462193496562,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.005,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 1.0,
+   "effective_repositories": 9,
+   "median_ci_width": 0.011091477303858246,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.005,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.9458,
+   "effective_repositories": 9,
+   "median_ci_width": 0.011151568651749155,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.005,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.9888,
+   "effective_repositories": 9,
+   "median_ci_width": 0.016956095349805897,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.01,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.9946,
+   "effective_repositories": 9,
+   "median_ci_width": 0.017041075633126818,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.01,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.952,
+   "effective_repositories": 9,
+   "median_ci_width": 0.0168330370969283,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.01,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.4604,
+   "effective_repositories": 9,
+   "median_ci_width": 0.0307660581753774,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.02,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.7238,
+   "effective_repositories": 9,
+   "median_ci_width": 0.030569147353853618,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.02,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.95,
+   "effective_repositories": 9,
+   "median_ci_width": 0.03062749816458271,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.02,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.0902,
+   "effective_repositories": 9,
+   "median_ci_width": 0.04474977904559056,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.03,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.409,
+   "effective_repositories": 9,
+   "median_ci_width": 0.04485043046729961,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.03,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.9478,
+   "effective_repositories": 9,
+   "median_ci_width": 0.04478686374691222,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.03,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.08
+  },
+  {
+   "correct_classification_probability": 0.9998,
+   "effective_repositories": 9,
+   "median_ci_width": 0.014412089553217832,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.005,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.9992,
+   "effective_repositories": 9,
+   "median_ci_width": 0.014599345550633108,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.005,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.9482,
+   "effective_repositories": 9,
+   "median_ci_width": 0.014387012941972668,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.005,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.9562,
+   "effective_repositories": 9,
+   "median_ci_width": 0.019389190130945817,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.01,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.982,
+   "effective_repositories": 9,
+   "median_ci_width": 0.0193479001538676,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.01,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.9478,
+   "effective_repositories": 9,
+   "median_ci_width": 0.019400184466240818,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.01,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.4006,
+   "effective_repositories": 9,
+   "median_ci_width": 0.03188043950227169,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.02,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.6852,
+   "effective_repositories": 9,
+   "median_ci_width": 0.031808635475522755,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.02,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.949,
+   "effective_repositories": 9,
+   "median_ci_width": 0.03200431806902232,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.02,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.0768,
+   "effective_repositories": 9,
+   "median_ci_width": 0.045659917274021314,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.03,
+   "scenario": "compatible",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.0,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.3958,
+   "effective_repositories": 9,
+   "median_ci_width": 0.04564209975724346,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.03,
+   "scenario": "outside-positive",
+   "scenario_role": "adequacy-gate",
+   "true_delta_beta": 0.04,
+   "unit_slope_sd": 0.12
+  },
+  {
+   "correct_classification_probability": 0.9526,
+   "effective_repositories": 9,
+   "median_ci_width": 0.046016759102153144,
+   "paired_units_per_repository": 200,
+   "replicates": 5000,
+   "repository_slope_sd": 0.03,
+   "scenario": "boundary",
+   "scenario_role": "coverage-diagnostic-only",
+   "true_delta_beta": 0.02,
+   "unit_slope_sd": 0.12
+  }
+ ]
+}
