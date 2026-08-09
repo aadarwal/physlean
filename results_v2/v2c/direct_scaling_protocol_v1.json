@@ -129,7 +129,7 @@
  },
  "design": {
   "path": "DIRECT_SCALING_STUDY.md",
-  "sha256": "f0f7e2e95dbea4e1608478f26fee777563e7a123e49c250073c48b5b36068da9"
+  "sha256": "53a77e561665a1b53227ca103c5203b54851d976486dea26eef084b0f74a129c"
  },
  "eligibility": {
   "a0": "all-source-bytes-no-comment-or-blank-filter",
@@ -159,8 +159,8 @@
  "frozen_at_utc_date": "2026-08-09",
  "generator": {
   "program": "freeze_direct_scaling_protocol.py",
-  "source_commit": "4fb87f48c0bb7e2687153f873e6bc8d0acd6e4ee",
-  "source_tree_hash": "59d29470d138d648441ea82cd589afe8a960c07c62b6a6dae73c235844b07a4c"
+  "source_commit": "9dcfe6b54c1432d3cfccfabc242b08c05f196bf4",
+  "source_tree_hash": "ba3143606b2d911e4688d51a1584667947892436b264823fd642f63c3f03e2a4"
  },
  "input_ledgers": {
   "corpora_lock": {
@@ -1317,20 +1317,48 @@
   },
   "simulation_seed_u64": 4763017857764459980
  },
- "protocol_binding": "9dbac7146beea73363b5753b7d6f738bafa51dde589d5d32ba063785918a9cf7",
+ "protocol_binding": "b87215a1444191ea2410db07daac15543ae1b535f8692e42194e3a6bd6c627ac",
  "protocol_state": "frozen-before-loss",
  "sampling": {
+  "a0_origin_rule": {
+   "anchor": "selected-file-exact-metadata-header-start",
+   "deduplicate_or_top_up": false,
+   "population": "lexicographically-sorted-eligible-file-identities",
+   "population_size_symbol": "P=N_eligible_files",
+   "raw_index": "systematic_index_formula"
+  },
   "a0_seed_sha256": "b24bbc98d1dcf5935fcd1aa24eb386fe18ff646b26f565ebf0ed82b4b82f6a7e",
+  "a1_coordinate_rule": {
+   "axis": "concatenated-file-body-bytes-headers-excluded",
+   "post_mapping": "map-to-containing-file-then-line-align;reject-cross-file-header-short-overlap-comment-blank-nearduplicate;never-top-up",
+   "processing_order": "ascending-raw-coordinate",
+   "raw_coordinate": "target_block_bytes*i_j",
+   "raw_index": "systematic_index_formula",
+   "slot_population": "P=floor(axis_bytes/target_block_bytes)"
+  },
   "a1_seed_sha256": "cbd41eb6bb47472ed5b01e19b30336157dee6f9ce01cbeeaf5d70c63cdb31e59",
   "alignment": "next-utf8-line-boundary-at-or-after-coordinate",
-  "delta_formula": "max(4096,floor((eligible_axis_bytes-4096)/max(1,planned_per_repo-1)))",
   "identity_reuse": "same-origins-targets-all-orderings-models-rungs",
   "minimum_realized_target_bytes": 2048,
   "overlap_policy": "reject-pairwise-overlap-never-resample",
   "planned_per_repo": 200,
   "primary_score_horizon_source_bytes": 512,
   "seed_family": "v2c-direct-scaling-p0-20260809",
-  "systematic_offset_formula": "u64be(sha256(seed_sha256,repo,arm)[:8]) mod delta",
+  "seed_u64_rule": {
+   "arm_enum": [
+    "a0",
+    "a1"
+   ],
+   "canonical_json": "json.dumps(value,sort_keys=true,separators=[comma,colon],ensure_ascii=true) encoded UTF-8",
+   "digest_decode": "unsigned-big-endian-first-8-bytes-of-SHA256",
+   "preimage": [
+    "v2c-systematic-offset-v1",
+    "$seed_sha256",
+    "$repo",
+    "$arm"
+   ]
+  },
+  "systematic_index_formula": "i_j=floor(P*(u+j*2^64)/(n*2^64));j=0,...,n-1;n=min(planned_per_repo,P)",
   "target_block_bytes": 4096
  },
  "schema": "v2c_direct_scaling_protocol_v1",
