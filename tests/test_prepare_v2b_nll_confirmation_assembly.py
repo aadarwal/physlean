@@ -98,11 +98,21 @@ def _fixture():
     add_unit(pool_identity[0], pool_identity, pool_payload, len(pool_header))
     edges = [(list(identity), list(dep_identity))
              for identity, _, _ in identities]
+    coverage_rows = []
+    for index, (identity, _, _) in enumerate(identities):
+        n_refs = 0 if index == 0 else 4
+        n_resolved = 0 if index == 0 else (index - 1) % 5
+        coverage_rows.append(dict(
+            identity=list(identity), name=identity[1], n_refs=n_refs,
+            n_resolved_decl=n_resolved, n_module_fallback=0,
+            n_external=0, n_unresolved=n_refs - n_resolved,
+            coverage=(n_resolved / n_refs) if n_refs else None))
     chain = dict(
         bindings=copy.deepcopy(
             protocol["source_eligibility_gate"]["bindings"]),
         candidates=dict(targets=candidates), units=units, edges=edges,
-        adjacency={})
+        adjacency={}, extraction=dict(
+            graph=dict(target_coverage=coverage_rows)))
 
     gate_binding = dict(path="/synthetic/source_gate.json",
                         schema=SOURCE_GATE_SCHEMA, sha256="1" * 64)
@@ -220,6 +230,23 @@ def test_exact_cell_order_no_extra_arms_and_intrinsic_k1():
     for forbidden in ('"k2"', '"k6"', '"k7"', '"bm25"', '"k3s"',
                       '"k4s"'):
         assert forbidden not in encoded
+
+
+def test_static_reference_coverage_is_exact_and_uses_frozen_bins():
+    manifest, _ = _built()
+    observed_bins = set()
+    for target in manifest["targets"]:
+        row = target["static_reference_coverage"]
+        assert row["n_refs"] == row["n_resolved_decl"] + \
+            row["n_module_fallback"] + row["n_external"] + \
+            row["n_unresolved"]
+        assert row["resolved_fraction"] == (
+            row["n_resolved_decl"] / row["n_refs"]
+            if row["n_refs"] else None)
+        observed_bins.add(row["coverage_bin"])
+    assert observed_bins == {
+        "no-references", "[0,0.25)", "[0.25,0.5)", "[0.5,0.75)",
+        "[0.75,1)", "1.0"}
 
 
 def test_required_primary_cell_ineligibility_aborts_whole_assembly():

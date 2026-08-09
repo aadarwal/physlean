@@ -67,8 +67,16 @@ TOP_KEYS = {
 TARGET_KEYS = {
     "key", "identity", "module", "source_rel", "sample_cell",
     "sample_priority", "prefix_bytes", "prefix_sha256", "body_bytes",
-    "body_sha256", "cells", "cells_sha256",
+    "body_sha256", "static_reference_coverage", "cells", "cells_sha256",
 }
+REFERENCE_COVERAGE_KEYS = {
+    "n_refs", "n_resolved_decl", "n_module_fallback", "n_external",
+    "n_unresolved", "resolved_fraction", "coverage_bin",
+}
+REFERENCE_COVERAGE_BINS = (
+    "no-references", "[0,0.25)", "[0.25,0.5)", "[0.5,0.75)",
+    "[0.75,1)", "1.0",
+)
 CELL_KEYS = {
     "cell_id", "role", "required_for_fixed_n", "budget_bytes",
     "eligible", "eligibility_basis", "ineligibility_reason",
@@ -616,6 +624,76 @@ def _candidate_index(chain):
     return out
 
 
+def _coverage_bin(resolved, total):
+    if total == 0:
+        return "no-references"
+    if 4 * resolved < total:
+        return "[0,0.25)"
+    if 2 * resolved < total:
+        return "[0.25,0.5)"
+    if 4 * resolved < 3 * total:
+        return "[0.5,0.75)"
+    if resolved < total:
+        return "[0.75,1)"
+    return "1.0"
+
+
+def _coverage_index(chain):
+    rows = chain.get("extraction", {}).get("graph", {}).get(
+        "target_coverage")
+    if not isinstance(rows, list):
+        raise V2BError("source chain lacks Python target_coverage rows")
+    out = {}
+    count_names = (
+        "n_refs", "n_resolved_decl", "n_module_fallback", "n_external",
+        "n_unresolved")
+    for index, row in enumerate(rows):
+        if not isinstance(row, dict):
+            raise V2BError(f"target_coverage[{index}] is not an object")
+        identity = validate_identity(LANGUAGE, row.get("identity"))
+        key = identity_key(LANGUAGE, identity)
+        counts = {name: row.get(name) for name in count_names}
+        if key in out or any(
+                not isinstance(value, int) or isinstance(value, bool)
+                or value < 0 for value in counts.values()):
+            raise V2BError("duplicate/malformed target_coverage row")
+        if counts["n_refs"] != sum(counts[name] for name in count_names[1:]) \
+                or counts["n_resolved_decl"] > counts["n_refs"]:
+            raise V2BError("target_coverage count arithmetic drift")
+        expected_fraction = (counts["n_resolved_decl"] /
+                             counts["n_refs"]
+                             if counts["n_refs"] else None)
+        if row.get("coverage") != expected_fraction:
+            raise V2BError("target_coverage fraction drift")
+        out[key] = dict(
+            **counts, resolved_fraction=expected_fraction,
+            coverage_bin=_coverage_bin(
+                counts["n_resolved_decl"], counts["n_refs"]))
+    return out
+
+
+def _validate_reference_coverage(value):
+    _exact_keys(value, REFERENCE_COVERAGE_KEYS,
+                "assembly static reference coverage")
+    count_names = (
+        "n_refs", "n_resolved_decl", "n_module_fallback", "n_external",
+        "n_unresolved")
+    if any(not isinstance(value[name], int) or isinstance(value[name], bool)
+           or value[name] < 0 for name in count_names) \
+            or value["n_refs"] != sum(value[name]
+                                      for name in count_names[1:]) \
+            or value["n_resolved_decl"] > value["n_refs"]:
+        raise V2BError("assembly reference-coverage count drift")
+    fraction = (value["n_resolved_decl"] / value["n_refs"]
+                if value["n_refs"] else None)
+    if value["resolved_fraction"] != fraction \
+            or value["coverage_bin"] not in REFERENCE_COVERAGE_BINS \
+            or value["coverage_bin"] != _coverage_bin(
+                value["n_resolved_decl"], value["n_refs"]):
+        raise V2BError("assembly reference-coverage fraction/bin drift")
+    return value
+
+
 def _gate_index(source_gate, protocol):
     if not isinstance(source_gate, dict) \
             or source_gate.get("schema") != SOURCE_GATE_SCHEMA \
@@ -717,6 +795,7 @@ def build_assembly_value(protocol, protocol_binding, sample, sample_binding,
             or not isinstance(edges, list) or not isinstance(adjacency, dict):
         raise V2BError("assembly source chain is incomplete")
     candidates = _candidate_index(chain)
+    coverage_rows = _coverage_index(chain)
     gate_rows = _gate_index(source_gate, protocol)
     cache = {}
     mass_index = ContextMassIndex(units, edges, adjacency,
@@ -732,7 +811,8 @@ def build_assembly_value(protocol, protocol_binding, sample, sample_binding,
     for sampled in plan_targets:
         identity = validate_identity(LANGUAGE, sampled["identity"])
         key = identity_key(LANGUAGE, identity)
-        if key not in units or key not in candidates or key not in gate_rows:
+        if key not in units or key not in candidates or key not in gate_rows \
+                or key not in coverage_rows:
             raise V2BError(f"sampled target missing from source chain: {key}")
         candidate = candidates[key]
         if sampled["cell"] != candidate.get("cell") \
@@ -806,6 +886,7 @@ def build_assembly_value(protocol, protocol_binding, sample, sample_binding,
             sample_priority=sampled["priority"],
             prefix_bytes=len(prefix), prefix_sha256=sha256_bytes(prefix),
             body_bytes=len(body), body_sha256=sha256_bytes(body),
+            static_reference_coverage=coverage_rows[key],
             cells=cells, cells_sha256=sha256_sorted_json(cells))
         targets.append(target)
         if collect is not None:
@@ -943,6 +1024,7 @@ def validate_assembly(value, protocol, sample):
                 or not _hex(target["prefix_sha256"]) \
                 or not _hex(target["body_sha256"]):
             raise V2BError(f"assembly target identity/body drift: {key}")
+        _validate_reference_coverage(target["static_reference_coverage"])
         cells = target["cells"]
         if not isinstance(cells, list) or len(cells) != len(CELL_ORDER) \
                 or target["cells_sha256"] != sha256_sorted_json(cells):
