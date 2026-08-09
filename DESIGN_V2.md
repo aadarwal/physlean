@@ -2161,7 +2161,16 @@ enforces exact schemas, manifest order, finite reasons, and reason-specific
 elaboration flags. As with S4, production must stage immutable inputs, rehash
 before and after the child, bind the exact runtime/toolchain/setup closure and
 stdout/stderr/argv/environment, and impose one 300-second whole-process limit.
-Every marked record is explicitly flushed. Candidate mode emits a bound
+Every marked record is explicitly flushed. Because generated metaprograms can
+spawn a child inheriting OS stdout even while Lean's stream refs are isolated,
+the fixed marker alone is not an evidence channel. The wrapper generates a
+fresh uniformly random 256-bit lowercase-hex nonce per process and sends it as
+the SOLE stdin line; the driver consumes that line, requires immediate stdin
+EOF before imports or target elaboration, keeps the nonce only as a lexical
+value, and emits `@@V2B_LEAN_VERIFY:<nonce>@@` records. The nonce is never in
+argv, environment, manifest, or a file. Only exact nonce-qualified lines are
+evidence; other marker-looking/untrusted bytes are noise, while malformed
+payload bytes carrying the exact nonce fail closed. Candidate mode emits a bound
 `candidate-start` marker only after certificate/splice trusted validation and
 immediately before candidate parsing/elaboration. A strict prefix consumer
 validates the completed stage if the wrapper terminates a timed-out process:

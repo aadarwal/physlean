@@ -15,8 +15,12 @@ implemented_by, depend on a newly-created axiom, or depend on the absolute
 forbidden trusted axioms sorryAx/ofReduceBool/ofReduceNat.
 
 Generated code is elaborated here, so the production wrapper must execute this
-driver in a staged, resource-bounded process.  Marker-prefixed compact JSON is
-the only evidence surface; trusted command output is isolated.
+driver in a staged, resource-bounded process.  The wrapper sends a fresh
+256-bit channel nonce as the sole stdin line before any target elaboration.
+Every compact-JSON evidence record carries that nonce in its marker.  The
+nonce is absent from argv, environment, manifests, and files, so generated
+metaprograms and inherited-stdout subprocesses cannot forge verifier records;
+trusted command output is additionally isolated.
 -/
 import Lean
 
@@ -26,7 +30,8 @@ namespace V2BVerifyCommand
 
 def MANIFEST_SCHEMA := "v2b_lean_verify_manifest_v2"
 def OUTPUT_SCHEMA := "v2b_lean_verify_result_v2"
-def OUTPUT_MARKER := "@@V2B_LEAN_VERIFY@@"
+def OUTPUT_MARKER_PREFIX := "@@V2B_LEAN_VERIFY:"
+def OUTPUT_MARKER_SUFFIX := "@@"
 
 structure SampleSpec where
   id : String
@@ -708,9 +713,9 @@ partial def elaborateSuffix (source fileName : String)
   catch _ =>
     pure <| .error "suffix-elaboration-exception"
 
-def emit (value : Json) : IO Unit :=
+def emit (channelNonce : String) (value : Json) : IO Unit :=
   do
-    IO.println s!"{OUTPUT_MARKER}{Json.compress value}"
+    IO.println s!"{OUTPUT_MARKER_PREFIX}{channelNonce}{OUTPUT_MARKER_SUFFIX}{Json.compress value}"
     let stdout <- IO.getStdout
     stdout.flush
 
@@ -762,8 +767,9 @@ def failureJson (recordType reason targetKind : String)
     | some id => [("sample_id", toJson id)]
     | none => []
 
-def emitPrevalidation (manifest : Manifest) (prepared : Prepared) : IO Unit :=
-  emit <| Json.mkObj [
+def emitPrevalidation (channelNonce : String) (manifest : Manifest)
+    (prepared : Prepared) : IO Unit :=
+  emit channelNonce <| Json.mkObj [
     ("schema", toJson OUTPUT_SCHEMA),
     ("record_type", toJson "prevalidation"),
     ("mode", toJson manifest.mode),
@@ -792,10 +798,11 @@ def emitPrevalidation (manifest : Manifest) (prepared : Prepared) : IO Unit :=
     ("n_prior_commands", toJson prepared.nPriorCommands)
   ]
 
-def emitCandidateStart (manifest : Manifest) (sample : SampleSpec) : IO Unit := do
+def emitCandidateStart (channelNonce : String) (manifest : Manifest)
+    (sample : SampleSpec) : IO Unit := do
   let some certificate := manifest.baselineCertificate
     | hard "candidate-start marker has no baseline certificate"
-  emit <| Json.mkObj [
+  emit channelNonce <| Json.mkObj [
     ("schema", toJson OUTPUT_SCHEMA),
     ("record_type", toJson "candidate-start"),
     ("invocation_binding", toJson manifest.invocationBinding),
@@ -824,7 +831,7 @@ def readManifest (path : String) : IO Manifest := do
   | Except.ok manifest => pure manifest
   | Except.error message => hard s!"manifest schema decode failed: {message}"
 
-def run (manifestPath : String) : IO Unit := do
+def run (channelNonce manifestPath : String) : IO Unit := do
   let manifest <- readManifest manifestPath
   unless manifest.schema == MANIFEST_SCHEMA do
     hard s!"manifest schema {manifest.schema} != {MANIFEST_SCHEMA}"
@@ -926,7 +933,7 @@ def run (manifestPath : String) : IO Unit := do
     hard "targetName is not in canonical round-trip Lean Name form"
   if (prepared.commandState.env.find? manifest.targetName.toName).isSome then
     hard "committed target name already exists before the target command"
-  emitPrevalidation manifest prepared
+  emitPrevalidation channelNonce manifest prepared
   if let some certificate := manifest.baselineCertificate then
     unless certificate.nPriorCommands == prepared.nPriorCommands do
       hard "baseline certificate pre-target command count drifted"
@@ -935,16 +942,16 @@ def run (manifestPath : String) : IO Unit := do
       prepared.originalStx prepared manifest.targetName manifest.targetKind
     match baseline with
     | .error (reason, succeeded) =>
-        emit <| failureJson "baseline" reason manifest.targetKind none true
+        emit channelNonce <| failureJson "baseline" reason manifest.targetKind none true
           succeeded
     | .ok (baselineState, verified) =>
         match ← elaborateSuffix original manifest.logicalFileName
             prepared.originalNextParserState baselineState with
         | .error reason =>
-            emit <| failureJson "baseline" reason manifest.targetKind
+            emit channelNonce <| failureJson "baseline" reason manifest.targetKind
               none true true
         | .ok _ =>
-            emit <| verifiedJson "baseline" none verified Json.null
+            emit channelNonce <| verifiedJson "baseline" none verified Json.null
               manifest.targetKind
   else
     let some certificate := manifest.baselineCertificate
@@ -954,38 +961,38 @@ def run (manifestPath : String) : IO Unit := do
     let baselineType <- decodeBaselineType prepared.commandState.env certificate
     let reconstructed <- IO.FS.readFile sample.reconstructedFile
     validateCandidateSplice original reconstructed manifest sample
-    emitCandidateStart manifest sample
+    emitCandidateStart channelNonce manifest sample
     let (stx, nextParserState) <- parseExactTarget reconstructed
       manifest.logicalFileName prepared
       manifest.targetStartByte sample.retainedEndByte
     match forbiddenGeneratedSyntax? stx (rawPos manifest.headerEndByte) with
     | some reason =>
-        emit (failureJson "sample" reason manifest.targetKind
+        emit channelNonce (failureJson "sample" reason manifest.targetKind
           (some sample.id) false false)
     | none =>
       match ← elaborateTarget reconstructed manifest.logicalFileName stx
           prepared manifest.targetName manifest.targetKind with
-      | .error (reason, succeeded) => emit (failureJson "sample" reason
+      | .error (reason, succeeded) => emit channelNonce (failureJson "sample" reason
           manifest.targetKind (some sample.id) true succeeded)
       | .ok (candidateState, verified) =>
           match kernelTypeEqual prepared.commandState.env
               baselineType verified.typeExpr with
           | .error reason =>
-              emit (failureJson "sample" reason manifest.targetKind
+              emit channelNonce (failureJson "sample" reason manifest.targetKind
                 (some sample.id) true true)
           | .ok typesEqual =>
               if verified.nLevelParams != certificate.nLevelParams ||
                   !typesEqual then
-                emit (failureJson "sample" "target-type-drift"
+                emit channelNonce (failureJson "sample" "target-type-drift"
                   manifest.targetKind (some sample.id) true true)
               else
                 match ← elaborateSuffix reconstructed manifest.logicalFileName
                     nextParserState candidateState with
                 | .error reason =>
-                    emit (failureJson "sample" reason manifest.targetKind
+                    emit channelNonce (failureJson "sample" reason manifest.targetKind
                       (some sample.id) true true)
                 | .ok _ =>
-                    emit <| verifiedJson "sample" (some sample.id) verified
+                    emit channelNonce <| verifiedJson "sample" (some sample.id) verified
                       (toJson true) manifest.targetKind
 
 end V2BVerifyCommand
@@ -993,7 +1000,21 @@ end V2BVerifyCommand
 def main (args : List String) : IO UInt32 := do
   match args with
   | [manifestPath] =>
-      V2BVerifyCommand.run manifestPath
+      let stdin <- IO.getStdin
+      let nonceLine <- stdin.getLine
+      unless nonceLine.length == 65 && nonceLine.endsWith "\n" do
+        IO.eprintln "V2B channel nonce must be one 64-hex line"
+        return 2
+      let channelNonce := (nonceLine.dropEnd 1).toString
+      unless channelNonce.all fun c =>
+          ('0' <= c && c <= '9') || ('a' <= c && c <= 'f') do
+        IO.eprintln "V2B channel nonce must be lowercase hexadecimal"
+        return 2
+      let trailingStdin <- stdin.getLine
+      unless trailingStdin.isEmpty do
+        IO.eprintln "V2B channel stdin must contain exactly one line"
+        return 2
+      V2BVerifyCommand.run channelNonce manifestPath
       pure 0
   | _ =>
       IO.eprintln "usage: V2BVerifyCommand <manifest.json>"

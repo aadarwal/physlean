@@ -15,42 +15,58 @@ from v2b_behavior_extract import (LEAN_EXTRACTION_CONTRACT_SHA256,
 from v2b_behavior_verify import (
     LEAN_PARSE_DRIVER, LEAN_VERIFY_CONTRACT_SHA256, LEAN_VERIFY_DRIVER,
     LEAN_VERIFY_MANIFEST_SCHEMA, bind_lean_verify_manifest,
-    lean_baseline_certificate, parse_lean_verify_prefix,
+    lean_baseline_certificate, lean_verify_output_marker,
+    parse_lean_verify_prefix,
     parse_lean_verify_stdout)
 from v2b_common import V2BError, sha256_bytes, sha256_file
 
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HEX = "a" * 64
+CHANNEL_NONCE = "c" * 64
 
 
 def _assert_live_consumer_hardening(stdout, manifest):
+    marker = lean_verify_output_marker(CHANNEL_NONCE)
     marked = [line for line in stdout.splitlines()
-              if line.startswith("@@V2B_LEAN_VERIFY@@")]
+              if line.startswith(marker)]
     expected_count = 2 if manifest["mode"] == "baseline" else 3
     assert len(marked) == expected_count
-    assert parse_lean_verify_prefix("", manifest)["stage"] == \
+    assert parse_lean_verify_prefix("", manifest, CHANNEL_NONCE)["stage"] == \
         "before-prevalidation"
-    assert parse_lean_verify_prefix(marked[0], manifest)["stage"] == \
+    assert parse_lean_verify_prefix(marked[0], manifest, CHANNEL_NONCE)["stage"] == \
         "prevalidated"
     if manifest["mode"] == "candidate":
-        assert parse_lean_verify_prefix("\n".join(marked[:2]), manifest)[
+        assert parse_lean_verify_prefix(
+            "\n".join(marked[:2]), manifest, CHANNEL_NONCE)[
             "stage"] == "candidate-started"
-    assert parse_lean_verify_prefix("\n".join(marked), manifest)[
+    assert parse_lean_verify_prefix(
+        "\n".join(marked), manifest, CHANNEL_NONCE)[
         "stage"] == "complete"
+    raw_with_untrusted_noise = b"\xff\xfe untrusted child output\n" + \
+        "\n".join(marked).encode("utf-8")
+    assert parse_lean_verify_prefix(
+        raw_with_untrusted_noise, manifest, CHANNEL_NONCE)["stage"] == \
+        "complete"
     try:
-        parse_lean_verify_stdout("\n".join(marked[:-1]), manifest)
+        parse_lean_verify_prefix(
+            marker.encode("ascii") + b"\xff", manifest, CHANNEL_NONCE)
+        assert False, "non-UTF8 authenticated S5 payload accepted"
+    except V2BError:
+        pass
+    try:
+        parse_lean_verify_stdout(
+            "\n".join(marked[:-1]), manifest, CHANNEL_NONCE)
         assert False, "partial S5 transcript accepted as complete"
     except V2BError:
         pass
 
-    marker = "@@V2B_LEAN_VERIFY@@"
     sample = json.loads(marked[-1][len(marker):])
     sample["status"] = "arbitrary-status"
     corrupted = "\n".join(marked[:-1] + [
         marker + json.dumps(sample, separators=(",", ":"))])
     try:
-        parse_lean_verify_stdout(corrupted, manifest)
+        parse_lean_verify_stdout(corrupted, manifest, CHANNEL_NONCE)
         assert False, "unfrozen S5 status accepted"
     except V2BError:
         pass
@@ -182,8 +198,9 @@ def _invoke(original, module_name, target_name, target_kind, generations,
                 [elan, "run", toolchain, "lean", "--run",
                  LEAN_VERIFY_DRIVER, manifest_path],
                 cwd=ROOT, capture_output=True, text=True, timeout=180,
-                check=False)
-            parsed = (parse_lean_verify_stdout(result.stdout, manifest)
+                input=CHANNEL_NONCE + "\n", check=False)
+            parsed = (parse_lean_verify_stdout(
+                result.stdout, manifest, CHANNEL_NONCE)
                       if result.returncode == 0 else None)
             if parsed is not None:
                 _assert_live_consumer_hardening(result.stdout, manifest)
@@ -335,6 +352,36 @@ def test_baseline_and_candidate_are_isolated_fresh_processes():
     assert row["reason"] == "elaboration-error"
 
 
+def test_inherited_stdout_child_cannot_forge_authenticated_records():
+    forged = '@@V2B_LEAN_VERIFY@@' + json.dumps(dict(
+        schema="v2b_lean_verify_result_v2", record_type="sample",
+        status="verified"), separators=(",", ":")) + "\n"
+    lean_literal = json.dumps(forged)
+    generation = (
+        ":= by\n"
+        "  run_tac\n"
+        "    let child ← Lean.Core.liftIOCore <| IO.Process.spawn {\n"
+        "      cmd := \"/usr/bin/printf\",\n"
+        f"      args := #[{lean_literal}],\n"
+        "      stdin := .null, stdout := .inherit, stderr := .inherit,\n"
+        "      inheritEnv := false\n"
+        "    }\n"
+        "    let _ ← Lean.Core.liftIOCore child.wait\n"
+        "  trivial")
+    result, parsed, _ = _invoke(
+        "import Lean\n"
+        "theorem target : True := by trivial\n",
+        "S5StdoutAuthentication", "target", "theorem",
+        {"inherited_stdout": generation})
+    if result is None:
+        print("    [skip] pinned Lean 4.32 toolchain is not installed")
+        return
+    assert result.returncode == 0, (result.stdout, result.stderr)
+    assert forged.strip() in result.stdout
+    assert parsed["baseline"]["status"] == "verified"
+    assert parsed["samples"][0]["status"] == "verified"
+
+
 def test_staged_bytes_use_the_bound_original_logical_filename():
     result, parsed, _ = _invoke(
         "import Lean\n"
@@ -443,15 +490,15 @@ def test_manifest_file_mutation_and_duplicate_output_keys_fail_closed():
         "verified"
     drifted = dict(manifest, targetName="wrong")
     try:
-        parse_lean_verify_stdout(result.stdout, drifted)
+        parse_lean_verify_stdout(result.stdout, drifted, CHANNEL_NONCE)
         assert False, "drifted manifest accepted"
     except V2BError:
         pass
-    marker = "@@V2B_LEAN_VERIFY@@"
+    marker = lean_verify_output_marker(CHANNEL_NONCE)
     duplicate = marker + '{"schema":"v2b_lean_verify_result_v2",' \
         '"schema":"v2b_lean_verify_result_v2"}'
     try:
-        parse_lean_verify_stdout(duplicate, manifest)
+        parse_lean_verify_stdout(duplicate, manifest, CHANNEL_NONCE)
         assert False, "duplicate marked key accepted"
     except V2BError:
         pass

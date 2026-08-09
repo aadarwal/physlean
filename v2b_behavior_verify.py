@@ -24,7 +24,8 @@ from v2b_lean_boundaries import BOUNDARIES_SCHEMA
 
 LEAN_VERIFY_MANIFEST_SCHEMA = "v2b_lean_verify_manifest_v2"
 LEAN_VERIFY_OUTPUT_SCHEMA = "v2b_lean_verify_result_v2"
-LEAN_VERIFY_OUTPUT_MARKER = "@@V2B_LEAN_VERIFY@@"
+LEAN_VERIFY_OUTPUT_MARKER_PREFIX = "@@V2B_LEAN_VERIFY:"
+LEAN_VERIFY_OUTPUT_MARKER_SUFFIX = "@@"
 LEAN_VERIFY_DRIVER = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     "lean_drivers", "V2BVerifyCommand.lean")
@@ -67,7 +68,12 @@ LEAN_VERIFY_CONTRACT = dict(
     schema="v2b_lean_semantic_verification_contract_v2",
     manifest_schema=LEAN_VERIFY_MANIFEST_SCHEMA,
     output_schema=LEAN_VERIFY_OUTPUT_SCHEMA,
-    output_marker=LEAN_VERIFY_OUTPUT_MARKER,
+    output_channel=("fresh 256-bit lowercase-hex nonce sent as the sole stdin "
+                    "line and consumed before imports/target elaboration; "
+                    "records use @@V2B_LEAN_VERIFY:<nonce>@@; the nonce is "
+                    "absent from argv, environment, manifest, and files; "
+                    "only exact nonce-qualified lines are evidence, while "
+                    "malformed lines carrying that nonce hard-fail"),
     artifact_schema="v2b_behavior_verified_complete_v1",
     input=("baseline mode receives one trusted original module and no sample; "
            "candidate mode receives the same trusted original only for exact "
@@ -182,6 +188,13 @@ _SAMPLE_FAILURE_KEYS = _BASELINE_FAILURE_KEYS | {"sample_id"}
 def _hex(value):
     return isinstance(value, str) and len(value) == 64 \
         and all(char in "0123456789abcdef" for char in value)
+
+
+def lean_verify_output_marker(channel_nonce):
+    if not _hex(channel_nonce):
+        raise V2BError("Lean S5 channel nonce must be lowercase 256-bit hex")
+    return (LEAN_VERIFY_OUTPUT_MARKER_PREFIX + channel_nonce
+            + LEAN_VERIFY_OUTPUT_MARKER_SUFFIX)
 
 
 def _nonnegative(value, label):
@@ -594,14 +607,24 @@ def _validate_result_record(row, record_type, target_kind, target_name,
                     "Lean S5 elaboration-success truth table drift")
 
 
-def _marked_records(stdout):
-    if not isinstance(stdout, str):
-        raise V2BError("Lean S5 stdout must be text")
+def _marked_records(stdout, channel_nonce):
+    marker = lean_verify_output_marker(channel_nonce)
+    if isinstance(stdout, bytes):
+        marker = marker.encode("ascii")
+    elif not isinstance(stdout, str):
+        raise V2BError("Lean S5 stdout must be text or raw bytes")
     records = []
     for line in stdout.splitlines():
-        if line.startswith(LEAN_VERIFY_OUTPUT_MARKER):
-            value = _json_no_duplicates(
-                line[len(LEAN_VERIFY_OUTPUT_MARKER):])
+        if line.startswith(marker):
+            payload = line[len(marker):]
+            if isinstance(payload, bytes):
+                try:
+                    payload = payload.decode("utf-8", errors="strict")
+                except UnicodeError as err:
+                    raise V2BError(
+                        "authenticated Lean S5 record is not strict UTF-8") \
+                        from err
+            value = _json_no_duplicates(payload)
             if not isinstance(value, dict):
                 raise V2BError("marked Lean S5 record is not an object")
             records.append(value)
@@ -698,10 +721,10 @@ def lean_baseline_certificate(parsed, manifest, baseline_evidence_sha256):
     )
 
 
-def parse_lean_verify_prefix(stdout, manifest):
+def parse_lean_verify_prefix(stdout, manifest, channel_nonce):
     """Validate a flushed marker prefix from a possibly timed-out process."""
     expected_ids = _validate_manifest(manifest)
-    records = _marked_records(stdout)
+    records = _marked_records(stdout, channel_nonce)
     expected_count = 2 if manifest["mode"] == "baseline" else 3
     if len(records) > expected_count:
         raise V2BError("Lean S5 marked record count exceeds manifest")
@@ -736,9 +759,9 @@ def parse_lean_verify_prefix(stdout, manifest):
                 samples=[sample])
 
 
-def parse_lean_verify_stdout(stdout, manifest):
+def parse_lean_verify_stdout(stdout, manifest, channel_nonce):
     """Validate one complete manifest-bound marker transcript."""
-    parsed = parse_lean_verify_prefix(stdout, manifest)
+    parsed = parse_lean_verify_prefix(stdout, manifest, channel_nonce)
     if parsed["stage"] != "complete":
         raise V2BError("Lean S5 marked record count does not match manifest")
     return {key: parsed[key] for key in
@@ -749,7 +772,8 @@ __all__ = [
     "BOUNDARIES_SCHEMA", "LEAN_DRIVER_MANIFEST_SCHEMA",
     "LEAN_VERIFY_CONTRACT", "LEAN_VERIFY_CONTRACT_SHA256",
     "LEAN_VERIFY_DRIVER", "LEAN_VERIFY_FAILURE_REASONS",
-    "LEAN_VERIFY_MANIFEST_SCHEMA", "LEAN_VERIFY_OUTPUT_MARKER",
+    "LEAN_VERIFY_MANIFEST_SCHEMA", "LEAN_VERIFY_OUTPUT_MARKER_PREFIX",
+    "LEAN_VERIFY_OUTPUT_MARKER_SUFFIX", "lean_verify_output_marker",
     "LEAN_VERIFY_OUTPUT_SCHEMA", "bind_lean_verify_manifest",
     "lean_baseline_certificate", "lean_verify_invocation_binding",
     "lean_verify_semantic_context_binding", "parse_lean_verify_prefix",

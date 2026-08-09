@@ -1654,7 +1654,14 @@ arxiv_manifest) must be committed before measurement.
   process evidence, and a separate 300-second fresh-process limit per invocation.
   Baseline mode carries
   zero candidates and each candidate mode carries exactly one; multi-sample
-  processes are forbidden. Marker records are flushed; candidate mode emits a
+  processes are forbidden. Generated `run_tac` code can bypass Lean stream
+  isolation by spawning an inherited-stdout child, so fixed marker text is not
+  authentication. Every process instead receives a fresh random 256-bit
+  lowercase-hex nonce as its sole consumed stdin line (immediate EOF required,
+  absent from argv/environment/manifest/files); only flushed
+  `@@V2B_LEAN_VERIFY:<nonce>@@` records count as evidence. Other raw bytes or
+  marker-looking lines are untrusted noise, while malformed payload under the
+  exact nonce fails closed. Candidate mode emits a
   bound `candidate-start` marker after trusted certificate/splice validation and
   before parsing/elaborating generated syntax. Baseline termination or candidate
   termination before that marker is HARNESS-INVALID; candidate termination after
