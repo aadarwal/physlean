@@ -345,7 +345,7 @@ V2-a/b — these amend the sections cited):
   equal-budget (as specified) AND same-dependency-set (equal B changes
   WHICH dependencies fit; holding the dependency set fixed and varying
   only interface-vs-implementation text is the cleaner mechanism probe).
-- (§5) Lean verification REJECTS sorry/admit, new axioms, and unsafe
+- (§5) Lean verification REJECTS sorry/admit, new axioms, and unsafe/partial
   escape hatches (native_decide, implemented_by, etc.); a "pass" is a
   kernel-checked proof/def with no new trusted surface.
 - (§5) mutation probes retain ONLY verifier/test-killed mutants
@@ -639,7 +639,7 @@ classes: Lean verification = re-elaboration of the UNMODIFIED repo
 file with the generated body in the target's exact environment;
 forbidden escapes are the UNIFIED §12 list as frozen in §14.23
 (sorry/sorryAx/admit, new axioms, native_decide, implemented_by,
-unsafe — no new trusted surface); a fixed 300s elaboration timeout
+unsafe/partial — no new trusted surface); a fixed 300s elaboration timeout
 counts as FAILURE (never exclusion — timeouts correlate with
 difficulty and exclusion would be arm-correlated missingness). Class
 structure, baseline-pass, and coverage requirements are frozen in
@@ -795,7 +795,7 @@ lean-theorem-proof (kernel-checked proof), lean-def-typecheck
 (well-typed body; semantically weaker, stated as such),
 python-semantic-covered, compile-only (any language). Lean passes use
 the UNIFIED §12 forbidden-escape list: sorry/sorryAx/admit, new
-axioms, native_decide, implemented_by, unsafe — a pass adds NO new
+axioms, native_decide, implemented_by, unsafe/partial — a pass adds NO new
 trusted surface. BASELINE-PASS is required: the reference body must
 pass the same harness verifier or the item is excluded as
 HARNESS-INVALID (excluded counts reported per corpus). The
@@ -1930,10 +1930,13 @@ ordinary extraction failure. No text is normalized.
 15.A20 LEAN BEHAVIORAL BODY EXTRACTION (pinned-toolchain parser rule frozen
 PRE-GENERATION; no generated token, extracted body, or verifier outcome
 exists). Lean S4 is prepared from the FULL ORIGINAL MODULE, not from G or the
-assembly shell as a standalone snippet. One exact-keyed batch manifest
-supplies the original file, Lake ModuleSetup file, module and V2-a target
-identity/kind, committed target [start,end), body/header boundary H, original
-body delimiter in {`:=`,`where`,`|`}, bound command-line option overrides, and
+assembly shell as a standalone snippet. Before generation, the producer joins
+the committed extraction identity to exactly one `resolved` row in the complete
+parser-backed `v2b_lean_body_boundaries_v1` artifact. The legacy V2-a lexical
+split (including null) is diagnostic only. One exact-keyed batch manifest
+supplies the original file, Lake ModuleSetup file, module and committed target
+identity/kind, committed target [start,end), the row's effective body/header
+boundary H and delimiter in {`:=`,`where`,`|`}, bound command-line option overrides, and
 one spliced-file path plus generated end E for every sample. It also contains
 an invocation binding: SHA256 of a canonical projection of every exact
 manifest field (except the binding itself) plus the exact SHA256 of the
@@ -1952,10 +1955,15 @@ the exact pinned frontend (Lean 4.33.0-rc2 for mathlib4/Batteries and Lean
 ModuleSetup merge, setup/file options win collisions, and the combined options
 are reparsed after imports register plugin options. The driver then forces
 `Elab.async=false` before every command even if setup, CLI, or source text
-attempted to set it true. Any trusted command (including scoped
-`set_option ... in`) that nevertheless leaves a snapshot/asynchronous task is
-rejected prospectively for that target; the driver never continues from a
-partially asynchronous prefix. It then repeatedly parses and ELABORATES only
+attempted to set it true. If a trusted command (including a scoped
+`set_option ... in` or imported command elaborator) nevertheless leaves
+snapshot/asynchronous tasks, the driver synchronously forces every complete
+snapshot-task tree, rejects any asynchronous error diagnostic, clears the
+settled task list, and only then continues; it never continues from a running
+or failed asynchronous prefix. This rule was prospectively amended after the
+first outcome-free corpus audit attempt showed such tasks in
+`Mathlib.Algebra.Algebra.Defs` and `Batteries.Data.Array.Match`. It then
+repeatedly parses and ELABORATES only
 commands strictly before the target, with trusted
 stdout/stderr isolated. This reconstructs file-local parser extensions,
 namespaces, open declarations, scopes, options, and notation without allowing
@@ -1978,12 +1986,12 @@ failure, never a model zero. It retains the
 outer syntax kind plus an exact pre-H syntax projection containing node kind,
 child index, token spelling/resolved identifier, and raw token range. No
 original token may cross H. Outer kind supports imported custom commands such
-as `lemma`; the manifest separately binds the exact V2-a identity and source
-kind.
+as `lemma`; the manifest separately binds the exact committed extraction
+identity and source kind.
 
   EXACT SPLICE AND LAZY BOUNDARY. For each sample, bytes [0,H) in the spliced
 module must equal original [0,H), and spliced [E,EOF) must equal original
-[target_end,EOF). Thus only the continuation beginning at the frozen V2-a body
+[target_end,EOF). Thus only the continuation beginning at the parser-backed effective body
 boundary has been replaced at the byte level. G is NOT required to repeat the
 same body introducer: leading parser-recognized trivia and an alternate
 verifier-valid Lean body form are legitimate model completions. After trivia,
@@ -2030,7 +2038,8 @@ table, and fails on any unfrozen field. The contract binds both schemas,
 marker, driver source, Lake preparation, splice, boundary, projection, safety,
 and failure surface. Adversarial 4.32 tests cover UTF-8 offsets, attributes/doc
 comments, no-whitespace `Foo:=` header continuation, syntax introduced earlier
-in the file, a prior marker-printing `run_cmd`, source attempts to enable async,
+in the file, a prior marker-printing `run_cmd`, successful settlement of scoped
+async trusted commands and rejection of their asynchronous errors,
 malformed/incomplete/empty bodies, trailing commands/trivia, reconstructed-
 suffix parity, and a valid `run_tac` body that deliberately errors if
 elaborated; the latter succeeds, directly testing the parse-only boundary.
@@ -2038,7 +2047,8 @@ elaborated; the latter succeeds, directly testing the parse-only boundary.
   EXECUTION BOUNDARY. The driver and pure transcript consumer write no S4
 artifact and prove no behavioral result. The future file-based producer must
 construct and exact-key-check the batch manifest; bind the behavior plan,
-V2-a identity/kind/name/ranges, original source SHA, assembly prefix,
+committed extraction identity/kind/name/ranges, exact boundary artifact SHA and
+span id, original source SHA, assembly prefix,
 generation samples, model/tokenizer, pinned Lean/lake/toolchain and repository
 identities, driver source tree, and contract hash; extract/hash the exact
 retained-continuation bytes; and publish under `v2b_behavior_extracted_v1`. It
@@ -2116,3 +2126,96 @@ resolve when its same-form sentinel is complete, while an inductive-style
 boundary that cannot pass that probe remains unsplit; both retain their
 already-frozen target-eligibility kind. The prospective artifact must report
 these status/kind transition counts before any sample is drawn.
+
+15.A21 LEAN S5 SEMANTIC VERIFICATION (kernel rule frozen PRE-GENERATION;
+implementation exists, production artifact writer and corpus integration are
+still required). S5 receives only reconstructions already accepted by S4. Its
+exact-keyed manifest binds the original source and ModuleSetup bytes, module,
+exact fully-qualified target name and eligible source kind, committed source
+range, parser-backed effective H/delimiter, boundary-artifact SHA and span id,
+S4/S5 contract and driver hashes, and zero (baseline mode) or exactly one
+retained reconstruction/body/S4 evidence hash. Baseline mode and each
+candidate mode run in SEPARATE fresh OS processes, each with its own 300-second
+budget; multi-sample manifests are rejected. A shared semantic-context binding
+covers the exact original/logical filename, ModuleSetup/module, target and
+parser-backed span, ordered options, S4/S5 contracts/drivers, and transitive
+runtime/toolchain/setup-closure evidence. A canonical invocation/content SHA
+covers every manifest field
+and referenced file. The consumer duplicate-key-rejects marker records and
+enforces exact schemas, manifest order, finite reasons, and reason-specific
+elaboration flags. As with S4, production must stage immutable inputs, rehash
+before and after the child, bind the exact runtime/toolchain/setup closure and
+stdout/stderr/argv/environment, and impose one 300-second whole-process limit.
+Every marked record is explicitly flushed. Candidate mode emits a bound
+`candidate-start` marker only after certificate/splice trusted validation and
+immediately before candidate parsing/elaboration. A strict prefix consumer
+validates the completed stage if the wrapper terminates a timed-out process:
+baseline timeout/failure or candidate termination before `candidate-start` is
+`HARNESS-INVALID`; candidate termination after it is an ordinary zero. A
+malformed marker remains a hard evidence failure rather than being guessed.
+
+  EXACT FRONTEND AND BASELINE. The driver loads the same exact Lake
+`ModuleSetup` and reconstructs the synchronous parser/command state immediately
+before the target by elaborating only the trusted original prefix. It forces
+`Elab.async=false`, `debug.skipKernelTC=false`, and
+`debug.proofAsSorry=false` before every command. Residual tasks from trusted
+prefix, target, and suffix commands are synchronously forced, checked for
+asynchronous error diagnostics, and cleared before continuation; a generated
+target's drained asynchronous error maps to ordinary `elaboration-error`.
+Reconstructed bytes are read from scratch paths but always parsed and
+elaborated with the ORIGINAL repository source path as the logical filename;
+private/file-scoped names and file-relative terms such as `include_str` therefore cannot observe
+the staging location. The committed name must round-trip canonically, be absent
+from the pre-target environment, and appear exactly after the target. The fresh
+BASELINE process elaborates and verifies the original target and exact original
+suffix through terminal EOF, then exits. Any baseline failure is arm-independent
+`HARNESS-INVALID`, never a model zero. A fresh CANDIDATE process reconstructs the
+same pre-target state but NEVER elaborates the original target or original
+suffix before the candidate; this prevents process-global initializer/plugin/
+`IO.Ref` state from leaking from baseline into candidate.
+
+  TARGET IDENTITY AND TYPE. A theorem/lemma must create the exact committed
+name as `thmInfo`; a def must create it as `defnInfo`. Proof/value terms and the
+set of ordinary compiler auxiliaries need not match the original. Both target
+types must mention only constants already present in the immutable pre-target
+environment. The baseline emits a locally owned exact tagged-array
+Expr/Level/Name certificate, bound to its invocation, complete execution
+evidence, shared semantic context, runtime, pre-target command count, target
+identity/kind, and a hash of the canonical type expression. The candidate
+strictly decodes and re-encodes it; free/meta/loose-bound variables, universe
+metavariables, noncanonical ordinal universe names, and constants or projection
+type names outside the immutable pre-target environment fail. `Kernel.check`
+must establish that the decoded expression is itself a type. Universe
+parameters are instantiated by ordinal with shared fresh levels; their arity
+must match; and only `Kernel.isDefEq = .ok true` in that pre-target
+environment—not pretty-print or syntactic equality—accepts the baseline and
+candidate types (`.error` is a distinct frozen verifier failure). This
+preserves alternate bodies and definitionally equal
+inferred types while forbidding signature drift. Baselines whose target type
+intrinsically requires a same-command new constant are prospectively
+`class_verifier_feasible=false`, rather than post-generation exclusions.
+
+  INDEPENDENT KERNEL/TRUST GATE. Before elaboration, exact canonical generated
+tokens `sorry`, `admit`, `sorryAx`, `native_decide`, `implemented_by`, and
+`unsafe` are rejected; identical words in comments or strings are not tokens.
+This is an early diagnostic, not the proof. After elaboration, S5 diffs every
+new constant from the immutable pre-environment, rejects any new axiom,
+unsafe/partial declaration, `implemented_by` extension drift, transitive
+dependency on an axiom not already present before the target, and absolute use
+of `sorryAx`, `Lean.ofReduceBool`, or `Lean.ofReduceNat`. Existing imported or
+corpus-declared axioms are allowed: the estimand forbids NEW trusted surface,
+not all pre-existing trusted surface. Finally `Environment.replay` inserts the
+complete new-constant map into the immutable pre-environment and independently
+kernel-checks it. Thus option hardening or elaborator acceptance alone cannot
+certify a pass.
+
+  FULL-FILE CONSEQUENCE. Exact target identity/type is necessary but not
+sufficient for §14.15's “unmodified repository file with the body replaced.”
+After the target gates, the driver continues parsing and elaborating the exact
+original post-target suffix from the candidate state through EOF, again
+synchronously. For example, replacing `def target : Nat := 0` by `:= 1` must
+fail if a later trusted theorem proves `target = 0`, despite preserving the
+target name and type. Candidate target or suffix parse/elaboration/kernel/trust
+failure is an ordinary zero with a frozen reason; trusted manifest/setup/range/
+splice drift aborts the artifact. Separate fresh OS processes provide the
+production isolation boundary for generated code.

@@ -95,14 +95,25 @@ LEAN_EXTRACTION_CONTRACT = dict(
     driver_output_marker=LEAN_DRIVER_OUTPUT_MARKER,
     driver_source="lean_drivers/V2BParseCommand.lean",
     position_units="raw UTF-8 byte offsets",
+    boundary_provenance=("the producer must join the exact extraction identity "
+                         "to one resolved row of the complete parser-backed "
+                         "v2b_lean_body_boundaries_v1 artifact before "
+                         "generation; H, delimiter, body bytes, source span, "
+                         "and span_id come from that effective split, while "
+                         "the legacy V2-a lexical split is diagnostic only; "
+                         "the artifact SHA and span_id are bound again by the "
+                         "combined S4/S5 evidence producer"),
     preparation=("load an exact Lake ModuleSetup (package, imports, import "
                  "artifacts, plugins, dynamic libraries, and options), "
                  "reparse imported/CLI option overrides, then parse and "
                  "elaborate only commands strictly before the exact frozen "
                  "target range with Elab.async forced false after every "
-                 "command, rejecting any residual snapshot/asynchronous "
-                 "tasks, and all trusted command streams isolated"),
-    trusted_boundary=("the frozen original delimiter must be an exact token "
+                 "command; synchronously force complete residual snapshot-"
+                 "task trees from trusted commands, reject asynchronous "
+                 "error diagnostics, clear settled tasks before continuing, "
+                 "and isolate all trusted command streams"),
+    trusted_boundary=("the parser-backed effective original delimiter must "
+                      "be an exact token "
                       "and replacing everything from its boundary with a "
                       "same-form minimal sentinel must parse one complete "
                       "declaration with the same start/kind/pre-boundary "
@@ -118,7 +129,7 @@ LEAN_EXTRACTION_CONTRACT = dict(
                   "after the generated region must equal the corresponding "
                   "original prefix and post-target suffix"),
     boundary=("the trusted original boundary must begin an exact canonical "
-              "token whose spelling is its frozen V2-a delimiter; generated "
+              "token whose spelling is its parser-backed effective delimiter; generated "
               "continuations may begin with parser-recognized trivia, after "
               "which their first unique canonical token must be an exact "
               "member of {:=, where, |}; this permits another verifier-valid "

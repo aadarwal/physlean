@@ -194,6 +194,16 @@ def parserContext (state : Elab.Command.State) : Parser.ParserModuleContext :=
     currNamespace := scope.currNamespace
     openDecls := scope.openDecls }
 
+def settleTrustedSnapshotTasks (state : Elab.Command.State) : IO Elab.Command.State := do
+  for task in state.snapshotTasks do
+    let tree := task.get
+    for snapshot in tree.getAll do
+      if snapshot.diagnostics.msgLog.hasErrors then
+        hard "a trusted command before the target has an asynchronous error"
+  unless (state.env.toKernelEnv.find? ``True).isSome do
+    hard "settled checked environment lost the Init.True declaration"
+  pure { state with snapshotTasks := #[] }
+
 def elaboratePriorCommand (inputCtx : Parser.InputContext)
     (cmdPos : String.Pos.Raw) (stx : Syntax)
     (state : Elab.Command.State) : IO Elab.Command.State := do
@@ -215,9 +225,8 @@ def elaboratePriorCommand (inputCtx : Parser.InputContext)
   | Except.ok (_, nextState) =>
       if nextState.messages.hasErrors then
         hard "a trusted command before the target does not elaborate"
-      else if !nextState.snapshotTasks.isEmpty then
-        hard "a trusted command before the target spawned asynchronous tasks"
       else
+        let nextState <- settleTrustedSnapshotTasks nextState
         pure <| disableAsync { nextState with messages := {} }
 
 def lineIndentBefore (source : String) (byteIdx : Nat) : String :=

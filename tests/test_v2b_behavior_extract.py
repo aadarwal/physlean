@@ -595,7 +595,7 @@ def test_real_lean_driver_rejects_type_internal_delimiter_boundary():
         assert parsed["samples"][0]["status"] == "extracted"
 
 
-def test_real_lean_driver_rejects_scoped_async_prefix_tasks():
+def test_real_lean_driver_settles_scoped_async_prefix_tasks():
     elan = shutil.which("elan")
     if elan is None:
         print("    [skip] elan is not installed")
@@ -639,10 +639,11 @@ def test_real_lean_driver_rejects_scoped_async_prefix_tasks():
         json.dump(manifest, open(manifest_path, "w", encoding="utf-8"))
         result = subprocess.run(
             [elan, "run", "leanprover/lean4:v4.32.0", "lean", "--run",
-             LEAN_DRIVER, manifest_path], cwd=ROOT, capture_output=True,
+            LEAN_DRIVER, manifest_path], cwd=ROOT, capture_output=True,
             text=True, timeout=180, check=False)
-    assert result.returncode != 0
-    assert "spawned asynchronous tasks" in result.stderr
+        assert result.returncode == 0, (result.stdout, result.stderr)
+        parsed = parse_lean_driver_stdout(result.stdout, manifest)
+        assert parsed["samples"][0]["status"] == "extracted"
 
 
 def test_real_lean_driver_rejects_type_preserving_header_continuation():

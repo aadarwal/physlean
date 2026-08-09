@@ -1557,13 +1557,19 @@ arxiv_manifest) must be committed before measurement.
   and bound option overrides. Matching the pinned frontend, raw CLI options
   precede the ModuleSetup merge and setup/file options win collisions before
   post-import reparse. It loads package/import/plugin/dynamic-library context,
-  forces async off before every command, rejects any trusted command that
-  still leaves snapshot/asynchronous tasks (including scoped option commands),
+  forces async off before every command, and synchronously forces every
+  residual snapshot-task tree from trusted commands (including scoped option
+  commands), rejecting asynchronous error diagnostics and clearing settled
+  tasks before continuation. This outcome-free amendment follows the first
+  corpus integration attempt, where mathlib and Batteries produced legitimate
+  residual tasks before any boundary/model artifact existed. It
   isolates trusted command streams, and parses/elaborates only commands
   strictly before the frozen
   target, and parses the original target once without elaboration to bind its
-  canonical range, outer kind, and exact pre-body syntax projection. The
-  original V2-a body boundary must start one exact canonical delimiter token,
+  canonical range, outer kind, and exact pre-body syntax projection. Before
+  generation, the committed extraction identity must join exactly one resolved
+  row in the complete parser-backed Lean boundary artifact; the old V2-a
+  lexical split is diagnostic only. That effective body boundary must start one exact canonical delimiter token,
   rejecting mere byte-prefix matches, and a same-form minimal sentinel reparse
   must prove that token is the declaration-value slot rather than a delimiter
   nested in the statement/type. Every sample must be an exact
@@ -1589,10 +1595,61 @@ arxiv_manifest) must be committed before measurement.
   manifest field plus the original, ModuleSetup, and spliced-file hashes; the
   driver echoes it and the consumer rehashes it. The future S4 producer still
   must hash-bind
-  plans, V2-a rows, setup/source/sample files, invocations, runtimes, driver
+  plans, committed extraction rows, exact boundary artifact/span ids,
+  setup/source/sample files, invocations, runtimes, driver
   tree, and contract; enforce process/time/resource isolation; and pass both
-  frozen Lean toolchains. S5 must verify the elaborated declaration name and
-  original statement/type. Full detail: DESIGN_V2 §15.A20.
+  frozen Lean toolchains. Full detail: DESIGN_V2 §15.A20.
+
+- ADOPTED/CLARIFIED (2026-08-08, Lean semantic S5 rule;
+  PRE-GENERATION/PRE-OUTCOME — no completion or verifier outcome exists): S5
+  uses separate fresh OS processes for the original baseline and for each
+  S4-retained reconstruction. Both reconstruct the identical exact pre-target
+  Lake/Lean state using the original repository source path as logical filename,
+  but candidate mode never elaborates the original target or suffix before the
+  candidate, preventing process-global initializer/plugin/IO.Ref leakage. It requires the
+  exact canonical fully-qualified name, theorem/lemma versus def constant kind,
+  equal universe-parameter arity, and `Kernel.isDefEq` of baseline/candidate
+  target types in the immutable pre-target environment after ordinal universe
+  normalization; compared types may mention only pre-target constants, including
+  projection type names. The baseline emits a strict locally owned tagged
+  Expr/Level/Name certificate bound to its invocation, complete execution
+  evidence, semantic context, runtime, pre-target command count, target
+  identity/kind, and type-expression hash. Candidate mode strictly decodes and
+  re-encodes it, rejects free/meta/loose-bound variables and noncanonical
+  universes, independently `Kernel.check`s that it is a type, and accepts type
+  equality only on `Kernel.isDefEq = .ok true`; a kernel comparison error is a
+  distinct frozen failure. It does
+  not require equal proof/value terms or an identical ordinary auxiliary set.
+  Every new constant is diffed and replayed with `Environment.replay`; new
+  axioms, unsafe/partial declarations, implemented-by drift, new axiom
+  dependencies, and absolute use of `sorryAx`, `Lean.ofReduceBool`, or
+  `Lean.ofReduceNat` fail. Pre-existing imported/corpus axioms remain allowed.
+  Exact canonical generated `sorry`/`admit`/`sorryAx`/`native_decide`/
+  `implemented_by`/`unsafe` tokens are rejected before elaboration, without
+  matching comments or strings, but post-elaboration replay/trust checks are
+  the certificate. Async, kernel-skip, and proof-as-sorry options are forced
+  false before every command. Residual snapshot tasks from trusted original
+  prefix/suffix commands are synchronously forced,
+  checked for asynchronous error diagnostics, and cleared; a generated target's
+  drained asynchronous error is ordinary `elaboration-error`. After target
+  verification, the exact immutable
+  original suffix must parse and elaborate through EOF; preserving the target
+  type while breaking a downstream declaration is therefore an ordinary zero.
+  Original baseline or suffix failure is arm-independent HARNESS-INVALID;
+  candidate failure is a frozen ordinary zero; trusted provenance drift aborts.
+  The exact manifest binds S4/S5 code/contracts, parser-backed boundary artifact
+  and span, source/setup/reconstruction bytes, and invocation; the future
+  producer must additionally provide pre/post hashes, exact runtime closure,
+  process evidence, and a separate 300-second fresh-process limit per invocation.
+  Baseline mode carries
+  zero candidates and each candidate mode carries exactly one; multi-sample
+  processes are forbidden. Marker records are flushed; candidate mode emits a
+  bound `candidate-start` marker after trusted certificate/splice validation and
+  before parsing/elaborating generated syntax. Baseline termination or candidate
+  termination before that marker is HARNESS-INVALID; candidate termination after
+  it is an ordinary zero, and timeout evidence is accepted only through the
+  strict manifest-bound prefix parser. Full detail:
+  DESIGN_V2 §15.A21.
 
 ## 14. Known limitations (standing list)
 

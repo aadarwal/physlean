@@ -14,6 +14,7 @@ from v2b_common import V2BError
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DRIVER = os.path.join(ROOT, "lean_drivers", "V2BLeanBoundaryAudit.lean")
 TOOLCHAIN = "leanprover/lean4:v4.32.0"
+TOOLCHAIN_433 = "leanprover/lean4:v4.33.0-rc2"
 MANIFEST_SCHEMA = "v2b_lean_boundary_driver_manifest_v1"
 OUTPUT_SCHEMA = "v2b_lean_boundary_driver_output_v1"
 MARKER = "@@V2B_LEAN_BOUNDARY@@"
@@ -31,13 +32,13 @@ SPAN_KEYS = {
 }
 
 
-def _lean_runner():
+def _lean_runner(toolchain=TOOLCHAIN):
     elan = shutil.which("elan")
     if elan is None:
         return None
     listed = subprocess.run([elan, "toolchain", "list"],
                             capture_output=True, text=True, check=False)
-    return elan if TOOLCHAIN in listed.stdout else None
+    return elan if toolchain in listed.stdout else None
 
 
 def _loads_exact(payload):
@@ -66,7 +67,7 @@ def _command_span(source, start_marker, next_marker=None):
     return start, end
 
 
-def _invoke(elan, source, spans, module="V2BBoundary"):
+def _invoke(elan, source, spans, module="V2BBoundary", toolchain=TOOLCHAIN):
     with tempfile.TemporaryDirectory() as td:
         source_path = os.path.join(td, "Original.lean")
         with open(source_path, "wb") as handle:
@@ -83,7 +84,7 @@ def _invoke(elan, source, spans, module="V2BBoundary"):
         with open(manifest_path, "w", encoding="utf-8") as handle:
             json.dump(manifest, handle)
         return subprocess.run(
-            [elan, "run", TOOLCHAIN, "lean", "--run", DRIVER,
+            [elan, "run", toolchain, "lean", "--run", DRIVER,
              manifest_path], cwd=ROOT, capture_output=True, text=True,
             timeout=180, check=False)
 
@@ -166,11 +167,7 @@ def test_real_driver_selects_earliest_sentinel_valid_body_slot():
     assert all(row["sentinels_elaborated"] is False for row in span_rows)
 
 
-def test_real_driver_rejects_scoped_async_trusted_state():
-    elan = _lean_runner()
-    if elan is None:
-        print("    [skip] pinned Lean 4.32 toolchain is not installed")
-        return
+def test_real_driver_settles_scoped_async_trusted_state():
     source = (
         "import Lean\n"
         "set_option Elab.async true in\n"
@@ -178,11 +175,39 @@ def test_real_driver_rejects_scoped_async_trusted_state():
         "theorem target : True := by trivial\n"
     ).encode("utf-8")
     target = _command_span(source, b"theorem target")
+    for toolchain in (TOOLCHAIN, TOOLCHAIN_433):
+        elan = _lean_runner(toolchain)
+        if elan is None:
+            print(f"    [skip] pinned {toolchain} is not installed")
+            continue
+        result = _invoke(elan, source, [dict(
+            id="target", startByte=target[0], endByte=target[1])],
+            module="V2BBoundaryAsync", toolchain=toolchain)
+        assert result.returncode == 0, (
+            toolchain, result.stdout, result.stderr)
+        records = _records(result.stdout)
+        assert len(records) == 2
+        assert records[1]["span_id"] == "target"
+        assert records[1]["status"] == "resolved"
+
+
+def test_real_driver_rejects_settled_async_errors():
+    elan = _lean_runner()
+    if elan is None:
+        print("    [skip] pinned Lean 4.32 toolchain is not installed")
+        return
+    source = (
+        "import Lean\n"
+        "set_option Elab.async true in\n"
+        "theorem prior : False := by trivial\n"
+        "theorem target : True := by trivial\n"
+    ).encode("utf-8")
+    target = _command_span(source, b"theorem target")
     result = _invoke(elan, source, [dict(
         id="target", startByte=target[0], endByte=target[1])],
-        module="V2BBoundaryAsync")
+        module="V2BBoundaryAsyncError")
     assert result.returncode != 0
-    assert "spawned asynchronous tasks" in result.stderr
+    assert "asynchronous error" in result.stderr
     assert _records(result.stdout) == []
 
 
