@@ -18,8 +18,8 @@ from collections import Counter
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from finalize_v2b_a6 import EXPECTED
-from prepare_v2b_assembly import (B_STAR, K7_ORDER_RULE, build_assembly,
-                                  materialize)
+from prepare_v2b_assembly import (B_STAR, K7_ORDER_RULE, _corpus_root,
+                                  build_assembly, materialize)
 from v2b_assemble import normalize_payload
 from v2b_common import (ASSEMBLY_SCHEMA, BOUND_SAMPLE_SCHEMA,
                         A6_OUTCOME_SCHEMA, CANDIDATES_SCHEMA, K7_ORDER_SCHEMA,
@@ -30,12 +30,74 @@ from v2b_lean_boundaries import (BOUNDARIES_SCHEMA,
                                  BOUNDARY_MANIFEST_SCHEMA,
                                  BOUNDARY_MARKER,
                                  BOUNDARY_RESULT_SCHEMA, span_id_of)
-from v2b_neardup import (lean_keyword_provenance_hash, lex_unit,
+from v2b_neardup import (LEAN_EXTRACT_SCHEMA, PYTHON_EXTRACT_SCHEMA,
+                         lean_keyword_provenance_hash, lex_unit,
                          lexical_records, load_lean_keyword_freeze,
                          verbatim_hash)
 
 BM25_K1, BM25_B = 1.2, 0.75
 K6_TIE_LABEL = "k6tie:v2b:20260808"
+
+
+def test_corpus_root_joins_production_lean_null_rel_to_k7():
+    with tempfile.TemporaryDirectory() as td:
+        root = os.path.join(td, "corpus")
+        top = os.path.join(root, "Batteries.lean")
+        nested = os.path.join(root, "Batteries", "Classes", "Cast.lean")
+        script = os.path.join(root, "scripts", "runLinter.lean")
+        _write(top, "import Batteries.Classes.Cast\n")
+        _write(nested, "class Cast (α β : Type) where\n")
+        _write(script, "def runLinter : IO Unit := pure ()\n")
+        extraction = dict(
+            schema=LEAN_EXTRACT_SCHEMA,
+            files=[
+                dict(module="Batteries", source=top, rel=None,
+                     source_sha256=_sha(open(top, "rb").read())),
+                dict(module="Batteries.Classes.Cast", source=nested,
+                     rel=None,
+                     source_sha256=_sha(open(nested, "rb").read())),
+                # The module is deliberately not the filesystem relpath.
+                dict(module="runLinter", source=script, rel=None,
+                     source_sha256=_sha(open(script, "rb").read())),
+            ])
+        k7_rows = [
+            ["Batteries.lean", 1, extraction["files"][0]["source_sha256"],
+             "Batteries.lean"],
+            ["Batteries/Classes/Cast.lean", 1,
+             extraction["files"][1]["source_sha256"],
+             "Batteries/Classes/Cast.lean"],
+        ]
+        # The script is intentionally absent from k7, as are a small number
+        # of production extraction files.  The two exact anchors still prove
+        # one root and the unmatched source is contained beneath it.
+        assert _corpus_root(extraction, k7_rows) == root + os.sep
+
+        k7_rows[0][2] = "0" * 64
+        k7_rows[1][2] = "0" * 64
+        try:
+            _corpus_root(extraction, k7_rows)
+            assert False, "root without a sealed k7 anchor accepted"
+        except V2BError as err:
+            assert "root" in str(err)
+
+        k7_rows[0][2] = extraction["files"][0]["source_sha256"]
+        k7_rows[1][2] = extraction["files"][1]["source_sha256"]
+        extraction["schema"] = PYTHON_EXTRACT_SCHEMA
+        try:
+            _corpus_root(extraction, k7_rows)
+            assert False, "Python null rel accepted"
+        except V2BError as err:
+            assert "source/rel" in str(err)
+
+        extraction["schema"] = LEAN_EXTRACT_SCHEMA
+        extraction["files"].append(dict(
+            module="Escaped", source=os.path.join(td, "Escaped.lean"),
+            rel=None, source_sha256="f" * 64))
+        try:
+            _corpus_root(extraction, k7_rows)
+            assert False, "unmatched extraction source escaped the root"
+        except V2BError as err:
+            assert "escapes" in str(err)
 
 
 def _sha(data):

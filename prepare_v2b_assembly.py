@@ -39,6 +39,7 @@ contrasts as true zero-budget effects; k3s/k4s likewise become
 explicit empty sensitivities when the k4 B* suffix has no whole units.
 """
 import argparse
+import os
 import sys
 
 from finalize_v2b_a6 import EXPECTED
@@ -312,21 +313,54 @@ def _unit_index(extraction, language, lean_boundaries=None):
     return units, sources
 
 
-def _corpus_root(extraction):
-    """One consistent corpus root derived from source/rel agreement."""
-    root = None
+def _corpus_root(extraction, k7_rows=None):
+    """One corpus root from extraction paths joined to the sealed k7 ledger."""
+    roots = set()
+    sources = []
     for f in extraction.get("files", []):
         source, rel = f.get("source"), f.get("rel")
+        if not isinstance(source, str) or not source:
+            raise V2BError("extraction file source/rel are inconsistent")
+        sources.append(source)
+        # Production Lean v3 rows leave the optional cross-language `rel`
+        # field null.  Join them to the independently sealed k7 file ledger
+        # by raw source hash plus a path-boundary suffix when that ledger
+        # contains the file.  K7 intentionally omits a small number of
+        # extracted files, so unmatched rows are subsequently admitted only
+        # under the single root proven by the matched anchors.  Module names
+        # are insufficient: Batteries' `runLinter` intentionally lives under
+        # scripts/runLinter.lean.
+        if rel is None and extraction.get("schema") == LEAN_EXTRACT_SCHEMA:
+            source_sha = f.get("source_sha256")
+            matches = [row[0] for row in (k7_rows or [])
+                       if row[2] == source_sha
+                       and (source == row[0]
+                            or source.endswith("/" + row[0]))]
+            if len(matches) > 1:
+                raise V2BError("Lean extraction file has ambiguous k7 "
+                               "source-path/hash matches")
+            if not matches:
+                continue
+            rel = matches[0]
         if not isinstance(source, str) or not isinstance(rel, str) \
                 or not rel or not source.endswith(rel):
             raise V2BError("extraction file source/rel are inconsistent")
         head = source[:len(source) - len(rel)]
-        if root is None:
-            root = head
-        elif root != head:
-            raise V2BError("extraction files disagree on the corpus root")
-    if root is None:
+        roots.add(head)
+    if not sources:
         raise V2BError("extraction exposes no corpus root")
+    if len(roots) != 1:
+        raise V2BError("extraction files disagree on the corpus root")
+    root = next(iter(roots))
+    canonical_root = os.path.normpath(root)
+    if not root or not os.path.isabs(root) \
+            or root != canonical_root + os.sep \
+            or any(not os.path.isabs(source)
+                   or os.path.normpath(source) != source
+                   or source == canonical_root
+                   or os.path.commonpath((canonical_root, source)) !=
+                   canonical_root for source in sources):
+        raise V2BError("extraction source escapes the sealed corpus root")
     return root
 
 
@@ -1141,7 +1175,7 @@ def build_assembly(sample_path, repo, candidates_path, extraction_path,
         language, units,
         {unit["key"]: unit["verbatim_sha256"]
          for unit in neardup.get("units", [])}, cache)
-    k7 = dict(rows=k7_rows, root=_corpus_root(extraction), cache={})
+    k7 = dict(rows=k7_rows, root=_corpus_root(extraction, k7_rows), cache={})
     k4x_ctx = None
     if k4x_bundle is not None:
         k4x_ctx = _k4x_context(k4x_bundle, units, edges, outcome,
