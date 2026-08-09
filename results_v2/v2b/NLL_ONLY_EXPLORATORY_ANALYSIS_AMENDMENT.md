@@ -44,6 +44,13 @@ module as identity field zero; that module is the inference cluster. Every
 summary reports target N, module G, descending cluster sizes, the exact target
 keys, and all three pairwise and three-way target-set intersections.
 
+The primary point is the finite, sealed, contrast-specific pilot-sample mean.
+The intervals below are a model-based uncertainty description for hypothetical
+repetitions of the same stratified draw from the unchanged candidate universe;
+they are not a design-based estimate for all repository declarations. No
+inverse-selection or eligibility-attrition weighting is introduced after the
+draw.
+
 The analyzer must accept only the exact five-corpus exploratory reveal schema
 and its frozen claim/status strings. For each corpus it loads the reveal-bound
 masked object and the masked object's completion, assembly, sample,
@@ -79,7 +86,10 @@ described when it exists but every interval is null, every inferential p-value
 is `1`, and status is `insufficient-clusters`. If `SE` is exactly zero, the
 point remains descriptive, intervals are null, p-values are `1`, and status is
 `degenerate-zero-se`; a constant tiny pilot can never mechanically establish a
-claim. Nonfinite arithmetic aborts.
+claim. The same degenerate status applies whenever either the full target range
+or `SE` is at most `64 * ulp(max(1, max_i(abs(d_i))))`; this scale-aware floor
+prevents reconstruction roundoff from turning a structurally constant family
+into overwhelming evidence. Nonfinite arithmetic aborts.
 
 For nondegenerate rows, one-sided Student-t p-values use the same `G-1`
 degrees of freedom:
@@ -89,6 +99,8 @@ degrees of freedom:
 - `p_NI = P(T <= (mean_E1b-0.02)/SE_E1b)`;
 - `p_active = P(T >= (mean_E1a_intersection-0.02)/SE_intersection)`.
 
+These plug-in MoM/t intervals and p-values are explicitly **model-based pilot
+summaries**, not exact finite-sample or calibrated confirmatory error control.
 The implementation evaluates the Student-t CDF without a runtime statistics
 library: the standard incomplete-beta identity, `math.lgamma`, and a frozen
 continued fraction with at most 256 iterations, tolerance `3e-14`, and floor
@@ -104,10 +116,12 @@ complete-case set). E1a is recomputed on that set with its own module
 components and bounds. The E1b intersection-union p-value is
 `max(p_NI, p_active)`.
 
-Within each repository, Holm's step-down adjustment is applied to exactly
+Within each repository, Holm's step-down arithmetic is applied to exactly
 `[p_E1a, p_E1b_IUT, p_E2]`, sorting ties by contrast name. No adjustment or
-pooling occurs across repositories. The adjusted p-values are descriptive
-exploratory multiplicity controls; they create no confirmatory claim.
+pooling occurs across repositories. Because the component p-values are the
+model-based pilot summaries above, the adjusted values are labeled
+`model-based Holm-adjusted diagnostics`, never calibrated error control; they
+create no confirmatory claim.
 
 The E1b interpretation label is deterministic:
 
@@ -123,6 +137,14 @@ The E1b interpretation label is deterministic:
 
 The last phrase is never shortened to equivalence, confirmation, or
 "interfaces suffice."
+
+PhysLib's same-repository k4 is structurally missing its external Mathlib
+spine. Therefore its primary E1a/E1b estimates and intervals are still shown,
+but their interpretation status is forced to
+`uninterpretable-pending-k4x-sensitivity`; all positive E1a and E1b labels are
+suppressed. The already-scored, lake-manifest-pinned k4x arm must be consumed
+by a separately frozen sensitivity analyzer before either contrast receives a
+substantive PhysLib interpretation.
 
 ## Frozen reporting surface
 
@@ -142,4 +164,6 @@ No source-token attribution is licensed by this reveal. Bits/codepoint,
 boundary-inclusive scores, extra k5 seeds, same-dependency-set arms, Python
 coverage/duplicate subsets, and PhysLib external-context sensitivities require
 their own prospectively frozen consumer before inspection and are absent from
-this primary exploratory artifact.
+this primary exploratory artifact. Consequently this first artifact licenses
+only the finite-pilot primary-BPB description; any stronger repository-context
+claim remains pending the already-required sensitivities.
