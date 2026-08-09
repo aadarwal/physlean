@@ -25,8 +25,12 @@ export TRITON_CACHE_DIR="$V2B_POOL_BASE/triton-cache"
 export CUDA_CACHE_PATH="$V2B_POOL_BASE/cuda-cache"
 export TMPDIR="$V2B_POOL_BASE/tmp"
 
-V2B_MODEL_TIER="${V2B_MODEL_TIER:?export V2B_MODEL_TIER (q25c-0.5b|q25c-3b|q25c-7b)}"
+V2B_MODEL_TIER="${V2B_MODEL_TIER:?export V2B_MODEL_TIER (q25c-0.5b|q25c-3b|q25c-7b|q25c-14b)}"
 case "$V2B_MODEL_TIER" in
+  q25c-14b)
+    V2B_MODEL="Qwen/Qwen2.5-Coder-14B"
+    V2B_TIER_BATTERY="results_v2/battery/battery_pilot_14b.json"
+    ;;
   q25c-0.5b)
     V2B_MODEL="Qwen/Qwen2.5-Coder-0.5B"
     V2B_TIER_BATTERY="results_v2/battery/battery_pilot_0p5b.json"

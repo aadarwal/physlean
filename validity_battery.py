@@ -84,6 +84,13 @@ PILOT_TIERS = {
         revision="0396a76181e127dfc13e5c5ec48a8cee09938b02",
         family="q25c-7b", param_range=(6.0e9, 8.5e9),
         battery_file="battery_pilot_7b.json"),
+    # 14B is a big rung: its battery fp32 semantic leg exceeds L40S memory,
+    # so its battery and scoring run on H200 (human-authorized 2026-08-09).
+    "q25c-14b": dict(
+        model="Qwen/Qwen2.5-Coder-14B",
+        revision="f2ad5164aade432d6d56c24bb71589184d5d613d",
+        family="q25c-14b", param_range=(13.0e9, 16.0e9),
+        battery_file="battery_pilot_14b.json"),
 }
 _ACTIVE_PILOT_TIER = None
 
