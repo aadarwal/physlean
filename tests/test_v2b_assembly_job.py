@@ -24,6 +24,9 @@ def test_exact_five_cpu_job_and_write_once_inputs():
     assert "prepare_v2b_assembly.py" in src
     assert "job${V2B_RUN_ID}_${V2B_TAG}.json" in src
     assert "V2B-ASSEMBLY-DONE" in src
+    assert 'for V2B_TRACKED in "$V2B_SAMPLE" "$V2B_A6_OUTCOME"' in src
+    assert 'git ls-files --error-unmatch "$V2B_TRACKED"' in src
+    assert 'git diff --quiet HEAD -- "$V2B_TRACKED"' in src
 
 
 def test_exact_sealed_chain_and_identity_guards():

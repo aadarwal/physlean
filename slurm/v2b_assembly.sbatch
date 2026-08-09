@@ -50,6 +50,16 @@ V2B_A6_OUTCOME="${V2B_A6_OUTCOME:?export the committed A6 outcome path}"
   echo "missing committed sample or A6 outcome" >&2
   exit 1
 }
+for V2B_TRACKED in "$V2B_SAMPLE" "$V2B_A6_OUTCOME"; do
+  git ls-files --error-unmatch "$V2B_TRACKED" >/dev/null || {
+    echo "assembly input is not tracked/committed: $V2B_TRACKED" >&2
+    exit 1
+  }
+  git diff --quiet HEAD -- "$V2B_TRACKED" || {
+    echo "assembly input differs from HEAD: $V2B_TRACKED" >&2
+    exit 1
+  }
+done
 
 V2B_TASK="${SLURM_ARRAY_TASK_ID:?submit as array 0-4}"
 V2B_K4X_ARGS=()

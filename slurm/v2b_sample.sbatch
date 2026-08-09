@@ -60,6 +60,14 @@ V2B_CANDIDATES=(
   echo "missing committed A6 outcome: $V2B_A6_OUTCOME" >&2
   exit 1
 }
+git ls-files --error-unmatch "$V2B_A6_OUTCOME" >/dev/null || {
+  echo "A6 outcome is not tracked/committed: $V2B_A6_OUTCOME" >&2
+  exit 1
+}
+git diff --quiet HEAD -- "$V2B_A6_OUTCOME" || {
+  echo "A6 outcome differs from HEAD: $V2B_A6_OUTCOME" >&2
+  exit 1
+}
 for V2B_CANDIDATE in "${V2B_CANDIDATES[@]}"; do
   [[ -f "$V2B_CANDIDATE" ]] || {
     echo "missing sealed candidate table: $V2B_CANDIDATE" >&2

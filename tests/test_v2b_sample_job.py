@@ -33,6 +33,12 @@ def test_exact_candidate_cohort_and_new_output():
     assert "V2B-SAMPLE-DONE" in src
 
 
+def test_a6_outcome_is_exact_committed_blob():
+    src = source()
+    assert 'git ls-files --error-unmatch "$V2B_A6_OUTCOME"' in src
+    assert 'git diff --quiet HEAD -- "$V2B_A6_OUTCOME"' in src
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):
