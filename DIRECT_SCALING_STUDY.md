@@ -1,8 +1,12 @@
 # DIRECT_SCALING_STUDY — testing the context-position proxy for code predictability
 
-Status: **PROSPECTIVE DESIGN, NOT FROZEN.** Nothing here has been run, no
-artifact exists, and no constant is preregistered until P0. Revision 5, after
-fourth root review. Separate from `DESIGN_V2.md`/`PREREG.md`; amends neither.
+Status: **P0 FROZEN BEFORE LOSS (2026-08-09).** The exact machine-readable
+constants and their source/config ledgers are in
+`results_v2/v2c/direct_scaling_protocol_v1.json`. No A0/A1 scientific loss has
+been scored. Language-general loss scoring remains fail-closed until the
+protocol's disjoint variance-calibration gate is sealed and passes; the
+model-free P1a census is authorized. Revision 6, after fifth root review.
+Separate from `DESIGN_V2.md`/`PREREG.md`; amends neither.
 
 Motivating source: Gwern, ["Lean Software Scaling
 Laws"](https://gwern.net/lean-scaling) (June 2026). Quoted phrases are from
