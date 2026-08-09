@@ -1,0 +1,51 @@
+{
+  "artifact": {
+    "compressed": {
+      "bytes": 10139998,
+      "name": "job19991255_feasibility.json.gz",
+      "path": "results_v2/v2c/p1a/job19991255_feasibility.json.gz",
+      "sha256": "7c64a286d9e3ba7399e673d6da35ee76701b2edb09eeace531c18121c3a18e5e"
+    },
+    "raw": {
+      "bytes": 175451846,
+      "name": "job19991255_feasibility.json",
+      "path": "results_v2/v2c/p1a/job19991255_feasibility.json",
+      "sha256": "d5bbb7fad774ef1ef3b7cfe6385ba4de5095a57a07a0864dbf25fead8cd3f100"
+    }
+  },
+  "compression": {
+    "command": "gzip -n -9 -c job19991255_feasibility.json > job19991255_feasibility.json.gz",
+    "format": "gzip",
+    "options": [
+      "-n",
+      "-9"
+    ],
+    "observed_wall_seconds": 6
+  },
+  "provenance": {
+    "artifact_schema": "v2c_direct_scaling_feasibility_v1",
+    "protocol_path": "results_v2/v2c/direct_scaling_protocol_v1.json",
+    "protocol_sha256": "b32f1ebb7de3e18230cd8f0c28633871e9543408788d07acf7cc2c916d160291",
+    "slurm_exit_code": "0:0",
+    "slurm_job_id": "19991255",
+    "slurm_state": "COMPLETED",
+    "source_commit": "cdafeb058097311e4c4f68b1bafb3a597979691e",
+    "source_tree_hash": "160a47fe8c11cd30c178316558112c0b1465ad56d46f0baf02a8e3448cfcdd97"
+  },
+  "schema": "v2c_direct_scaling_feasibility_seal_v1",
+  "scope": {
+    "contains_model_outputs": false,
+    "loss_scoring_authorized": false,
+    "scientific_status": "model-free P1a structural no-go bound; evidence seal only"
+  },
+  "verification": {
+    "decompressed_bytes": 175451846,
+    "decompressed_sha256": "d5bbb7fad774ef1ef3b7cfe6385ba4de5095a57a07a0864dbf25fead8cd3f100",
+    "decompressed_sha256_equals_raw_sha256": true,
+    "producer_markers": [
+      "V2C-P1A-DONE",
+      "V2C-P1A-VALID",
+      "V2C-P1A-CLUSTER-DONE"
+    ]
+  }
+}
