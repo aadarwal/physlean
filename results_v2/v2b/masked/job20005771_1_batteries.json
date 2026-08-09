@@ -1,0 +1,64 @@
+{
+ "bindings": {
+  "assembly": {
+   "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/assembly/job19991210_1_batteries.json",
+   "schema": "v2b_assembly_manifest_v2",
+   "sha256": "56daa6151b0444888bfa39aaf7700ab135cf3d036a2290e236fd093fdadc4985"
+  },
+  "candidates": {
+   "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/candidates/job19982184_1_batteries.json",
+   "schema": "v2b_candidates_v2",
+   "sha256": "4f40eefc318dc327d8888bc73799ff1c8f10fab7aac34ad963f5b58641b612fc"
+  },
+  "completion": {
+   "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/paired/q25c-1.5b/6db2566599da-56daa6151b04-batteries/complete.json",
+   "schema": "v2b_paired_nll_complete_v2",
+   "sha256": "437e5564487c22658076b48b1686622317a6b6cc5df1dc2a2f413e3db20dadd2"
+  },
+  "run_identity_sha256": "900f7b8b9c97f02c2219a9a9bc70e0495e64e14c25756cc2fc74f9266bff750e",
+  "salt_commitment": {
+   "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/mask/salt_commitment_e734b0d.json",
+   "salt_sha256": "144ce6956a81a24a30e047367b1e6c1c2cdc8dcbd94afb8da94bbfe83091544f",
+   "schema": "v2b_salt_commitment_v1",
+   "sha256": "fe9444b70f621db2523e3bc85c8bdae8dc64f79f1622ce5e3ed5e99fd76f1497"
+  },
+  "sample": {
+   "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/sample/job19989076_sample.json",
+   "schema": "v2b_bound_sample_v2",
+   "sha256": "86090b33389a2c78eabc924ce67ac71b6082c579256fd101c3e9fda69409db9b"
+  }
+ },
+ "budget_bytes": 16384,
+ "corpus_git_sha": "76e1c118b0700b4ceafe99532e887d6431625e1a",
+ "families": {
+  "fam-53502049ffed798e": [],
+  "fam-6c8e9ac362893c3d": [],
+  "fam-92acd0d795f0ec88": []
+ },
+ "generator": {
+  "program": "prepare_v2b_masked_deltas.py",
+  "source_commit": "6db2566599da66b58200537586b006d85bc767a6",
+  "source_tree_hash": "85dd90e8529ba9380669ffff6a3d9f396e5c65f5f2ef4d08128c920ecdb498c0"
+ },
+ "language": "lean",
+ "metric": "bpb",
+ "n_rows_by_family": {
+  "fam-53502049ffed798e": 0,
+  "fam-6c8e9ac362893c3d": 0,
+  "fam-92acd0d795f0ec88": 0
+ },
+ "repo": "batteries",
+ "run_identity": {
+  "ast_class_state": "not-run-separate-required-gate",
+  "chunk_tokens": 2048,
+  "dtype": "bfloat16",
+  "env_fingerprint": "cece9b716c1eb844ffff8c4000421f50441ea775010082f8724953bb9b9cd962",
+  "manifest_sha256": "56daa6151b0444888bfa39aaf7700ab135cf3d036a2290e236fd093fdadc4985",
+  "model": "Qwen/Qwen2.5-Coder-1.5B",
+  "paired_harness_hash": "cfdb3208c549c90ad267fa35ebe49d0bf1301471dbedd0d9f0891d891651d68d",
+  "paired_schema_version": 2,
+  "pilot_battery_sha256": "bd9004b1a8ee1823fff9d697797d5f5e7f1a3bc6f8471ef13036ff7d35a0bf17",
+  "revision": "df3ce67c0e24480f20468b6ef2894622d69eb73b"
+ },
+ "schema": "v2b_masked_deltas_v1"
+}

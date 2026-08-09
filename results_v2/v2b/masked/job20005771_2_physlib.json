@@ -1,0 +1,87 @@
+{
+ "bindings": {
+  "assembly": {
+   "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/assembly/job19991210_2_physlib.json",
+   "schema": "v2b_assembly_manifest_v2",
+   "sha256": "996febf3f7d9967cb0438a69c37757e4a6056d948df6ef254566cdc96daf7b7b"
+  },
+  "candidates": {
+   "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/candidates/job19982184_2_physlib.json",
+   "schema": "v2b_candidates_v2",
+   "sha256": "300931563c15494ab47f3418ec00855f374a83792aad8555cf83a7178f441ced"
+  },
+  "completion": {
+   "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/paired/q25c-1.5b/6db2566599da-996febf3f7d9-physlib/complete.json",
+   "schema": "v2b_paired_nll_complete_v2",
+   "sha256": "076376bca0f7054297107028ada4ab5fc3a70c2331d440ceeb55901d0c6a6b39"
+  },
+  "run_identity_sha256": "592e45e73195ee621a51b9f35bdc0761710cea895494ce9970d21ccc844b7b90",
+  "salt_commitment": {
+   "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/mask/salt_commitment_e734b0d.json",
+   "salt_sha256": "144ce6956a81a24a30e047367b1e6c1c2cdc8dcbd94afb8da94bbfe83091544f",
+   "schema": "v2b_salt_commitment_v1",
+   "sha256": "fe9444b70f621db2523e3bc85c8bdae8dc64f79f1622ce5e3ed5e99fd76f1497"
+  },
+  "sample": {
+   "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/sample/job19989076_sample.json",
+   "schema": "v2b_bound_sample_v2",
+   "sha256": "86090b33389a2c78eabc924ce67ac71b6082c579256fd101c3e9fda69409db9b"
+  }
+ },
+ "budget_bytes": 16384,
+ "corpus_git_sha": "e882411d1b6bcbdfdd336d4c509c6cc72e96842d",
+ "families": {
+  "fam-8101876a295bbf3d": [
+   [
+    "[\"Physlib.Relativity.Tensors.RealTensor.Velocity.Basic\",\"Lorentz.Velocity.zero_le_minkowskiProduct\"]",
+    0.054069531836656054
+   ],
+   [
+    "[\"QuantumInfo.ResourceTheory.SteinsLemma\",\"_private.QuantumInfo.ResourceTheory.SteinsLemma.0.SteinsLemma.σ''\"]",
+    -0.054069531836656054
+   ]
+  ],
+  "fam-8f36a66d4c182cc3": [
+   [
+    "[\"Physlib.Relativity.Tensors.RealTensor.Velocity.Basic\",\"Lorentz.Velocity.zero_le_minkowskiProduct\"]",
+    0.01591907636422482
+   ],
+   [
+    "[\"QuantumInfo.ResourceTheory.SteinsLemma\",\"_private.QuantumInfo.ResourceTheory.SteinsLemma.0.SteinsLemma.σ''\"]",
+    -0.01591907636422482
+   ]
+  ],
+  "fam-c7de1cbe2cbf8e3f": [
+   [
+    "[\"Physlib.Relativity.Tensors.RealTensor.Velocity.Basic\",\"Lorentz.Velocity.zero_le_minkowskiProduct\"]",
+    0.0
+   ]
+  ]
+ },
+ "generator": {
+  "program": "prepare_v2b_masked_deltas.py",
+  "source_commit": "6db2566599da66b58200537586b006d85bc767a6",
+  "source_tree_hash": "85dd90e8529ba9380669ffff6a3d9f396e5c65f5f2ef4d08128c920ecdb498c0"
+ },
+ "language": "lean",
+ "metric": "bpb",
+ "n_rows_by_family": {
+  "fam-8101876a295bbf3d": 2,
+  "fam-8f36a66d4c182cc3": 2,
+  "fam-c7de1cbe2cbf8e3f": 1
+ },
+ "repo": "physlib",
+ "run_identity": {
+  "ast_class_state": "not-run-separate-required-gate",
+  "chunk_tokens": 2048,
+  "dtype": "bfloat16",
+  "env_fingerprint": "cece9b716c1eb844ffff8c4000421f50441ea775010082f8724953bb9b9cd962",
+  "manifest_sha256": "996febf3f7d9967cb0438a69c37757e4a6056d948df6ef254566cdc96daf7b7b",
+  "model": "Qwen/Qwen2.5-Coder-1.5B",
+  "paired_harness_hash": "cfdb3208c549c90ad267fa35ebe49d0bf1301471dbedd0d9f0891d891651d68d",
+  "paired_schema_version": 2,
+  "pilot_battery_sha256": "bd9004b1a8ee1823fff9d697797d5f5e7f1a3bc6f8471ef13036ff7d35a0bf17",
+  "revision": "df3ce67c0e24480f20468b6ef2894622d69eb73b"
+ },
+ "schema": "v2b_masked_deltas_v1"
+}
