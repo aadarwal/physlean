@@ -1299,6 +1299,17 @@ arxiv_manifest) must be committed before measurement.
   source_tree_hash whitelist never weakened; PAIRED_SCHEMA_VERSION
   introduced for the V2 driver.
 
+- ADOPTED (2026-08-08, pre-pilot-model execution): the initial frozen
+  Qwen2.5-Coder-1.5B tier receives its own write-once instrument battery before
+  any V2-b score or generation. It inherits the production-path 8192-token
+  repeat/causality and fp32 semantic bounds from §7/§13, but runs them on the
+  exact 1.5B revision with SDPA required and a separate 1.2--1.8B loader range.
+  Its `battery_pilot_1p5b.json` never overwrites or reinterprets the accepted
+  0.5B `battery.json`; throughput/peak memory are recorded without a threshold.
+  The battery reads only fixed public corpus bytes and remains target/draw/salt/
+  outcome independent, so it may run while the parser boundary audit and A6
+  human labels are pending.
+
 - ADOPTED (2026-08-07 late): reviewer's strategic ordering — v2
   extraction/pilot (G3.5) before grid expansion (G3b); the sentinel grid
   runs first only as instrument validation. Supersedes my earlier

@@ -10,7 +10,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from layout import PRODUCTION_CHUNK_TOKENS
 from validity_battery import (A_CAUSAL_MAX, A_CAUSAL_P, A_CTX, A_F2_CHUNK,
                               A_F2_MEAN, A_F2_P99, A_REPEAT_MAX, FAM_SMALL,
-                              a_fixed_chunk_verdict, chunked_nll)
+                              PILOT_FAMILY, PILOT_MODEL, PILOT_REVISION,
+                              a_fixed_chunk_verdict, chunked_nll,
+                              pilot_fixed_chunk_verdict, rev_of)
 
 FAMS = tuple(FAM_SMALL)
 CHUNK = PRODUCTION_CHUNK_TOKENS
@@ -63,6 +65,37 @@ def _block():
 def test_all_pass():
     ok, fails = a_fixed_chunk_verdict(_block(), FAMS, CHUNK)
     assert ok and fails == []
+
+
+def test_pilot_1p5b_gate_is_separate_and_fail_closed():
+    assert rev_of(PILOT_MODEL) == PILOT_REVISION
+    family = _fam_ok()
+    family.update(
+        model=PILOT_MODEL, revision=PILOT_REVISION,
+        performance=dict(
+            scored_tokens=A_CTX - 1, seconds=3.0,
+            tokens_per_second=(A_CTX - 1) / 3.0,
+            max_memory_allocated_bytes=10_000,
+            max_memory_reserved_bytes=20_000))
+    f2 = _f2_ok()
+    f2.update(model=PILOT_MODEL, revision=PILOT_REVISION)
+    block = dict(families={PILOT_FAMILY: family}, f2=f2,
+                 production_chunk=CHUNK)
+    ok, fails = pilot_fixed_chunk_verdict(block)
+    assert ok and fails == []
+    for mutate, expected in (
+            (lambda b: b["families"][PILOT_FAMILY].update(
+                attn_resolved="eager"), f"attn-impl:{PILOT_FAMILY}"),
+            (lambda b: b["families"][PILOT_FAMILY].update(
+                revision="0" * 40), "pilot-model-identity"),
+            (lambda b: b["families"][PILOT_FAMILY][
+                "performance"].update(tokens_per_second=None),
+             "pilot-performance-record")):
+        import copy
+        drifted = copy.deepcopy(block)
+        mutate(drifted)
+        ok, failures = pilot_fixed_chunk_verdict(drifted)
+        assert not ok and expected in failures
 
 
 def test_family_coverage_fails_closed():

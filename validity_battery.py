@@ -52,6 +52,12 @@ def bpb(nll_nats, ids, tok, text_bytes=None):
 
 FAM_SMALL = {"q25c": "Qwen/Qwen2.5-Coder-0.5B", "q3": "Qwen/Qwen3-0.6B-Base",
              "q35": "Qwen/Qwen3.5-0.8B-Base", "sc2": "bigcode/starcoder2-3b"}
+PILOT_MODEL = "Qwen/Qwen2.5-Coder-1.5B"
+PILOT_REVISION = "df3ce67c0e24480f20468b6ef2894622d69eb73b"
+PILOT_FAMILY = "q25c-1p5b"
+PILOT_FAMILIES = {PILOT_FAMILY: PILOT_MODEL}
+PILOT_PARAM_RANGES = {PILOT_FAMILY: (1.2e9, 1.8e9)}
+PILOT_BATTERY_FILE = "battery_pilot_1p5b.json"
 # Big rungs require a SEPARATE battery --big mode (not yet implemented;
 # the `big` preflight gate FAILS CLOSED until battery_big.json exists):
 # DeepSeek-V2-Lite architecture probe + Qwen3.5 >=131k cache probe.
@@ -201,7 +207,37 @@ def a_fixed_chunk_verdict(a, expected_fams, expected_chunk):
     return (not fails, fails)
 
 
-def item_A(model, tok, device, res):
+def pilot_fixed_chunk_verdict(block):
+    """The 1.5B pilot inherits A's numeric gates and additionally freezes
+    its own bf16 dispatch to SDPA.  This never widens or reinterprets the
+    already-published four-family 0.5B battery verdict."""
+    ok, failures = a_fixed_chunk_verdict(
+        block, tuple(PILOT_FAMILIES), PRODUCTION_CHUNK_TOKENS)
+    row = (block.get("families") or {}).get(PILOT_FAMILY) or {}
+    f2 = block.get("f2") or {}
+    if row.get("model") != PILOT_MODEL \
+            or row.get("revision") != PILOT_REVISION \
+            or f2.get("model") != PILOT_MODEL \
+            or f2.get("revision") != PILOT_REVISION:
+        failures.append("pilot-model-identity")
+    if row.get("attn_resolved") != "sdpa":
+        failures.append(f"attn-impl:{PILOT_FAMILY}")
+    performance = row.get("performance") or {}
+    if not (_finite(performance.get("seconds"))
+            and performance["seconds"] > 0
+            and _finite(performance.get("tokens_per_second"))
+            and performance["tokens_per_second"] > 0
+            and type(performance.get("scored_tokens")) is int
+            and performance["scored_tokens"] == A_CTX - 1
+            and type(performance.get("max_memory_allocated_bytes")) is int
+            and performance["max_memory_allocated_bytes"] > 0
+            and type(performance.get("max_memory_reserved_bytes")) is int
+            and performance["max_memory_reserved_bytes"] > 0):
+        failures.append("pilot-performance-record")
+    return not failures, failures
+
+
+def item_A(model, tok, device, res, *, pilot=False):
     """A_fixed_chunk_semantics: production-path invariants per bf16
     family at EXACTLY 8192 tokens (spans StarCoder2's sliding window and
     Qwen3.5 hybrid state well past one chunk) — loader class/param
@@ -219,15 +255,25 @@ def item_A(model, tok, device, res):
                                       tf32_snapshot)
     text = open(os.path.join(BASE, "data/streams/mathlib/full_topo.txt"),
                 encoding="utf-8").read()[:120000]
+    families = PILOT_FAMILIES if pilot else FAM_SMALL
+    param_ranges = PILOT_PARAM_RANGES if pilot else PARAM_RANGES
     fams = {}
-    for fam, mid in FAM_SMALL.items():
+    for fam, mid in families.items():
         tk = tok_of(mid)
         ids = tk(text, add_special_tokens=False)["input_ids"][:A_CTX]
         if len(ids) != A_CTX:
             raise RuntimeError(f"A[{fam}]: only {len(ids)} tokens; the "
                                f"frozen design requires exactly {A_CTX}")
         m2, cls, nparams, attn = load_text_model(mid, device)
+        if pilot and device == "cuda":
+            torch.cuda.synchronize()
+            torch.cuda.reset_peak_memory_stats()
+        score_started = time.perf_counter() if pilot else None
         r1 = chunked_nll(m2, ids, device, chunk=PRODUCTION_CHUNK_TOKENS)
+        if pilot and device == "cuda":
+            torch.cuda.synchronize()
+        score_seconds = (time.perf_counter() - score_started
+                         if pilot else None)
         r2 = chunked_nll(m2, ids, device, chunk=PRODUCTION_CHUNK_TOKENS)
         rep_max = float((r1 - r2).abs().max())
         cfg2 = m2.config
@@ -239,8 +285,8 @@ def item_A(model, tok, device, res):
                          chunk=PRODUCTION_CHUNK_TOKENS)
         d = (r1.double() - rp.double()).abs()
         prot, excl, down = causality_partition(len(r1), A_CAUSAL_P)
-        lo, hi = PARAM_RANGES[fam]
-        fams[fam] = dict(
+        lo, hi = param_ranges[fam]
+        family_row = dict(
             model=mid, revision=rev_of(mid), cls=cls, n_params=nparams,
             attn=attn, attn_resolved=resolved_attn(m2),
             dtype="bfloat16", n_tokens=len(ids),
@@ -254,9 +300,21 @@ def item_A(model, tok, device, res):
                         protected_max_abs=float(d[prot].max()),
                         excluded_row_delta=float(d[excl[0]]),
                         downstream_max_abs=float(d[down].max())),
-            class_ok=("ForCausalLM" in cls
-                      or "ForConditionalGeneration" in cls),
+            class_ok=(cls == "Qwen2ForCausalLM" if pilot else
+                      ("ForCausalLM" in cls
+                       or "ForConditionalGeneration" in cls)),
             param_sane=lo <= nparams <= hi)
+        if pilot:
+            family_row["performance"] = dict(
+                scored_tokens=len(r1), seconds=score_seconds,
+                tokens_per_second=len(r1) / max(score_seconds, 1e-12),
+                max_memory_allocated_bytes=(
+                    int(torch.cuda.max_memory_allocated())
+                    if device == "cuda" else None),
+                max_memory_reserved_bytes=(
+                    int(torch.cuda.max_memory_reserved())
+                    if device == "cuda" else None))
+        fams[fam] = family_row
         del m2
         if device == "cuda":
             torch.cuda.empty_cache()
@@ -273,7 +331,7 @@ def item_A(model, tok, device, res):
     assert (tf["matmul_allow_tf32"] is False
             and tf["cudnn_allow_tf32"] is False
             and tf["float32_matmul_precision"] == "highest"), tf
-    mid = FAM_SMALL["q25c"]
+    mid = PILOT_MODEL if pilot else FAM_SMALL["q25c"]
     tk = tok_of(mid)
     ids = tk(text, add_special_tokens=False)["input_ids"][:A_CTX]
     if len(ids) != A_CTX:
@@ -297,8 +355,11 @@ def item_A(model, tok, device, res):
         torch.cuda.empty_cache()
     block = dict(families=fams, f2=f2,
                  production_chunk=PRODUCTION_CHUNK_TOKENS)
-    ok, fails = a_fixed_chunk_verdict(block, tuple(FAM_SMALL),
-                                      PRODUCTION_CHUNK_TOKENS)
+    if pilot:
+        ok, fails = pilot_fixed_chunk_verdict(block)
+    else:
+        ok, fails = a_fixed_chunk_verdict(block, tuple(FAM_SMALL),
+                                          PRODUCTION_CHUNK_TOKENS)
     block["verdict"] = dict(ok=ok, failures=fails)
     res["A_fixed_chunk_semantics"] = block
     LOG("A: verdict", ok, fails or "all production-path invariants hold",
@@ -352,7 +413,8 @@ def grouping_conservation(lens, grps, ids, nll_seq):
     return rec, ok
 
 
-def item_B(device_model, tok_main, device, res):
+def item_B(device_model, tok_main, device, res, *, pilot=False):
+    families = PILOT_FAMILIES if pilot else FAM_SMALL
     corpora = ["physlib", "mathlib", "qutip", "sympy", "geant4"]
     # OPTIONAL arXiv rows are opportunistic and NON-GATING, and must be
     # CURRENT: a corpus joins only if the present streams_stats records
@@ -365,7 +427,7 @@ def item_B(device_model, tok_main, device, res):
     except (OSError, ValueError):
         pass
     rows = {}
-    for fam, mid in FAM_SMALL.items():  # ALL FOUR tokenizer families
+    for fam, mid in families.items():
         tk = tok_of(mid)
         for c in corpora:
             p = os.path.join(BASE, f"data/streams/{c}/full_topo.txt")
@@ -388,7 +450,7 @@ def item_B(device_model, tok_main, device, res):
     # prove the grouping/window/drop/collapse pipeline conserves; the
     # real-model NLL-share diagnostic stays separate on q25c below.
     conserv_ok = True
-    for fam, mid in FAM_SMALL.items():
+    for fam, mid in families.items():
         tk = tok_of(mid)
         for c in ("physlib", "mathlib"):
             text = open(os.path.join(BASE,
@@ -440,7 +502,7 @@ def item_B(device_model, tok_main, device, res):
                         "\\frac{12\\pi}{23\\ln(M_Z^2/\\Lambda^2)} "
                         "\\end{equation} % comment ~5\\%")}
     probe_out, probe_ok = {}, True
-    for fam, mid in FAM_SMALL.items():
+    for fam, mid in families.items():
         tk = tok_of(mid)  # one load per family, shared by both probes
         for pname, probe in probes.items():
             enc = tk(probe, add_special_tokens=False,
@@ -650,7 +712,11 @@ def identity_drift(start, now):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", default="Qwen/Qwen2.5-Coder-0.5B")
+    ap.add_argument("--model")
+    ap.add_argument("--pilot", action="store_true",
+                    help="run the prospective Qwen2.5-Coder-1.5B pilot "
+                         "instrument battery and publish only its separate "
+                         "write-once artifact")
     ap.add_argument("--allow-non-cuda", action="store_true",
                     help="device override for local smokes; output is "
                          "marked gate-ineligible")
@@ -658,6 +724,12 @@ def main():
                     help="run on a dirty source tree (dev only); output is "
                          "marked gate-ineligible")
     args = ap.parse_args()
+    if args.pilot:
+        if args.model not in (None, PILOT_MODEL):
+            ap.error("--pilot fixes --model to Qwen2.5-Coder-1.5B")
+        args.model = PILOT_MODEL
+    else:
+        args.model = args.model or FAM_SMALL["q25c"]
     device = ("cuda" if torch.cuda.is_available() else
               "mps" if torch.backends.mps.is_available() else "cpu")
     if device != "cuda" and not args.allow_non_cuda:
@@ -712,7 +784,9 @@ def main():
                              "vocab_size 49152 (upstream quirk); harmless "
                              "here — no special tokens are ever added"},
                revision=rev_of(args.model),
-               model_revisions={m: rev_of(m) for m in FAM_SMALL.values()},
+               model_revisions={
+                   m: rev_of(m) for m in (
+                       PILOT_FAMILIES if args.pilot else FAM_SMALL).values()},
                torch_version=torch.__version__,
                transformers_version=__import__("transformers").__version__,
                harness_commit=head_commit(),
@@ -729,7 +803,10 @@ def main():
     errors = []
     for fn in (item_A, item_B, item_C, item_D, item_E):
         try:
-            fn(model, tok, device, res)
+            if fn in (item_A, item_B):
+                fn(model, tok, device, res, pilot=args.pilot)
+            else:
+                fn(model, tok, device, res)
         except Exception as e:
             res[fn.__name__ + "_error"] = repr(e)
             errors.append(fn.__name__)
@@ -761,7 +838,8 @@ def main():
         res["identities_unchanged_during_run"] = True
     else:
         res["identities_unchanged_during_run"] = False  # dev: unchecked
-    bj = os.path.join(OUT, "battery.json")
+    bj = os.path.join(
+        OUT, PILOT_BATTERY_FILE if args.pilot else "battery.json")
     if os.path.exists(bj):  # evidence is never overwritten: a failed
         ts = f"{time.strftime('%Y%m%d-%H%M%S')}-{os.getpid()}"  # survives rerun, collision-proof
         os.rename(bj, f"{bj}.quarantine-{ts}")

@@ -1753,6 +1753,21 @@ the mathematical half of §14.22's behavioral gate. It does NOT claim that the
 still-required generation, post-hoc completion parser, Lean/Python verifier,
 masking producer, or k4 tier revealer has run.
 
+  PILOT-MODEL INSTRUMENT BATTERY. Before any V2-b pilot score or generation,
+  the initial pinned Qwen2.5-Coder-1.5B model gets a separate write-once
+  `battery_pilot_1p5b.json`; it never replaces or rewrites the frozen 0.5B
+  `battery.json`. On the exact production NLL kernel it requires: exact pinned
+  model/revision and Qwen2 loader class with 1.2--1.8B parameters; bf16 SDPA,
+  8192 tokens, chunk 2048, repeat max <=1e-6; the p=4095 protected-row
+  causality bound <=1e-6 with strictly nonzero downstream response; and the
+  same fp32/TF32-off/forced-MATH 512-vs-2048 semantic bounds (<1e-4 mean
+  absolute, <1e-3 p99), now on the 1.5B model itself. Token/layout conservation
+  and the existing machinery diagnostics run with the pilot tokenizer/model.
+  Throughput and peak CUDA memory are required records but have no acceptance
+  threshold. This battery uses public fixed corpus bytes, reads no final draw,
+  completion, salt, masked result, or outcome, and remains valid if the later
+  boundary audit changes the pilot targets.
+
   INPUT AND BLINDNESS. One artifact governs one exact (repo, final model)
   SLOT; reliability is never pooled across repos or model tiers. The final
   tier is selected first by §8's sole permitted k4 floor/ceiling aggregate,
