@@ -202,8 +202,11 @@ exclusion are reported. No lexicographic degeneration is labeled
 
 A0 window origins are sampled once as anchored file identities from the
 lexicographically sorted source inventory and reused across orderings and checkpoints. A window begins
-at that file's exact metadata-header start. The P0 seed and systematic origin
-formula are committed; no origin is chosen or topped up after a loss is seen.
+at that file's exact metadata-header start. If there are `N` eligible files,
+`n = min(200,N)`, and `u` is the frozen A0 seed integer below, selected index
+`i_j = floor(N·(u+j·2⁶⁴)/(n·2⁶⁴))` for `j=0,…,n−1`. This produces
+exactly `n` unique increasing file indices. There is no de-duplication or
+top-up, and no origin is chosen after a loss is seen.
 For a fitted position range, only origins whose window is structurally present
 and model-eligible through the largest included `q` are used at **every** `q`.
 Thus the origin cohort is complete across position, even though the scored
@@ -244,17 +247,29 @@ Sampling rule:
    full-block sensitivity; the primary first-512-byte horizon uses its exact
    token-covered source-byte denominator. `T` is never used as a
    denominator.**
-3. Offsets are a **seeded systematic sample** over the file-body axis:
-   `o_j = o_0 + j·Δ`, with `o_0` from a committed seed. Systematic rather than
-   i.i.d. for even, reproducible coverage.
-4. `Δ ≥ T` on the nominal file-body axis. Line alignment can still map two
+3. Offsets are a **seeded systematic sample** over nonoverlapping nominal
+   `T`-byte slots on the concatenated file-body axis. Let `A` be total eligible
+   file-body bytes, `K=floor(A/T)`, and `n=min(200,K)`. If `K=0`, there is no
+   candidate. Otherwise select slot
+   `i_j=floor(K·(u+j·2⁶⁴)/(n·2⁶⁴))` and raw coordinate `o_j=T·i_j`
+   for `j=0,…,n−1`. This yields exactly `n` unique increasing nominal
+   coordinates, separated by at least `T`, without overflow. Systematic rather
+   than i.i.d. sampling gives even, reproducible coverage.
+4. For both arms, `u` is unsigned-big-endian
+   `SHA256(UTF8(J))[0:8]`, where `J` is the canonical JSON array
+   `["v2c-systematic-offset-v1", seed_sha256, repo, arm]`, serialized with
+   `json.dumps(..., sort_keys=True, separators=(",", ":"),
+   ensure_ascii=True)`. `repo` is the exact locked repository id and `arm` is
+   exactly `"a0"` or `"a1"`; no implicit separators or host-language tuple
+   representation are permitted.
+5. Line alignment can still map two
    nominal offsets into overlapping realized spans (for example, on a very
    long line), so candidates are processed in canonical offset order and any
    realized overlap is rejected. The overlap-rejection count is recorded and
    the retained target spans are proven pairwise disjoint. Files shorter than
    the minimum realized span host no block; the count of such files is
    recorded.
-5. A candidate is dropped if it is >50% comment or blank by byte, or if it
+6. A candidate is dropped if it is >50% comment or blank by byte, or if it
    fails the near-duplicate eligibility rule (§8.1). Drops are counted and the
    realized sample is published (§12).
 

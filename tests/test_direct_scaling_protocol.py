@@ -12,6 +12,8 @@ sys.path.insert(0, str(ROOT))
 
 from direct_scaling_protocol import (MODEL_CONFIG_INDEX_SCHEMA,
                                      PRIMARY_MODELS, build_protocol,
+                                     systematic_indices,
+                                     systematic_seed_u64,
                                      validate_protocol)
 from simulate_direct_scaling_power import build_power
 from v2b_common import V2BError, sha256_file, sha256_sorted_json
@@ -73,6 +75,17 @@ def test_round_trip_and_frozen_ladder():
     assert len(protocol["panel"]["repositories"]) == 14
     assert protocol["context"]["grid_bytes"][-1] == 1024 * 1024
     assert protocol["study_status"] == "prospective-exploratory-follow-up"
+    sampling = protocol["sampling"]
+    assert sampling["seed_u64_rule"]["preimage"] == [
+        "v2c-systematic-offset-v1", "$seed_sha256", "$repo", "$arm"]
+    assert sampling["seed_u64_rule"]["arm_enum"] == ["a0", "a1"]
+    assert sampling["systematic_index_formula"] == (
+        "i_j=floor(P*(u+j*2^64)/(n*2^64));"
+        "j=0,...,n-1;n=min(planned_per_repo,P)")
+    assert sampling["a0_origin_rule"]["raw_index"] == (
+        "systematic_index_formula")
+    assert sampling["a1_coordinate_rule"]["slot_population"] == (
+        "P=floor(axis_bytes/target_block_bytes)")
 
 
 def test_binding_tamper_rejected():
@@ -103,6 +116,15 @@ def test_nonascending_power_grid_rejected_even_when_resigned():
         assert "strictly ascending" in str(err)
     else:
         raise AssertionError("nonascending power grid accepted")
+
+
+def test_systematic_seed_and_indices_have_frozen_vector():
+    seed = systematic_seed_u64("0" * 64, "fixture", "a0")
+    assert seed == 4726835686534094915
+    assert systematic_indices(1000, 7, seed) == [36, 179, 322, 465,
+                                                  608, 750, 893]
+    assert systematic_indices(3, 200, seed) == [0, 1, 2]
+    assert systematic_indices(0, 200, seed) == []
 
 
 def test_missing_config_row_rejected():
