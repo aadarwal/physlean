@@ -4,6 +4,7 @@ load, no GPU): boundary byte accounting, the frozen three-file harness
 hash, exact target-cell coverage against a real materialized synthetic
 manifest, materialization tamper refusal, and the fail-closed
 context-length gate."""
+import copy
 import hashlib
 import json
 import math
@@ -20,7 +21,7 @@ import eval_paired as paired
 from eval_paired import (_model_max_positions, body_token_ledger,
                          empty_cell_arms, nll_rows_for_token_indices,
                          paired_harness_hash, score_prompt,
-                         target_cell_specs)
+                         target_cell_specs, validate_pilot_battery)
 from prepare_v2b_assembly import build_assembly, materialize
 from test_prepare_v2b_assembly import (_build, _build_physlib, _lean_chain,
                                        _physlib_chain, _python_chain)
@@ -78,6 +79,90 @@ def test_paired_harness_hash_is_exact_canonical_three_file_binding():
     expected = hashlib.sha256(json.dumps(
         rows, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
     assert paired_harness_hash(root) == expected
+
+
+def test_pilot_battery_run_identity_is_path_independent():
+    source = open(paired.__file__, encoding="utf-8").read()
+    assert 'pilot_battery_sha256=battery_binding["sha256"]' in source
+    assert "pilot_battery=battery_binding" not in source
+
+
+def _pilot_battery(source="a" * 64, harness="b" * 64,
+                   environment="c" * 64):
+    from layout import PRODUCTION_CHUNK_TOKENS
+    from validity_battery import (
+        A_CAUSAL_P, A_CTX, A_F2_CHUNK, PILOT_FAMILY, PILOT_MODEL,
+        PILOT_REVISION)
+    family = dict(
+        model=PILOT_MODEL, revision=PILOT_REVISION,
+        class_ok=True, param_sane=True, dtype="bfloat16",
+        attn_resolved="sdpa", chunk=PRODUCTION_CHUNK_TOKENS,
+        n_tokens=A_CTX, repeat_max_abs=0.0, mean_nll=2.0,
+        causal=dict(
+            p=A_CAUSAL_P, vocab=100, orig_token=42, perturbed_token=43,
+            n_protected=A_CAUSAL_P - 1,
+            n_downstream=A_CTX - 1 - A_CAUSAL_P,
+            excluded_row_delta=1.0, protected_max_abs=0.0,
+            downstream_max_abs=5.0),
+        performance=dict(
+            scored_tokens=A_CTX - 1, seconds=3.0,
+            tokens_per_second=(A_CTX - 1) / 3.0,
+            max_memory_allocated_bytes=10_000,
+            max_memory_reserved_bytes=20_000))
+    f2 = dict(
+        model=PILOT_MODEL, revision=PILOT_REVISION,
+        dtype="float32", attn_resolved="sdpa",
+        sdp_backend_forced="MATH", tokens=A_CTX,
+        tf32=dict(matmul_allow_tf32=False, cudnn_allow_tf32=False,
+                  float32_matmul_precision="highest"),
+        stats=dict(n=A_CTX - 1, mean_signed=0.0, mean_abs=3.2e-6,
+                   p50=1e-6, p90=1e-5, p99=2.4e-5, max=6.5e-5),
+        repeat_max_abs=0.0,
+        chunks=[A_F2_CHUNK, PRODUCTION_CHUNK_TOKENS])
+    block = dict(
+        families={PILOT_FAMILY: family}, f2=f2,
+        production_chunk=PRODUCTION_CHUNK_TOKENS,
+        verdict={"ok": True, "failures": []})
+    return dict(
+        model=PILOT_MODEL, revision=PILOT_REVISION,
+        model_revisions={PILOT_MODEL: PILOT_REVISION},
+        device="cuda", gate_eligible=True, plumbing_pass=True,
+        identities_unchanged_during_run=True,
+        source_tree_hash=source, harness_hash=harness,
+        env_fingerprint=environment,
+        A_fixed_chunk_semantics=block,
+        B_zero_rows={"conservation_ok": True},
+        C_nested_context={"ok": True},
+        D_duplicate_control={"ok": True},
+        E_dep_vs_random_context={"n": 8})
+
+
+def test_paired_run_requires_exact_current_pilot_battery():
+    from validity_battery import PILOT_MODEL, PILOT_REVISION
+    source, harness, environment = "a" * 64, "b" * 64, "c" * 64
+    battery = _pilot_battery(source, harness, environment)
+    assert validate_pilot_battery(
+        battery, source, harness, environment,
+        PILOT_MODEL, PILOT_REVISION) is battery
+    mutations = (
+        lambda value: value.update(source_tree_hash="0" * 64),
+        lambda value: value.update(harness_hash="0" * 64),
+        lambda value: value.update(env_fingerprint="0" * 64),
+        lambda value: value.update(plumbing_pass=False),
+        lambda value: value["B_zero_rows"].update(conservation_ok=False),
+        lambda value: value["A_fixed_chunk_semantics"]["families"][
+            "q25c-1p5b"].update(repeat_max_abs=1.0),
+    )
+    for mutate in mutations:
+        altered = copy.deepcopy(battery)
+        mutate(altered)
+        try:
+            validate_pilot_battery(
+                altered, source, harness, environment,
+                PILOT_MODEL, PILOT_REVISION)
+            assert False, "invalid pilot battery passed paired gate"
+        except V2BError:
+            pass
 
 
 def test_nll_row_mapping_rejects_token_zero():

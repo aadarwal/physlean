@@ -1308,7 +1308,10 @@ arxiv_manifest) must be committed before measurement.
   0.5B `battery.json`; throughput/peak memory are recorded without a threshold.
   The battery reads only fixed public corpus bytes and remains target/draw/salt/
   outcome independent, so it may run while the parser boundary audit and A6
-  human labels are pending.
+  human labels are pending. Before the paired scorer loads a model, the battery
+  must be a committed HEAD blob; the scorer recomputes its verdict, requires
+  exact current source-tree/numerical-harness/environment identity, binds its
+  artifact hash into the run identity, and rehashes it throughout execution.
 
 - ADOPTED (2026-08-07 late): reviewer's strategic ordering — v2
   extraction/pilot (G3.5) before grid expansion (G3b); the sentinel grid
@@ -1430,6 +1433,10 @@ arxiv_manifest) must be committed before measurement.
   second tier decision. This resolves the previously inconsistent combination
   of "exactly 20 rows" with mandatory baseline/model-cap exclusions without
   changing thresholds, outcome classes, or the blind reliability estimator.
+  This behavioral eligibility table is not an input to paired NLL scoring:
+  both tracks share the committed 20 identities, but S5 baseline/coverage gates
+  behavioral generation and joint reveal only. Masked NLL production may finish
+  first; formal salt reveal still waits for both frozen governance constants.
   Full detail: DESIGN_V2 §15.A17-A18.
 
 - ADOPTED (2026-08-08, Python behavioral extraction rule; PRE-GENERATION and

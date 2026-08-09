@@ -53,6 +53,56 @@ def paired_harness_hash(base_dir=None):
     return hashlib.sha256(canonical_json_bytes(rows)).hexdigest()
 
 
+def validate_pilot_battery(value, source_hash, numerical_harness_hash,
+                           environment, model, revision):
+    """Fail closed on the write-once 1.5B instrument evidence."""
+    from validity_battery import (
+        PILOT_FAMILIES, PILOT_MODEL, PILOT_REVISION,
+        pilot_fixed_chunk_verdict)
+    failures = []
+    if not isinstance(value, dict):
+        raise V2BError("pilot battery root is not an object")
+    if model != PILOT_MODEL or revision != PILOT_REVISION \
+            or value.get("model") != PILOT_MODEL \
+            or value.get("revision") != PILOT_REVISION \
+            or value.get("model_revisions") != {
+                name: PILOT_REVISION for name in PILOT_FAMILIES.values()}:
+        failures.append("model-identity")
+    if value.get("device") != "cuda" \
+            or value.get("gate_eligible") is not True \
+            or value.get("plumbing_pass") is not True \
+            or value.get("identities_unchanged_during_run") is not True:
+        failures.append("execution-verdict")
+    if value.get("source_tree_hash") != source_hash:
+        failures.append("source-tree")
+    if value.get("harness_hash") != numerical_harness_hash:
+        failures.append("numerical-harness")
+    if value.get("env_fingerprint") != environment:
+        failures.append("environment")
+    block = value.get("A_fixed_chunk_semantics")
+    if not isinstance(block, dict):
+        failures.append("fixed-chunk-missing")
+    else:
+        ok, recomputed = pilot_fixed_chunk_verdict(block)
+        if not ok or recomputed \
+                or block.get("verdict") != {"ok": True, "failures": []}:
+            failures.append("fixed-chunk-verdict")
+    if not isinstance(value.get("B_zero_rows"), dict) \
+            or value["B_zero_rows"].get("conservation_ok") is not True:
+        failures.append("token-conservation")
+    for field in ("C_nested_context", "D_duplicate_control",
+                  "E_dep_vs_random_context"):
+        if not isinstance(value.get(field), dict) or not value[field]:
+            failures.append(f"missing-{field}")
+    if any(key.endswith("_error") for key in value):
+        failures.append("recorded-error")
+    if failures:
+        raise V2BError(
+            "pilot battery is not valid for this paired run: "
+            + ", ".join(failures))
+    return value
+
+
 def body_token_ledger(text, offsets, body_start_char, token_ids=None):
     """Freeze §15.A11's body-only boundary convention before scoring.
 
@@ -490,7 +540,7 @@ def _chain_paths(manifest, args):
 
 
 def _check_guard(source_hash, harness, environment, manifest_path,
-                 manifest_sha):
+                 manifest_sha, battery_path, battery_sha):
     from provenance import env_fingerprint, source_clean, source_tree_hash
     if not source_clean() or source_tree_hash() != source_hash:
         raise V2BError("measurement source changed during paired evaluation")
@@ -500,6 +550,8 @@ def _check_guard(source_hash, harness, environment, manifest_path,
         raise V2BError("software environment changed during evaluation")
     if sha256_file(manifest_path) != manifest_sha:
         raise V2BError("assembly manifest changed during evaluation")
+    if sha256_file(battery_path) != battery_sha:
+        raise V2BError("pilot battery changed during paired evaluation")
 
 
 def _existing_target(path, run_identity, run_sha, manifest,
@@ -562,15 +614,17 @@ def _existing_target(path, run_identity, run_sha, manifest,
 def evaluate(args):
     from prepare_v2b_assembly import materialize
     from provenance import (env_fingerprint, env_matches_freeze,
-                            env_matches_lock, gpu_info, head_commit,
-                            source_clean, source_tree_hash)
+                            env_matches_lock, gpu_info, harness_hash,
+                            head_commit, source_clean, source_tree_hash)
     from v2b_a6_blind import require_committed
 
     if not source_clean():
         raise V2BError("source tree is dirty outside results_v2")
     require_committed(args.manifest)
+    require_committed(args.pilot_battery)
     manifest_binding, manifest = artifact_binding(args.manifest,
                                                   ASSEMBLY_SCHEMA)
+    battery_binding, battery = artifact_binding(args.pilot_battery)
     targets = manifest.get("targets")
     if not isinstance(targets, list) or not targets \
             or manifest.get("n_targets") != len(targets) \
@@ -592,12 +646,16 @@ def evaluate(args):
             f"environment does not match lock/freeze: "
             f"{lock_problems[:4] or 'lock-ok'}; {freeze_detail}")
     revision = _model_revision(args.model)
+    validate_pilot_battery(
+        battery, source_hash, harness_hash(), environment,
+        args.model, revision)
     run_identity = dict(
         paired_schema_version=PAIRED_SCHEMA_VERSION,
         manifest_sha256=manifest_binding["sha256"],
         model=args.model, revision=revision, dtype=args.dtype,
         chunk_tokens=PRODUCTION_CHUNK_TOKENS,
         paired_harness_hash=harness, env_fingerprint=environment,
+        pilot_battery_sha256=battery_binding["sha256"],
         ast_class_state=AST_CLASS_STATE)
     run_sha = sha256_sorted_json(run_identity)
     os.makedirs(args.out_dir, exist_ok=True)
@@ -639,7 +697,8 @@ def evaluate(args):
         if set(materialized) != {row["key"] for row in targets}:
             raise V2BError("materialization target set differs from manifest")
         _check_guard(source_hash, harness, environment, args.manifest,
-                     manifest_binding["sha256"])
+                     manifest_binding["sha256"], args.pilot_battery,
+                     battery_binding["sha256"])
 
         device = args.device or ("cuda" if torch.cuda.is_available() else
                                  "mps" if torch.backends.mps.is_available()
@@ -723,7 +782,8 @@ def evaluate(args):
                                program="eval_paired.py"),
                 wall_s=time.time() - started)
             _check_guard(source_hash, harness, environment, args.manifest,
-                         manifest_binding["sha256"])
+                         manifest_binding["sha256"], args.pilot_battery,
+                         battery_binding["sha256"])
             digest = write_new_json(path, artifact)
             bindings[index] = dict(path=os.path.abspath(path), sha256=digest,
                                    target_key=target["key"],
@@ -735,7 +795,8 @@ def evaluate(args):
     if len(ordered_bindings) != len(targets):
         raise AssertionError("paired completion missing target bindings")
     _check_guard(source_hash, harness, environment, args.manifest,
-                 manifest_binding["sha256"])
+                 manifest_binding["sha256"], args.pilot_battery,
+                 battery_binding["sha256"])
     complete = dict(
         schema=COMPLETE_SCHEMA,
         paired_schema_version=PAIRED_SCHEMA_VERSION,
@@ -762,6 +823,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
     ap.add_argument("--manifest", required=True)
+    ap.add_argument("--pilot-battery", required=True)
     ap.add_argument("--out-dir", required=True)
     ap.add_argument("--dtype", default="bfloat16")
     ap.add_argument("--device")

@@ -9,7 +9,7 @@ present -> integrity must validate and failure blocks G1 (tri-state).
   --gate big  big shards: big-rung models cached at pinned revisions
 Writes results_v2/preflight_<gate>.json (gate-specific evidence is
 preserved, never overwritten by later gates). Exit 0 only on pass."""
-import argparse, json, os, subprocess, sys
+import argparse, json, os, subprocess, sys, tempfile
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 OK = True
@@ -697,8 +697,39 @@ def raw_inventory():
                 sha256=_h.sha256(open(p, "rb").read()).hexdigest(),
                 quarantined=".quarantine-" in p)
         inv_p = os.path.join(BASE, "results_v2", "raw_inventory.json")
-        with open(inv_p, "w") as f:
-            json.dump(inv, f, indent=1)
+        if os.path.exists(inv_p):
+            prior = json.load(open(inv_p))
+            if not isinstance(prior, dict):
+                raise RuntimeError("existing raw inventory is not an object")
+            lost = []
+            for name, row in prior.items():
+                if inv.get(name) == row:
+                    continue
+                quarantines = [
+                    candidate for candidate, candidate_row in inv.items()
+                    if candidate.startswith(name + ".quarantine-")
+                    and candidate_row.get("quarantined") is True
+                    and candidate_row.get("bytes") == row.get("bytes")
+                    and candidate_row.get("sha256") == row.get("sha256")]
+                if not quarantines:
+                    lost.append(name)
+            if lost:
+                raise RuntimeError(
+                    f"refusing raw-inventory loss: {len(lost)} prior "
+                    f"artifacts disappeared or changed; sample={lost[:5]}")
+        os.makedirs(os.path.dirname(inv_p), exist_ok=True)
+        fd, temp_path = tempfile.mkstemp(
+            prefix=".raw-inventory-", dir=os.path.dirname(inv_p))
+        try:
+            with os.fdopen(fd, "w") as f:
+                json.dump(inv, f, indent=1)
+                f.flush()
+                os.fsync(f.fileno())
+            os.chmod(temp_path, 0o644)
+            os.replace(temp_path, inv_p)
+        finally:
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
         check("raw-inventory", True,
               dict(artifacts=len(inv),
                    quarantined=sum(1 for v in inv.values()

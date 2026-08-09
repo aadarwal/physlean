@@ -23,6 +23,8 @@ def test_single_gpu_exact_five_resumable_job():
         assert f"export {cache}=" in src
     assert "eval_paired.py" in src
     assert "--model Qwen/Qwen2.5-Coder-1.5B" in src
+    assert "results_v2/battery/battery_pilot_1p5b.json" in src
+    assert "--pilot-battery \"$V2B_PILOT_BATTERY\"" in src
     assert "--dtype bfloat16" in src and "--device cuda" in src
     assert "complete.json" in src and "V2B-PAIRED-DONE" in src
 
@@ -33,6 +35,7 @@ def test_manifest_source_and_corpus_are_fail_closed():
     assert "job${V2B_ASSEMBLY_JOB}_${V2B_TASK}_${V2B_TAG}.json" in src
     assert "git ls-files --error-unmatch" in src
     assert "git diff --quiet HEAD" in src
+    assert "pilot instrument battery is not tracked/committed" in src
     assert "git status --porcelain -- . ':(exclude)results_v2'" in src
     assert src.count("v2b_assert_source_identity") >= 3
     assert src.count("v2b_assert_corpus_identity") >= 3
