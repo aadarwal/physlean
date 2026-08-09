@@ -54,14 +54,25 @@ def paired_harness_hash(base_dir=None):
 
 
 def validate_pilot_battery(value, source_hash, numerical_harness_hash,
-                           environment, model, revision):
-    """Fail closed on the write-once 1.5B instrument evidence."""
-    from validity_battery import (
-        PILOT_FAMILIES, PILOT_MODEL, PILOT_REVISION,
-        pilot_fixed_chunk_verdict)
+                           environment, model, revision, battery_path=None):
+    """Fail closed on the write-once per-tier instrument evidence.
+
+    The tier is resolved from the scored model id against the frozen
+    PILOT_TIERS registry (NLL_LADDER_EXPLORATORY_AMENDMENT); the module
+    defaults are the sealed q25c-1.5b pilot, so 1.5B behavior is
+    byte-identical to the pre-ladder validator."""
+    import validity_battery as vb
+    vb.activate_pilot_tier(vb.resolve_pilot_tier_for_model(model))
+    PILOT_FAMILIES = vb.PILOT_FAMILIES
+    PILOT_MODEL = vb.PILOT_MODEL
+    PILOT_REVISION = vb.PILOT_REVISION
+    pilot_fixed_chunk_verdict = vb.pilot_fixed_chunk_verdict
     failures = []
     if not isinstance(value, dict):
         raise V2BError("pilot battery root is not an object")
+    if battery_path is not None and os.path.basename(
+            battery_path) != vb.PILOT_BATTERY_FILE:
+        failures.append("battery-filename")
     if model != PILOT_MODEL or revision != PILOT_REVISION \
             or value.get("model") != PILOT_MODEL \
             or value.get("revision") != PILOT_REVISION \
@@ -648,7 +659,7 @@ def evaluate(args):
     revision = _model_revision(args.model)
     validate_pilot_battery(
         battery, source_hash, harness_hash(), environment,
-        args.model, revision)
+        args.model, revision, battery_path=args.pilot_battery)
     run_identity = dict(
         paired_schema_version=PAIRED_SCHEMA_VERSION,
         manifest_sha256=manifest_binding["sha256"],
