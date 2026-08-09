@@ -1,0 +1,345 @@
+{
+ "model": "Qwen/Qwen2.5-Coder-14B",
+ "device": "cuda",
+ "gate_eligible": true,
+ "config_notes": {
+  "starcoder2": "config bos/eos id 50256 exceeds vocab_size 49152 (upstream quirk); harmless here \u2014 no special tokens are ever added"
+ },
+ "revision": "f2ad5164aade432d6d56c24bb71589184d5d613d",
+ "model_revisions": {
+  "Qwen/Qwen2.5-Coder-14B": "f2ad5164aade432d6d56c24bb71589184d5d613d"
+ },
+ "torch_version": "2.13.0+cu130",
+ "transformers_version": "5.14.1",
+ "harness_commit": "af0655f30f2dc26c48c01ded00b3638337ce5539",
+ "source_tree_hash": "87d54d84a801dfd148b1495c8885ed31b766355f81ba59b94fa71fcbe8e41958",
+ "harness_hash": "3358dd7e81463b730c323934c4b81e994fd1e00072c1894811a4cb9b7259a4d1",
+ "env_fingerprint": "cece9b716c1eb844ffff8c4000421f50441ea775010082f8724953bb9b9cd962",
+ "gpu_name": "NVIDIA H200",
+ "gpu_driver": "590.48.01",
+ "A_fixed_chunk_semantics": {
+  "families": {
+   "q25c-14b": {
+    "model": "Qwen/Qwen2.5-Coder-14B",
+    "revision": "f2ad5164aade432d6d56c24bb71589184d5d613d",
+    "cls": "Qwen2ForCausalLM",
+    "n_params": 14770033664,
+    "attn": {
+     "model_type": "qwen2",
+     "sliding_window": null,
+     "layer_types": "['full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', '"
+    },
+    "attn_resolved": "sdpa",
+    "dtype": "bfloat16",
+    "n_tokens": 8192,
+    "chunk": 2048,
+    "repeat_max_abs": 0.0,
+    "mean_nll": 0.5403878688812256,
+    "causal": {
+     "p": 4095,
+     "vocab": 152064,
+     "orig_token": 92,
+     "perturbed_token": 93,
+     "n_protected": 4094,
+     "n_downstream": 4096,
+     "protected_max_abs": 0.0,
+     "excluded_row_delta": 23.18749947589822,
+     "downstream_max_abs": 6.314638316631317
+    },
+    "class_ok": true,
+    "param_sane": true,
+    "performance": {
+     "scored_tokens": 8191,
+     "seconds": 9.97856881748885,
+     "tokens_per_second": 820.8591983295357,
+     "max_memory_allocated_bytes": 62120515584,
+     "max_memory_reserved_bytes": 62776147968
+    }
+   }
+  },
+  "f2": {
+   "model": "Qwen/Qwen2.5-Coder-14B",
+   "revision": "f2ad5164aade432d6d56c24bb71589184d5d613d",
+   "dtype": "float32",
+   "attn_resolved": "sdpa",
+   "sdp_backend_forced": "MATH",
+   "tf32": {
+    "matmul_allow_tf32": false,
+    "cudnn_allow_tf32": false,
+    "float32_matmul_precision": "highest"
+   },
+   "tokens": 8192,
+   "chunks": [
+    512,
+    2048
+   ],
+   "stats": {
+    "n": 8191,
+    "mean_signed": -4.507964572127394e-08,
+    "mean_abs": 4.528085907657635e-06,
+    "p50": 2.3655593395233154e-07,
+    "p90": 1.52587890625e-05,
+    "p99": 4.649162292480469e-05,
+    "max": 0.00015211105346679688
+   },
+   "repeat_max_abs": 0.0
+  },
+  "production_chunk": 2048,
+  "verdict": {
+   "ok": true,
+   "failures": []
+  }
+ },
+ "B_zero_rows": {
+  "q25c-14b/physlib": {
+   "tokens": 166425,
+   "zero_rows": 2942,
+   "zero_share": 0.017677632567222473,
+   "n_groups": 163483
+  },
+  "q25c-14b/mathlib": {
+   "tokens": 178793,
+   "zero_rows": 3798,
+   "zero_share": 0.021242442377498002,
+   "n_groups": 174995
+  },
+  "q25c-14b/qutip": {
+   "tokens": 131866,
+   "zero_rows": 9,
+   "zero_share": 6.825110339283819e-05,
+   "n_groups": 131857
+  },
+  "q25c-14b/sympy": {
+   "tokens": 157070,
+   "zero_rows": 0,
+   "zero_share": 0.0,
+   "n_groups": 157070
+  },
+  "q25c-14b/geant4": {
+   "tokens": 128553,
+   "zero_rows": 0,
+   "zero_share": 0.0,
+   "n_groups": 128553
+  },
+  "q25c-14b/arxiv_old": {
+   "tokens": 191147,
+   "zero_rows": 0,
+   "zero_share": 0.0,
+   "n_groups": 191147
+  },
+  "q25c-14b/arxiv_new": {
+   "tokens": 138887,
+   "zero_rows": 0,
+   "zero_share": 0.0,
+   "n_groups": 138887
+  },
+  "conserv/q25c-14b/physlib": {
+   "n_groups": 16247,
+   "zero_rows": 133,
+   "zero_nll_share": 0.00975426754235348,
+   "boundary_dropped_rows": 0,
+   "boundary_dropped_nll": 0.0,
+   "nll_ok": true,
+   "bytes_ok": true,
+   "conservation_ok": true
+  },
+  "conserv/q25c-14b/mathlib": {
+   "n_groups": 16055,
+   "zero_rows": 325,
+   "zero_nll_share": 0.017615357190552502,
+   "boundary_dropped_rows": 0,
+   "boundary_dropped_nll": 0.0,
+   "nll_ok": true,
+   "bytes_ok": true,
+   "conservation_ok": true
+  },
+  "nllshare/physlib": {
+   "n_groups": 16247,
+   "zero_rows": 133,
+   "zero_nll_share": 0.00034966048499961746,
+   "boundary_dropped_rows": 0,
+   "boundary_dropped_nll": 0.0,
+   "nll_ok": true,
+   "bytes_ok": true,
+   "conservation_ok": true
+  },
+  "nllshare/mathlib": {
+   "n_groups": 16055,
+   "zero_rows": 325,
+   "zero_nll_share": 0.00195532975029866,
+   "boundary_dropped_rows": 0,
+   "boundary_dropped_nll": 0.0,
+   "nll_ok": true,
+   "bytes_ok": true,
+   "conservation_ok": true
+  },
+  "real_offset_probe": {
+   "q25c-14b/unicode": {
+    "tokens": 12,
+    "overlap_rows": 1,
+    "bytes_conserved": true
+   },
+   "q25c-14b/latex": {
+    "tokens": 48,
+    "overlap_rows": 0,
+    "bytes_conserved": true
+   }
+  },
+  "synthetic_partition_ok": true,
+  "conservation_ok": true
+ },
+ "C_nested_context": {
+  "mathlib": {
+   "targets": [
+    {
+     "1024": 0.9507497549057007,
+     "4096": 0.9271182417869568,
+     "16384": 0.9339097738265991,
+     "32256": 0.9162641763687134
+    },
+    {
+     "1024": 0.7092829942703247,
+     "4096": 0.6863570809364319,
+     "16384": 0.6892855167388916,
+     "32256": 0.6920826435089111
+    },
+    {
+     "1024": 0.922070324420929,
+     "4096": 0.7066543698310852,
+     "16384": 0.6786190867424011,
+     "32256": 0.6954003572463989
+    }
+   ],
+   "monotonicity_violations": 1
+  },
+  "physlib": {
+   "targets": [
+    {
+     "1024": 1.0577303171157837,
+     "4096": 0.8609325289726257,
+     "16384": 0.6878075003623962,
+     "32256": 0.6833149194717407
+    },
+    {
+     "1024": 0.9147469997406006,
+     "4096": 0.4600319266319275,
+     "16384": 0.32393717765808105,
+     "32256": 0.32910609245300293
+    },
+    {
+     "1024": 0.3293938934803009,
+     "4096": 0.31837010383605957,
+     "16384": 0.302620530128479,
+     "32256": 0.3024362325668335
+    }
+   ],
+   "monotonicity_violations": 0
+  }
+ },
+ "D_duplicate_control": {
+  "file": "Erase.lean",
+  "bytes": 6006,
+  "bpb_per_copy": [
+   0.42020752296884484,
+   0.006059367435643604,
+   0.0005169827120076031,
+   0.00015905925423984472,
+   0.00010229430570668145,
+   9.810272970685054e-05,
+   9.91233433668659e-05,
+   9.430326183787665e-05
+  ]
+ },
+ "E_meta": {
+  "corpus": "mathlib",
+  "scan_root": "Mathlib",
+  "parser": "^import\\s+(?:all\\s+)?([A-Za-z0-9_.]+)",
+  "n_files_scanned": 8308,
+  "n_eligible_targets": 81,
+  "eligibility_floor": 8,
+  "scope": "machinery validation only \u2014 not physlib evidence, not the V2-b grounding pilot (DESIGN_V2 \u00a79)"
+ },
+ "E_dep_vs_random_context": {
+  "corpus": "mathlib",
+  "rows": [
+   {
+    "ctx_bytes_dep": 16000,
+    "ctx_bytes_rand": 16000,
+    "ctx_tokens_dep": 4556,
+    "ctx_tokens_rand": 4581,
+    "dep": 1.46798837184906,
+    "rand": 1.6616801023483276,
+    "file": "EquifiberedLimits.lean"
+   },
+   {
+    "ctx_bytes_dep": 16000,
+    "ctx_bytes_rand": 16000,
+    "ctx_tokens_dep": 5554,
+    "ctx_tokens_rand": 5471,
+    "dep": 0.6802555322647095,
+    "rand": 0.7007290124893188,
+    "file": "IsValuedIn.lean"
+   },
+   {
+    "ctx_bytes_dep": 7932,
+    "ctx_bytes_rand": 7932,
+    "ctx_tokens_dep": 2651,
+    "ctx_tokens_rand": 2715,
+    "dep": 0.39478713274002075,
+    "rand": 0.47707730531692505,
+    "file": "Pullback.lean"
+   },
+   {
+    "ctx_bytes_dep": 15667,
+    "ctx_bytes_rand": 15667,
+    "ctx_tokens_dep": 5654,
+    "ctx_tokens_rand": 5292,
+    "dep": 0.5356799960136414,
+    "rand": 0.7511922121047974,
+    "file": "RadonNikodym.lean"
+   },
+   {
+    "ctx_bytes_dep": 16000,
+    "ctx_bytes_rand": 16000,
+    "ctx_tokens_dep": 4281,
+    "ctx_tokens_rand": 4927,
+    "dep": 0.7516837120056152,
+    "rand": 0.8012650012969971,
+    "file": "Tensoriality.lean"
+   },
+   {
+    "ctx_bytes_dep": 16000,
+    "ctx_bytes_rand": 16000,
+    "ctx_tokens_dep": 5458,
+    "ctx_tokens_rand": 5102,
+    "dep": 0.6021243929862976,
+    "rand": 0.6654661297798157,
+    "file": "AsTensorProduct.lean"
+   },
+   {
+    "ctx_bytes_dep": 16000,
+    "ctx_bytes_rand": 16000,
+    "ctx_tokens_dep": 6153,
+    "ctx_tokens_rand": 5182,
+    "dep": 0.8024100661277771,
+    "rand": 0.7861510515213013,
+    "file": "Basic.lean"
+   },
+   {
+    "ctx_bytes_dep": 16000,
+    "ctx_bytes_rand": 16000,
+    "ctx_tokens_dep": 5030,
+    "ctx_tokens_rand": 5596,
+    "dep": 1.1278061866760254,
+    "rand": 1.154444932937622,
+    "file": "TuranDensity.lean"
+   }
+  ],
+  "dep_wins": 7,
+  "n": 8,
+  "skipped_insufficient_pool": [],
+  "mean_delta_nats": 0.07940879464149475
+ },
+ "plumbing_pass": true,
+ "identities_unchanged_during_run": true
+}
