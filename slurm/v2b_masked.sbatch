@@ -10,7 +10,7 @@
 # each paired complete dir from that HEAD + the committed assembly
 # manifest SHA, exactly as slurm/v2b_paired.sbatch named it:
 #   sbatch -p mit_normal --array=0-4 \
-#     --export=ALL,V2B_ASSEMBLY_JOB=<id>,V2B_SAMPLE=<sample.json>,V2B_SALT=<pool-salt>,V2B_SALT_COMMITMENT=<tracked-commitment.json> \
+#     --export=ALL,V2B_CANDIDATES_JOB=<id>,V2B_ASSEMBLY_JOB=<id>,V2B_SAMPLE=<sample.json>,V2B_SALT=<pool-salt>,V2B_SALT_COMMITMENT=<tracked-commitment.json> \
 #     slurm/v2b_masked.sbatch
 set -euo pipefail
 cd "$SLURM_SUBMIT_DIR"
@@ -49,6 +49,11 @@ v2b_assert_source_identity
 V2B_ASSEMBLY_JOB="${V2B_ASSEMBLY_JOB:?export the committed assembly array job id}"
 [[ "$V2B_ASSEMBLY_JOB" =~ ^[0-9]+$ ]] || {
   echo "V2B_ASSEMBLY_JOB must be a numeric Slurm job id" >&2
+  exit 1
+}
+V2B_CANDIDATES_JOB="${V2B_CANDIDATES_JOB:?export the sealed candidate array job id}"
+[[ "$V2B_CANDIDATES_JOB" =~ ^[0-9]+$ ]] || {
+  echo "V2B_CANDIDATES_JOB must be a numeric Slurm job id" >&2
   exit 1
 }
 V2B_SAMPLE="${V2B_SAMPLE:?export the committed V2-b sample path}"
@@ -90,29 +95,25 @@ V2B_TASK="${SLURM_ARRAY_TASK_ID:?submit as array 0-4}"
 case "$V2B_TASK" in
   0)
     V2B_TAG="mathlib4"
-    V2B_CANDIDATES="results_v2/v2b/candidates/job19931908_0_mathlib4.json"
     ;;
   1)
     V2B_TAG="batteries"
-    V2B_CANDIDATES="results_v2/v2b/candidates/job19931908_1_batteries.json"
     ;;
   2)
     V2B_TAG="physlib"
-    V2B_CANDIDATES="results_v2/v2b/candidates/job19931908_2_physlib.json"
     ;;
   3)
     V2B_TAG="sympy"
-    V2B_CANDIDATES="results_v2/v2b/candidates/job19931908_3_sympy.json"
     ;;
   4)
     V2B_TAG="astropy"
-    V2B_CANDIDATES="results_v2/v2b/candidates/job19931908_4_astropy.json"
     ;;
   *)
     echo "invalid V2-b masked array task: $V2B_TASK" >&2
     exit 1
     ;;
 esac
+V2B_CANDIDATES="results_v2/v2b/candidates/job${V2B_CANDIDATES_JOB}_${V2B_TASK}_${V2B_TAG}.json"
 [[ -f "$V2B_CANDIDATES" ]] || {
   echo "missing sealed candidate table: $V2B_CANDIDATES" >&2
   exit 1

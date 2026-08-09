@@ -24,9 +24,11 @@ def test_cpu_array_job_and_source_boundary():
 
 def test_exact_five_cohort_and_completion_derivation():
     src = source()
-    for task, tag in enumerate(("mathlib4", "batteries", "physlib",
-                                "sympy", "astropy")):
-        assert f"job19931908_{task}_{tag}.json" in src
+    assert 'V2B_CANDIDATES_JOB="${V2B_CANDIDATES_JOB:?' in src
+    assert '[[ "$V2B_CANDIDATES_JOB" =~ ^[0-9]+$ ]]' in src
+    assert ("job${V2B_CANDIDATES_JOB}_${V2B_TASK}_"
+            "${V2B_TAG}.json") in src
+    assert "19931908" not in src
     # complete dir derived exactly as the paired job named it: current
     # scoring HEAD + committed manifest SHA
     assert ("job${V2B_ASSEMBLY_JOB}_${V2B_TASK}_${V2B_TAG}.json") in src

@@ -14,7 +14,7 @@
 # masked/governance/behavioral input must be a committed HEAD blob and
 # the private salt stays 0600 and untracked to the end:
 #   sbatch -p mit_normal \
-#     --export=ALL,V2B_MASKED_JOB=<id>,V2B_GOVERNANCE_JOB=<id>,V2B_BEHAVIORAL_JOB=<id>,V2B_ASSEMBLY_JOB=<id>,V2B_SCORING_COMMIT=<40-hex>,V2B_SAMPLE=<sample.json>,V2B_SALT=<pool-salt>,V2B_SALT_COMMITMENT=<tracked-commitment.json> \
+#     --export=ALL,V2B_CANDIDATES_JOB=<id>,V2B_MASKED_JOB=<id>,V2B_GOVERNANCE_JOB=<id>,V2B_BEHAVIORAL_JOB=<id>,V2B_ASSEMBLY_JOB=<id>,V2B_SCORING_COMMIT=<40-hex>,V2B_SAMPLE=<sample.json>,V2B_SALT=<pool-salt>,V2B_SALT_COMMITMENT=<tracked-commitment.json> \
 #     slurm/v2b_unblind.sbatch
 set -euo pipefail
 cd "$SLURM_SUBMIT_DIR"
@@ -70,6 +70,11 @@ V2B_ASSEMBLY_JOB="${V2B_ASSEMBLY_JOB:?export the committed assembly array job id
   echo "V2B_ASSEMBLY_JOB must be a numeric Slurm job id" >&2
   exit 1
 }
+V2B_CANDIDATES_JOB="${V2B_CANDIDATES_JOB:?export the sealed candidate array job id}"
+[[ "$V2B_CANDIDATES_JOB" =~ ^[0-9]+$ ]] || {
+  echo "V2B_CANDIDATES_JOB must be a numeric Slurm job id" >&2
+  exit 1
+}
 V2B_SCORING_COMMIT="${V2B_SCORING_COMMIT:?export the exact 40-hex scoring commit}"
 [[ "$V2B_SCORING_COMMIT" =~ ^[0-9a-f]{40}$ ]] || {
   echo "V2B_SCORING_COMMIT must be exactly 40 hex characters" >&2
@@ -120,7 +125,7 @@ for V2B_TASK in 0 1 2 3 4; do
   V2B_GOVERNANCE="results_v2/v2b/governance/job${V2B_GOVERNANCE_JOB}_${V2B_TASK}_${V2B_TAG}.json"
   V2B_BEHAVIORAL="results_v2/v2b/behavioral_governance/job${V2B_BEHAVIORAL_JOB}_${V2B_TASK}_${V2B_TAG}.json"
   V2B_MANIFEST="results_v2/v2b/assembly/job${V2B_ASSEMBLY_JOB}_${V2B_TASK}_${V2B_TAG}.json"
-  V2B_CANDIDATES="results_v2/v2b/candidates/job19931908_${V2B_TASK}_${V2B_TAG}.json"
+  V2B_CANDIDATES="results_v2/v2b/candidates/job${V2B_CANDIDATES_JOB}_${V2B_TASK}_${V2B_TAG}.json"
   for V2B_TRACKED in "$V2B_MASKED" "$V2B_GOVERNANCE" "$V2B_BEHAVIORAL" \
                      "$V2B_MANIFEST"; do
     [[ -f "$V2B_TRACKED" ]] || {

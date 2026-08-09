@@ -52,7 +52,11 @@ def test_five_corpus_committed_chain_and_salt_boundary():
     assert ("job${V2B_MASKED_JOB}_${V2B_TASK}_${V2B_TAG}.json") in src
     assert ("job${V2B_GOVERNANCE_JOB}_${V2B_TASK}_${V2B_TAG}.json") in src
     assert ("job${V2B_ASSEMBLY_JOB}_${V2B_TASK}_${V2B_TAG}.json") in src
-    assert "job19931908_${V2B_TASK}_${V2B_TAG}.json" in src
+    assert 'V2B_CANDIDATES_JOB="${V2B_CANDIDATES_JOB:?' in src
+    assert '[[ "$V2B_CANDIDATES_JOB" =~ ^[0-9]+$ ]]' in src
+    assert ("job${V2B_CANDIDATES_JOB}_${V2B_TASK}_"
+            "${V2B_TAG}.json") in src
+    assert "19931908" not in src
     # masked + governance + behavioral + manifest committed per corpus;
     # candidates are POOL evidence, gated by SHA equality with the
     # masked binding instead of tracking (frozen B0 decision)

@@ -10,7 +10,7 @@
 # commit by the evidence-only masked commit, so the paired complete dir
 # is re-derived from the exported scoring commit + committed manifest:
 #   sbatch -p mit_normal --array=0-4 \
-#     --export=ALL,V2B_MASKED_JOB=<id>,V2B_ASSEMBLY_JOB=<id>,V2B_SCORING_COMMIT=<40-hex>,V2B_SAMPLE=<sample.json> \
+#     --export=ALL,V2B_CANDIDATES_JOB=<id>,V2B_MASKED_JOB=<id>,V2B_ASSEMBLY_JOB=<id>,V2B_SCORING_COMMIT=<40-hex>,V2B_SAMPLE=<sample.json> \
 #     slurm/v2b_governance.sbatch
 set -euo pipefail
 cd "$SLURM_SUBMIT_DIR"
@@ -56,6 +56,11 @@ V2B_ASSEMBLY_JOB="${V2B_ASSEMBLY_JOB:?export the committed assembly array job id
   echo "V2B_ASSEMBLY_JOB must be a numeric Slurm job id" >&2
   exit 1
 }
+V2B_CANDIDATES_JOB="${V2B_CANDIDATES_JOB:?export the sealed candidate array job id}"
+[[ "$V2B_CANDIDATES_JOB" =~ ^[0-9]+$ ]] || {
+  echo "V2B_CANDIDATES_JOB must be a numeric Slurm job id" >&2
+  exit 1
+}
 V2B_SCORING_COMMIT="${V2B_SCORING_COMMIT:?export the exact 40-hex scoring commit}"
 V2B_SAMPLE="${V2B_SAMPLE:?export the committed V2-b sample path}"
 [[ "$V2B_SCORING_COMMIT" =~ ^[0-9a-f]{40}$ ]] || {
@@ -67,29 +72,25 @@ V2B_TASK="${SLURM_ARRAY_TASK_ID:?submit as array 0-4}"
 case "$V2B_TASK" in
   0)
     V2B_TAG="mathlib4"
-    V2B_CANDIDATES="results_v2/v2b/candidates/job19931908_0_mathlib4.json"
     ;;
   1)
     V2B_TAG="batteries"
-    V2B_CANDIDATES="results_v2/v2b/candidates/job19931908_1_batteries.json"
     ;;
   2)
     V2B_TAG="physlib"
-    V2B_CANDIDATES="results_v2/v2b/candidates/job19931908_2_physlib.json"
     ;;
   3)
     V2B_TAG="sympy"
-    V2B_CANDIDATES="results_v2/v2b/candidates/job19931908_3_sympy.json"
     ;;
   4)
     V2B_TAG="astropy"
-    V2B_CANDIDATES="results_v2/v2b/candidates/job19931908_4_astropy.json"
     ;;
   *)
     echo "invalid N governance array task: $V2B_TASK" >&2
     exit 1
     ;;
 esac
+V2B_CANDIDATES="results_v2/v2b/candidates/job${V2B_CANDIDATES_JOB}_${V2B_TASK}_${V2B_TAG}.json"
 [[ -f "$V2B_CANDIDATES" ]] || {
   echo "missing sealed candidate table: $V2B_CANDIDATES" >&2
   exit 1
