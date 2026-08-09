@@ -389,6 +389,12 @@ families × ≥3 sizes with ≥32k-token context for descriptive coverage, plus
 headline checkpoints with ≥128k effective reach and one ≥262k-context
 checkpoint if available and licensable. P1b may mark a frozen checkpoint unavailable; it
 may not substitute a more favorable checkpoint after any loss is observed.
+The currently locked three-family × three-size ladder is **descriptive and
+checkpoint-specific**, not a pooled headline roster: its native reach does not
+prospectively establish three headline-eligible families. A checkpoint may
+earn a model-specific headline only through K1. Unless at least three distinct
+families independently earn that status, K3 is recorded as **unevaluable** and
+there is no pooled family-stability claim or pooled crossover.
 
 ---
 
@@ -662,7 +668,13 @@ For **A0 and A1 separately**, reuse the `analyze_v2.py:120-190` machinery:
 curve, `x=q_source` for cross-language A0 comparisons, and `x=c` for each A1
 decomposition, against a
 saturating exponential and a log-linear alternative, all under the same
-contiguous fit/holdout split with the frozen relative-error gate, and
+contiguous fit/holdout split with the frozen relative-error gate. P0 overrides
+the older analyzer's grid and 8-KiB split: fit rungs are 512 B through 32 KiB;
+the fixed validation holdout is 64, 128, and 256 KiB; and eligible 512- and
+1,024-KiB rungs are nonparametric diagnostics only. The two diagnostics do not
+enter fitting, holdout validation, the 10× exhaustion gate, or range/common-
+support licensing. The total validated fit-plus-holdout support—not the fit
+subset alone—must pass the range rules below. Fits retain the existing
 equal / sqrt / byte weightings. The outputs are explicitly
 `β_position_stream`, `β_position_source`, `β_paired_with_file`, and
 `β_paired_cross_file`; they are never pooled into one coefficient. β
@@ -695,7 +707,14 @@ growth are not the essay's context-access scaling curve.
   `q_stream` support alone cannot license a cross-language A0 claim.
 - **Support rule:** a crossover is reported only inside measured common
   support. Outside it the output is "not reached within measured support (upper
-  bound: X)". Extrapolated crossovers appear in no figure, table, or abstract.
+  bound: X)". The primary crossover is read from the **nonparametric common-
+  rung language-difference curve**, never from extrapolating the parametric
+  fit: posterior draws are interpolated linearly in `log₂(x)` only between
+  adjacent measured rungs, and a crossover is reported only when ≥95% of draws
+  contain exactly one within-support crossing. Otherwise the frozen output is
+  "no stable unique crossover within measured support". A parametric crossing
+  is a labeled sensitivity only. Extrapolated crossovers appear in no figure,
+  table, or abstract.
 
 A0/A1 compatibility is a frozen interpretation gate, not a model-selection
 step, and uses A0-temporal on `q_stream` versus A1 with-file on `c`. Within a
@@ -1035,11 +1054,29 @@ corpus/panel and exploratory-versus-reserved-confirmatory status, checkpoint
 ledger/scoring adapters, metadata-header bytes, sampling seed and cohort-size
 rule, primary arm/checkpoint/language contrasts, multiplicity policy, power
 simulation, and the complete analysis model. The power simulation must use the
-512-byte primary score horizon and the frozen clustering structure; it reports
-the probability that the 95% interval correctly classifies the compatibility
-ROPE under prespecified compatible, outside-ROPE, and boundary cases. If the
-planned sample cannot achieve the P0 power target, increase units or the score
-horizon before freezing—never widen the scientific ROPE to fit the budget.
+512-byte primary score horizon and the frozen clustering structure. The
+compatible and outside-ROPE cases are its adequacy gates. The boundary case
+measures nominal interval coverage at the positive ROPE boundary and is
+diagnostic only; a wide interval cannot count as power. The simulation reports,
+for every frozen effective-repository count and unit-slope standard deviation,
+the largest contiguous tested repository-slope standard deviation for which
+both adequacy cases reach the 0.80 target. It does not require an incoherent
+conjunction over deliberately falsifying sensitivity cells.
+
+The central `unit_slope_sd = 0.08` and `repository_slope_sd = 0.005` values are
+explicitly assumptions at the 512-byte horizon, not empirical measurements and
+not a power certificate. Before any primary or holdout loss is scored, a frozen
+disjoint calibration cohort—never used in a primary or holdout fit—must emit
+only pooled unit- and repository-slope variance (no means, condition contrasts,
+or crossover). A language-general score run is authorized only when those
+calibrated variances fall inside the simulated adequacy boundary at that
+language's effective repository count. Otherwise the language is prospectively
+restricted to repository-specific description. If planned support is
+inadequate, increase units or the score horizon and, when repository variance
+binds, add genuinely independent repositories/components—never widen the
+scientific ROPE to fit the budget. Fewer than three independent repositories
+always implies repository-specific description only. The model-free P1a census
+may proceed before calibration because it reveals no loss or effect estimate.
 → *Output:* constants table plus its sha256. *Go:* review sign-off.
 
 **P1a — structural feasibility. CPU only; no model is loaded.** Emit
@@ -1102,6 +1139,7 @@ unanswered for that panel.
 | Block containment | entirely within one file body; never crosses a file or metadata boundary |
 | Sampling | seeded systematic on the file-body axis, `Δ ≥ T`; line-aligned realized spans are checked pairwise disjoint |
 | Position/context grids `q_stream`,`q_source`,`c` | same frozen edges {512 B,1,2,4,8,16,32,64,128,256,512,1024 KiB} on their declared byte axes |
+| Fit / validation / diagnostic rungs | fit 512 B–32 KiB; fixed holdout 64/128/256 KiB; 512/1024 KiB nonparametric diagnostics only and excluded from the 10× exhaustion and range/common-support gates |
 | Context eligibility | exact, after joint tokenization, per model token limit |
 | Attention eligibility | effective causal reach at each rung; native and extended adapters separate |
 | A1 context regimes | with-file and cross-file-only (skip/backfill to the same `c`) are both required; claim must be stable across them |
@@ -1117,6 +1155,8 @@ unanswered for that panel.
 | Planned sample | 200 A0 origins and 200 A1 shared targets per repository (sizing only, not cell floors) |
 | Min contiguous fit range | 2 decades, at eligible sample size |
 | Headline range robustness | ≥2 decades after removing 512-B rung and maximum rung ≥10× cell median same-file exhaustion |
+| Locked ladder scope | the 3-family × 3-size ladder is descriptive/checkpoint-specific; model-specific K1 headlines remain possible, but K3 and every pooled claim are unevaluable unless ≥3 families independently pass K1 |
+| Crossover source | posterior interpolation of adjacent nonparametric common-rung differences; ≥95% of draws must contain exactly one measured-support crossing; parametric crossing is sensitivity only |
 | ROPE `δ_β` | 0.02, frozen; straddling ⇒ indeterminate |
 | A0/A1 slope-equivalence ROPE | `β_position_stream−β_paired_with_file ∈ [−0.02,0.02]` by 95% interval |
 | Stops and claim limiters | K1–K6 classifications exactly as written in §10 |
@@ -1135,8 +1175,10 @@ not discretion delegated to the outcome consumer.
 
 1. **`analyze_v2.py`** — log bins (`:39`), bootstrap (`:89-117`), three
    functional forms with the gated holdout fit (`:120-190`). Reuse the fitting
-   core; replace window/document floors with §9.1 block/file floors and add the
-   §9.3 hierarchical layer.
+   core but replace its `EDGES` and `HOLDOUT_SPLIT=8192` with §9.2's explicit
+   direct-study grid and fit/holdout/diagnostic partition; replace
+   window/document floors with §9.1 block/file floors and add the §9.3
+   hierarchical layer.
 2. **`prep_streams.py`** — Kahn ordering (`:228-272`), shuffle/seed arms
    (`:13-16`), git first-add dates (`:100-207`), and regex import proposals
    (`:219-224`). Replace proposal edges with the §3.2 environment-resolved
