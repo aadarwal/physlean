@@ -1253,14 +1253,47 @@ def sample_targets(inventory: RepoInventory,
 LEXICAL_RECORD_RE = re.compile(r"[\w\u0080-\uffff]+|[^\s\w]", re.UNICODE)
 
 
-def _lexical_records(data: bytes, language: str) \
+def _utf8_window_interior(data: bytes, start: int, end: int) \
+        -> tuple[int, int]:
+    """Return the complete-scalar interior of byte window ``[start, end)``.
+
+    Source files have already passed a strict whole-blob UTF-8 decode in
+    ``load_inventory``.  A byte-axis window can nevertheless begin or end in
+    the middle of one of those valid scalars.  Only those incomplete edge
+    scalars are outside the lexical view; the frozen byte window itself is not
+    moved, padded, or decoded with replacement.
+    """
+    if (not isinstance(start, int) or isinstance(start, bool)
+            or not isinstance(end, int) or isinstance(end, bool)
+            or start < 0 or end < start or end > len(data)):
+        _fail("invalid lexical byte window")
+    interior_start = start
+    while (interior_start < end
+           and data[interior_start] & 0xC0 == 0x80):
+        interior_start += 1
+    interior_end = end
+    while (interior_end > interior_start and interior_end < len(data)
+           and data[interior_end] & 0xC0 == 0x80):
+        interior_end -= 1
+    return interior_start, interior_end
+
+
+def _lexical_records(data: bytes, language: str, *, start: int = 0,
+                     end: int | None = None) \
         -> list[tuple[str, int, int]]:
-    mask = _comment_mask(data, language)
+    requested_end = len(data) if end is None else end
+    interior_start, interior_end = _utf8_window_interior(
+        data, start, requested_end)
+    interior = data[interior_start:interior_end]
+    mask = _comment_mask(interior, language)
     visible = bytes(byte if not mask[i] else 0x20
-                    for i, byte in enumerate(data))
+                    for i, byte in enumerate(interior))
+    # Strict decoding is part of P0.  In particular, do not replace or ignore
+    # malformed bytes: an invalid byte away from a valid scalar-split edge is
+    # a fail-closed corpus error.
     text = visible.decode("utf-8")
-    char_to_byte = [0]
-    total = 0
+    char_to_byte = [interior_start]
+    total = interior_start
     for char in text:
         total += len(char.encode("utf-8"))
         char_to_byte.append(total)
@@ -1269,9 +1302,10 @@ def _lexical_records(data: bytes, language: str) \
             for match in LEXICAL_RECORD_RE.finditer(text)]
 
 
-def _lexical_grams(data: bytes, base: int, language: str, n: int) \
+def _lexical_grams(data: bytes, base: int, language: str, n: int, *,
+                   start: int = 0, end: int | None = None) \
         -> list[tuple[str, int, int, int]]:
-    records = _lexical_records(data, language)
+    records = _lexical_records(data, language, start=start, end=end)
     grams = []
     for i in range(0, max(0, len(records) - n + 1)):
         group = records[i:i + n]
@@ -1294,14 +1328,16 @@ def screen_near_duplicates(inventories: list[RepoInventory],
         by_file = files_by_repo[inventory.spec["repo"]]
         for target in inventory.targets or []:
             file = by_file[target["file_path"]]
-            target_data = file.data[
-                target["file_byte_start"]:target["file_byte_end"]]
-            if len(_lexical_records(target_data, inventory.spec["language"])) \
+            target_start = target["file_byte_start"]
+            target_end = target["file_byte_end"]
+            if len(_lexical_records(
+                    file.data, inventory.spec["language"],
+                    start=target_start, end=target_end)) \
                     < nd["minimum_lexical_records"]:
                 continue
             units = _lexical_grams(
-                target_data, target["file_byte_start"],
-                inventory.spec["language"], nd["gram_n"])
+                file.data, 0, inventory.spec["language"], nd["gram_n"],
+                start=target_start, end=target_end)
             target_set = {unit[0] for unit in units}
             if not target_set:
                 continue
@@ -1398,10 +1434,11 @@ def screen_near_duplicates(inventories: list[RepoInventory],
                         continue
                     if window not in slice_cache:
                         slice_cache[window] = {row[0] for row in _lexical_grams(
-                            other_file.data[candidate_start:candidate_end], 0,
+                            other_file.data, 0,
                             next(item.spec["language"] for item in inventories
                                  if item.spec["repo"] == other_repo),
-                            nd["gram_n"])}
+                            nd["gram_n"], start=candidate_start,
+                            end=candidate_end)}
                     other_set = slice_cache[window]
                     union = target_set | other_set
                     similarity = (len(target_set & other_set) / len(union)

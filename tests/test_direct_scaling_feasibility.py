@@ -19,6 +19,7 @@ sys.path.insert(0, ROOT)
 from direct_scaling_feasibility import (CensusError, _best_range,
                                         SourceFile, RepoInventory,
                                         PRODUCTION_PROTOCOL_SHA256,
+                                        _lexical_grams, _lexical_records,
                                         _repo_ranges, _systematic_file_origins,
                                         _systematic_indices,
                                         _systematic_u64, build_artifact,
@@ -383,6 +384,42 @@ def test_frozen_systematic_phase_and_a0_file_strata():
         (137 * (expected + j * scale)) // (17 * scale)
         for j in range(17)]
     assert all(right > left for left, right in zip(indices, indices[1:]))
+
+
+def test_lexical_byte_window_excludes_only_split_utf8_edge_scalars():
+    # Both requested endpoints split a four-byte scalar.  Lexical coordinates
+    # remain coordinates in the original frozen byte axis, not in a shifted
+    # or replacement-decoded string.
+    text = "🐍alpha beta gamma delta epsilon🚀"
+    data = text.encode("utf-8")
+    start, end = 2, len(data) - 2
+    records = _lexical_records(data, "python", start=start, end=end)
+    expected_start = len("🐍".encode("utf-8"))
+    expected_end = len("🐍alpha beta gamma delta epsilon".encode("utf-8"))
+    assert [row[0] for row in records] == [
+        "alpha", "beta", "gamma", "delta", "epsilon"]
+    assert records[0][1] == expected_start
+    assert records[-1][2] == expected_end
+    assert data[records[0][1]:records[-1][2]].decode("utf-8") == \
+        "alpha beta gamma delta epsilon"
+
+    grams = _lexical_grams(
+        data, 0, "python", 5, start=start, end=end)
+    assert len(grams) == 1
+    assert grams[0][1:3] == (expected_start, expected_end)
+    # The requested byte window remains unchanged and is not silently rounded.
+    assert (start, end) == (2, len(data) - 2)
+
+
+def test_lexical_byte_window_never_replaces_malformed_interior_utf8():
+    data = "αalpha ".encode("utf-8") + b"\xff" + \
+        " betaβ".encode("utf-8")
+    try:
+        _lexical_records(data, "python", start=1, end=len(data) - 1)
+    except UnicodeDecodeError:
+        pass
+    else:
+        raise AssertionError("malformed interior UTF-8 was replaced or ignored")
 
 
 def test_schema_decision_and_raw_tamper_rejection():
