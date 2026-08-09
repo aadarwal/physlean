@@ -1,0 +1,150 @@
+{
+ "analysis": {},
+ "context": {
+  "bin_floor_files": 1,
+  "bin_floor_units": 1,
+  "cell_floor_files": 1,
+  "cell_floor_units": 1,
+  "diagnostic_rungs_excluded_from_gates": [
+   8192
+  ],
+  "floor_rung_bytes": 512,
+  "grid_bytes": [
+   512,
+   1024,
+   2048,
+   4096,
+   8192
+  ],
+  "headline_max_rung_over_median_exhaustion": 10.0,
+  "headline_max_validated_rung_bytes": 4096,
+  "headline_requires_decades_without_floor": 0.5,
+  "minimum_contiguous_decades": 0.5
+ },
+ "design": {},
+ "eligibility": {
+  "a0": "all-source-bytes-no-comment-or-blank-filter",
+  "a1_context_regimes": [
+   "with-file",
+   "cross-file-only"
+  ],
+  "a1_min_noncomment_bytes_in_primary_horizon": 128,
+  "a1_min_nonwhitespace_bytes_in_primary_horizon": 256,
+  "cross_file_policy": "skip-target-file-and-backfill-to-exact-c",
+  "independence_graph": {
+   "edge_if_git_history_overlaps": true,
+   "edge_if_shared_unique_fivegram_fraction_at_least": 0.05,
+   "minimum_components_for_language_general_claim": 3
+  },
+  "near_duplicate": {
+   "gram_n": 5,
+   "jaccard_threshold_rational": [
+    7,
+    10
+   ],
+   "minimum_lexical_records": 20,
+   "records": "language-lexical-records-layout-excluded",
+   "scope": "union-of-all-headline-contexts-all-orderings-rungs"
+  }
+ },
+ "frozen_at_utc_date": "2026-08-09",
+ "generator": {
+  "program": "synthetic-fixture-builder",
+  "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "source_tree_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ },
+ "input_ledgers": {
+  "corpora_lock": {
+   "path": "corpora_lock.json",
+   "sha256": "LOCK_SHA256"
+  }
+ },
+ "panel": {
+  "models": [
+   {
+    "model_id": "fixture/model",
+    "release_timestamp": "2025-01-01T00:00:00+00:00",
+    "revision": "cccccccccccccccccccccccccccccccccccccccc"
+   }
+  ],
+  "repositories": [
+   {
+    "language": "python",
+    "repo": "repo1",
+    "revision": "REPO_REVISION",
+    "url": "fixture://repo1"
+   }
+  ]
+ },
+ "power": {
+  "note": "bound but never consumed by P1a"
+ },
+ "protocol_binding": "PROTOCOL_BINDING",
+ "protocol_state": "synthetic-fixture",
+ "sampling": {
+  "a0_seed_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "a0_origin_rule": {
+   "anchor": "selected-file-exact-metadata-header-start",
+   "deduplicate_or_top_up": false,
+   "population": "lexicographically-sorted-eligible-file-identities",
+   "population_size_symbol": "P=N_eligible_files",
+   "raw_index": "systematic_index_formula"
+  },
+  "a1_seed_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "a1_coordinate_rule": {
+   "axis": "concatenated-file-body-bytes-headers-excluded",
+   "post_mapping": "map-to-containing-file-then-line-align;reject-cross-file-header-short-overlap-comment-blank-nearduplicate;never-top-up",
+   "processing_order": "ascending-raw-coordinate",
+   "raw_coordinate": "target_block_bytes*i_j",
+   "raw_index": "systematic_index_formula",
+   "slot_population": "P=floor(axis_bytes/target_block_bytes)"
+  },
+  "alignment": "next-utf8-line-boundary-at-or-after-coordinate",
+  "identity_reuse": "same-origins-targets-all-orderings-models-rungs",
+  "minimum_realized_target_bytes": 2048,
+  "overlap_policy": "reject-pairwise-overlap-never-resample",
+  "planned_per_repo": 8,
+  "primary_score_horizon_source_bytes": 512,
+  "seed_family": "v2c-direct-scaling-p0-20260809",
+  "seed_u64_rule": {
+   "arm_enum": [
+    "a0",
+    "a1"
+   ],
+   "canonical_json": "json.dumps(value,sort_keys=true,separators=[comma,colon],ensure_ascii=true) encoded UTF-8",
+   "digest_decode": "unsigned-big-endian-first-8-bytes-of-SHA256",
+   "preimage": [
+    "v2c-systematic-offset-v1",
+    "$seed_sha256",
+    "$repo",
+    "$arm"
+   ]
+  },
+  "systematic_index_formula": "i_j=floor(P*(u+j*2^64)/(n*2^64));j=0,...,n-1;n=min(planned_per_repo,P)",
+  "target_block_bytes": 4096
+ },
+ "schema": "v2c_direct_scaling_protocol_v1",
+ "stream": {
+  "graph_gate": {
+   "minimum_participating_file_fraction": 0.5,
+   "minimum_resolved_edges": 2,
+   "minimum_resolved_reference_fraction": 1.0
+  },
+  "metadata_header": "\n<V2C_FILE {compact_sorted_json(repo,path,source_sha256,source_bytes)}>\n",
+  "metadata_visible_not_scored": true,
+  "orderings": [
+   "seeded-shuffled",
+   "build-resolved-topological",
+   "reverse-topological"
+  ],
+  "path_exclusions": [],
+  "source_suffixes": {
+   "python": [
+    ".py"
+   ]
+  },
+  "tracked_files_only": true,
+  "utf8_policy": "strict-no-replacement"
+ },
+ "study_status": "synthetic-fixture"
+}
