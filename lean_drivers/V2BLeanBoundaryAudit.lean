@@ -210,11 +210,16 @@ def elaborateTrustedCommand (inputCtx : Parser.InputContext)
       ((Elab.Command.elabCommandTopLevel stx #[]) context).run state
   match result with
   | Except.error exception =>
-      hard s!"trusted-command elaboration raised: \
+      hard s!"trusted command at byte {cmdPos.byteIdx} \
+        ({stx.getKind}) raised during elaboration: \
         {← exception.toMessageData.toString}"
   | Except.ok (_, nextState) =>
       if nextState.messages.hasErrors then
-        hard "a trusted original command does not elaborate"
+        for message in nextState.messages.reportedPlusUnreported do
+          IO.eprintln s!"V2B trusted command at byte {cmdPos.byteIdx} \
+            ({stx.getKind}): {← message.toString}"
+        hard s!"trusted original command at byte {cmdPos.byteIdx} \
+          ({stx.getKind}) does not elaborate"
       else
         let nextState <- settleTrustedSnapshotTasks nextState
         pure <| disableAsync { nextState with messages := {} }
