@@ -65,6 +65,22 @@ Duplicate/malformed target keys, nonfinite values, binding drift, mapping
 drift, B3 replay drift, or a reconstructed-family mean inconsistent with the
 published centering aborts the whole artifact.
 
+The analyzer implementation and its one-touch freeze must be committed before
+the reveal. Their commits must be ancestors of the reveal generator commit.
+Because the separately frozen reveal executable requires its exact pre-score
+source-tree projection, production may temporarily omit the already-committed
+analyzer/test blobs while executing the reveal, then restore those exact
+frozen blobs afterward; commit ancestry, blob hashes, and the analysis freeze
+must prove this sequence mechanically. The analyzer also authenticates the
+exact reveal amendment and reveal-implementation freeze bytes, histories,
+commits, and source-tree hash rather than trusting fields echoed by the reveal
+JSON.
+
+Production analysis runs only from immutable snapshots of every direct replay
+input, or from a complete exact-file hash ledger checked before and after the
+run. The output binds that ledger. Any missing, extra, changed, or path-swapped
+input aborts publication.
+
 ## Frozen point estimates and intervals
 
 For a contrast with deltas `d_i`, the repo point estimate is
