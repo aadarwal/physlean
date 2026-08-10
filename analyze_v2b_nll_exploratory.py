@@ -129,6 +129,12 @@ T_095_BY_DF = {
     13: 1.770933396, 14: 1.761310136, 15: 1.753050356,
     16: 1.745883676, 17: 1.739606726, 18: 1.734063607,
     19: 1.729132812,
+    # SUPPLEMENT_DF_EXTENSION_AMENDMENT: classic printed-table
+    # breakpoints for df >= 20; lookup uses the largest breakpoint
+    # <= df (conservative: t-quantiles strictly decrease in df).
+    20: 1.724718243, 25: 1.708140761, 30: 1.697260887,
+    40: 1.683851013, 60: 1.670648865, 80: 1.664124579,
+    120: 1.657650899,
 }
 
 REVEAL_STATE = "revealed-post-nll-governance-exploratory"
@@ -809,7 +815,17 @@ def _inference(rows):
     if components["mode"] == "insufficient-clusters":
         return dict(base, inference_status="insufficient-clusters")
     df = components["n_modules"] - 1
-    if df not in T_095_BY_DF or df not in T_0975_BY_DF:
+    # SUPPLEMENT_DF_EXTENSION_AMENDMENT: exact df hits use their entry
+    # (df 1-19 byte-identical to every committed artifact); df >= 20
+    # falls back to the largest tabulated breakpoint <= df, which is
+    # conservative in every reported direction. P-values are computed
+    # from exact-df incomplete-beta integrals below and are unchanged.
+    if df in T_095_BY_DF and df in T_0975_BY_DF:
+        t_df = df
+    elif df >= 20:
+        t_df = max(k for k in T_0975_BY_DF
+                   if k <= df and k in T_095_BY_DF)
+    else:
         raise V2BError(f"no frozen Student-t quantiles for df={df}")
     n = len(rows)
     variance = components["sigma_b2"] * math.fsum(
@@ -825,7 +841,7 @@ def _inference(rows):
                     lower_one_sided_95_bpb=None,
                     upper_one_sided_95_bpb=None,
                     inference_status="degenerate-zero-se")
-    q2, q1 = T_0975_BY_DF[df], T_095_BY_DF[df]
+    q2, q1 = T_0975_BY_DF[t_df], T_095_BY_DF[t_df]
     interval = [mean - q2 * se, mean + q2 * se]
     lower, upper = mean - q1 * se, mean + q1 * se
     if any(not math.isfinite(value) for value in (*interval, lower, upper)):

@@ -55,6 +55,11 @@ T_0975_BY_DF = {
     6: 2.446912, 7: 2.364624, 8: 2.306004, 9: 2.262157, 10: 2.228139,
     11: 2.200985, 12: 2.178813, 13: 2.160369, 14: 2.144787, 15: 2.131450,
     16: 2.119905, 17: 2.109816, 18: 2.100922, 19: 2.093024,
+    # SUPPLEMENT_DF_EXTENSION_AMENDMENT: classic printed-table
+    # breakpoints for df >= 20 (largest breakpoint <= df is used by the
+    # exploratory analyzer; df 1-19 behavior is byte-identical).
+    20: 2.085963, 25: 2.059539, 30: 2.042272, 40: 2.021075,
+    60: 2.000298, 80: 1.990063, 120: 1.979930,
 }
 
 

@@ -142,3 +142,25 @@ if __name__ == "__main__":
             fn()
             print(f"[ok] {name}")
     print("SUPPLEMENT CONSUMER TESTS PASS")
+
+
+def test_frozen_t_breakpoint_extension():
+    from analyze_v2b_nll_exploratory import (
+        T_095_BY_DF, T_0975_BY_DF, _inference)
+    # df 1-19 entries untouched (committed artifacts must reproduce)
+    assert T_0975_BY_DF[19] == 2.093024 and T_095_BY_DF[19] == 1.729132812
+    # breakpoints present and strictly decreasing in df
+    breaks = [20, 25, 30, 40, 60, 80, 120]
+    for table in (T_095_BY_DF, T_0975_BY_DF):
+        vals = [table[b] for b in breaks]
+        assert vals == sorted(vals, reverse=True)
+    # df=102 (103 modules) resolves via the df=80 breakpoint and yields
+    # a wider CI than the df=120 entry would give: conservative.
+    rows = [{"target_key": f'["M{i:03d}","d",0]', "module": f"M{i:03d}",
+             "delta_bpb": 0.1 + (0.001 * (i % 7))} for i in range(103)]
+    summary = _inference(rows)
+    assert summary["inference_status"] == "available"
+    assert summary["degrees_of_freedom"] == 102
+    half = summary["ci95_two_sided_bpb"][1] - summary["target_equal_mean_bpb"]
+    assert abs(half - T_0975_BY_DF[80] * summary["standard_error_bpb"]) \
+        < 1e-12
