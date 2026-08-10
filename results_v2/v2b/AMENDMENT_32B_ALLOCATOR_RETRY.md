@@ -1,6 +1,6 @@
 # Prospective amendment: one 32b battery re-attempt under expandable-segments allocation
 
-Date: 2026-08-10 EDT. Status: DRAFT pending review. Boundary: the first
+Date: 2026-08-10 EDT. Status: **ADOPTED** (independent delta review: ADOPTABLE — allocator policy is outside the frozen measurement identity; one-retry/finality rule confirmed airtight). Boundary: the first
 32b battery attempt (job 20035959) is recorded infeasible (fp32 leg OOM,
 ~540MiB short of a 141GB H200); no 32b score exists; this amendment is
 written before any re-attempt runs.

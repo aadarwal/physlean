@@ -538,6 +538,16 @@ arxiv_manifest) must be committed before measurement.
 
 ## 13. Disagreement log
 
+- ADOPTED (2026-08-10, 32b allocator retry; PRE-RE-ATTEMPT — first 32b
+  battery recorded infeasible, no 32b score exists): one battery
+  re-attempt with PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+  exported by the 32b launches only (allocator segment policy; kernels,
+  dtype, chunk, tokens, fingerprint unchanged — the same remedy class as
+  the 7b H200 move). Independent delta review: ADOPTABLE. Pass restores
+  the six-tier set by the post-pass commit; ANY failure makes q25c-32b
+  infeasibility FINAL absent a fresh reviewed amendment; no other memory
+  remedy is authorized. AMENDMENT_32B_ALLOCATOR_RETRY.md.
+
 - ADOPTED (2026-08-09 night, dose-curve expansion package Part A;
   POST-FIVE-TIER-EVIDENCE, PRE-32B-OUTCOME — all six committed evidence
   sets were public; no 32b battery, score, or cell existed; the 32b
