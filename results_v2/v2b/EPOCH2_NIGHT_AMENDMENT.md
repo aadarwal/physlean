@@ -1,7 +1,13 @@
 # Prospective amendment: epoch-2 night batch (interior scoring; deep supplement; six-battery re-freeze)
 
-Date: 2026-08-10 EDT (overnight, user-directed full completion). Status:
-DRAFT pending review. Boundary: epoch-1 (32b battery rerun + 32b scoring
+Date: 2026-08-10 EDT (overnight, user-directed full completion). Status: **ADOPTED** after two-round independent review (round 1: four
+findings — interior-ledger repo scoping, per-target discard granularity,
+rebind basename preservation with launcher ordering enforcement,
+supplement print field — all resolved; round 2 blocker: the replication
+gate's reference side was unpinned — resolved by pinning the pilot
+manifest sha, requiring --pilot-ledger row equality, and enforcing
+per-tier pilot tree pins; final verdict ADOPTABLE, provenance nit
+(pilot_ledger_sha256 in bindings) applied in the adoption commit). Boundary: epoch-1 (32b battery rerun + 32b scoring
 at the 4ddf92e tree) is running or complete; both interior manifests
 exist unread (mathlib4 interior_job20042050_0 sha 1ea57d0c…, sympy
 interior_job20040278_1 sha da996920…); no interior or supplement cell has

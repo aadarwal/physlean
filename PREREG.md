@@ -538,6 +538,32 @@ arxiv_manifest) must be committed before measurement.
 
 ## 13. Disagreement log
 
+- ADOPTED (2026-08-10 overnight, epoch-2 night batch; PRE-EXECUTION — no
+  interior/supplement cell scored or read, no supplement draw, epoch-1
+  32b scoring in flight at its frozen tree): EPOCH2_NIGHT_AMENDMENT.md.
+  Epoch discipline (all code in one batch, one tree, instruments
+  re-frozen once): all six tier batteries rebound into
+  results_v2/battery/epoch1/ with preserved basenames then rerun at the
+  epoch-2 tree via battery_epoch.sbatch (refuses until the rebound
+  committed copy exists; sealed artifacts byte-preserved and still
+  bound by sha in sealed evidence). Interior scoring: pinned-sha
+  manifests (mathlib4 1ea57d0c…, sympy da996920…), six tiers x two
+  repos, one submission each; consumer analyze_v2b_interior.py with the
+  precondition-gated 16384 replication gate at PER-TARGET discard
+  granularity (env mismatch tier-wide; incidents abort; discards
+  enumerated) whose REFERENCE side is symmetrically pinned (pilot
+  manifest sha, --pilot-ledger row equality, per-tier pilot tree pins),
+  merging committed {4,16,64} with new {8,32} into five-point curves
+  under the standing non-B* reading rule. Supplement: mathlib4 n=120 via
+  the unchanged build_sample_plan with the 20 pilot identities excluded,
+  emitted bound-sample-compatible (assembly --expected-n 120), full-grid
+  assembly on the pinned chain, six-tier scoring, supplement + pooled
+  panels labeled exploratory-nll-only-supplemented-pilot. Ledger writer
+  gains --repos scoping and --sealed-from-scan. Two-round independent
+  review recorded in the amendment; adoption commit applies the final
+  provenance nit. Execution starts only after epoch-1 drains; no git
+  operation touches the cluster worktree between epoch sync and drain.
+
 - ADOPTED (2026-08-10, 32b fp32-residency correction; OUTCOME-FREE basis
   — code inspection after two OOMs, no 32b score exists): the battery
   harness kept the outer bf16 model GPU-resident as dead weight through

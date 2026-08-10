@@ -286,6 +286,7 @@ def analyze_repo(repo, interior_manifest_path, pilot_manifest_path,
                                  sha256=battery_shas[tag])
                        for tag in sorted(tier_batteries)},
             ledger_sha256=ledger.get("_binding_sha256"),
+            pilot_ledger_sha256=pilot_ledger.get("_binding_sha256"),
             amendment=dict(path=AMENDMENT_PATH,
                            sha256=sha256_file(AMENDMENT_PATH))),
         generator=dict(source_commit=head_commit(),
