@@ -95,7 +95,11 @@ PINNED_SCORING_TREE_BY_TIER = {
     "q25c-3b": _ORIGINAL_SCORING_TREE,
     "q25c-7b": _ORIGINAL_SCORING_TREE,
     "q25c-14b": _ORIGINAL_SCORING_TREE,
-    "q25c-32b": None,  # filled by the post-scoring pin commit
+    # 554a80b-lineage tree recorded by the five ledger-bound job-20044870
+    # completions (post-scoring pin commit per the frozen None-refusal
+    # rule; the ledger sha remains the primary anti-shopping gate).
+    "q25c-32b":
+        "6096279142bde0e9d1446e329b109daf3a286d65a5d5370a5eaa375ac2695357",
 }
 # Backward-compatible alias for consumers that imported the old name;
 # semantically it is now "the original five-tier scoring tree".
