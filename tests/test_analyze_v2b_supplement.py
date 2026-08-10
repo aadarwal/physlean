@@ -66,14 +66,24 @@ def test_pooled_panel_inference_over_union():
 
 
 def test_pin_refusals_precede_everything():
-    with _expect(V2BError, "no pinned supplement manifest"):
-        sup.analyze_supplement("nope.json", "nope.json", {}, {}, {},
-                               expected_manifest_sha=None,
-                               expected_tree="t")
-    with _expect(V2BError, "no pinned epoch-2 scoring tree"):
-        sup.analyze_supplement("nope.json", "nope.json", {}, {}, {},
-                               expected_manifest_sha="aa" * 32,
-                               expected_tree=None)
+    # The module pins are filled now; explicit None inherits them, so
+    # exercise the refusal branches by blanking the constants.
+    saved = (sup.PINNED_SUPPLEMENT_MANIFEST_SHA256,
+             sup.EPOCH2_SCORING_TREE)
+    sup.PINNED_SUPPLEMENT_MANIFEST_SHA256 = None
+    sup.EPOCH2_SCORING_TREE = None
+    try:
+        with _expect(V2BError, "no pinned supplement manifest"):
+            sup.analyze_supplement("nope.json", "nope.json", {}, {}, {},
+                                   expected_manifest_sha=None,
+                                   expected_tree="t")
+        with _expect(V2BError, "no pinned epoch-2 scoring tree"):
+            sup.analyze_supplement("nope.json", "nope.json", {}, {}, {},
+                                   expected_manifest_sha="aa" * 32,
+                                   expected_tree=None)
+    finally:
+        (sup.PINNED_SUPPLEMENT_MANIFEST_SHA256,
+         sup.EPOCH2_SCORING_TREE) = saved
 
 
 def test_guard_ordering_sha_then_tiers():
@@ -111,8 +121,10 @@ def test_supplement_launcher_contract():
 
 
 def test_supplement_constants():
-    assert sup.PINNED_SUPPLEMENT_MANIFEST_SHA256 is None  # pin-commit fills
-    assert sup.EPOCH2_SCORING_TREE is None  # post-scoring pin fills
+    assert sup.PINNED_SUPPLEMENT_MANIFEST_SHA256 == \
+        "2543b185e8d6d9359a112079df7b98dfd6547015b7b88a5ac29a3ea1ba5c88e5"
+    assert sup.EPOCH2_SCORING_TREE == \
+        "b7632c5deb3a89ac11d5da4532cb98fa247ad31d70c4083a49fedcaf0736cab1"
     assert sup.SUPPLEMENT_ANALYSIS_SCHEMA == "v2b_supplement_dose_v1"
     assert sup.SUPPLEMENT_CLAIM == \
         "exploratory-nll-only-supplemented-pilot"

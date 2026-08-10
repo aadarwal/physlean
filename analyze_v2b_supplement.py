@@ -33,8 +33,10 @@ from v2b_common import V2BError, artifact_binding, load_json, sha256_file, \
 SUPPLEMENT_ANALYSIS_SCHEMA = "v2b_supplement_dose_v1"
 SUPPLEMENT_CLAIM = "exploratory-nll-only-supplemented-pilot"
 REPO = "mathlib4"
-# Post-assembly pin commit fills this with the supplement manifest sha.
-PINNED_SUPPLEMENT_MANIFEST_SHA256 = None
+# Post-assembly pin: supplement_job20050588_0_mathlib4.json — the one
+# supplement assembly submission (job id recorded per the review note).
+PINNED_SUPPLEMENT_MANIFEST_SHA256 = \
+    "2543b185e8d6d9359a112079df7b98dfd6547015b7b88a5ac29a3ea1ba5c88e5"
 AMENDMENT_PATH = "results_v2/v2b/EPOCH2_NIGHT_AMENDMENT.md"
 
 

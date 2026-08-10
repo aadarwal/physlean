@@ -115,7 +115,9 @@ def test_grid_mismatch_discards():
 
 
 def test_interior_constants_and_launchers():
-    assert intr.PINNED_INTERIOR_SCORING_TREE is None  # pin-commit fills
+    assert intr.PINNED_INTERIOR_SCORING_TREE == (
+        "b7632c5deb3a89ac11d5da4532cb98fa247ad31d70c4083a49fedcaf"
+        "0736cab1")  # the one epoch-2 tree (post-scoring pin)
     assert set(intr.PINNED_INTERIOR_MANIFEST_SHA256) == \
         {"mathlib4", "sympy"}
     src = open(os.path.join(ROOT, "slurm",

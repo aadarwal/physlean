@@ -49,8 +49,10 @@ PINNED_INTERIOR_MANIFEST_SHA256 = {
 }
 # Filled by the post-scoring pin commit; every interior completion (all
 # six tiers, no sealed exemption) must have been scored at exactly this
-# tree. None => the consumer refuses to run.
-PINNED_INTERIOR_SCORING_TREE = None
+# tree — the one epoch-2 tree, recorded identically by all six epoch
+# batteries and every interior completion.
+PINNED_INTERIOR_SCORING_TREE = \
+    "b7632c5deb3a89ac11d5da4532cb98fa247ad31d70c4083a49fedcaf0736cab1"
 AMENDMENT_PATH = "results_v2/v2b/EPOCH2_NIGHT_AMENDMENT.md"
 
 
