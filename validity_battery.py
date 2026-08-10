@@ -400,7 +400,14 @@ def item_A(model, tok, device, res, *, pilot=False):
             "causal_prot", fams[fam]["causal"]["protected_max_abs"],
             "attn", fams[fam]["attn_resolved"])
     # q25c fp32 semantic leg: TF32 off (asserted + recorded), model impl
-    # gated == 'sdpa' in the verdict, torch SDP backend forced MATH
+    # gated == 'sdpa' in the verdict, torch SDP backend forced MATH.
+    # AMENDMENT_32B_FP32_RESIDENCY: the outer battery model is DEAD WEIGHT
+    # during this oracle (never computed with here) — offload it to CPU so
+    # the fp32 reference has the whole device, and restore it afterwards
+    # for the later items. Pure memory lifecycle; no computed value moves.
+    if device == "cuda":
+        model.to("cpu")
+        torch.cuda.empty_cache()
     torch.backends.cuda.matmul.allow_tf32 = False
     torch.backends.cudnn.allow_tf32 = False
     torch.set_float32_matmul_precision("highest")
@@ -430,6 +437,7 @@ def item_A(model, tok, device, res, *, pilot=False):
     del m32
     if device == "cuda":
         torch.cuda.empty_cache()
+        model.to(device)  # restore the outer model for later items
     block = dict(families=fams, f2=f2,
                  production_chunk=PRODUCTION_CHUNK_TOKENS)
     if pilot:
