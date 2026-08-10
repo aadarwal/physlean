@@ -1,0 +1,757 @@
+{
+ "assembly_manifest": {
+  "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/assembly/supplement_job20050588_0_mathlib4.json",
+  "schema": "v2b_assembly_manifest_v2",
+  "sha256": "2543b185e8d6d9359a112079df7b98dfd6547015b7b88a5ac29a3ea1ba5c88e5"
+ },
+ "ast_class_state": "not-run-separate-required-gate",
+ "behavioral_state": "not-run-separate-required-gate",
+ "corpus_git_sha": "87adeaebd370a3b6a41ac4f044fddd4bf81803ad",
+ "generator": {
+  "program": "eval_paired.py",
+  "source_commit": "871fc29ad23d03c8df621865443eac9e6cfdf3c7",
+  "source_tree_hash": "f767635242a71e1341545ec48bcdb72bb8d6c83cad807dc26ddfb92da37c8d4c"
+ },
+ "language": "lean",
+ "mutation_state": "not-run-separate-required-gate",
+ "n_cells": 2760,
+ "n_targets": 120,
+ "paired_schema_version": 2,
+ "repo": "mathlib4",
+ "run_identity": {
+  "ast_class_state": "not-run-separate-required-gate",
+  "chunk_tokens": 2048,
+  "dtype": "bfloat16",
+  "env_fingerprint": "cece9b716c1eb844ffff8c4000421f50441ea775010082f8724953bb9b9cd962",
+  "manifest_sha256": "2543b185e8d6d9359a112079df7b98dfd6547015b7b88a5ac29a3ea1ba5c88e5",
+  "model": "Qwen/Qwen2.5-Coder-1.5B",
+  "paired_harness_hash": "6cfe1a62cbd2408cb1fb8fe2fd0943e84c1e18bbb5da73c6718fa99bddcfe9b7",
+  "paired_schema_version": 2,
+  "pilot_battery_sha256": "18b5d50038c951ac8e4a647e5601320de90a64b43c941d26c2b0db0643533a82",
+  "revision": "df3ce67c0e24480f20468b6ef2894622d69eb73b"
+ },
+ "run_identity_sha256": "2409e018e246c11fa6ef5815a8c9977ac7ee839a78f4cd5e9d391318db2b19f6",
+ "schema": "v2b_paired_nll_complete_v2",
+ "target_artifacts": [
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0000.json",
+   "sha256": "274a88db041700baf217a80cb72b5c319100d857e5ecd40d9121488d636b865b",
+   "target_key": "[\"Mathlib.Algebra.CharZero.Defs\",\"Nat.cast_eq_one\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0001.json",
+   "sha256": "88fff68378f3cf995a4a7dda95f0d65237d47e7313b2a3b97272c65dc3db90c6",
+   "target_key": "[\"Mathlib.Algebra.EuclideanDomain.Field\",\"Field.gcd_eq_of_ne\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0002.json",
+   "sha256": "1996c6176c788aa9e24e5c040fb4fe648a594b56f81b7b540bcc1785941e0780",
+   "target_key": "[\"Mathlib.Algebra.FreeMonoid.Basic\",\"FreeMonoid.toList_mul\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0003.json",
+   "sha256": "b676ac14110aa2d905d39e08ec6c5cce8aad55a542762531b172c6d4361a129d",
+   "target_key": "[\"Mathlib.Algebra.Group.Action.Units\",\"Units.smul_mk_apply\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0004.json",
+   "sha256": "251c248b7fac0200661fa39a8ae5dd10ad51ad00729a1b768bb806660eed58f3",
+   "target_key": "[\"Mathlib.Algebra.Group.Defs\",\"mul_left_inj\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0005.json",
+   "sha256": "9fe88ed15b39834a70eeeaae81a798865118a2f70deb94e0301b25552cb842e3",
+   "target_key": "[\"Mathlib.Algebra.Homology.HomologicalComplex\",\"HomologicalComplex.Hom.comm_from\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0006.json",
+   "sha256": "bd86a1a30e1f8f5a6a51e811da6a3db55e1808dcc4bfc0ef94c60c94a0ea8add",
+   "target_key": "[\"Mathlib.Algebra.Homology.ShortComplex.Homology\",\"CategoryTheory.ShortComplex.homologyι\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0007.json",
+   "sha256": "6272759306e5a5ee7174b3d5cb842893e120ec964b0e62e386d444e9799c2d30",
+   "target_key": "[\"Mathlib.Algebra.Lie.Subalgebra\",\"LieSubalgebra.comap_lieSpan_range_eq\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0008.json",
+   "sha256": "f3331cf8a012025d7a6af19280df0521bae6cf6f89897721e12130e14f8b614e",
+   "target_key": "[\"Mathlib.Algebra.Module.LocalizedModule.Int\",\"IsLocalizedModule.finsetIntegerMultiple_image\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0009.json",
+   "sha256": "f743c0adac1b3fa45da1092be6926e5a7137470310b0cdc190f0afa61e30c19c",
+   "target_key": "[\"Mathlib.Algebra.MvPolynomial.Degrees\",\"MvPolynomial.monomial_le_degreeOf\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0010.json",
+   "sha256": "f802994ede1b45593b00b2227d0971ddf20e2145da2d55e3bcda1484035040e0",
+   "target_key": "[\"Mathlib.Algebra.Order.Group.Indicator\",\"Function.mulSupport_iSup\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0011.json",
+   "sha256": "ecf019ff21a2a959e228fee00c7297d5df433e29930b464d386e9574eab77b76",
+   "target_key": "[\"Mathlib.Algebra.Order.GroupWithZero.Basic\",\"le_self_pow₀\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0012.json",
+   "sha256": "03f93a73155141931e786894faf2e80508dbd9a29d4abb868a8de7965174ed86",
+   "target_key": "[\"Mathlib.Algebra.Order.Kleene\",\"kstar_idem\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0013.json",
+   "sha256": "a6e900e55447395e4ee24b76efaaa520a1d00764acaf38fcdfe336f34b76c40b",
+   "target_key": "[\"Mathlib.Algebra.Order.Ring.Unbundled.Basic\",\"pos_iff_neg_of_mul_neg\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0014.json",
+   "sha256": "9ee086079be23a4b9925223ff5e205d0ec771c06c09d3f1d6593d16f60257520",
+   "target_key": "[\"Mathlib.Algebra.Polynomial.Div\",\"Polynomial.self_mul_modByMonic\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0015.json",
+   "sha256": "968aa341fbfeac4d5653a7dd46cda9422900ccc3918c8667ef4534618d5fd9fc",
+   "target_key": "[\"Mathlib.Algebra.Polynomial.Monic\",\"Polynomial.Monic.degree_mul_comm\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0016.json",
+   "sha256": "f1e6f9d15ce250d3153bc4d7d6c238248f1cf22c45b919fa162f07a6647043ff",
+   "target_key": "[\"Mathlib.Algebra.Star.Subalgebra\",\"StarAlgHom.ext_of_adjoin_eq_top\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0017.json",
+   "sha256": "ac834d6f7b935ab978f9e2c2ce604c7301fd1a4ea1b7fa2bc3d6122df7929263",
+   "target_key": "[\"Mathlib.Algebra.Star.Subalgebra\",\"StarSubalgebra.ext\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0018.json",
+   "sha256": "0a7e2f86403f4e586045cfc76702a8ca3ed3bfbf583ccc4bffa50f14cfaaebd4",
+   "target_key": "[\"Mathlib.Algebra.Star.UnitaryStarAlgAut\",\"Unitary.conjStarAlgAut_apply\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0019.json",
+   "sha256": "b56ee8828a9c82aa1614164f7899072742b9dc20c8d92250c4c9f8dd3c4e4b7b",
+   "target_key": "[\"Mathlib.AlgebraicGeometry.EllipticCurve.Jacobian.Point\",\"WeierstrassCurve.Jacobian.Point.fromAffine_zero\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0020.json",
+   "sha256": "ac7f5a4737ea0d4eff44a736129d7bc5d85a85b787d8749632022edbc3711e2a",
+   "target_key": "[\"Mathlib.AlgebraicTopology.SimplexCategory.Truncated\",\"SimplexCategory.Truncated.δ₂_two_comp_σ₂_zero\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0021.json",
+   "sha256": "b82268cb90db9e85cac570625409d39d1e0421810e608a2adc17d55db8e8083b",
+   "target_key": "[\"Mathlib.Analysis.Asymptotics.Defs\",\"Asymptotics.IsBigO.congr_left\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0022.json",
+   "sha256": "096b2bec17b5723328fae2b196ed0a8d53854cf02801cb8d442d7f659b78c537",
+   "target_key": "[\"Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric\",\"IsGreatest.nnnorm_cfcₙ_nnreal\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0023.json",
+   "sha256": "4f15bd32f952a27166bbf31644f56cafd521aca742118154ea04c8259b765c76",
+   "target_key": "[\"Mathlib.Analysis.Calculus.ContDiff.Comp\",\"iteratedFDeriv_clm_apply_const_apply\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0024.json",
+   "sha256": "8f12bcb5a6c990f626bb3e4cff97134ed88bc40b04707f2510f5e260bfbce653",
+   "target_key": "[\"Mathlib.Analysis.Calculus.InverseFunctionTheorem.ApproximatesLinearOn\",\"ApproximatesLinearOn.toHomeomorph\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0025.json",
+   "sha256": "7770287384e0ac1432526f65eebbfe9f9ef55253dd932a07884a8314001c21df",
+   "target_key": "[\"Mathlib.Analysis.Convex.Topology\",\"Convex.strictConvex\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0026.json",
+   "sha256": "56366c5b8f8594a47641607abfcc1dd73e16304055c4a31b310ff10de7883c57",
+   "target_key": "[\"Mathlib.Analysis.InnerProductSpace.StandardSubspace\",\"StandardSubspace.involutive_symplComp\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0027.json",
+   "sha256": "e35c840dfca562c0cb5d48788511d688d69986dff5a2092003a149d87035f38f",
+   "target_key": "[\"Mathlib.Analysis.InnerProductSpace.l2Space\",\"Orthonormal.linearIsometryEquiv_symm_apply_single_one\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0028.json",
+   "sha256": "c4f796449e7ce10a92ad78ad645c63c2829414ab67ea9478f6f10f826995a092",
+   "target_key": "[\"Mathlib.Analysis.LocallyConvex.Bounded\",\"Set.Finite.isVonNBounded\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0029.json",
+   "sha256": "56f0017b7d374cc369aa17899316aff2499c254cd56cdc1638543b37173e0669",
+   "target_key": "[\"Mathlib.Analysis.Normed.Lp.LpEquiv\",\"coe_addEquiv_lpBCF_symm\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0030.json",
+   "sha256": "69649b01ddd9d91ee49567dba95f96bef5cbdb6bbf45ad32a08bd9c952422fb3",
+   "target_key": "[\"Mathlib.Analysis.Normed.Module.PiTensorProduct.ProjectiveSeminorm\",\"PiTensorProduct.liftIsometry_comp_mapL\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0031.json",
+   "sha256": "50f83cc0e0d173bdf432d323d837e52cde8ef2a40e92cf10f671a34c201302b6",
+   "target_key": "[\"Mathlib.Analysis.SpecialFunctions.Pow.NNReal\",\"NNReal.rpow_lt_rpow_of_exponent_lt\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0032.json",
+   "sha256": "5c0a4fd4ada0e0b77f992f0875db08b1d0e0eea5ff64c4f2b46f09dbdd95e0ec",
+   "target_key": "[\"Mathlib.CategoryTheory.Category.Cat\",\"CategoryTheory.Cat.Hom₂.comp_app\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0033.json",
+   "sha256": "5b5974195cccb94f0e6c9f798c20edc5a01be84a162cbfb7a11e12b76f763122",
+   "target_key": "[\"Mathlib.CategoryTheory.Comma.Over.Basic\",\"CategoryTheory.Under.map_map_right\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0034.json",
+   "sha256": "713731c841ef69e2359f4034f28480c88b5a422fc79c6a984ab883def4940c12",
+   "target_key": "[\"Mathlib.CategoryTheory.Functor.KanExtension.Preserves\",\"CategoryTheory.Functor.pointwiseLeftKanExtensionCompIsoOfPreserves\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0035.json",
+   "sha256": "66460d2864626dca8c0b200b2c11f07ac6022e6ec180cbb1a4f5a3f38fb06c34",
+   "target_key": "[\"Mathlib.CategoryTheory.Limits.Shapes.Biproducts\",\"CategoryTheory.Limits.biproduct.isLimit\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0036.json",
+   "sha256": "fbf456a160347c51bc19d8de5153611a75b663fe54db69ea4e2d0676602a1834",
+   "target_key": "[\"Mathlib.CategoryTheory.Limits.Shapes.Kernels\",\"CategoryTheory.Limits.kernelComparison_comp_ι\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0037.json",
+   "sha256": "b1b34e51001cd8db9405b483b43f15412eac87ccb1cd7bed6dc956a25886ff6b",
+   "target_key": "[\"Mathlib.Combinatorics.SetFamily.Compression.UV\",\"UV.disjoint_of_mem_compression_of_notMem\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0038.json",
+   "sha256": "3390bef3f8dbee81b4d607814092ebfa54689d51d748464ab2802a74936aa405",
+   "target_key": "[\"Mathlib.Combinatorics.SimpleGraph.Density\",\"Rel.card_interedges_finpartition_left\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0039.json",
+   "sha256": "15c21b68da0605f8613ccdfe562662a89394280f6392f316c279132e9f785b5d",
+   "target_key": "[\"Mathlib.Combinatorics.SimpleGraph.Density\",\"Rel.edgeDensity_le_one\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0040.json",
+   "sha256": "1efa4558dc9ccc72a166a3cf728ed384cdc97b74292249630fd28cc661bb747f",
+   "target_key": "[\"Mathlib.Combinatorics.Tiling.Tile\",\"DiscreteTiling.PlacedTile.mem_smul_iff_smul_inv_mem\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0041.json",
+   "sha256": "08daed519a91f1608dcb4f41b8a42c9b932168ffcb6f53c1bba2b5e72ca94700",
+   "target_key": "[\"Mathlib.Computability.Ackermann\",\"max_ack_left\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0042.json",
+   "sha256": "f6fddfd4eb5f54cc13448c7eff10188849e5dbe0078e03235931ce043db7f65e",
+   "target_key": "[\"Mathlib.Computability.Partrec\",\"Nat.mem_rfind\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0043.json",
+   "sha256": "2ed4557ad35648db7c22b16d202febb61b95c4d3867f15d9d80fcecb31810556",
+   "target_key": "[\"Mathlib.Computability.PartrecBasis\",\"Nat.Partrec'.part_iff₁\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0044.json",
+   "sha256": "ccaab400f868f275ea6ddac9152f51353cae6f00c74c15e998e3a2e12148e676",
+   "target_key": "[\"Mathlib.Data.ENat.Basic\",\"ENat.add_lt_add_iff_right\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0045.json",
+   "sha256": "dfc9f5f10069e7668666e1147c587387a0582488be3394995ad78433d653e9d4",
+   "target_key": "[\"Mathlib.Data.EReal.Operations\",\"EReal.mul_pos_iff\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0046.json",
+   "sha256": "a20cfa1dca7d781a7b6a53cc390a2723b409126880aae5559be607c1259d169b",
+   "target_key": "[\"Mathlib.Data.Finset.Lattice.Basic\",\"Finset.left_eq_union\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0047.json",
+   "sha256": "599718a678877636b713a05da67602bdcda3a7d9a16683d724270699c681432d",
+   "target_key": "[\"Mathlib.Data.Finset.Pi\",\"Finset.mem_pi\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0048.json",
+   "sha256": "4ccf1bbfcb76227d27d052ded2e42dec16a63e0b8f4a1e4e3d26c340f54b7e4d",
+   "target_key": "[\"Mathlib.Data.Finset.Prod\",\"Finset.product_eq_biUnion\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0049.json",
+   "sha256": "629d8c3341613b1398cfd8b88061f8e8983d37011be2478f26fb2ba7d89ca795",
+   "target_key": "[\"Mathlib.Data.Nat.Factorization.LCM\",\"Nat.factorizationLCMLeft_dvd_left\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0050.json",
+   "sha256": "3fa046e99638188dbef2dba5ee6354dbe81065e55552ed6a3e0dbb06e0cbb798",
+   "target_key": "[\"Mathlib.Data.Num.ZNum\",\"Num.sub_to_nat\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0051.json",
+   "sha256": "6b3770ccdd2d1fb37acf6d28d05b835d75efb4d06e13c4e859e49ad21c562d3e",
+   "target_key": "[\"Mathlib.Data.Rel\",\"SetRel.comp\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0052.json",
+   "sha256": "31b99d565a5843d1f8a8ce6d5279b1b8d831c6a51642b193deca961fc3688077",
+   "target_key": "[\"Mathlib.Data.Set.Basic\",\"Set.bot_eq_empty\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0053.json",
+   "sha256": "0c48754329b8b6e1971b494a51bfc2eae95205722bbbfc08a1007d176bfc9a13",
+   "target_key": "[\"Mathlib.Data.Set.Finite.Basic\",\"Set.Finite.toFinset_eq_univ\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0054.json",
+   "sha256": "aea5c0c8e296db1c2f4a37bd9b46dc4a07515118c92b66002316f8ad831e031e",
+   "target_key": "[\"Mathlib.Data.Setoid.Partition\",\"Setoid.IsPartition\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0055.json",
+   "sha256": "500d1cf7a9587e2a14b9359366a0681e65f8524bffc918348d68664dd884bd0b",
+   "target_key": "[\"Mathlib.Dynamics.PeriodicPts.Defs\",\"Function.iterate_add_minimalPeriod_eq\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0056.json",
+   "sha256": "d95ab47497d04d6926217dcd7074c1bcf5c8a1c8a1a3ef01a12510050b461cb1",
+   "target_key": "[\"Mathlib.FieldTheory.RatFunc.IntermediateField\",\"RatFunc.IntermediateField.isAlgebraic_X\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0057.json",
+   "sha256": "ea038b2ff77651292ae374a818dad7b78eb226ec714237dd21ef98af57639c49",
+   "target_key": "[\"Mathlib.Geometry.Euclidean.Incenter\",\"Affine.Simplex.excenterWeightsUnnorm\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0058.json",
+   "sha256": "9d0651dd640b42d7a8bf6825ca67f79fedd9151084bcf4143b6fbb1105ad6cc3",
+   "target_key": "[\"Mathlib.GroupTheory.Perm.Fin\",\"Fin.cycleIcc_def_gt'\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0059.json",
+   "sha256": "5f485b541fb865a42ef4ef0b7c37dbf99f77c9b5661ee66a0a8dcacf2a027630",
+   "target_key": "[\"Mathlib.GroupTheory.Sylow\",\"Sylow.coe_comapOfInjective\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0060.json",
+   "sha256": "5d097e8d7edb307afa07e68872bafbdc1b36f43f64d9e731c81d555179a8873a",
+   "target_key": "[\"Mathlib.LinearAlgebra.AffineSpace.Combination\",\"Finset.weightedVSubOfPoint_insert\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0061.json",
+   "sha256": "d118b785dd161bbee50f3c9b7fafb173081d30b66bfd9f512d4d4657ad3578ed",
+   "target_key": "[\"Mathlib.LinearAlgebra.AffineSpace.Simplex.Basic\",\"Affine.Simplex.closedInterior_restrict\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0062.json",
+   "sha256": "a8aca7d358e8a4d439514797381bc8e79c2d53c86bd1cd808bebed4dcb942901",
+   "target_key": "[\"Mathlib.LinearAlgebra.Dimension.LinearMap\",\"LinearMap.le_rank_iff_exists_linearIndependent\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0063.json",
+   "sha256": "5daedc854c1f45cad837ce542eab39fda2f0b5da604f2c1ae1870d926e91d8cb",
+   "target_key": "[\"Mathlib.LinearAlgebra.Matrix.NonsingularInverse\",\"Matrix.vecMul_surjective_iff_exists_left_inverse\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0064.json",
+   "sha256": "cba66035e104e691d7198e85f231a361dc982c4b3a16a2e25d524176cf1e2224",
+   "target_key": "[\"Mathlib.LinearAlgebra.Matrix.Rank\",\"Matrix.eRank_zero\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0065.json",
+   "sha256": "6fe52104858b4149a7d52342c63a006495aec15f40ffabe587b9d58634c4d80d",
+   "target_key": "[\"Mathlib.LinearAlgebra.Matrix.SesquilinearForm\",\"Matrix.toLinearMap₂\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0066.json",
+   "sha256": "1aa20e32aa3b59e23c6e623d1a82a2de84feb5c88027b7d370e08ac7a9b06981",
+   "target_key": "[\"Mathlib.LinearAlgebra.Matrix.ToLin\",\"LinearMap.toMatrixRight'_id\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0067.json",
+   "sha256": "50c4623f82e1fc753e1fc02e06ababbdeaad09f8054c7082788862450cda426a",
+   "target_key": "[\"Mathlib.LinearAlgebra.RootSystem.Finite.G2\",\"RootPairing.EmbeddedG2.shortAddLongRoot_eq\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0068.json",
+   "sha256": "a9fcf8f28ae87a038a2664c3e6ab852c104806a9d36a5a81d3f7f5d99a83a784",
+   "target_key": "[\"Mathlib.LinearAlgebra.Span.Defs\",\"Submodule.span_eq_span\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0069.json",
+   "sha256": "08e43466ce707a3db1df88cdeac9cf6c75bc007b7fe0ebbc57c9b3744e6104b2",
+   "target_key": "[\"Mathlib.MeasureTheory.Function.ConditionalExpectation.CondJensen\",\"Convex.condExp_mem\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0070.json",
+   "sha256": "36d9c45cc0cfcf9f2e5e20a10d151be8a8015324ebc3e6005449b62a7bbe6756",
+   "target_key": "[\"Mathlib.MeasureTheory.Function.LpSpace.Basic\",\"MeasureTheory.Lp.norm_exponent_zero\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0071.json",
+   "sha256": "b97fc12407932b74ee5d26ce91ae8522347b99d9f6dff62150c97d4ee2deac1a",
+   "target_key": "[\"Mathlib.MeasureTheory.Group.Arithmetic\",\"aemeasurable_inv_iff\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0072.json",
+   "sha256": "6733a0cc429c0b0f508c2db589318d230d58e189661a9463e8f69676d6985e0c",
+   "target_key": "[\"Mathlib.MeasureTheory.Integral.Asymptotics\",\"Asymptotics.IsBigO.eventually_integrableOn\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0073.json",
+   "sha256": "569c927324c870a059ef637982174024dbea0dba25dae2682d771df411ac4c78",
+   "target_key": "[\"Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap\",\"integral_withDensity_eq_integral_smul₀\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0074.json",
+   "sha256": "26f8f20130a5ea3d01e8980e4b97321e4cfd7c19588098a154d0f85a23f6c32c",
+   "target_key": "[\"Mathlib.MeasureTheory.Measure.MeasureSpace\",\"MeasureTheory.le_measure_symmDiff\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0075.json",
+   "sha256": "d5b03c0d7411a80cb4cec7a9152626c83001fff978f7532b4432ce21487562f0",
+   "target_key": "[\"Mathlib.MeasureTheory.Measure.Prod\",\"MeasureTheory.Measure.nullMeasurableSet_prod\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0076.json",
+   "sha256": "d98765ff967aa04d883b9266413a964b072475cc87a72f5a47ed798dfcc6bfcb",
+   "target_key": "[\"Mathlib.MeasureTheory.Measure.Regular\",\"MeasureTheory.Measure.OuterRegular.smul\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0077.json",
+   "sha256": "a8899b381389a3851aad7c882454c54bf454b7318ec8ea9a67c94da4c41ebf3a",
+   "target_key": "[\"Mathlib.MeasureTheory.VectorMeasure.Integral\",\"MeasureTheory.VectorMeasure.exists_ne_zero_of_integral_ne_zero\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0078.json",
+   "sha256": "a1bcdb8d1455c057b425d254791d52a2447b1e28a5821f4659a1e4c0762dda04",
+   "target_key": "[\"Mathlib.ModelTheory.Equivalence\",\"FirstOrder.Language.Theory.inf_imp_right\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0079.json",
+   "sha256": "4266974380edc22a2974198962cef4fc3505569ce87b425f7f5deafdc4c615be",
+   "target_key": "[\"Mathlib.NumberTheory.DirichletCharacter.Basic\",\"DirichletCharacter.mem_annihilator_iff_mem_closure\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0080.json",
+   "sha256": "7df060f2085bc47448c7f51d3b2bb75879f5bd63f3b25de0b2960805f7cca8ce",
+   "target_key": "[\"Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal\",\"IsCyclotomicExtension.Rat.eq_span_zeta_sub_one_of_liesOver'\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0081.json",
+   "sha256": "40dba18a62a671d009f884e8d9c08b7e69e10c90b27bba01df3dc39e338225b8",
+   "target_key": "[\"Mathlib.NumberTheory.NumberField.InfinitePlace.Basic\",\"NumberField.InfinitePlace.ext\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0082.json",
+   "sha256": "f15cb3b75ad4d93c84a8de1d9024d8313a7b46b0b1d7c727d55c51525efccdc1",
+   "target_key": "[\"Mathlib.NumberTheory.Padics.Hensel\",\"_private.Mathlib.NumberTheory.Padics.Hensel.0.soln_dist_to_a\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0083.json",
+   "sha256": "d0171f665ead94a0df42d73f1bbff6ce1ba2c95c3c24b40eb4b36f6d835b6720",
+   "target_key": "[\"Mathlib.NumberTheory.Padics.PadicVal.Basic\",\"padicValNat.eq_zero_of_not_dvd\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0084.json",
+   "sha256": "0d123e69b81ae3ba7e9e5a81695b4a463e432dadbe3570e333ef8af1924f1a76",
+   "target_key": "[\"Mathlib.Order.Atoms\",\"IsCoatom.not_codisjoint_iff_le\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0085.json",
+   "sha256": "15473d6f370147cdf321525bd4c1c6110e73fdbbc2479f18bd3bec27e7c18c71",
+   "target_key": "[\"Mathlib.Order.Basic\",\"Prod.mk_le_mk\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0086.json",
+   "sha256": "dceb310369d86242677125af172b2a1826c6e10313cb31c000a7b8c80707c450",
+   "target_key": "[\"Mathlib.Order.ConditionallyCompleteLattice.Basic\",\"lt_csSup_iff'\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0087.json",
+   "sha256": "dcdd15c93d72120fde57dbbd63fe7ec1ad416ad1faa78aa72573a14db200ff20",
+   "target_key": "[\"Mathlib.Order.ConditionallyCompleteLattice.Indexed\",\"WithTop.coe_iInf\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0088.json",
+   "sha256": "d62e96c23fac43c986084794bc1cefc5169438a7b93a64a4af875a1fba866476",
+   "target_key": "[\"Mathlib.Order.Filter.Pi\",\"Filter.pi_mem_pi\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0089.json",
+   "sha256": "f1c7567de545b18b24219d3eebd1c28817d4577dec4bbbd941c6805e899a043a",
+   "target_key": "[\"Mathlib.Order.Heyting.Basic\",\"compl_sup_le_himp\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0090.json",
+   "sha256": "dbd34830f6da21f2440286f02f883f2a75205aefb0222720bd012b51ad6581bb",
+   "target_key": "[\"Mathlib.Order.Interval.Set.Fin\",\"Fin.preimage_cast_Ioo\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0091.json",
+   "sha256": "da6ab04ffce9e35d4a0af56247edd0d33666264a0c3911c885239918d9ddb9ec",
+   "target_key": "[\"Mathlib.Order.SetAccumulate\",\"Set.subset_accumulate\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0092.json",
+   "sha256": "a0a252fdf7d095d53917e73beccab4eeb5a77d41408ec2cef49876347e56de9f",
+   "target_key": "[\"Mathlib.Order.Types.Arithmetic\",\"OrderType.type_lex_prod\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0093.json",
+   "sha256": "4fc8393b3eb21f7177f90a09b87d47e2152b9eb85b8b5aac0c228f8bd155c6de",
+   "target_key": "[\"Mathlib.Probability.Density\",\"MeasureTheory.pdf\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0094.json",
+   "sha256": "7102b629171f6006e5eeb0bcd9de823b0993142c0319672bb29abebe3f65337b",
+   "target_key": "[\"Mathlib.Probability.Independence.Conditional\",\"ProbabilityTheory.iCondIndep\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0095.json",
+   "sha256": "096cd254fc6bdd03640314d9274c1c500d582e22a8424296370855a0b837084d",
+   "target_key": "[\"Mathlib.Probability.Kernel.Composition.IntegralCompProd\",\"MeasureTheory.AEStronglyMeasurable.comp\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0096.json",
+   "sha256": "ca924c440f27c003091f34841ff81e983a2b0b3e91083c35e107c44b1ad18889",
+   "target_key": "[\"Mathlib.Probability.Martingale.Upcrossing\",\"MeasureTheory.lowerCrossingTimeAux\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0097.json",
+   "sha256": "d5b8d4cdbb397b5b47f347b4c477ba4eac9695bf42b0050d32db311a975b8d0e",
+   "target_key": "[\"Mathlib.RingTheory.Congruence.Hom\",\"RingCon.comap_eq\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0098.json",
+   "sha256": "64eaafd328b264e10092134bef7cacd2959f816eb4add8b044985aac2ce6d368",
+   "target_key": "[\"Mathlib.RingTheory.DividedPowers.Basic\",\"dividedPowersBot_dpow_eq\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0099.json",
+   "sha256": "4d1840b7cdd5a51d53d720b49b6740ade4fbe19bc64019249cef20aedae3978f",
+   "target_key": "[\"Mathlib.RingTheory.Ideal.Operations\",\"Ideal.mul_le_right\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0100.json",
+   "sha256": "db56c153ee7ba736595d24226ee40c9f701d3902f4a4ca304982594a8b70984f",
+   "target_key": "[\"Mathlib.RingTheory.KrullDimension.Regular\",\"ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_mem_jacobson\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0101.json",
+   "sha256": "fc37a189ef28c5fe363200597c9fb40dc157e1f59aa0b4b36314a791bd9d3bff",
+   "target_key": "[\"Mathlib.RingTheory.LaurentSeries\",\"PowerSeries.coe_neg\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0102.json",
+   "sha256": "8936851b0cf663e63414686ee79d758d795a425c9b818574377c7fe675f72181",
+   "target_key": "[\"Mathlib.RingTheory.Localization.Away.Basic\",\"IsLocalization.Away.mk\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0103.json",
+   "sha256": "52df07fd7d843b46b66623d53b354570bc52b2631ab82369d49a0ce29c17e142",
+   "target_key": "[\"Mathlib.RingTheory.NonUnitalSubsemiring.Basic\",\"NonUnitalSubsemiring.coe_comap\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0104.json",
+   "sha256": "2e8f2ead67500268b797251daf79d390d93af3459730a9b97f857ba22559749b",
+   "target_key": "[\"Mathlib.RingTheory.PowerSeries.PiTopology\",\"PowerSeries.WithPiTopology.tsum_pow_mul_one_sub_of_constantCoeff_eq_zero\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0105.json",
+   "sha256": "cf71b09a5d037a36882e55a21dff4f3d6445cc8b91783accf9102ec4c154eafd",
+   "target_key": "[\"Mathlib.RingTheory.PowerSeries.WeierstrassPreparation\",\"PowerSeries.weierstrassDistinguished_mul\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0106.json",
+   "sha256": "21a0e87e3c4a803093455abce1a94d91a57d36ecacdeef481db9b1b9612013d8",
+   "target_key": "[\"Mathlib.RingTheory.SurjectiveOnStalks\",\"RingHom.SurjectiveOnStalks.localRingHom_surjective\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0107.json",
+   "sha256": "0b72947a01bda506a1d5a47ba3592cf8bdc06c7ef4780859935a2273cea967c3",
+   "target_key": "[\"Mathlib.Tactic.Sat.FromLRAT\",\"Sat.Fmla.reify_one\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0108.json",
+   "sha256": "28d7ec0a00572a3ce420bc8073a37d76486575e249d6f94e1e8deeccdcce0cfc",
+   "target_key": "[\"Mathlib.Topology.Algebra.Group.GroupTopology\",\"GroupTopology.continuous_inv'\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0109.json",
+   "sha256": "361386f81bd603f0c3a4b26f501d39726ac32331b572b0c623dde4abd8057d97",
+   "target_key": "[\"Mathlib.Topology.Algebra.InfiniteSum.ENNReal\",\"ENNReal.tsum_eq_iSup_nat\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0110.json",
+   "sha256": "af8e49739d6fa57105c1b5ebfcb0e05c83f29ae79b95c41b1b80d4f6ce9fe8c1",
+   "target_key": "[\"Mathlib.Topology.Algebra.LinearTopology\",\"IsLinearTopology.tendsto_mul_zero_of_left\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0111.json",
+   "sha256": "c8ed04b0327463c4d557e8c690787616a10baea5bbe167946e795b9a870ebfb0",
+   "target_key": "[\"Mathlib.Topology.Algebra.Module.ModuleTopology\",\"IsModuleTopology.continuous_bilinear_of_finite_left\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0112.json",
+   "sha256": "b86cca26fbbf8228f1f86b7b3632e3e37b4f0b67aa26681257ef0ce2bde916e3",
+   "target_key": "[\"Mathlib.Topology.Algebra.Monoid\",\"Topology.IsInducing.continuousMul\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0113.json",
+   "sha256": "81b428dd7cbc5a662803d2afc02e7b28f0ff8d61e3b5b37527628fc58d385f35",
+   "target_key": "[\"Mathlib.Topology.Category.Profinite.Nobeling.Basic\",\"Profinite.NobelingProof.Products.eval_πs'\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0114.json",
+   "sha256": "1842341cbb894c9a1e3ea6150407184768b28fcd703d53bdfafa4f8a1469c25b",
+   "target_key": "[\"Mathlib.Topology.Connected.Basic\",\"IsConnected\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0115.json",
+   "sha256": "23f5e2b3531cd7f89e596564613eda35ef11fed05fd472c7ebb200b2f31dcca1",
+   "target_key": "[\"Mathlib.Topology.FiberBundle.Basic\",\"FiberBundle.continuousAt_section\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0116.json",
+   "sha256": "ad304d385c922f7b80c5deac5a55750af7362925d971823a8b55f63514cb6cd2",
+   "target_key": "[\"Mathlib.Topology.Homeomorph.Lemmas\",\"Topology.IsEmbedding.toHomeomorph_symm_apply\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0117.json",
+   "sha256": "43500d45f3c29449f2b559e7e2d01f57cc96431592ec3d3c0f5d90cb99b45a5e",
+   "target_key": "[\"Mathlib.Topology.MetricSpace.Isometry\",\"IsometryClass.toIsometryEquiv\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0118.json",
+   "sha256": "52bfc216cba0b6ed4ba81e326e4769f2581cb19e0a53009ba268a994fc3d8ec3",
+   "target_key": "[\"Mathlib.Topology.NoetherianSpace\",\"TopologicalSpace.NoetherianSpace.finite\"]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired_supplement/q25c-1.5b/871fc29ad23d-2543b185e8d6-mathlib4/target-0119.json",
+   "sha256": "5709457a2362dee434be4f1c9eb84fd2bba71595e6c57d72513fca113fdf9c57",
+   "target_key": "[\"Mathlib.Topology.UniformSpace.CompactConvergence\",\"ContinuousMap.range_toUniformOnFunIsCompact\"]"
+  }
+ ]
+}
