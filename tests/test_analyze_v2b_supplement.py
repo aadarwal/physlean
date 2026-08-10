@@ -123,7 +123,9 @@ def test_supplement_launcher_contract():
 def test_supplement_constants():
     assert sup.PINNED_SUPPLEMENT_MANIFEST_SHA256 == \
         "2543b185e8d6d9359a112079df7b98dfd6547015b7b88a5ac29a3ea1ba5c88e5"
-    assert sup.PINNED_SUPPLEMENT_SCORING_TREE is None  # epoch-3 pin pending
+    assert sup.PINNED_SUPPLEMENT_SCORING_TREE == (
+        "f767635242a71e1341545ec48bcdb72bb8d6c83cad807dc26ddf"
+        "b92da37c8d4c")
     assert sup.SUPPLEMENT_ANALYSIS_SCHEMA == "v2b_supplement_dose_v1"
     assert sup.SUPPLEMENT_CLAIM == \
         "exploratory-nll-only-supplemented-pilot"

@@ -39,8 +39,10 @@ PINNED_SUPPLEMENT_MANIFEST_SHA256 = \
 # original design shared the interior pin, but the epoch-3 chain-
 # validation fix moved the source tree between the interior and
 # supplement scoring waves, so each wave pins the one tree it actually
-# ran at. None => the consumer refuses to run.
-PINNED_SUPPLEMENT_SCORING_TREE = None
+# ran at. Post-scoring pin: the epoch-3 tree recorded identically by
+# all six epoch-3 batteries and all six job-20058218..23 completions.
+PINNED_SUPPLEMENT_SCORING_TREE = \
+    "f767635242a71e1341545ec48bcdb72bb8d6c83cad807dc26ddfb92da37c8d4c"
 AMENDMENT_PATH = "results_v2/v2b/EPOCH2_NIGHT_AMENDMENT.md"
 
 
