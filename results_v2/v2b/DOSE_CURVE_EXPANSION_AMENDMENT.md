@@ -1,10 +1,19 @@
 # Prospective amendment: dose-curve expansion package (32B rung; interior budgets; deep-closure supplement)
 
-Date: 2026-08-09 EDT (night). Status: DRAFT — one umbrella design review
-covers all three parts; parts B and C additionally require a delta review
-of their implementation commits before execution. Human authorization for
-maximal compute/parallel execution: recorded 2026-08-09 ("max compute +
-max parallelization").
+Date: 2026-08-09 EDT (night). Status: **ADOPTED (Part A executable)**
+after independent umbrella review by a fresh-context consultant: initial
+verdict FIX-FIRST — BLOCKER 1 (the global scoring-tree pin would refuse
+every 32b completion) plus concerns C2 (unimplemented reproduction
+gate), C3 (ledger rows re-derived without prior comparison), C4
+(replication-gate preconditions), C5 (missing one-assembly-submission
+rule) — all five resolved at commit 136bf1e and re-review returned
+ADOPTABLE ("all five fixes verified in code and amendment text; per-tier
+None-refusal is fail-closed in both analyzers"), with one nit
+(--prior-ledger optional at CLI) closed in the adoption commit via an
+explicit --first-ledger assertion requirement. Parts B and C remain
+design-frozen here and each requires a delta review of its
+implementation commit before execution. Human authorization for maximal
+compute/parallel execution: recorded 2026-08-09.
 
 Adoption boundary: the six committed evidence sets are public (1.5B
 reveal/analysis, five-tier ladder, budget dose-response, PhysLib k4x). No

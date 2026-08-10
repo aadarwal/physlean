@@ -538,6 +538,34 @@ arxiv_manifest) must be committed before measurement.
 
 ## 13. Disagreement log
 
+- ADOPTED (2026-08-09 night, dose-curve expansion package Part A;
+  POST-FIVE-TIER-EVIDENCE, PRE-32B-OUTCOME — all six committed evidence
+  sets were public; no 32b battery, score, or cell existed; the 32b
+  snapshot download was outcome-free): DOSE_CURVE_EXPANSION_AMENDMENT.md.
+  Part A (executable): tier set extended to SIX with q25c-32b
+  (2e12b5f7bc878d424d222e224ed40aee564ec45f, range (30e9,35e9),
+  battery_pilot_32b.json, H200-only battery AND scoring; the fp32
+  semantic leg is ~128GB on a 141GB H200 — an OOM is recorded as tier
+  infeasibility, never worked around). Review-driven mechanics all
+  implemented pre-outcome: PER-TIER scoring-tree pins with fail-closed
+  None-refusal until the post-scoring pin commit (umbrella review
+  BLOCKER 1 — the prior global pin would have refused every 32b
+  completion); verify_v2b_expansion_consistency.py as the enforced
+  reproduction gate (six-tier reruns must reproduce every committed
+  five-tier block exactly; PASS report required in the evidence commit);
+  ledger v2 with mandatory --prior-ledger byte-identical carry (or an
+  explicit --first-ledger assertion); five-tier v1 artifacts remain
+  untouched evidence. Parts B (interior budgets {8192,32768} for
+  mathlib4+sympy with precondition-gated 16384 replication cells,
+  discard-non-comparable rule, one-assembly-submission) and C (n=120
+  same-draw-law mathlib supplement, pilot identities excluded, separate
+  + pooled panels labeled exploratory-nll-only-supplemented-pilot) are
+  design-frozen and EACH requires a delta review of its implementation
+  commit before execution. Umbrella review: fresh-context consultant,
+  FIX-FIRST (1 blocker, 4 concerns) -> fixes at 136bf1e -> re-review
+  ADOPTABLE; final nit closed in the adoption commit. Maximal
+  compute/parallel execution human-authorized 2026-08-09; per-job
+  measurement identity (single GPU, frozen chunk) never varies.
 - ADOPTED (2026-08-09 late, post-ladder frozen consumers; PRE-CONSUMPTION —
   the five-tier B* ladder artifacts were public; no 4KiB/64KiB cell and no
   k4x cell had ever been read): POST_LADDER_CONSUMERS_AMENDMENT.md +

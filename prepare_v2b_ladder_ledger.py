@@ -84,6 +84,10 @@ def main():
     ap.add_argument("--prior-ledger", default=None,
                     help="committed prior ledger whose rows must be "
                          "carried forward byte-identically")
+    ap.add_argument("--first-ledger", action="store_true",
+                    help="explicitly assert this is the campaign's first "
+                         "completion ledger (otherwise --prior-ledger is "
+                         "REQUIRED)")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     if not source_clean():
@@ -99,6 +103,9 @@ def main():
         if not sep or tier in tier_jobs or not job.isdigit():
             raise V2BError(f"malformed --tier-job: {pair!r}")
         tier_jobs[tier] = job
+    if args.prior_ledger is None and not args.first_ledger:
+        raise V2BError("--prior-ledger is required unless --first-ledger "
+                       "is explicitly asserted")
     prior_repos = None
     if args.prior_ledger is not None:
         require_committed(args.prior_ledger)
