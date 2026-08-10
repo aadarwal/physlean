@@ -2146,13 +2146,16 @@ already-frozen target-eligibility kind. The prospective artifact must report
 these status/kind transition counts before any sample is drawn.
 
 15.A21 LEAN S5 SEMANTIC VERIFICATION (kernel rule frozen PRE-GENERATION;
-implementation exists, production artifact writer and corpus integration are
-still required). S5 receives only reconstructions already accepted by S4. Its
+driver and execution envelope exist; the production complete-artifact writer
+and corpus integration are still required). S5 receives only reconstructions
+already accepted by S4. Its
 exact-keyed manifest binds the original source and ModuleSetup bytes, module,
 exact fully-qualified target name and eligible source kind, committed source
 range, parser-backed effective H/delimiter, boundary-artifact SHA and span id,
 S4/S5 contract and driver hashes, and zero (baseline mode) or exactly one
-retained reconstruction/body/S4 evidence hash. Baseline mode and each
+retained reconstruction/body/S4 evidence hash. The candidate sample id is
+nonempty and at most 256 UTF-8 bytes, bounding the mode-specific start and
+GO-acknowledgment records below the wrapper's reserved headroom. Baseline mode and each
 candidate mode run in SEPARATE fresh OS processes, each with its own 300-second
 budget; multi-sample manifests are rejected. A shared semantic-context binding
 covers the exact original/logical filename, ModuleSetup/module, target and
@@ -2161,25 +2164,41 @@ runtime/toolchain/setup-closure evidence. A canonical invocation/content SHA
 covers every manifest field
 and referenced file. The consumer duplicate-key-rejects marker records and
 enforces exact schemas, manifest order, finite reasons, and reason-specific
-elaboration flags. As with S4, production must stage immutable inputs, rehash
-before and after the child, bind the exact runtime/toolchain/setup closure and
-stdout/stderr/argv/environment, and impose one 300-second whole-process limit.
+elaboration flags. The production execution envelope stages immutable inputs,
+rehashes before and after the child, binds the exact tracked harness source-tree
+identity and runtime/toolchain/setup closure plus stdout/stderr/argv/environment,
+and imposes one 300-second whole-process limit.
 Every marked record is explicitly flushed. Because generated metaprograms can
 spawn a child inheriting OS stdout even while Lean's stream refs are isolated,
 the fixed marker alone is not an evidence channel. The wrapper generates a
 fresh uniformly random 256-bit lowercase-hex nonce per process and sends it as
-the SOLE stdin line; the driver consumes that line, requires immediate stdin
-EOF before imports or target elaboration, keeps the nonce only as a lexical
-value, and emits `@@V2B_LEAN_VERIFY:<nonce>@@` records. The nonce is never in
-argv, environment, manifest, or a file. Only exact nonce-qualified lines are
-evidence; other marker-looking/untrusted bytes are noise, while malformed
-payload bytes carrying the exact nonce fail closed. Candidate mode emits a bound
-`candidate-start` marker only after certificate/splice trusted validation and
-immediately before candidate parsing/elaboration. A strict prefix consumer
-validates the completed stage if the wrapper terminates a timed-out process:
-baseline timeout/failure or candidate termination before `candidate-start` is
-`HARNESS-INVALID`; candidate termination after it is an ordinary zero. A
-malformed marker remains a hard evidence failure rather than being guessed.
+the first stdin line while keeping stdin open. The driver consumes that line
+before corpus ModuleSetup/import processing, keeps the nonce only as a lexical value, performs the branch's
+trusted prevalidation, emits and flushes a bound `baseline-start` or
+`candidate-start`, and blocks. The wrapper parses newline-complete raw bytes,
+durably writes/fsyncs the exact start prefix and a GO-intent record, rechecks
+the deadline/output cap/child state, then sends exact `GO:<nonce>\n` and closes
+stdin. The driver requires that line plus EOF, emits and flushes a bound
+`*-go-accepted` record, and only then begins candidate-generated parsing or
+either branch's target elaboration. The nonce is absent from argv, environment,
+manifest, and every child-visible file; the host attempt journal is private,
+must live outside every broad child-visible mount, and is published only after
+termination. Only exact nonce-qualified lines are evidence; other marker-looking/
+untrusted bytes are noise, while every newline-complete malformed payload
+carrying the exact nonce fails closed. A terminal incomplete fragment produced
+by an enforced timeout/output-limit is excluded from the authenticated prefix.
+The wrapper reserves 64 KiB
+for the bounded acknowledgment, and a later partial/output-capped generated
+record cannot erase an already-complete acknowledgment. Before durable GO
+intent, termination is `HARNESS-INVALID` and may use at most two total attempts
+for that invocation (the initial attempt plus one pre-start retry). After GO
+intent, a candidate attempt is outcome-bearing:
+timeout, output limit, or termination is an ordinary zero and is never retried,
+even if the acknowledgment was lost with the supervisor. Baseline timeout or
+abnormal termination remains arm-independent `HARNESS-INVALID`, never a model
+zero; a complete explicit baseline semantic failure is prospective target
+ineligibility. Malformed authenticated evidence remains a hard evidence failure
+rather than being guessed.
 
   EXACT FRONTEND AND BASELINE. The driver loads the same exact Lake
 `ModuleSetup` and reconstructs a fully settled parser/command state immediately
@@ -2196,8 +2215,10 @@ private/file-scoped names and file-relative terms such as `include_str` therefor
 the staging location. The committed name must round-trip canonically, be absent
 from the pre-target environment, and appear exactly after the target. The fresh
 BASELINE process elaborates and verifies the original target and exact original
-suffix through terminal EOF, then exits. Any baseline failure is arm-independent
-`HARNESS-INVALID`, never a model zero. A fresh CANDIDATE process reconstructs the
+suffix through terminal EOF, then exits. A complete explicit baseline semantic
+failure is arm-independent target ineligibility; timeout, abnormal termination,
+evidence failure, or trusted-input drift is `HARNESS-INVALID`, never a model
+zero. A fresh CANDIDATE process reconstructs the
 same pre-target state but NEVER elaborates the original target or original
 suffix before the candidate; this prevents process-global initializer/plugin/
 `IO.Ref` state from leaking from baseline into candidate.

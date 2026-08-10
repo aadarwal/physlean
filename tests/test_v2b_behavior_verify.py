@@ -3,10 +3,13 @@
 import copy
 import json
 import os
+import select
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -15,7 +18,8 @@ from v2b_behavior_extract import (LEAN_EXTRACTION_CONTRACT_SHA256,
 from v2b_behavior_verify import (
     LEAN_PARSE_DRIVER, LEAN_VERIFY_CONTRACT_SHA256, LEAN_VERIFY_DRIVER,
     LEAN_VERIFY_MANIFEST_SCHEMA, bind_lean_verify_manifest,
-    lean_baseline_certificate, lean_verify_output_marker,
+    MAX_SAMPLE_ID_UTF8_BYTES, lean_baseline_certificate,
+    lean_verify_output_marker,
     parse_lean_verify_prefix,
     parse_lean_verify_stdout)
 from v2b_common import V2BError, sha256_bytes, sha256_file
@@ -30,16 +34,23 @@ def _assert_live_consumer_hardening(stdout, manifest):
     marker = lean_verify_output_marker(CHANNEL_NONCE)
     marked = [line for line in stdout.splitlines()
               if line.startswith(marker)]
-    expected_count = 2 if manifest["mode"] == "baseline" else 3
+    expected_count = 4
     assert len(marked) == expected_count
     assert parse_lean_verify_prefix("", manifest, CHANNEL_NONCE)["stage"] == \
         "before-prevalidation"
     assert parse_lean_verify_prefix(marked[0], manifest, CHANNEL_NONCE)["stage"] == \
         "prevalidated"
-    if manifest["mode"] == "candidate":
-        assert parse_lean_verify_prefix(
-            "\n".join(marked[:2]), manifest, CHANNEL_NONCE)[
-            "stage"] == "candidate-started"
+    expected_wait = ("candidate-awaiting-authorization"
+                     if manifest["mode"] == "candidate"
+                     else "baseline-awaiting-authorization")
+    assert parse_lean_verify_prefix(
+        "\n".join(marked[:2]), manifest, CHANNEL_NONCE)[
+        "stage"] == expected_wait
+    expected_start = ("candidate-started" if manifest["mode"] == "candidate"
+                      else "baseline-started")
+    assert parse_lean_verify_prefix(
+        "\n".join(marked[:3]), manifest, CHANNEL_NONCE)[
+        "stage"] == expected_start
     assert parse_lean_verify_prefix(
         "\n".join(marked), manifest, CHANNEL_NONCE)[
         "stage"] == "complete"
@@ -107,6 +118,16 @@ def _assert_live_consumer_hardening(stdout, manifest):
         try:
             bind_lean_verify_manifest(malformed_type)
             assert False, "malformed S5 type certificate accepted"
+        except V2BError:
+            pass
+
+        oversized_id = copy.deepcopy(manifest)
+        oversized_id.pop("invocationBinding")
+        oversized_id["samples"][0]["id"] = \
+            "x" * (MAX_SAMPLE_ID_UTF8_BYTES + 1)
+        try:
+            bind_lean_verify_manifest(oversized_id)
+            assert False, "oversized S5 sample id accepted"
         except V2BError:
             pass
 
@@ -198,7 +219,8 @@ def _invoke(original, module_name, target_name, target_kind, generations,
                 [elan, "run", toolchain, "lean", "--run",
                  LEAN_VERIFY_DRIVER, manifest_path],
                 cwd=ROOT, capture_output=True, text=True, timeout=180,
-                input=CHANNEL_NONCE + "\n", check=False)
+                input=(CHANNEL_NONCE + "\nGO:" + CHANNEL_NONCE + "\n"),
+                check=False)
             parsed = (parse_lean_verify_stdout(
                 result.stdout, manifest, CHANNEL_NONCE)
                       if result.returncode == 0 else None)
@@ -235,8 +257,131 @@ def _invoke(original, module_name, target_name, target_kind, generations,
 
 def test_contract_names_are_separate_from_s4():
     assert LEAN_DRIVER_MANIFEST_SCHEMA == "v2b_lean_parse_manifest_v1"
-    assert LEAN_VERIFY_MANIFEST_SCHEMA == "v2b_lean_verify_manifest_v2"
+    assert LEAN_VERIFY_MANIFEST_SCHEMA == "v2b_lean_verify_manifest_v3"
     assert len(LEAN_VERIFY_CONTRACT_SHA256) == 64
+
+
+def test_real_driver_waits_for_observed_go_and_eof_before_target_work():
+    """Exercise the temporal barrier rather than prebuffering both lines.
+
+    The authenticated start must be observable while the target is still
+    blocked.  A complete GO line is insufficient until the parent closes
+    stdin, and only then may target elaboration create the sentinel.
+    """
+    elan = _toolchain_available()
+    if elan is None:
+        print("    [skip] pinned Lean 4.32 toolchain is not installed")
+        return
+    with tempfile.TemporaryDirectory() as td:
+        sentinel = os.path.join(td, "target-ran")
+        lean_sentinel = json.dumps(sentinel)
+        source = (
+            "import Lean\n"
+            "theorem target : True := by\n"
+            "  run_tac\n"
+            "    Lean.Core.liftIOCore <|\n"
+            f"      IO.FS.writeFile {lean_sentinel} \"ran\"\n"
+            "  trivial\n"
+            "theorem after : True := target\n")
+        original = source.encode("utf-8")
+        original_path = os.path.join(td, "Original.lean")
+        with open(original_path, "wb") as handle:
+            handle.write(original)
+        setup_path = os.path.join(td, "setup.json")
+        with open(setup_path, "w", encoding="utf-8") as handle:
+            json.dump(dict(dynlibs=[], importArts={}, isModule=False,
+                           name="S5TemporalGate", options={}, plugins=[]),
+                      handle)
+        target_start = original.index(b"theorem target")
+        header_end = original.index(b":=", target_start)
+        target_end = original.index(b"\ntheorem after", header_end)
+        manifest = bind_lean_verify_manifest(dict(
+            schema=LEAN_VERIFY_MANIFEST_SCHEMA,
+            mode="baseline", baselineCertificate=None, samples=[],
+            originalFile=original_path, logicalFileName=original_path,
+            originalSha256=sha256_file(original_path),
+            moduleSetupFile=setup_path,
+            moduleSetupSha256=sha256_file(setup_path),
+            moduleName="S5TemporalGate", targetName="target",
+            targetKind="theorem", targetStartByte=target_start,
+            targetEndByte=target_end, headerEndByte=header_end,
+            bodyDelimiter=":=", boundaryArtifactSha256=HEX,
+            spanId="b" * 64,
+            s4ContractSha256=LEAN_EXTRACTION_CONTRACT_SHA256,
+            s4DriverSha256=sha256_file(LEAN_PARSE_DRIVER),
+            s5ContractSha256=LEAN_VERIFY_CONTRACT_SHA256,
+            s5DriverSha256=sha256_file(LEAN_VERIFY_DRIVER),
+            runtimeSha256=HEX, optionOverrides=[]))
+        manifest_path = os.path.join(td, "manifest.json")
+        with open(manifest_path, "w", encoding="utf-8") as handle:
+            json.dump(manifest, handle, ensure_ascii=False, sort_keys=True)
+
+        process = subprocess.Popen(
+            [elan, "run", "leanprover/lean4:v4.32.0", "lean", "--run",
+             LEAN_VERIFY_DRIVER, manifest_path],
+            cwd=ROOT, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, start_new_session=True)
+        try:
+            assert process.stdin is not None and process.stdout is not None
+            process.stdin.write((CHANNEL_NONCE + "\n").encode("ascii"))
+            process.stdin.flush()
+            prefix = b""
+            deadline = time.monotonic() + 60
+            while True:
+                remaining = deadline - time.monotonic()
+                assert remaining > 0, \
+                    "timed out waiting for authenticated start"
+                ready, _, _ = select.select(
+                    [process.stdout], [], [], remaining)
+                assert ready, "driver produced no authenticated start"
+                chunk = os.read(process.stdout.fileno(), 65536)
+                assert chunk, ("driver exited before authenticated start",
+                               process.stderr.read(), prefix)
+                prefix += chunk
+                complete_end = prefix.rfind(b"\n")
+                assert complete_end >= 0
+                stage = parse_lean_verify_prefix(
+                    prefix[:complete_end + 1], manifest,
+                    CHANNEL_NONCE)["stage"]
+                if stage == "baseline-awaiting-authorization":
+                    break
+            assert process.poll() is None
+            assert not os.path.exists(sentinel)
+
+            # The driver requires exact GO plus EOF.  Keeping the writer open
+            # must leave it at the same awaiting-authorization stage.
+            process.stdin.write(
+                ("GO:" + CHANNEL_NONCE + "\n").encode("ascii"))
+            process.stdin.flush()
+            ready, _, _ = select.select([process.stdout], [], [], 0.25)
+            assert not ready
+            assert process.poll() is None
+            assert not os.path.exists(sentinel)
+
+            process.stdin.close()
+            process.stdin = None
+            stdout_tail, stderr = process.communicate(timeout=60)
+            stdout = prefix + stdout_tail
+            assert process.returncode == 0, (stdout, stderr)
+            parsed = parse_lean_verify_stdout(stdout, manifest, CHANNEL_NONCE)
+            assert parsed["baseline"]["status"] == "verified"
+            assert os.path.exists(sentinel)
+            marker = lean_verify_output_marker(CHANNEL_NONCE).encode("ascii")
+            authenticated = [line for line in stdout.splitlines()
+                             if line.startswith(marker)]
+            record_types = [json.loads(
+                line[len(marker):].decode("utf-8"))["record_type"]
+                for line in authenticated]
+            assert record_types == [
+                "prevalidation", "baseline-start", "baseline-go-accepted",
+                "baseline"]
+            assert parse_lean_verify_prefix(
+                b"\n".join(authenticated[:3]), manifest,
+                CHANNEL_NONCE)["stage"] == "baseline-started"
+        finally:
+            if process.poll() is None:
+                os.killpg(process.pid, signal.SIGKILL)
+                process.wait()
 
 
 def test_trusted_semantic_verification_is_outside_model_exception_catch():
@@ -382,7 +527,7 @@ def test_baseline_and_candidate_are_isolated_fresh_processes():
 
 def test_inherited_stdout_child_cannot_forge_authenticated_records():
     forged = '@@V2B_LEAN_VERIFY@@' + json.dumps(dict(
-        schema="v2b_lean_verify_result_v2", record_type="sample",
+        schema="v2b_lean_verify_result_v3", record_type="sample",
         status="verified"), separators=(",", ":")) + "\n"
     lean_literal = json.dumps(forged)
     generation = (
@@ -523,8 +668,8 @@ def test_manifest_file_mutation_and_duplicate_output_keys_fail_closed():
     except V2BError:
         pass
     marker = lean_verify_output_marker(CHANNEL_NONCE)
-    duplicate = marker + '{"schema":"v2b_lean_verify_result_v2",' \
-        '"schema":"v2b_lean_verify_result_v2"}'
+    duplicate = marker + '{"schema":"v2b_lean_verify_result_v3",' \
+        '"schema":"v2b_lean_verify_result_v3"}'
     try:
         parse_lean_verify_stdout(duplicate, manifest, CHANNEL_NONCE)
         assert False, "duplicate marked key accepted"

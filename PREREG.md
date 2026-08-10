@@ -1653,27 +1653,42 @@ arxiv_manifest) must be committed before measurement.
   verification, the exact immutable
   original suffix must parse and elaborate through EOF; preserving the target
   type while breaking a downstream declaration is therefore an ordinary zero.
-  Original baseline or suffix failure is arm-independent HARNESS-INVALID;
-  candidate failure is a frozen ordinary zero; trusted provenance drift aborts.
+  A complete explicit original-baseline semantic failure is arm-independent
+  target ineligibility; baseline timeout, abnormal termination, invalid
+  evidence, or trusted provenance drift is HARNESS-INVALID. Candidate failure
+  is a frozen ordinary zero; trusted provenance drift aborts.
   The exact manifest binds S4/S5 code/contracts, parser-backed boundary artifact
-  and span, source/setup/reconstruction bytes, and invocation; the future
-  producer must additionally provide pre/post hashes, exact runtime closure,
-  process evidence, and a separate 300-second fresh-process limit per invocation.
-  Baseline mode carries
-  zero candidates and each candidate mode carries exactly one; multi-sample
+  and span, source/setup/reconstruction bytes, and invocation. The production
+  execution envelope additionally provides pre/post hashes, the tracked harness
+  source-tree identity, exact runtime closure, process evidence, and a separate
+  300-second fresh-process limit per invocation; the complete-artifact producer
+  must join this evidence to the frozen plan/sample chain.
+  Baseline mode carries zero candidates and each candidate mode carries exactly
+  one, whose nonempty sample id is capped at 256 UTF-8 bytes; multi-sample
   processes are forbidden. Generated `run_tac` code can bypass Lean stream
   isolation by spawning an inherited-stdout child, so fixed marker text is not
   authentication. Every process instead receives a fresh random 256-bit
-  lowercase-hex nonce as its sole consumed stdin line (immediate EOF required,
-  absent from argv/environment/manifest/files); only flushed
-  `@@V2B_LEAN_VERIFY:<nonce>@@` records count as evidence. Other raw bytes or
-  marker-looking lines are untrusted noise, while malformed payload under the
-  exact nonce fails closed. Candidate mode emits a
-  bound `candidate-start` marker after trusted certificate/splice validation and
-  before parsing/elaborating generated syntax. Baseline termination or candidate
-  termination before that marker is HARNESS-INVALID; candidate termination after
-  it is an ordinary zero, and timeout evidence is accepted only through the
-  strict manifest-bound prefix parser. Full detail:
+  lowercase-hex nonce as the first stdin line and consumes it before corpus
+  ModuleSetup/import processing; it is absent from argv/environment/manifest/
+  child-visible files. The private host journal must lie outside every broad
+  child-visible mount. After branch-specific trusted validation the
+  driver emits/flushed a bound `baseline-start` or `candidate-start` and blocks.
+  The wrapper durably fsyncs the raw prefix and GO intent, rechecks cap/deadline/
+  child state, then sends exact `GO:<nonce>\n` and EOF. The driver emits/flushed
+  `*-go-accepted` before candidate-generated parsing or target elaboration.
+  Only `@@V2B_LEAN_VERIFY:<nonce>@@` records count as evidence; other raw bytes
+  are untrusted noise, while every newline-complete malformed payload under the
+  exact nonce fails closed. Only a terminal incomplete fragment under enforced
+  timeout/output termination is excluded. The 256-byte id cap and 64-KiB
+  reserved headroom make the mode-specific start/acknowledgment records
+  bounded; parsing newline-complete prefixes prevents later truncated generated
+  output from erasing it. Before durable GO intent, termination is
+  HARNESS-INVALID and at most two total attempts are allowed for the invocation
+  (one initial attempt and one pre-start retry). After
+  GO intent, candidate termination/timeout/output-limit is an ordinary immutable
+  zero even if the acknowledgment is lost, never a retry. Baseline timeout or
+  abnormal termination remains HARNESS-INVALID; a complete explicit baseline
+  semantic failure is arm-independent ineligibility. Full detail:
   DESIGN_V2 §15.A21.
 
 ## 14. Known limitations (standing list)

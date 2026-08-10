@@ -16,11 +16,14 @@ forbidden trusted axioms sorryAx/ofReduceBool/ofReduceNat.
 
 Generated code is elaborated here, so the production wrapper must execute this
 driver in a staged, resource-bounded process.  The wrapper sends a fresh
-256-bit channel nonce as the sole stdin line before any target elaboration.
+256-bit channel nonce as the first stdin line before any target elaboration.
 Every compact-JSON evidence record carries that nonce in its marker.  The
-nonce is absent from argv, environment, manifests, and files, so generated
+nonce is absent from argv, environment, manifests, and child-visible files, so generated
 metaprograms and inherited-stdout subprocesses cannot forge verifier records;
-trusted command output is additionally isolated.
+trusted command output is additionally isolated.  After trusted branch
+prevalidation the driver emits a start record and blocks for the exact
+GO:<nonce> line plus EOF; candidate-generated parsing and either branch's target
+elaboration begin only after the wrapper has durably journaled that start record.
 -/
 import Lean
 
@@ -28,10 +31,11 @@ open Lean
 
 namespace V2BVerifyCommand
 
-def MANIFEST_SCHEMA := "v2b_lean_verify_manifest_v2"
-def OUTPUT_SCHEMA := "v2b_lean_verify_result_v2"
+def MANIFEST_SCHEMA := "v2b_lean_verify_manifest_v3"
+def OUTPUT_SCHEMA := "v2b_lean_verify_result_v3"
 def OUTPUT_MARKER_PREFIX := "@@V2B_LEAN_VERIFY:"
 def OUTPUT_MARKER_SUFFIX := "@@"
+def MAX_SAMPLE_ID_UTF8_BYTES : Nat := 256
 
 structure SampleSpec where
   id : String
@@ -808,6 +812,40 @@ def emitCandidateStart (channelNonce : String) (manifest : Manifest)
     ("baseline_evidence_sha256", toJson certificate.baselineEvidenceSha256)
   ]
 
+def emitCandidateGoAccepted (channelNonce : String) (manifest : Manifest)
+    (sample : SampleSpec) : IO Unit := do
+  let some certificate := manifest.baselineCertificate
+    | hard "candidate GO-acceptance marker has no baseline certificate"
+  emit channelNonce <| Json.mkObj [
+    ("schema", toJson OUTPUT_SCHEMA),
+    ("record_type", toJson "candidate-go-accepted"),
+    ("invocation_binding", toJson manifest.invocationBinding),
+    ("sample_id", toJson sample.id),
+    ("baseline_evidence_sha256", toJson certificate.baselineEvidenceSha256)
+  ]
+
+def emitBaselineStart (channelNonce : String) (manifest : Manifest) : IO Unit :=
+  emit channelNonce <| Json.mkObj [
+    ("schema", toJson OUTPUT_SCHEMA),
+    ("record_type", toJson "baseline-start"),
+    ("invocation_binding", toJson manifest.invocationBinding)
+  ]
+
+def emitBaselineGoAccepted (channelNonce : String) (manifest : Manifest) : IO Unit :=
+  emit channelNonce <| Json.mkObj [
+    ("schema", toJson OUTPUT_SCHEMA),
+    ("record_type", toJson "baseline-go-accepted"),
+    ("invocation_binding", toJson manifest.invocationBinding)
+  ]
+
+def awaitAuthorization (stdin : IO.FS.Stream) (channelNonce : String) : IO Unit := do
+  let line <- stdin.getLine
+  unless line == s!"GO:{channelNonce}\n" do
+    hard "channel start authorization is missing or malformed"
+  let trailing <- stdin.read 1
+  unless trailing.isEmpty do
+    hard "channel stdin must end immediately after start authorization"
+
 def validateCandidateSplice (original reconstructed : String)
     (manifest : Manifest) (sample : SampleSpec) : IO Unit := do
   requireRawPosition "retainedEndByte" reconstructed sample.retainedEndByte
@@ -829,7 +867,7 @@ def readManifest (path : String) : IO Manifest := do
   | Except.ok manifest => pure manifest
   | Except.error message => hard s!"manifest schema decode failed: {message}"
 
-def run (channelNonce manifestPath : String) : IO Unit := do
+def run (stdin : IO.FS.Stream) (channelNonce manifestPath : String) : IO Unit := do
   let manifest <- readManifest manifestPath
   unless manifest.schema == MANIFEST_SCHEMA do
     hard s!"manifest schema {manifest.schema} != {MANIFEST_SCHEMA}"
@@ -877,7 +915,8 @@ def run (channelNonce manifestPath : String) : IO Unit := do
     seenOptions := seenOptions.push option.name
   let mut seenIds : Array String := #[]
   for sample in manifest.samples do
-    if sample.id.isEmpty || sample.reconstructedFile.isEmpty ||
+    if sample.id.isEmpty || sample.id.utf8ByteSize >
+        MAX_SAMPLE_ID_UTF8_BYTES || sample.reconstructedFile.isEmpty ||
         sample.reconstructedSha256.length != 64 ||
         sample.extractedBodySha256.length != 64 ||
         sample.s4EvidenceSha256.length != 64 || seenIds.contains sample.id then
@@ -935,6 +974,9 @@ def run (channelNonce manifestPath : String) : IO Unit := do
     unless certificate.nPriorCommands == prepared.nPriorCommands do
       hard "baseline certificate pre-target command count drifted"
   if manifest.mode == "baseline" then
+    emitBaselineStart channelNonce manifest
+    awaitAuthorization stdin channelNonce
+    emitBaselineGoAccepted channelNonce manifest
     let baseline <- elaborateTarget original manifest.logicalFileName
       prepared.originalStx prepared manifest.targetName manifest.targetKind
     match baseline with
@@ -959,6 +1001,8 @@ def run (channelNonce manifestPath : String) : IO Unit := do
     let reconstructed <- IO.FS.readFile sample.reconstructedFile
     validateCandidateSplice original reconstructed manifest sample
     emitCandidateStart channelNonce manifest sample
+    awaitAuthorization stdin channelNonce
+    emitCandidateGoAccepted channelNonce manifest sample
     let (stx, nextParserState) <- parseExactTarget reconstructed
       manifest.logicalFileName prepared
       manifest.targetStartByte sample.retainedEndByte
@@ -1007,11 +1051,7 @@ def main (args : List String) : IO UInt32 := do
           ('0' <= c && c <= '9') || ('a' <= c && c <= 'f') do
         IO.eprintln "V2B channel nonce must be lowercase hexadecimal"
         return 2
-      let trailingStdin <- stdin.getLine
-      unless trailingStdin.isEmpty do
-        IO.eprintln "V2B channel stdin must contain exactly one line"
-        return 2
-      V2BVerifyCommand.run channelNonce manifestPath
+      V2BVerifyCommand.run stdin channelNonce manifestPath
       pure 0
   | _ =>
       IO.eprintln "usage: V2BVerifyCommand <manifest.json>"

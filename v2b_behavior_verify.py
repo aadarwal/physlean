@@ -22,10 +22,11 @@ from v2b_common import (V2BError, sha256_bytes, sha256_file,
 from v2b_lean_boundaries import BOUNDARIES_SCHEMA
 
 
-LEAN_VERIFY_MANIFEST_SCHEMA = "v2b_lean_verify_manifest_v2"
-LEAN_VERIFY_OUTPUT_SCHEMA = "v2b_lean_verify_result_v2"
+LEAN_VERIFY_MANIFEST_SCHEMA = "v2b_lean_verify_manifest_v3"
+LEAN_VERIFY_OUTPUT_SCHEMA = "v2b_lean_verify_result_v3"
 LEAN_VERIFY_OUTPUT_MARKER_PREFIX = "@@V2B_LEAN_VERIFY:"
 LEAN_VERIFY_OUTPUT_MARKER_SUFFIX = "@@"
+MAX_SAMPLE_ID_UTF8_BYTES = 256
 LEAN_VERIFY_DRIVER = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     "lean_drivers", "V2BVerifyCommand.lean")
@@ -65,16 +66,33 @@ SUFFIX_FAILURE_REASONS = frozenset((
 ))
 
 LEAN_VERIFY_CONTRACT = dict(
-    schema="v2b_lean_semantic_verification_contract_v2",
+    schema="v2b_lean_semantic_verification_contract_v3",
     manifest_schema=LEAN_VERIFY_MANIFEST_SCHEMA,
     output_schema=LEAN_VERIFY_OUTPUT_SCHEMA,
-    output_channel=("fresh 256-bit lowercase-hex nonce sent as the sole stdin "
-                    "line and consumed before imports/target elaboration; "
+    output_channel=("fresh 256-bit lowercase-hex nonce sent as the first stdin "
+                    "line and consumed before corpus ModuleSetup/import "
+                    "processing or target elaboration; "
                     "records use @@V2B_LEAN_VERIFY:<nonce>@@; the nonce is "
-                    "absent from argv, environment, manifest, and files; "
+                    "absent from argv, environment, manifest, and all "
+                    "child-visible files; "
                     "only exact nonce-qualified lines are evidence, while "
-                    "malformed lines carrying that nonce hard-fail"),
+                    "every newline-complete malformed line carrying that "
+                    "nonce hard-fails; only a terminal incomplete fragment "
+                    "under enforced timeout/output termination is excluded"),
+    start_authorization=("after all trusted branch prevalidation, emit and "
+                         "flush an authenticated baseline-start or "
+                         "candidate-start record, then block for the exact "
+                         "GO:<nonce> line plus EOF; acknowledge acceptance "
+                         "with a second authenticated record; candidate-"
+                         "generated parsing and either branch's "
+                         "target elaboration begin only after authorization, "
+                         "which the production wrapper sends only after "
+                         "durably journaling the start record"),
     artifact_schema="v2b_behavior_verified_complete_v1",
+    sample_identity=("one nonempty sample id of at most 256 UTF-8 bytes; "
+                     "this prospectively bounds the mode-specific start and "
+                     "GO-acknowledgment records below the wrapper's reserved "
+                     "output headroom"),
     input=("baseline mode receives one trusted original module and no sample; "
            "candidate mode receives the same trusted original only for exact "
            "pre-target preparation plus exactly one reconstructed module "
@@ -96,8 +114,11 @@ LEAN_VERIFY_CONTRACT = dict(
                        "initializer/plugin/IO.Ref state leakage"),
     baseline=("in baseline mode elaborate the original target, verify it under "
               "the semantic gates, and elaborate its exact original suffix to "
-              "EOF; failure is arm-independent HARNESS-INVALID; on success "
-              "emit a strict canonical kernel-type expression certificate"),
+              "EOF; a complete explicit semantic failure is arm-independent "
+              "target ineligibility, while timeout, abnormal termination, "
+              "invalid evidence, or trusted-input drift is HARNESS-INVALID; "
+              "on success emit a strict canonical kernel-type expression "
+              "certificate"),
     target=("the exact fully-qualified Name created by the candidate equals "
             "the independently elaborated baseline Name; theorem/lemma must "
             "produce thmInfo and def must produce defnInfo"),
@@ -120,10 +141,21 @@ LEAN_VERIFY_CONTRACT = dict(
                        "and Lean.ofReduceNat are forbidden absolutely"),
     suffix=("after target verification, parse and elaborate the exact original "
             "post-target suffix to terminal EOF from the candidate target "
-            "state; any suffix failure is an ordinary model zero"),
+            "state; candidate suffix failure is an ordinary model zero, while "
+            "complete explicit baseline suffix failure is arm-independent "
+            "target ineligibility"),
     timeout=("the file producer enforces a separate fixed 300-second deadline "
              "for each fresh baseline or candidate process; baseline timeout "
              "is HARNESS-INVALID and candidate timeout is an ordinary zero"),
+    prestart_retry=("before durable GO intent, at most two total attempts "
+                    "are allowed per invocation (one initial attempt and one "
+                    "retry); after GO intent a candidate attempt is immutable "
+                    "and never retried"),
+    runtime_binding=("the execution runtime binds the complete tracked harness "
+                     "source-tree identity plus canonical wrapper/driver, "
+                     "setup/toolchain closure, sandbox, and resource limits; "
+                     "the private nonce journal must be outside every broad "
+                     "child-visible read-only mount"),
     invocation_binding=("recursively key-sorted SHA256 over the exact unbound "
                         "manifest (including mode and baseline certificate) plus "
                         "role-ordered live SHA256s of original, ModuleSetup, and "
@@ -170,6 +202,9 @@ _PREVALIDATION_KEYS = frozenset((
 _CANDIDATE_START_KEYS = frozenset((
     "schema", "record_type", "invocation_binding", "sample_id",
     "baseline_evidence_sha256",
+))
+_BASELINE_START_KEYS = frozenset((
+    "schema", "record_type", "invocation_binding",
 ))
 _BASELINE_SUCCESS_KEYS = frozenset((
     "schema", "record_type", "status", "outcome_class", "target_name",
@@ -492,6 +527,8 @@ def _validate_manifest(manifest):
     for sample in samples:
         if not isinstance(sample, dict) or set(sample) != _SAMPLE_KEYS \
                 or not isinstance(sample.get("id"), str) or not sample["id"] \
+                or len(sample["id"].encode("utf-8")) > \
+                MAX_SAMPLE_ID_UTF8_BYTES \
                 or not isinstance(sample.get("reconstructedFile"), str) \
                 or not sample["reconstructedFile"]:
             raise V2BError("Lean S5 sample is malformed")
@@ -686,6 +723,41 @@ def _validate_candidate_start(row, manifest):
     return row
 
 
+def _validate_candidate_go(row, manifest):
+    certificate = manifest["baselineCertificate"]
+    sample_id = manifest["samples"][0]["id"]
+    if not isinstance(row, dict) or set(row) != _CANDIDATE_START_KEYS \
+            or row.get("schema") != LEAN_VERIFY_OUTPUT_SCHEMA \
+            or row.get("record_type") != "candidate-go-accepted" \
+            or row.get("invocation_binding") != \
+            manifest["invocationBinding"] \
+            or row.get("sample_id") != sample_id \
+            or row.get("baseline_evidence_sha256") != \
+            certificate["baselineEvidenceSha256"]:
+        raise V2BError("Lean S5 candidate GO-acceptance marker drift")
+    return row
+
+
+def _validate_baseline_start(row, manifest):
+    if not isinstance(row, dict) or set(row) != _BASELINE_START_KEYS \
+            or row.get("schema") != LEAN_VERIFY_OUTPUT_SCHEMA \
+            or row.get("record_type") != "baseline-start" \
+            or row.get("invocation_binding") != \
+            manifest["invocationBinding"]:
+        raise V2BError("Lean S5 baseline-start marker drift")
+    return row
+
+
+def _validate_baseline_go(row, manifest):
+    if not isinstance(row, dict) or set(row) != _BASELINE_START_KEYS \
+            or row.get("schema") != LEAN_VERIFY_OUTPUT_SCHEMA \
+            or row.get("record_type") != "baseline-go-accepted" \
+            or row.get("invocation_binding") != \
+            manifest["invocationBinding"]:
+        raise V2BError("Lean S5 baseline GO-acceptance marker drift")
+    return row
+
+
 def lean_baseline_certificate(parsed, manifest, baseline_evidence_sha256):
     """Derive a candidate certificate from a complete verified baseline run.
 
@@ -727,7 +799,7 @@ def parse_lean_verify_prefix(stdout, manifest, channel_nonce):
     """Validate a flushed marker prefix from a possibly timed-out process."""
     expected_ids = _validate_manifest(manifest)
     records = _marked_records(stdout, channel_nonce)
-    expected_count = 2 if manifest["mode"] == "baseline" else 3
+    expected_count = 4
     if len(records) > expected_count:
         raise V2BError("Lean S5 marked record count exceeds manifest")
     if not records:
@@ -738,17 +810,38 @@ def parse_lean_verify_prefix(stdout, manifest, channel_nonce):
         return dict(stage="prevalidated", prevalidation=prevalidation,
                     baseline=None, samples=[])
     if manifest["mode"] == "baseline":
-        baseline = records[1]
+        baseline_start = _validate_baseline_start(records[1], manifest)
+        if len(records) == 2:
+            return dict(stage="baseline-awaiting-authorization",
+                        prevalidation=prevalidation,
+                        baseline_start=baseline_start,
+                        baseline=None, samples=[])
+        baseline_go = _validate_baseline_go(records[2], manifest)
+        if len(records) == 3:
+            return dict(stage="baseline-started",
+                        prevalidation=prevalidation,
+                        baseline_start=baseline_start,
+                        baseline_go=baseline_go,
+                        baseline=None, samples=[])
+        baseline = records[3]
         _validate_result_record(baseline, "baseline", manifest["targetKind"],
                                 manifest["targetName"])
         return dict(stage="complete", prevalidation=prevalidation,
-                    baseline=baseline, samples=[])
+                    baseline_start=baseline_start, baseline_go=baseline_go,
+                    baseline=baseline,
+                    samples=[])
     candidate_start = _validate_candidate_start(records[1], manifest)
     if len(records) == 2:
-        return dict(stage="candidate-started", prevalidation=prevalidation,
+        return dict(stage="candidate-awaiting-authorization",
+                    prevalidation=prevalidation,
                     candidate_start=candidate_start, baseline=None, samples=[])
+    candidate_go = _validate_candidate_go(records[2], manifest)
+    if len(records) == 3:
+        return dict(stage="candidate-started", prevalidation=prevalidation,
+                    candidate_start=candidate_start,
+                    candidate_go=candidate_go, baseline=None, samples=[])
     sample_id = expected_ids[0]
-    sample = records[2]
+    sample = records[3]
     _validate_result_record(sample, "sample", manifest["targetKind"],
                             manifest["targetName"], sample_id)
     certificate = manifest["baselineCertificate"]
@@ -758,6 +851,7 @@ def parse_lean_verify_prefix(stdout, manifest, channel_nonce):
         raise V2BError("Lean S5 certificate/sample identity drift")
     return dict(stage="complete", prevalidation=prevalidation,
                 candidate_start=candidate_start, baseline=None,
+                candidate_go=candidate_go,
                 samples=[sample])
 
 
