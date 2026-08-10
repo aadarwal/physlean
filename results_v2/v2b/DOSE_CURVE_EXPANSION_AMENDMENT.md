@@ -1,6 +1,18 @@
 # Prospective amendment: dose-curve expansion package (32B rung; interior budgets; deep-closure supplement)
 
-Date: 2026-08-09 EDT (night). Status: **ADOPTED (Part A executable)**
+Date: 2026-08-09 EDT (night). Status: **ADOPTED; Part A OUTCOME:
+32B-TIER INFEASIBLE, RECORDED** — battery job 20035959 OOMed in the fp32
+semantic leg by ~540MiB on a 141GB H200 (139.35GiB resident), exactly
+the predeclared marginal risk; per this amendment's own rule the tier is
+dropped (FULL_TIER_SET stays five; the registry entry and the failed
+battery artifact battery_pilot_32b.failed-job20035959.json remain as
+record; the pre-verdict battery commit and scoring-array submission were
+an operator chaining error — the array was cancelled with zero tasks
+started and the artifact rebound by a logged commit). A future
+re-attempt would require a NEW pre-outcome amendment (e.g., declaring an
+allocator-configuration retry prospectively); this attempt's verdict
+stands. Parts B and C proceed on the five-tier set. Original adoption:
+**ADOPTED (Part A executable)**
 after independent umbrella review by a fresh-context consultant: initial
 verdict FIX-FIRST — BLOCKER 1 (the global scoring-tree pin would refuse
 every 32b completion) plus concerns C2 (unimplemented reproduction

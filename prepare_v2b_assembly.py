@@ -1385,10 +1385,33 @@ def materialize(manifest_path, sample_path, repo, candidates_path,
     return collect
 
 
+INTERIOR_ALLOWED_BUDGETS = (4096, 8192, 16384, 32768, 65536)
+
+
+def parse_budgets(text):
+    """DOSE_CURVE_EXPANSION Part B: an explicit budget grid override.
+
+    Must be a sorted comma list drawn from the allowed set, include B*
+    (the frozen k3s/k4s definition requires it), and contain at least two
+    budgets. The default (None) is the frozen BUDGET_GRID."""
+    if text is None:
+        return BUDGET_GRID
+    try:
+        budgets = tuple(int(part) for part in text.split(","))
+    except ValueError as err:
+        raise V2BError(f"malformed --budgets {text!r}") from err
+    if len(budgets) < 2 or len(set(budgets)) != len(budgets)             or list(budgets) != sorted(budgets)             or any(b not in INTERIOR_ALLOWED_BUDGETS for b in budgets)             or B_STAR not in budgets:
+        raise V2BError(
+            f"--budgets must be a sorted unique subset of "
+            f"{INTERIOR_ALLOWED_BUDGETS} containing B*={B_STAR}: {text!r}")
+    return budgets
+
+
 def prepare(sample_path, repo, candidates_path, extraction_path,
             neardup_path, outcome_path, keyword_freeze_path=None,
             k7_order_path=None, k4x_graph_path=None,
-            external_extraction_path=None, lean_boundaries_path=None):
+            external_extraction_path=None, lean_boundaries_path=None,
+            budgets=BUDGET_GRID):
     if not source_clean():
         raise V2BError("measurement source tree is dirty outside results_v2")
     commit_start, tree_start = head_commit(), source_tree_hash()
@@ -1396,7 +1419,8 @@ def prepare(sample_path, repo, candidates_path, extraction_path,
                               extraction_path, neardup_path, outcome_path,
                               keyword_freeze_path, k7_order_path,
                               k4x_graph_path, external_extraction_path,
-                              lean_boundaries_path=lean_boundaries_path)
+                              lean_boundaries_path=lean_boundaries_path,
+                              budgets=budgets)
     if not source_clean() or head_commit() != commit_start \
             or source_tree_hash() != tree_start:
         raise V2BError("measurement source drifted during assembly")
@@ -1421,13 +1445,18 @@ def main():
                     help="§15.A13 external graph (required for physlib)")
     ap.add_argument("--k4x-external-extraction",
                     help="pinned-mathlib v3 extraction (physlib only)")
+    ap.add_argument("--budgets", default=None,
+                    help="explicit sorted comma budget grid containing "
+                         "B* (DOSE_CURVE_EXPANSION Part B); default is "
+                         "the frozen grid")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     manifest = prepare(args.sample, args.repo, args.candidates,
                        args.extraction, args.neardup, args.a6_outcome,
                        args.lean_keyword_freeze, args.k7_order,
                        args.k4x_graph, args.k4x_external_extraction,
-                       args.lean_boundaries)
+                       args.lean_boundaries,
+                       budgets=parse_budgets(args.budgets))
     digest = write_new_json(args.out, manifest)
     print(f"[v2b-assembly] {args.repo}: {manifest['n_targets']} targets, "
           f"arms {'/'.join(manifest['arms_included'])} "
