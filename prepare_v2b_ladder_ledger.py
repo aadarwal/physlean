@@ -26,7 +26,7 @@ REPO_TASK = {repo: index for index, repo in enumerate(REPOS)}
 
 
 def build_ledger(paired_root, reveal, tier_jobs, prior_repos=None,
-                 sealed_from_scan=False):
+                 sealed_from_scan=False, repos=REPOS):
     """sealed_from_scan (EPOCH2): for completion families with NO sealed
     member (e.g. interior scoring, where every tier including q25c-1.5b
     is a fresh epoch-2 run), all six rows come from the directory scan
@@ -38,8 +38,8 @@ def build_ledger(paired_root, reveal, tier_jobs, prior_repos=None,
         raise V2BError(
             f"tier job ids must cover exactly {sorted(expected)}; "
             f"got {sorted(tier_jobs)}")
-    repos = {}
-    for repo in REPOS:
+    out_repos = {}
+    for repo in repos:
         rows = {}
         for tier, job in sorted(tier_jobs.items()):
             tier_dir = os.path.join(paired_root, tier)
@@ -53,9 +53,10 @@ def build_ledger(paired_root, reveal, tier_jobs, prior_repos=None,
             path = os.path.join(tier_dir, matches[0], "complete.json")
             if not os.path.isfile(path):
                 raise V2BError(f"missing complete.json: {path}")
+            suffix = "" if sealed_from_scan else f"_{REPO_TASK[repo]}"
             rows[tier] = dict(path=os.path.abspath(path),
                               sha256=sha256_file(path),
-                              slurm_job_id=f"{job}_{REPO_TASK[repo]}")
+                              slurm_job_id=f"{job}{suffix}")
         if sealed_from_scan:
             if prior_repos is not None:
                 prior_rows = prior_repos.get(repo)
@@ -66,7 +67,7 @@ def build_ledger(paired_root, reveal, tier_jobs, prior_repos=None,
                         raise V2BError(
                             f"re-derived ledger row differs from the "
                             f"committed prior ledger: {repo} {tier}")
-            repos[repo] = rows
+            out_repos[repo] = rows
             continue
         sealed = (reveal.get("repos", {}).get(repo, {})
                   .get("bindings", {}).get("completion"))
@@ -90,8 +91,8 @@ def build_ledger(paired_root, reveal, tier_jobs, prior_repos=None,
                     raise V2BError(
                         f"re-derived ledger row differs from the committed "
                         f"prior ledger: {repo} {tier}")
-        repos[repo] = rows
-    return repos
+        out_repos[repo] = rows
+    return out_repos
 
 
 def main():
@@ -103,6 +104,9 @@ def main():
     ap.add_argument("--prior-ledger", default=None,
                     help="committed prior ledger whose rows must be "
                          "carried forward byte-identically")
+    ap.add_argument("--repos", default=None,
+                    help="comma repo subset (EPOCH2 interior: "
+                         "mathlib4,sympy); default all five")
     ap.add_argument("--sealed-from-scan", action="store_true",
                     help="EPOCH2: no sealed member; all tiers scanned "
                          "and tier_jobs covers the full set")
@@ -140,7 +144,9 @@ def main():
         reveal_sha256=PINNED_REVEAL_SHA256,
         repos=build_ledger(args.paired_root, reveal, tier_jobs,
                            prior_repos=prior_repos,
-                           sealed_from_scan=args.sealed_from_scan),
+                           sealed_from_scan=args.sealed_from_scan,
+                           repos=(tuple(args.repos.split(","))
+                                  if args.repos else REPOS)),
         generator=dict(source_commit=head_commit(),
                        source_tree_hash=source_tree_hash(),
                        program="prepare_v2b_ladder_ledger.py"))

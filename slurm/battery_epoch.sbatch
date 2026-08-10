@@ -54,13 +54,20 @@ case "$V2B_MODEL_TIER" in
     ;;
 esac
 
-# Epoch precondition: the standard battery path must NOT be committed
-# evidence right now (the rebind commit renames it first). An untracked
-# leftover file is quarantined by the battery program itself.
+# Epoch preconditions (review-hardened): (1) the standard battery path
+# must NOT be committed evidence right now, and (2) the rebound copy MUST
+# already exist, committed, under results_v2/battery/epoch1/ with its
+# BASENAME PRESERVED — sealed-pilot consumers keep passing the rebound
+# file and their registry-basename checks must keep holding.
+V2B_REBOUND="results_v2/battery/epoch1/$(basename "$V2B_BATTERY_FILE")"
 if git ls-files --error-unmatch "$V2B_BATTERY_FILE" >/dev/null 2>&1; then
   echo "committed battery still at standard path; rebind first: $V2B_BATTERY_FILE" >&2
   exit 1
 fi
+git ls-files --error-unmatch "$V2B_REBOUND" >/dev/null 2>&1 || {
+  echo "rebound battery copy missing/uncommitted: $V2B_REBOUND" >&2
+  exit 1
+}
 
 V2B_SOURCE_DIRT=$(git status --porcelain -- . ':(exclude)results_v2')
 [[ -z "$V2B_SOURCE_DIRT" ]] || {

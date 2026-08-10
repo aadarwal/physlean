@@ -67,31 +67,42 @@ def replication_gate(interior_manifest, pilot_manifest,
                      interior_cells_by_target, pilot_cells_by_target):
     """Returns the gate report; raises on a true replication failure."""
     if interior_env != pilot_env:
+        # Environment mismatch is legitimately tier-wide: no target of
+        # this tier is comparable.
         return dict(status="discarded-non-comparable",
                     reason="environment-fingerprint-differs",
-                    n_compared=0)
+                    n_compared=0, discarded_targets=[])
     compared = 0
+    discarded = []
     for key, icells in interior_cells_by_target.items():
+        # Per-target discards (review fix): one benign mismatch must not
+        # exempt the REMAINING targets from the incident check.
         pcells = pilot_cells_by_target.get(key)
         if pcells is None:
-            return dict(status="discarded-non-comparable",
-                        reason=f"pilot-lacks-target:{key[:60]}",
-                        n_compared=compared)
+            discarded.append(dict(target=key,
+                                  reason="pilot-lacks-target"))
+            continue
         irow = interior_manifest[key]
         prow = pilot_manifest[key]
         if _grid_16k(irow) != _grid_16k(prow):
-            return dict(status="discarded-non-comparable",
-                        reason="metadata-grid-differs",
-                        n_compared=compared)
+            discarded.append(dict(target=key,
+                                  reason="metadata-grid-differs"))
+            continue
+        cell_mismatch = None
         for cell_id, icell in icells.items():
             if not (cell_id.endswith(":16384") or cell_id == "k1"):
                 continue
             pcell = pcells.get(cell_id)
             if pcell is None or icell.get("eligible") != \
                     pcell.get("eligible"):
-                return dict(status="discarded-non-comparable",
-                            reason=f"eligibility-differs:{cell_id}",
-                            n_compared=compared)
+                cell_mismatch = f"eligibility-differs:{cell_id}"
+                break
+        if cell_mismatch is not None:
+            discarded.append(dict(target=key, reason=cell_mismatch))
+            continue
+        for cell_id, icell in icells.items():
+            if not (cell_id.endswith(":16384") or cell_id == "k1"):
+                continue
             if icell.get("eligible") is not True:
                 continue
             ib = _cell_bpb(icells, cell_id, key)
@@ -102,8 +113,10 @@ def replication_gate(interior_manifest, pilot_manifest,
                     f"incident): {key} {cell_id} interior {ib!r} != "
                     f"pilot {pb!r}")
             compared += 1
-    return dict(status="replicated-exactly", reason=None,
-                n_compared=compared)
+    status = "replicated-exactly" if not discarded else \
+        "replicated-with-per-target-discards"
+    return dict(status=status, reason=None, n_compared=compared,
+                discarded_targets=discarded)
 
 
 def _load_completion_cells(complete_path, manifest_value, expected_tree):

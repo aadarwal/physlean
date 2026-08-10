@@ -109,7 +109,7 @@ def main():
                                  source_tree_hash=source_tree_hash(),
                                  program="finalize_v2b_supplement_sample.py")
     digest = write_new_json(args.out, artifact)
-    print(f"V2B-SUPPLEMENT-DRAWN {artifact['n_selected']}/{SUPPLEMENT_N} "
+    print(f"V2B-SUPPLEMENT-DRAWN {artifact['n_selected_total']}/{SUPPLEMENT_N} "
           f"{args.out} {digest}")
     return 0
 
