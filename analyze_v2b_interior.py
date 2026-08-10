@@ -24,8 +24,9 @@ from analyze_v2b_dose import (
     extract_rows)
 from analyze_v2b_nll_ladder import (
     COMPLETE_SCHEMA, FULL_TIER_SET, LADDER_LEDGER_SCHEMA,
-    LADDER_PUBLIC_SALT, LADDER_PUBLIC_SALT_NOTE, _check_ledger, _require,
-    _tier_entry)
+    LADDER_PUBLIC_SALT, LADDER_PUBLIC_SALT_NOTE,
+    PINNED_MANIFEST_SHA256, PINNED_SCORING_TREE_BY_TIER, SEALED_TIER,
+    _check_ledger, _require, _tier_entry)
 from eval_paired import _target_cell_rows
 from layout import PRODUCTION_CHUNK_TOKENS
 from prepare_v2b_masked_deltas import _cell_bpb, _load_target
@@ -148,8 +149,9 @@ def _load_completion_cells(complete_path, manifest_value, expected_tree):
 
 def analyze_repo(repo, interior_manifest_path, pilot_manifest_path,
                  interior_completions, pilot_completions, tier_batteries,
-                 ledger, committed_dose_path,
-                 expected_tree=PINNED_INTERIOR_SCORING_TREE):
+                 ledger, pilot_ledger, committed_dose_path,
+                 expected_tree=PINNED_INTERIOR_SCORING_TREE,
+                 pilot_trees=None):
     _require(repo in PINNED_INTERIOR_MANIFEST_SHA256,
              f"interior consumer covers mathlib4/sympy only; got {repo!r}")
     _require(sha256_file(interior_manifest_path)
@@ -163,6 +165,17 @@ def analyze_repo(repo, interior_manifest_path, pilot_manifest_path,
              "no pinned interior scoring tree yet; the post-scoring pin "
              "commit must land before analysis")
     _check_ledger(repo, ledger, interior_completions)
+    # Review blocker: the replication gate's REFERENCE side must be as
+    # pinned as its subject — the pilot manifest matches the ladder pin,
+    # pilot completions match the committed ladder ledger rows, and every
+    # non-sealed pilot completion matches its per-tier scoring-tree pin.
+    _require(sha256_file(pilot_manifest_path)
+             == PINNED_MANIFEST_SHA256[repo],
+             f"pilot manifest does not match the pinned pilot manifest: "
+             f"{repo}")
+    _check_ledger(repo, pilot_ledger, pilot_completions)
+    if pilot_trees is None:
+        pilot_trees = PINNED_SCORING_TREE_BY_TIER
     dose_binding, dose = artifact_binding(committed_dose_path)
     _require(dose.get("repo") == repo
              and dose.get("schema") == "v2b_budget_response_v1",
@@ -191,8 +204,12 @@ def analyze_repo(repo, interior_manifest_path, pilot_manifest_path,
                  == battery_shas[tag],
                  f"interior completion does not bind the epoch battery: "
                  f"{repo} {tag}")
+        pilot_pin = None if tag == SEALED_TIER else pilot_trees.get(tag)
+        _require(tag == SEALED_TIER
+                 or (isinstance(pilot_pin, str) and pilot_pin),
+                 f"pilot tier {tag} has no scoring-tree pin")
         _, pilot_identity, pcells, prows = _load_completion_cells(
-            pilot_completions[tag], pilot_manifest, None)
+            pilot_completions[tag], pilot_manifest, pilot_pin)
         language = interior_manifest.get("language")
 
         gate = replication_gate(
@@ -298,13 +315,14 @@ def main():
                     metavar="TIER=PATH")
     ap.add_argument("--battery", action="append", metavar="TIER=PATH")
     ap.add_argument("--ledger", required=True)
+    ap.add_argument("--pilot-ledger", required=True)
     ap.add_argument("--committed-dose", required=True)
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     if not source_clean():
         raise V2BError("source tree is dirty outside results_v2")
     for path in (args.interior_manifest, args.pilot_manifest, args.ledger,
-                 args.committed_dose, AMENDMENT_PATH):
+                 args.pilot_ledger, args.committed_dose, AMENDMENT_PATH):
         require_committed(path)
     batteries = _parse_tier_args(args.battery, "battery")
     for path in batteries.values():
@@ -312,11 +330,15 @@ def main():
     ledger_binding, ledger = artifact_binding(args.ledger,
                                               LADDER_LEDGER_SCHEMA)
     ledger = dict(ledger, _binding_sha256=ledger_binding["sha256"])
+    pilot_ledger_binding, pilot_ledger = artifact_binding(
+        args.pilot_ledger, LADDER_LEDGER_SCHEMA)
+    pilot_ledger = dict(pilot_ledger,
+                        _binding_sha256=pilot_ledger_binding["sha256"])
     artifact = analyze_repo(
         args.repo, args.interior_manifest, args.pilot_manifest,
         _parse_tier_args(args.completion, "completion"),
         _parse_tier_args(args.pilot_completion, "pilot-completion"),
-        batteries, ledger, args.committed_dose)
+        batteries, ledger, pilot_ledger, args.committed_dose)
     digest = write_new_json(args.out, artifact)
     print(f"V2B-INTERIOR-ANALYZED {args.repo} {args.out} {digest}")
     return 0
