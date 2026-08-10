@@ -26,7 +26,7 @@ from analyze_v2b_nll_ladder import (
     AMENDMENT_PATH as LADDER_AMENDMENT_PATH, COMPLETE_SCHEMA, FULL_TIER_SET,
     LADDER_LEDGER_SCHEMA, LADDER_PUBLIC_SALT, LADDER_PUBLIC_SALT_NOTE,
     PINNED_MANIFEST_SHA256, PINNED_REVEAL_SHA256,
-    PINNED_SCORING_TREE_SHA256, SEALED_TIER, _check_ledger,
+    PINNED_SCORING_TREE_BY_TIER, SEALED_TIER, _check_ledger,
     _check_sealed_consistency, _require, _tier_entry)
 from layout import PRODUCTION_CHUNK_TOKENS
 from prepare_v2b_masked_deltas import _cell_bpb, _load_target
@@ -176,15 +176,15 @@ def _force_physlib(panel):
 def analyze_repo(mode, repo, manifest_path, sample_path, candidates_path,
                  tier_completions, tier_batteries, ledger, reveal,
                  build_fn=None, load_target_fn=_load_target,
-                 expected_scoring_tree=None):
+                 expected_scoring_trees=None):
     _require(mode in MODES, f"unknown mode {mode!r}")
     _require(mode != "k4x" or repo == "physlib",
              "k4x mode is PhysLib-only")
     if build_fn is None:
         from prepare_v2b_masked_deltas import build_masked_deltas
         build_fn = build_masked_deltas
-    if expected_scoring_tree is None:
-        expected_scoring_tree = PINNED_SCORING_TREE_SHA256
+    if expected_scoring_trees is None:
+        expected_scoring_trees = PINNED_SCORING_TREE_BY_TIER
     _require(set(tier_completions) == FULL_TIER_SET,
              f"dose consumers require exactly the frozen full tier set; "
              f"got {sorted(tier_completions or ())}")
@@ -225,9 +225,12 @@ def analyze_repo(mode, repo, manifest_path, sample_path, candidates_path,
             complete_path, COMPLETE_SCHEMA)
         generator = complete.get("generator") or {}
         if tag != SEALED_TIER:
-            _require(generator.get("source_tree_hash")
-                     == expected_scoring_tree,
-                     f"{tag} completion was not scored at the pinned "
+            pinned_tree = expected_scoring_trees.get(tag)
+            _require(isinstance(pinned_tree, str) and pinned_tree,
+                     f"{tag} has no pinned scoring tree yet; the "
+                     f"post-scoring pin commit must land before analysis")
+            _require(generator.get("source_tree_hash") == pinned_tree,
+                     f"{tag} completion was not scored at its pinned "
                      f"scoring tree: {repo}")
         masked, private = build_fn(
             complete_path, manifest_path, sample_path, candidates_path,

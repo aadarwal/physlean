@@ -25,14 +25,27 @@ RISK, recorded before running: the battery's fp32 semantic leg needs
 ~128GB of weights on a 141GB H200 — marginal; an OOM there is recorded
 as 32b-tier infeasibility and the tier is dropped from the six-tier set
 by a logged follow-up, never worked around by weakening the leg.
-Everything else is the unchanged ladder machinery: per-tier write-once
-battery at the scoring tree, one scoring submission, ledger v2
-(COMPLETION_LEDGER_V2.json, six rows per repo, sealed rows carried
-forward byte-identically), and six-tier reruns of the frozen ladder and
-dose consumers as NEW artifact files (the committed five-tier v1
-artifacts remain untouched evidence; six-tier artifacts must reproduce
-every five-tier panel exactly — same rows, same inference — as a
-standing consistency gate enforced by comparison before commit).
+Everything else is the unchanged ladder machinery — per-tier write-once
+battery at the scoring tree, one scoring submission — plus four
+review-driven mechanics (umbrella review findings, all implemented):
+
+- PER-TIER SCORING-TREE PINS (review BLOCKER 1): the single global
+  scored-tree pin would refuse every 32b completion, since the adoption
+  commit itself moves the source tree. PINNED_SCORING_TREE_BY_TIER maps
+  the five original tiers to the af0655f-lineage tree and q25c-32b to
+  None; both analyzers REFUSE a tier whose pin is None, and the
+  post-scoring pre-analysis pin commit fills in the 32b tree (a value
+  determined by the ledger-bound completion, so pinning selects
+  nothing).
+- LEDGER v2 PRIOR-CARRY (review C3): prepare_v2b_ladder_ledger takes
+  --prior-ledger (the committed v1) and refuses any re-derived row that
+  is not byte-identical to the prior for every previously ledgered tier.
+- REPRODUCTION GATE, IMPLEMENTED (review C2):
+  verify_v2b_expansion_consistency.py deep-compares every common tier
+  block of the committed five-tier artifact against the six-tier rerun
+  and refuses any drift; its PASS report is a required input of the
+  six-tier evidence commit. The committed five-tier v1 artifacts remain
+  untouched evidence; six-tier artifacts are NEW files.
 
 ## Part B — interior budget points {8192, 32768} (delta review before execution)
 
@@ -40,11 +53,19 @@ One new assembly for mathlib4 AND sympy only (the headline contrast
 pair), same sealed sample, same frozen renderer and chain bindings, with
 budget grid (8192, 16384, 32768) — B* included because the frozen k3s/k4s
 definition requires it. The 16384 cells DUPLICATE already-scored public
-cells by construction; they are declared REPLICATION GATES: at scoring
-time each 16384 cell's primary bpb must equal the committed completion's
-value exactly (same device class, frozen chunk, verified repeat
-determinism), and any inequality aborts the tier's interior run as a
-measurement-identity incident. Two-phase pinning (the assembly job id
+cells by construction; they are declared REPLICATION GATES with
+review-tightened preconditions (review C4): the equality requirement
+applies ONLY when the interior run's environment fingerprint equals the
+original completion's and the interior manifest's 16384 cell grid equals
+the original manifest's for that target (same bytes, same chunk, same
+device class); under those preconditions any primary-bpb inequality
+aborts the tier's interior run as a measurement-identity incident, and
+if the preconditions themselves cannot be met the 16384 duplicates are
+DISCARDED as non-comparable (recorded, never averaged with the
+committed values). ONE ASSEMBLY SUBMISSION (review C5): exactly one
+interior-assembly job may be submitted; any re-submission after a
+produced manifest quarantines the interior arm pending a logged rebind,
+mirroring the one-scoring-submission rule. Two-phase pinning (the assembly job id
 cannot be known at adoption): (1) this amendment authorizes the assembly
 run; (2) a pre-scoring evidence commit pins the produced manifests by
 sha256 into the interior consumer and the interior launcher, reviewed as

@@ -197,7 +197,8 @@ class _Fixture:
             tier_batteries=dict(self.batteries),
             ledger=self.ledger, reveal=self.reveal,
             build_fn=self.build_fn, load_target_fn=self.load_target_fn,
-            expected_scoring_tree=TREE)
+            expected_scoring_trees={t: TREE for t in lad.FULL_TIER_SET
+                                    if t != lad.SEALED_TIER})
         kwargs.update(overrides)
         return dose.analyze_repo(**kwargs)
 

@@ -25,9 +25,12 @@ REPOS = ("mathlib4", "batteries", "physlib", "sympy", "astropy")
 REPO_TASK = {repo: index for index, repo in enumerate(REPOS)}
 
 
-def build_ledger(paired_root, reveal, tier_jobs):
-    if set(tier_jobs) != FULL_TIER_SET - {SEALED_TIER}:
-        raise V2BError("tier job ids must cover exactly the four new tiers")
+def build_ledger(paired_root, reveal, tier_jobs, prior_repos=None):
+    expected = FULL_TIER_SET - {SEALED_TIER}
+    if set(tier_jobs) != expected:
+        raise V2BError(
+            f"tier job ids must cover exactly the non-sealed tier set "
+            f"{sorted(expected)}; got {sorted(tier_jobs)}")
     repos = {}
     for repo in REPOS:
         rows = {}
@@ -59,6 +62,15 @@ def build_ledger(paired_root, reveal, tier_jobs):
         rows[SEALED_TIER] = dict(path=sealed["path"],
                                  sha256=sealed["sha256"],
                                  slurm_job_id="sealed-pilot")
+        if prior_repos is not None:
+            prior_rows = prior_repos.get(repo)
+            if not isinstance(prior_rows, dict):
+                raise V2BError(f"prior ledger lacks repository {repo}")
+            for tier, prior_row in prior_rows.items():
+                if rows.get(tier) != prior_row:
+                    raise V2BError(
+                        f"re-derived ledger row differs from the committed "
+                        f"prior ledger: {repo} {tier}")
         repos[repo] = rows
     return repos
 
@@ -69,6 +81,9 @@ def main():
     ap.add_argument("--reveal", required=True)
     ap.add_argument("--tier-job", action="append", metavar="TIER=JOBID",
                     required=True)
+    ap.add_argument("--prior-ledger", default=None,
+                    help="committed prior ledger whose rows must be "
+                         "carried forward byte-identically")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     if not source_clean():
@@ -84,12 +99,18 @@ def main():
         if not sep or tier in tier_jobs or not job.isdigit():
             raise V2BError(f"malformed --tier-job: {pair!r}")
         tier_jobs[tier] = job
+    prior_repos = None
+    if args.prior_ledger is not None:
+        require_committed(args.prior_ledger)
+        _, prior = artifact_binding(args.prior_ledger, LADDER_LEDGER_SCHEMA)
+        prior_repos = prior.get("repos")
     ledger = dict(
         schema=LADDER_LEDGER_SCHEMA,
         note=("one scoring submission per tier; sealed rows from the "
               "committed reveal; analyzer requires row equality"),
         reveal_sha256=PINNED_REVEAL_SHA256,
-        repos=build_ledger(args.paired_root, reveal, tier_jobs),
+        repos=build_ledger(args.paired_root, reveal, tier_jobs,
+                           prior_repos=prior_repos),
         generator=dict(source_commit=head_commit(),
                        source_tree_hash=source_tree_hash(),
                        program="prepare_v2b_ladder_ledger.py"))

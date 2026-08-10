@@ -77,16 +77,27 @@ PINNED_MANIFEST_SHA256 = {
 }
 # The adopted amendment file is bound into every artifact (finding 4).
 AMENDMENT_PATH = "results_v2/v2b/NLL_LADDER_EXPLORATORY_AMENDMENT.md"
-# The one source tree every non-sealed completion was scored at (the
-# adoption-lineage tree of af0655f/3245ee5/7fd25e6 — battery commits touch
-# only results_v2, so all four scoring launches shared it). Pinned as a
-# constant pre-analysis: the original scored-at-CURRENT-tree formulation
-# broke as soon as the ledger writer itself was committed (a root-level
-# code file moves the tree). The value is determined by the ledger-bound
-# completions, so pinning it selects nothing; the ledger sha pinning is
-# the primary anti-shopping gate and this remains belt-and-braces.
-PINNED_SCORING_TREE_SHA256 = \
+# PER-TIER scored-tree pins (expansion review BLOCKER 1: a single global
+# pin refuses every completion scored after any code commit, e.g. the 32b
+# rung scored at the expansion-adoption tree). Each non-sealed tier maps
+# to the ONE source tree its scoring launch ran at; a tier whose pin is
+# None is REFUSED by the analyzers until a post-scoring, pre-analysis
+# evidence commit fills it in (the value is determined by the
+# ledger-bound completion itself, so pinning selects nothing; the ledger
+# sha pinning remains the primary anti-shopping gate). The five original
+# tiers share the af0655f-lineage tree.
+_ORIGINAL_SCORING_TREE = \
     "87d54d84a801dfd148b1495c8885ed31b766355f81ba59b94fa71fcbe8e41958"
+PINNED_SCORING_TREE_BY_TIER = {
+    "q25c-0.5b": _ORIGINAL_SCORING_TREE,
+    "q25c-3b": _ORIGINAL_SCORING_TREE,
+    "q25c-7b": _ORIGINAL_SCORING_TREE,
+    "q25c-14b": _ORIGINAL_SCORING_TREE,
+    "q25c-32b": None,  # filled by the post-scoring pin commit
+}
+# Backward-compatible alias for consumers that imported the old name;
+# semantically it is now "the original five-tier scoring tree".
+PINNED_SCORING_TREE_SHA256 = _ORIGINAL_SCORING_TREE
 # Fixed PUBLIC salt: 32 zero bytes. Deliberately non-secret — the family
 # masking machinery is reused solely so the frozen B3 validation and delta
 # construction apply byte-identically to every tier; the reconstruction
@@ -234,13 +245,13 @@ def _check_ledger(repo, ledger, tier_completions):
 
 def analyze_repo(repo, manifest_path, sample_path, candidates_path,
                  tier_completions, tier_batteries, ledger, reveal,
-                 build_fn=None, expected_scoring_tree=None):
+                 build_fn=None, expected_scoring_trees=None):
     """Analyze one repository across the frozen full ladder tier set."""
     if build_fn is None:
         from prepare_v2b_masked_deltas import build_masked_deltas
         build_fn = build_masked_deltas
-    if expected_scoring_tree is None:
-        expected_scoring_tree = PINNED_SCORING_TREE_SHA256
+    if expected_scoring_trees is None:
+        expected_scoring_trees = PINNED_SCORING_TREE_BY_TIER
     _require(isinstance(tier_completions, dict)
              and set(tier_completions) == FULL_TIER_SET,
              f"ladder requires exactly the frozen full tier set "
@@ -275,9 +286,12 @@ def analyze_repo(repo, manifest_path, sample_path, candidates_path,
             complete_path, COMPLETE_SCHEMA)
         generator = complete.get("generator") or {}
         if tag != SEALED_TIER:
-            _require(generator.get("source_tree_hash")
-                     == expected_scoring_tree,
-                     f"{tag} completion was not scored at the pinned "
+            pinned_tree = expected_scoring_trees.get(tag)
+            _require(isinstance(pinned_tree, str) and pinned_tree,
+                     f"{tag} has no pinned scoring tree yet; the "
+                     f"post-scoring pin commit must land before analysis")
+            _require(generator.get("source_tree_hash") == pinned_tree,
+                     f"{tag} completion was not scored at its pinned "
                      f"scoring tree: {repo}")
         masked, private = build_fn(
             complete_path, manifest_path, sample_path,
