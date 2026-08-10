@@ -91,6 +91,15 @@ PILOT_TIERS = {
         revision="f2ad5164aade432d6d56c24bb71589184d5d613d",
         family="q25c-14b", param_range=(13.0e9, 16.0e9),
         battery_file="battery_pilot_14b.json"),
+    # 32B (DOSE_CURVE_EXPANSION amendment, human-authorized 2026-08-09):
+    # H200-only; the fp32 semantic leg (~128GB weights) is MARGINAL on one
+    # 141GB H200 — an OOM there is recorded as tier infeasibility, never
+    # worked around by weakening the leg.
+    "q25c-32b": dict(
+        model="Qwen/Qwen2.5-Coder-32B",
+        revision="2e12b5f7bc878d424d222e224ed40aee564ec45f",
+        family="q25c-32b", param_range=(30.0e9, 35.0e9),
+        battery_file="battery_pilot_32b.json"),
 }
 _ACTIVE_PILOT_TIER = None
 

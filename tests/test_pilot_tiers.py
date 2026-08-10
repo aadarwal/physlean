@@ -37,12 +37,13 @@ def _expect(exc_type, needle=None):
 def test_registry_shape_and_1p5b_identity():
     m = _reload()
     assert set(m.PILOT_TIERS) == {
-        "q25c-0.5b", "q25c-1.5b", "q25c-3b", "q25c-7b", "q25c-14b"}
+        "q25c-0.5b", "q25c-1.5b", "q25c-3b", "q25c-7b", "q25c-14b",
+        "q25c-32b"}
     files = [t["battery_file"] for t in m.PILOT_TIERS.values()]
     models = [t["model"] for t in m.PILOT_TIERS.values()]
     fams = [t["family"] for t in m.PILOT_TIERS.values()]
-    assert len(set(files)) == 5 and len(set(models)) == 5
-    assert len(set(fams)) == 5
+    assert len(set(files)) == 6 and len(set(models)) == 6
+    assert len(set(fams)) == 6
     for t in m.PILOT_TIERS.values():
         assert len(t["revision"]) == 40
         assert all(c in "0123456789abcdef" for c in t["revision"])
@@ -91,8 +92,10 @@ def test_resolver_is_exact():
         "Qwen/Qwen2.5-Coder-0.5B") == "q25c-0.5b"
     assert m.resolve_pilot_tier_for_model(
         "Qwen/Qwen2.5-Coder-7B") == "q25c-7b"
+    assert m.resolve_pilot_tier_for_model(
+        "Qwen/Qwen2.5-Coder-32B") == "q25c-32b"
     with _expect(RuntimeError, "no unique pilot tier"):
-        m.resolve_pilot_tier_for_model("Qwen/Qwen2.5-Coder-32B")
+        m.resolve_pilot_tier_for_model("Qwen/Qwen2.5-Coder-72B")
 
 
 def test_paired_validator_resolves_tier_and_checks_filename():

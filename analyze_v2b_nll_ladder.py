@@ -53,8 +53,12 @@ SEALED_TIER = "q25c-1.5b"
 # The tier set is FROZEN AT ADOPTION: exactly the PILOT_TIERS registry of
 # the adopted amendment. Later rungs require a NEW amendment adopted before
 # that tier is scored; this analyzer refuses subsets and supersets alike.
+# q25c-32b added by the DOSE_CURVE_EXPANSION amendment (adopted before any
+# 32b battery or score existed); five-tier v1 artifacts remain committed
+# evidence and six-tier reruns are new artifact files, never overwrites.
 FULL_TIER_SET = frozenset(
-    ("q25c-0.5b", "q25c-1.5b", "q25c-3b", "q25c-7b", "q25c-14b"))
+    ("q25c-0.5b", "q25c-1.5b", "q25c-3b", "q25c-7b", "q25c-14b",
+     "q25c-32b"))
 # Anchors pinned at adoption (adversarial-review finding 2): the committed
 # exploratory reveal and the five job19991210 assembly manifests.
 PINNED_REVEAL_SHA256 = \

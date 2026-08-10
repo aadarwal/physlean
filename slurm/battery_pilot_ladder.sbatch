@@ -23,13 +23,13 @@ export TMPDIR="$V2B_POOL_BASE/tmp"
 mkdir -p "$XDG_CACHE_HOME" "$TORCH_HOME" "$MPLCONFIGDIR" \
   "$TRITON_CACHE_DIR" "$CUDA_CACHE_PATH" "$ELAN_HOME" "$TMPDIR" logs
 
-V2B_MODEL_TIER="${V2B_MODEL_TIER:?export V2B_MODEL_TIER (q25c-0.5b|q25c-3b|q25c-7b|q25c-14b)}"
+V2B_MODEL_TIER="${V2B_MODEL_TIER:?export V2B_MODEL_TIER (q25c-0.5b|q25c-3b|q25c-7b|q25c-14b|q25c-32b)}"
 case "$V2B_MODEL_TIER" in
   q25c-0.5b|q25c-3b|q25c-7b) ;;
-  q25c-14b)
+  q25c-14b|q25c-32b)
     # fp32 semantic leg needs > 48GB device memory: H200 partitions only
     if ! nvidia-smi --query-gpu=name --format=csv,noheader | grep -qi h200; then
-      echo "q25c-14b battery requires an H200 GPU" >&2
+      echo "$V2B_MODEL_TIER battery requires an H200 GPU" >&2
       exit 1
     fi
     ;;

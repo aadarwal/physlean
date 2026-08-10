@@ -48,7 +48,8 @@ BASIC_DELTAS = {
 def test_public_salt_is_literally_32_zero_bytes():
     assert lad.LADDER_PUBLIC_SALT == b"\x00" * 32
     assert lad.FULL_TIER_SET == frozenset(
-        ("q25c-0.5b", "q25c-1.5b", "q25c-3b", "q25c-7b", "q25c-14b"))
+        ("q25c-0.5b", "q25c-1.5b", "q25c-3b", "q25c-7b", "q25c-14b",
+         "q25c-32b"))
     assert set(lad.PINNED_MANIFEST_SHA256) == {
         "mathlib4", "batteries", "physlib", "sympy", "astropy"}
     assert len(lad.PINNED_REVEAL_SHA256) == 64
