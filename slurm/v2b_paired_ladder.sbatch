@@ -34,6 +34,8 @@ case "$V2B_MODEL_TIER" in
       echo "q25c-32b scoring requires an H200 GPU per the amendment" >&2
       exit 1
     fi
+    # AMENDMENT_32B_ALLOCATOR_RETRY: allocator policy only, 32b only
+    export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
     ;;
   q25c-14b)
     V2B_MODEL="Qwen/Qwen2.5-Coder-14B"

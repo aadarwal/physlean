@@ -26,12 +26,20 @@ mkdir -p "$XDG_CACHE_HOME" "$TORCH_HOME" "$MPLCONFIGDIR" \
 V2B_MODEL_TIER="${V2B_MODEL_TIER:?export V2B_MODEL_TIER (q25c-0.5b|q25c-3b|q25c-7b|q25c-14b|q25c-32b)}"
 case "$V2B_MODEL_TIER" in
   q25c-0.5b|q25c-3b|q25c-7b) ;;
-  q25c-14b|q25c-32b)
+  q25c-14b)
     # fp32 semantic leg needs > 48GB device memory: H200 partitions only
     if ! nvidia-smi --query-gpu=name --format=csv,noheader | grep -qi h200; then
       echo "$V2B_MODEL_TIER battery requires an H200 GPU" >&2
       exit 1
     fi
+    ;;
+  q25c-32b)
+    if ! nvidia-smi --query-gpu=name --format=csv,noheader | grep -qi h200; then
+      echo "q25c-32b battery requires an H200 GPU" >&2
+      exit 1
+    fi
+    # AMENDMENT_32B_ALLOCATOR_RETRY: allocator policy only, 32b only
+    export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
     ;;
   q25c-1.5b)
     echo "the q25c-1.5b battery is sealed evidence; never rerun it" >&2
