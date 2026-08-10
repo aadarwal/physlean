@@ -538,6 +538,36 @@ arxiv_manifest) must be committed before measurement.
 
 ## 13. Disagreement log
 
+- ADOPTED (2026-08-09 late, post-ladder frozen consumers; PRE-CONSUMPTION —
+  the five-tier B* ladder artifacts were public; no 4KiB/64KiB cell and no
+  k4x cell had ever been read): POST_LADDER_CONSUMERS_AMENDMENT.md +
+  analyze_v2b_dose.py, one analyzer with two modes over the twenty-five
+  ledger-bound completions, NO new scoring. Mode budget: standard contrasts
+  at {4096,16384,65536} for all repos, per-budget complete-case panels plus
+  the all-budgets common-subset E1a dose curve; every B* contrast's row
+  count and exact fsum mean must equal the B3 producer's recomputed
+  centering (transitively anchoring the committed ladder artifacts), the
+  sealed tier's B* centering must reproduce the committed reveal, and
+  PhysLib's k4-based statuses stay forced. Mode k4x: PhysLib-only
+  contrasts against the lake-manifest-pinned combined-graph arm
+  (mathlib4 81a5d257) at all three budgets — the separately frozen
+  consumer the reveal amendment required, lifting the forced status
+  exclusively through its committed artifacts; the E2-x control asymmetry
+  (internal k5 universe vs partly-external reference) is recorded in the
+  artifact. Inherits the ladder analyzer's full anti-shopping surface
+  (frozen tier set, ledger row equality, pinned reveal/manifest/scoring
+  -tree anchors, registry battery filenames). READING RULE stamped into
+  every artifact: non-B* panels' positive diagnostic flags are
+  descriptive dose-curve context, never standalone positive results.
+  INDEPENDENT DELTA REVIEW (same fresh-context reviewer as the ladder):
+  FIX-FIRST with two findings — an amendment overclaim of an
+  unimplemented ladder-artifact inference anchor (text corrected to the
+  implemented producer-centering gate) and the per-panel-Holm selective
+  -citation risk (closed by the reading rule) — both resolved in the
+  adoption commit; extraction, panel fidelity, injection defaults, k4x
+  honesty, and sealed anchoring were verified sound. Claim statuses:
+  exploratory-nll-only-budget-response /
+  exploratory-nll-only-physlib-k4x-sensitivity.
 - ADOPTED (2026-08-09, exploratory NLL model ladder; POST-1.5B-REVEAL,
   PRE-LADDER-OUTCOME — the sealed 1.5B exploratory reveal and analysis were
   public at drafting; NO other tier's battery, paired score, masked

@@ -47,6 +47,11 @@ K4X_EXTERNAL = dict(repo="mathlib4",
                     revision="81a5d257c8e410db227a6665ed08f64fea08e997")
 PHYSLIB_FORCED = "uninterpretable-pending-k4x-sensitivity"
 CONTRAST_NAMES = ("E1a", "E1b", "E2")
+NON_BSTAR_READING_RULE = (
+    "per-panel Holm is scoped within (repo, tier, budget); non-B* panels' "
+    "positive diagnostic flags are descriptive context for the dose curve "
+    "only and are never citable as standalone positive results; B* panels "
+    "are the only headline-bearing cells")
 
 
 def contrast_table(mode, budget):
@@ -326,6 +331,7 @@ def analyze_repo(mode, repo, manifest_path, sample_path, candidates_path,
         repo=repo, metric="bpb", budgets=list(BUDGETS), b_star=B_STAR,
         model_pooling=False, language_pooling="prohibited",
         trend_inference="none-descriptive-dose-curve-only",
+        non_bstar_reading_rule=NON_BSTAR_READING_RULE,
         k4x_external=(K4X_EXTERNAL if mode == "k4x" else None),
         e2_control_note=(
             "k5:0 draws from the PhysLib-internal non-dependency universe; "

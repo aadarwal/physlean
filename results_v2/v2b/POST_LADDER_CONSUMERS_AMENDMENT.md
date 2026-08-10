@@ -1,8 +1,16 @@
 # Prospective amendment: post-ladder frozen consumers (budget dose-response + PhysLib k4x)
 
-Date: 2026-08-09 EDT (late). Status: DRAFT — adoption requires independent
-adversarial review. Nothing below reads any new cell until the analyzer is
-committed and this amendment is adopted.
+Date: 2026-08-09 EDT (late). Status: **ADOPTED** after independent delta
+review by the same fresh-context reviewer (verdict FIX-FIRST with two
+findings, both resolved in the adoption commit: the B* anchor wording
+overclaimed an unimplemented ladder-artifact inference check and is
+corrected to the implemented producer-centering gate; the per-panel Holm
+selective-citation risk is closed by the READING RULE below, stamped into
+every artifact. The reviewer's verified-sound notes covered extraction
+and eligibility, panel fidelity to the frozen inference, the B* gate's
+permutation-invariance, k4x honesty, sealed anchoring inputs, and the
+production injection defaults). No cell at any non-B* budget or in any
+k4x arm was read before this adoption.
 
 Adoption boundary: the five-tier ladder analyses (`017ca02`) are public at
 B* = 16384 only. Every completion already contains the full committed
@@ -36,10 +44,18 @@ every panel reports its own N/G and, separately, the ALL-BUDGETS COMMON
 subset (targets eligible at k4:4096, k4:16384, and k4:65536
 simultaneously) whose within-target means form the composition-stable
 dose curve. Holm is applied within (repo, tier, budget) over the three
-contrasts; B* = 16384 panels must REPRODUCE the committed ladder
-artifacts' inference exactly (a standing consistency anchor), and the
-sealed q25c-1.5b B* centering must reproduce the committed reveal
-exactly, as in the ladder. PhysLib's k4-based statuses remain FORCED
+contrasts. The implemented B* anchor (review-corrected wording): every
+B* contrast's complete-case row count and exact fsum mean must equal the
+B3 producer's own recomputed centering for that completion — the same
+producer outputs the committed ladder artifacts were built and gated on,
+so agreement transitively anchors this consumer to them without re-running
+their inference; and the sealed q25c-1.5b B* centering must reproduce the
+committed reveal exactly, as in the ladder. READING RULE (review finding):
+per-panel Holm stays within (repo, tier, budget) as frozen, so non-B*
+panels' positive diagnostic flags are DESCRIPTIVE CONTEXT for the dose
+curve only — never citable as standalone positive results; B* panels
+remain the only headline-bearing cells, and this rule is stamped into
+every artifact. PhysLib's k4-based statuses remain FORCED
 `uninterpretable-pending-k4x-sensitivity` in this mode. Claim status:
 `exploratory-nll-only-budget-response`; cross-budget presentation is a
 descriptive dose curve; NO fitted functional form, exponent, or
