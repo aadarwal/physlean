@@ -150,14 +150,14 @@ def _load_chain(sample_path, repo, candidates_path, extraction_path,
                 neardup_path, outcome_path, keyword_freeze_path,
                 k7_order_path, k4x_graph_path=None,
                 external_extraction_path=None,
-                lean_boundaries_path=None):
+                lean_boundaries_path=None, expected_n=N_PER_CORPUS):
     if repo not in EXPECTED:
         raise V2BError(f"unexpected assembly corpus {repo!r}")
     language, corpus_sha = EXPECTED[repo]
     sample_binding, sample = artifact_binding(sample_path,
                                               BOUND_SAMPLE_SCHEMA)
     if sample.get("sampling_state") != "drawn" \
-            or sample.get("n_requested_per_corpus") != N_PER_CORPUS \
+            or sample.get("n_requested_per_corpus") != expected_n \
             or not isinstance(sample.get("plans"), dict) \
             or sample.get("plans_sha256") != \
             sha256_sorted_json(sample.get("plans")) \
@@ -1213,13 +1213,14 @@ def build_assembly(sample_path, repo, candidates_path, extraction_path,
                    k7_order_path=None, k4x_graph_path=None,
                    external_extraction_path=None,
                    lean_boundaries_path=None, budgets=BUDGET_GRID,
-                   collect=None):
+                   collect=None, expected_n=N_PER_CORPUS):
     bindings, sample, candidates, extraction, neardup, outcome, k7_rows, \
         lean_tokens, k4x_bundle, boundary_index = \
         _load_chain(sample_path, repo, candidates_path, extraction_path,
                     neardup_path, outcome_path, keyword_freeze_path,
                     k7_order_path, k4x_graph_path,
-                    external_extraction_path, lean_boundaries_path)
+                    external_extraction_path, lean_boundaries_path,
+                    expected_n=expected_n)
     language = bindings["language"]
     corpus_root = _corpus_root(extraction, k7_rows)
     units, _ = _unit_index(extraction, language, boundary_index,
@@ -1411,7 +1412,7 @@ def prepare(sample_path, repo, candidates_path, extraction_path,
             neardup_path, outcome_path, keyword_freeze_path=None,
             k7_order_path=None, k4x_graph_path=None,
             external_extraction_path=None, lean_boundaries_path=None,
-            budgets=BUDGET_GRID):
+            budgets=BUDGET_GRID, expected_n=N_PER_CORPUS):
     if not source_clean():
         raise V2BError("measurement source tree is dirty outside results_v2")
     commit_start, tree_start = head_commit(), source_tree_hash()
@@ -1420,7 +1421,7 @@ def prepare(sample_path, repo, candidates_path, extraction_path,
                               keyword_freeze_path, k7_order_path,
                               k4x_graph_path, external_extraction_path,
                               lean_boundaries_path=lean_boundaries_path,
-                              budgets=budgets)
+                              budgets=budgets, expected_n=expected_n)
     if not source_clean() or head_commit() != commit_start \
             or source_tree_hash() != tree_start:
         raise V2BError("measurement source drifted during assembly")
@@ -1445,6 +1446,10 @@ def main():
                     help="§15.A13 external graph (required for physlib)")
     ap.add_argument("--k4x-external-extraction",
                     help="pinned-mathlib v3 extraction (physlib only)")
+    ap.add_argument("--expected-n", type=int, default=None,
+                    help="per-corpus sample size the bound sample must "
+                         "declare (default: the frozen pilot 20; the "
+                         "EPOCH2 supplement passes 120)")
     ap.add_argument("--budgets", default=None,
                     help="explicit sorted comma budget grid containing "
                          "B* (DOSE_CURVE_EXPANSION Part B); default is "
@@ -1456,7 +1461,9 @@ def main():
                        args.lean_keyword_freeze, args.k7_order,
                        args.k4x_graph, args.k4x_external_extraction,
                        args.lean_boundaries,
-                       budgets=parse_budgets(args.budgets))
+                       budgets=parse_budgets(args.budgets),
+                       expected_n=(args.expected_n if args.expected_n
+                                   is not None else N_PER_CORPUS))
     digest = write_new_json(args.out, manifest)
     print(f"[v2b-assembly] {args.repo}: {manifest['n_targets']} targets, "
           f"arms {'/'.join(manifest['arms_included'])} "

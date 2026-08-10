@@ -20,7 +20,10 @@ from v2b_common import V2BError, artifact_binding, identity_key, \
     sha256_sorted_json, validate_identity, write_new_json
 from v2b_metadata import build_sample_plan
 
-SUPPLEMENT_SCHEMA = "v2b_supplement_sample_v1"
+# The artifact is emitted in the BOUND-SAMPLE-COMPATIBLE shape (schema
+# v2b_bound_sample_v2 with plans={mathlib4: plan}) so the frozen assembly
+# driver consumes it unchanged via --expected-n 120; the supplement
+# provenance lives under the nested "supplement" key.
 BOUND_SAMPLE_SCHEMA = "v2b_bound_sample_v2"
 SUPPLEMENT_N = 120
 REPO = "mathlib4"
@@ -59,25 +62,34 @@ def build_supplement(candidates_path, outcome_path, pilot_sample_path):
     if overlap:
         raise V2BError(f"supplement draw overlaps pilot identities: "
                        f"{sorted(overlap)[:3]}")
+    plans = {REPO: plan}
+    candidate_row = dict(binding, repo=REPO,
+                         language=table.get("language", "lean"),
+                         corpus_git_sha=table.get("corpus_git_sha"),
+                         n_candidates=table.get("n_candidates"),
+                         lean_boundaries=table.get("lean_boundaries"))
     return dict(
-        schema=SUPPLEMENT_SCHEMA,
+        schema=BOUND_SAMPLE_SCHEMA,
         sampling_state="drawn",
-        repo=REPO,
-        n_requested=SUPPLEMENT_N,
-        n_selected=plan.get("n_selected"),
-        excluded_pilot_identities=sorted(exclude),
-        candidate_table=dict(binding, repo=REPO),
-        a6_outcome=outcome_row,
-        pilot_sample_sha256=artifact_binding(
-            pilot_sample_path, BOUND_SAMPLE_SCHEMA)[0]["sha256"],
-        plan=plan,
-        plan_sha256=sha256_sorted_json(plan),
+        n_requested_per_corpus=SUPPLEMENT_N,
+        candidate_tables=[candidate_row],
         candidates_generator=dict(
             source_commit=provenance["source_commit"],
             source_tree_hash=provenance["source_tree_hash"],
             structural_cohort_sha256=provenance[
                 "structural_cohort_sha256"],
-            git_version=provenance["git_version"]))
+            git_version=provenance["git_version"]),
+        a6_outcome=outcome_row,
+        plans=plans,
+        n_selected_total=plan.get("n_selected"),
+        n_shortfall_total=sum((plan.get("shortfalls") or {}).values()),
+        plans_sha256=sha256_sorted_json(plans),
+        supplement=dict(
+            kind="deep-closure-mathlib4-supplement",
+            n_requested=SUPPLEMENT_N,
+            excluded_pilot_identities=sorted(exclude),
+            pilot_sample_sha256=artifact_binding(
+                pilot_sample_path, BOUND_SAMPLE_SCHEMA)[0]["sha256"]))
 
 
 def main():
