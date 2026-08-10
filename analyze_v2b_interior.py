@@ -56,6 +56,13 @@ PINNED_INTERIOR_SCORING_TREE = \
 AMENDMENT_PATH = "results_v2/v2b/EPOCH2_NIGHT_AMENDMENT.md"
 
 
+# The G2 validity battery's frozen fp32 semantic-oracle PER-CELL p99
+# tolerance (PREREG §7): the campaign's pre-existing definition of the
+# largest per-cell numeric discrepancy still counted as the same
+# measurement (INTERIOR_REPLICATION_INCIDENT_AMENDMENT).
+ORACLE_PER_CELL_P99_BPB = 1e-3
+
+
 def _grid_16k(manifest_row):
     rows = [dict(row) for row in _target_cell_rows(manifest_row)
             if str(row.get("cell_id", "")).endswith(":16384")
@@ -103,6 +110,7 @@ def replication_gate(interior_manifest, pilot_manifest,
         if cell_mismatch is not None:
             discarded.append(dict(target=key, reason=cell_mismatch))
             continue
+        shifted = []
         for cell_id, icell in icells.items():
             if not (cell_id.endswith(":16384") or cell_id == "k1"):
                 continue
@@ -111,11 +119,26 @@ def replication_gate(interior_manifest, pilot_manifest,
             ib = _cell_bpb(icells, cell_id, key)
             pb = _cell_bpb(pcells, cell_id, key)
             if ib != pb:
-                raise V2BError(
-                    f"REPLICATION FAILURE (measurement-identity "
-                    f"incident): {key} {cell_id} interior {ib!r} != "
-                    f"pilot {pb!r}")
+                # INTERIOR_REPLICATION_INCIDENT_AMENDMENT: a shift
+                # inside the frozen G2 fp32-oracle PER-CELL p99
+                # envelope (1e-3 bpb) is a recorded sub-envelope
+                # incident and discards the TARGET; anything larger
+                # remains a hard measurement-identity failure.
+                if abs(ib - pb) > ORACLE_PER_CELL_P99_BPB:
+                    raise V2BError(
+                        f"REPLICATION FAILURE (measurement-identity "
+                        f"incident): {key} {cell_id} interior {ib!r} "
+                        f"!= pilot {pb!r}")
+                shifted.append(dict(cell_id=cell_id, pilot_bpb=pb,
+                                    interior_bpb=ib, delta_bpb=ib - pb))
+                continue
             compared += 1
+        if shifted:
+            discarded.append(dict(
+                target=key,
+                reason="bpb-shift-within-oracle-envelope",
+                cells=shifted))
+            continue
     status = "replicated-exactly" if not discarded else \
         "replicated-with-per-target-discards"
     return dict(status=status, reason=None, n_compared=compared,
@@ -219,12 +242,22 @@ def analyze_repo(repo, interior_manifest_path, pilot_manifest_path,
             run_identity.get("env_fingerprint"),
             pilot_identity.get("env_fingerprint"),
             icells, pcells)
+        # Sub-envelope-shifted targets are excluded from the ANALYSIS
+        # rows too (INTERIOR_REPLICATION_INCIDENT_AMENDMENT): their
+        # re-scored cells are known node-shifted, so they may not mix
+        # into panels or the merged curve. Other discard reasons keep
+        # their adopted comparison-only semantics.
+        shifted_keys = {d["target"] for d in gate["discarded_targets"]
+                        if d.get("reason")
+                        == "bpb-shift-within-oracle-envelope"}
+        analysis_cells = {key: cells for key, cells in icells.items()
+                          if key not in shifted_keys}
 
         budgets_out = {}
         rows_by_budget = {}
         for budget in NEW_BUDGETS:
             rows_by_name = {name: [] for name in CONTRAST_NAMES}
-            for key, cells in icells.items():
+            for key, cells in analysis_cells.items():
                 extracted = extract_rows(cells, language, key,
                                          contrast_table("budget", budget))
                 for name, target_row in extracted.items():

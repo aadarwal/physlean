@@ -86,10 +86,23 @@ def test_replication_gate_truth_table():
         assert report["discarded_targets"][0]["reason"] == \
             "eligibility-differs:k4:16384"
 
-        # bpb inequality under equal preconditions = incident
+        # bpb inequality INSIDE the frozen oracle per-cell envelope
+        # (1e-3): recorded sub-envelope incident, target discarded
+        # (INTERIOR_REPLICATION_INCIDENT_AMENDMENT)
         p3 = {KEY: _cells(0.80001)}
+        report = intr.replication_gate(rows, rows, "envA", "envA",
+                                       icells, p3)
+        assert report["status"] == "replicated-with-per-target-discards"
+        entry = report["discarded_targets"][0]
+        assert entry["reason"] == "bpb-shift-within-oracle-envelope"
+        assert entry["cells"] and all(
+            abs(cell["delta_bpb"]) <= intr.ORACLE_PER_CELL_P99_BPB
+            for cell in entry["cells"])
+
+        # bpb inequality ABOVE the envelope = hard incident
+        p4 = {KEY: _cells(0.803)}
         with _expect(V2BError, "REPLICATION FAILURE"):
-            intr.replication_gate(rows, rows, "envA", "envA", icells, p3)
+            intr.replication_gate(rows, rows, "envA", "envA", icells, p4)
     finally:
         intr._grid_16k = original
 
