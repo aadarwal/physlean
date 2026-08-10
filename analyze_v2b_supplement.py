@@ -18,9 +18,7 @@ import sys
 
 from analyze_v2b_dose import (
     BUDGETS, CONTRAST_NAMES, build_panel, contrast_table, extract_rows)
-from analyze_v2b_interior import (
-    PINNED_INTERIOR_SCORING_TREE as EPOCH2_SCORING_TREE,
-    _load_completion_cells)
+from analyze_v2b_interior import _load_completion_cells
 from analyze_v2b_nll_ladder import (
     FULL_TIER_SET, LADDER_LEDGER_SCHEMA, LADDER_PUBLIC_SALT_NOTE,
     _check_ledger, _require, _tier_entry)
@@ -37,6 +35,12 @@ REPO = "mathlib4"
 # supplement assembly submission (job id recorded per the review note).
 PINNED_SUPPLEMENT_MANIFEST_SHA256 = \
     "2543b185e8d6d9359a112079df7b98dfd6547015b7b88a5ac29a3ea1ba5c88e5"
+# The supplement's OWN scoring-tree pin (post-scoring pin commit). The
+# original design shared the interior pin, but the epoch-3 chain-
+# validation fix moved the source tree between the interior and
+# supplement scoring waves, so each wave pins the one tree it actually
+# ran at. None => the consumer refuses to run.
+PINNED_SUPPLEMENT_SCORING_TREE = None
 AMENDMENT_PATH = "results_v2/v2b/EPOCH2_NIGHT_AMENDMENT.md"
 
 
@@ -57,12 +61,12 @@ def analyze_supplement(supplement_manifest_path, committed_dose_path,
     if expected_manifest_sha is None:
         expected_manifest_sha = PINNED_SUPPLEMENT_MANIFEST_SHA256
     if expected_tree is None:
-        expected_tree = EPOCH2_SCORING_TREE
+        expected_tree = PINNED_SUPPLEMENT_SCORING_TREE
     _require(expected_manifest_sha is not None,
              "no pinned supplement manifest yet; the post-assembly pin "
              "commit must land before analysis")
     _require(expected_tree is not None,
-             "no pinned epoch-2 scoring tree yet; the post-scoring pin "
+             "no pinned supplement scoring tree yet; the post-scoring pin "
              "commit must land before analysis")
     _require(sha256_file(supplement_manifest_path)
              == expected_manifest_sha,

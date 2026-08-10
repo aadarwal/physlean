@@ -157,7 +157,8 @@ def _load_chain(sample_path, repo, candidates_path, extraction_path,
     sample_binding, sample = artifact_binding(sample_path,
                                               BOUND_SAMPLE_SCHEMA)
     if sample.get("sampling_state") != "drawn" \
-            or sample.get("n_requested_per_corpus") != expected_n \
+            or (expected_n is not None
+                and sample.get("n_requested_per_corpus") != expected_n) \
             or not isinstance(sample.get("plans"), dict) \
             or sample.get("plans_sha256") != \
             sha256_sorted_json(sample.get("plans")) \
@@ -1362,12 +1363,18 @@ def materialize(manifest_path, sample_path, repo, candidates_path,
     if not isinstance(budgets, list) or not budgets:
         raise V2BError("manifest lacks a budget grid")
     collect = {}
+    # expected_n=None: at re-validation the n POLICY was already enforced
+    # by the assembly CLI at build time; the integrity anchors here are
+    # the sha-bound chain and targets_sha256 equality below, so the
+    # rebuilt chain accepts the sample's own recorded n (the pilot's 20
+    # and the supplement's 120 both re-validate through this one path).
     rebuilt = build_assembly(sample_path, repo, candidates_path,
                              extraction_path, neardup_path, outcome_path,
                              keyword_freeze_path, k7_order_path,
                              k4x_graph_path, external_extraction_path,
                              lean_boundaries_path=lean_boundaries_path,
-                             budgets=tuple(budgets), collect=collect)
+                             budgets=tuple(budgets), collect=collect,
+                             expected_n=None)
     def _paths_stripped(bindings):
         if not isinstance(bindings, dict):
             return None

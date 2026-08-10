@@ -56,10 +56,13 @@ esac
 
 # Epoch preconditions (review-hardened): (1) the standard battery path
 # must NOT be committed evidence right now, and (2) the rebound copy MUST
-# already exist, committed, under results_v2/battery/epoch1/ with its
-# BASENAME PRESERVED — sealed-pilot consumers keep passing the rebound
-# file and their registry-basename checks must keep holding.
-V2B_REBOUND="results_v2/battery/epoch1/$(basename "$V2B_BATTERY_FILE")"
+# already exist, committed, under results_v2/battery/$V2B_EPOCH_DIR/
+# with its BASENAME PRESERVED — sealed consumers keep passing the
+# rebound files and their registry-basename checks must keep holding.
+# V2B_EPOCH_DIR defaults to epoch1 (the first re-freeze); later epochs
+# rebind into their own dir (epoch2, ...) so no rebound copy collides.
+V2B_EPOCH_DIR="${V2B_EPOCH_DIR:-epoch1}"
+V2B_REBOUND="results_v2/battery/$V2B_EPOCH_DIR/$(basename "$V2B_BATTERY_FILE")"
 if git ls-files --error-unmatch "$V2B_BATTERY_FILE" >/dev/null 2>&1; then
   echo "committed battery still at standard path; rebind first: $V2B_BATTERY_FILE" >&2
   exit 1
