@@ -53,13 +53,14 @@ SEALED_TIER = "q25c-1.5b"
 # The tier set is FROZEN AT ADOPTION: exactly the PILOT_TIERS registry of
 # the adopted amendment. Later rungs require a NEW amendment adopted before
 # that tier is scored; this analyzer refuses subsets and supersets alike.
-# q25c-32b was added by the DOSE_CURVE_EXPANSION amendment and then
-# DROPPED by its own predeclared rule: the 32b battery fp32 semantic leg
-# OOMed on a 141GB H200 (job 20035959, failed artifact retained), which
-# the amendment defines as recorded tier infeasibility. The registry
-# entry remains as record; the frozen analyzable set stays FIVE tiers.
+# q25c-32b: dropped after two OOMs, then RESTORED by the adopted
+# fp32-residency amendment's post-pass rule — the OOMs measured a harness
+# lifecycle defect (outer model resident through the fp32 oracle), and
+# battery job 20041069 PASSED under the corrected harness. Failed
+# batteries from attempts 1-2 remain diagnostics.
 FULL_TIER_SET = frozenset(
-    ("q25c-0.5b", "q25c-1.5b", "q25c-3b", "q25c-7b", "q25c-14b"))
+    ("q25c-0.5b", "q25c-1.5b", "q25c-3b", "q25c-7b", "q25c-14b",
+     "q25c-32b"))
 # Anchors pinned at adoption (adversarial-review finding 2): the committed
 # exploratory reveal and the five job19991210 assembly manifests.
 PINNED_REVEAL_SHA256 = \
