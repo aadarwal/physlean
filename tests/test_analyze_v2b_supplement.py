@@ -95,6 +95,21 @@ def test_guard_ordering_sha_then_tiers():
         os.unlink(path)
 
 
+def test_supplement_launcher_contract():
+    src = open(os.path.join(ROOT, "slurm",
+                            "v2b_paired_supplement.sbatch")).read()
+    assert "V2B_SUPPLEMENT_MANIFEST:?" in src  # manifest is required
+    assert "not tracked/committed" in src  # committed-input refusal
+    assert "supplement_*_mathlib4.json" in src  # assembly-artifact shape
+    assert "87adeaebd370a3b6a41ac4f044fddd4bf81803ad" in src  # corpus pin
+    assert "expandable_segments" in src  # 32b allocator rule
+    assert src.count("h200") >= 2  # 14b and 32b gates
+    # deliberately NO in-script manifest sha pin: the manifest is created
+    # mid-epoch and a post-assembly launcher edit would break the
+    # battery/scoring shared-tree rule; binding = ledger + consumer pin.
+    assert "V2B_MANIFEST_PIN" not in src
+
+
 def test_supplement_constants():
     assert sup.PINNED_SUPPLEMENT_MANIFEST_SHA256 is None  # pin-commit fills
     assert sup.EPOCH2_SCORING_TREE is None  # post-scoring pin fills
