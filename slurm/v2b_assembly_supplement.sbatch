@@ -85,6 +85,7 @@ V2B_OUT="results_v2/v2b/assembly/supplement_job${SLURM_JOB_ID:-manual}_0_mathlib
   --a6-outcome "$V2B_A6_OUTCOME" \
   --lean-keyword-freeze "$V2B_KEYWORD_FREEZE" \
   --k7-order "$V2B_K7" \
+  --expected-n 120 \
   --out "$V2B_OUT"
 
 v2b_assert_corpus_identity
