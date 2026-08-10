@@ -25,12 +25,19 @@ REPOS = ("mathlib4", "batteries", "physlib", "sympy", "astropy")
 REPO_TASK = {repo: index for index, repo in enumerate(REPOS)}
 
 
-def build_ledger(paired_root, reveal, tier_jobs, prior_repos=None):
-    expected = FULL_TIER_SET - {SEALED_TIER}
+def build_ledger(paired_root, reveal, tier_jobs, prior_repos=None,
+                 sealed_from_scan=False):
+    """sealed_from_scan (EPOCH2): for completion families with NO sealed
+    member (e.g. interior scoring, where every tier including q25c-1.5b
+    is a fresh epoch-2 run), all six rows come from the directory scan
+    and tier_jobs must cover the FULL tier set; the reveal is then not
+    consulted for rows."""
+    expected = FULL_TIER_SET if sealed_from_scan \
+        else FULL_TIER_SET - {SEALED_TIER}
     if set(tier_jobs) != expected:
         raise V2BError(
-            f"tier job ids must cover exactly the non-sealed tier set "
-            f"{sorted(expected)}; got {sorted(tier_jobs)}")
+            f"tier job ids must cover exactly {sorted(expected)}; "
+            f"got {sorted(tier_jobs)}")
     repos = {}
     for repo in REPOS:
         rows = {}
@@ -49,6 +56,18 @@ def build_ledger(paired_root, reveal, tier_jobs, prior_repos=None):
             rows[tier] = dict(path=os.path.abspath(path),
                               sha256=sha256_file(path),
                               slurm_job_id=f"{job}_{REPO_TASK[repo]}")
+        if sealed_from_scan:
+            if prior_repos is not None:
+                prior_rows = prior_repos.get(repo)
+                if not isinstance(prior_rows, dict):
+                    raise V2BError(f"prior ledger lacks repository {repo}")
+                for tier, prior_row in prior_rows.items():
+                    if rows.get(tier) != prior_row:
+                        raise V2BError(
+                            f"re-derived ledger row differs from the "
+                            f"committed prior ledger: {repo} {tier}")
+            repos[repo] = rows
+            continue
         sealed = (reveal.get("repos", {}).get(repo, {})
                   .get("bindings", {}).get("completion"))
         if not isinstance(sealed, dict) \
@@ -84,6 +103,9 @@ def main():
     ap.add_argument("--prior-ledger", default=None,
                     help="committed prior ledger whose rows must be "
                          "carried forward byte-identically")
+    ap.add_argument("--sealed-from-scan", action="store_true",
+                    help="EPOCH2: no sealed member; all tiers scanned "
+                         "and tier_jobs covers the full set")
     ap.add_argument("--first-ledger", action="store_true",
                     help="explicitly assert this is the campaign's first "
                          "completion ledger (otherwise --prior-ledger is "
@@ -117,7 +139,8 @@ def main():
               "committed reveal; analyzer requires row equality"),
         reveal_sha256=PINNED_REVEAL_SHA256,
         repos=build_ledger(args.paired_root, reveal, tier_jobs,
-                           prior_repos=prior_repos),
+                           prior_repos=prior_repos,
+                           sealed_from_scan=args.sealed_from_scan),
         generator=dict(source_commit=head_commit(),
                        source_tree_hash=source_tree_hash(),
                        program="prepare_v2b_ladder_ledger.py"))
