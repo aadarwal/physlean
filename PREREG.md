@@ -538,6 +538,20 @@ arxiv_manifest) must be committed before measurement.
 
 ## 13. Disagreement log
 
+- ADOPTED (2026-08-10, 32b fp32-residency correction; OUTCOME-FREE basis
+  — code inspection after two OOMs, no 32b score exists): the battery
+  harness kept the outer bf16 model GPU-resident as dead weight through
+  the fp32 oracle (65+131GB vs 139.8GB), so both recorded 32b
+  infeasibilities measured a harness lifecycle defect, not hardware
+  truth. Fix: offload the outer model to CPU for the oracle, restore
+  after (no computed value moves; sealed batteries byte-unchanged).
+  Supersedes the retry finality clause via its own fresh-reviewed
+  -amendment escape; independent review ADOPTABLE; re-attempt submits
+  with --mem=256G (host-RSS note); a third failure closes q25c-32b
+  permanently. Process failure recorded: the resource-lifecycle audit
+  should have preceded the first infeasibility verdict.
+  AMENDMENT_32B_FP32_RESIDENCY.md.
+
 - ADOPTED (2026-08-10, 32b allocator retry; PRE-RE-ATTEMPT — first 32b
   battery recorded infeasible, no 32b score exists): one battery
   re-attempt with PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True

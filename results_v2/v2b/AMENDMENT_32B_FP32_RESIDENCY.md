@@ -1,6 +1,6 @@
 # Amendment: 32b fp32-oracle residency correction (supersedes the retry finality clause)
 
-Date: 2026-08-10 EDT. Status: DRAFT pending review. Boundary: both 32b
+Date: 2026-08-10 EDT. Status: **ADOPTED** (independent review: diagnosis sound — identical OOM under expandable_segments = real allocation; offload/restore is pure lifecycle outside MEASUREMENT_HARNESS_FILES with sealed batteries untouched; supersession valid via the finality clause's own escape on an outcome-free basis; closure rule conservative. Operational note adopted into the run plan: host RSS may exceed the default 128G sbatch cap with 65GB offloaded + fp32 CPU materialization, so the re-attempt submits with --mem=256G; a host-side kill counts as the final failure). Boundary: both 32b
 battery attempts are recorded failures; no 32b score exists; this
 amendment reads no outcome — its basis is CODE INSPECTION of the battery
 harness, performed after the second failure and prompted by the user's
