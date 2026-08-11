@@ -174,10 +174,19 @@ def plan_repo(repo, governance_path, candidates_path, sample_path,
 
     fractions = scan.get("fill_fractions") or {}
     def primary_at(floor):
+        # Amendment override clause: "16,384 stays primary wherever it
+        # meets the floor" — the rule rescues repos DOWNWARD, never
+        # moves a healthy repo up. (Fills are monotone non-increasing
+        # in budget, so when 16384 fails the only possible eligible
+        # budget is 4096.)
         eligible = [b for b in BUDGET_GRID
                     if isinstance(fractions.get(str(b)), float)
                     and fractions[str(b)] >= floor]
-        return max(eligible) if eligible else None
+        if not eligible:
+            return None
+        if ORIGINAL_PRIMARY in eligible:
+            return ORIGINAL_PRIMARY
+        return max(b for b in eligible if b < ORIGINAL_PRIMARY)
     primary = primary_at(FILL_FLOOR)
     budget_block = dict(
         fill_fractions=fractions, floor=FILL_FLOOR,

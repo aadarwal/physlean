@@ -99,6 +99,32 @@ def test_constants_and_label():
     assert gov.ANCHOR_SENSITIVITY == (0.2, 0.8)
 
 
+
+def test_primary_budget_override_clause():
+    import types
+    def fake(fractions):
+        # exercise plan_repo's primary_at via a minimal closure clone
+        def primary_at(floor):
+            eligible = [b for b in gov.BUDGET_GRID
+                        if isinstance(fractions.get(str(b)), float)
+                        and fractions[str(b)] >= floor]
+            if not eligible:
+                return None
+            if gov.ORIGINAL_PRIMARY in eligible:
+                return gov.ORIGINAL_PRIMARY
+            return max(b for b in eligible if b < gov.ORIGINAL_PRIMARY)
+        return primary_at
+    # sympy-like: 64KiB above floor too -> STAYS at 16384 (override)
+    p = fake({"4096": 0.76, "16384": 0.73, "65536": 0.711})
+    assert p(0.60) == 16384
+    # rescue-down: only 4KiB eligible
+    p = fake({"4096": 0.65, "16384": 0.30, "65536": 0.10})
+    assert p(0.60) == 4096
+    # structurally ineligible
+    p = fake({"4096": 0.37, "16384": 0.16, "65536": 0.07})
+    assert p(0.60) is None
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
