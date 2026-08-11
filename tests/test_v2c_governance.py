@@ -125,6 +125,24 @@ def test_primary_budget_override_clause():
     assert p(0.60) is None
 
 
+
+def test_sampler_test_stratum_extension():
+    from v2b_metadata import (CELL_LABELS, CELL_LABELS_TEST_STRATUM,
+                              allocate_quotas)
+    assert len(CELL_LABELS_TEST_STRATUM) == 2 * len(CELL_LABELS)
+    assert all(label.endswith(("-N", "-T"))
+               for label in CELL_LABELS_TEST_STRATUM)
+    # default label space unchanged, quotas behave as before
+    quotas = allocate_quotas({label: 10 for label in CELL_LABELS}, 18)
+    assert sum(quotas.values()) == 18
+    # doubled space allocates over 36 cells
+    quotas = allocate_quotas(
+        {label: 5 for label in CELL_LABELS_TEST_STRATUM}, 36,
+        labels=CELL_LABELS_TEST_STRATUM)
+    assert sum(quotas.values()) == 36
+    assert set(quotas) == set(CELL_LABELS_TEST_STRATUM)
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
