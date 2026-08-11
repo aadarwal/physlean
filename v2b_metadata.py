@@ -463,7 +463,9 @@ def build_sample_plan(candidates, n, exclude_keys=frozenset(),
             raise V2BError(f"Python candidate carries Lean span_id: "
                            f"{identity!r}")
         cell = t.get("cell")
-        if cell not in by_cell:
+        # candidates record BASE cells (frozen); the test-stratum suffix
+        # is derived at draw time, so validity is always the base space.
+        if cell not in CELL_LABELS:
             raise V2BError(f"candidate has invalid cell {cell!r}")
         body_bytes, module_degree = t.get("body_bytes"), \
             t.get("module_in_degree")
