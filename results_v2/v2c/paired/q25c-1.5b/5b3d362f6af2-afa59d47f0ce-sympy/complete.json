@@ -1,0 +1,499 @@
+{
+ "assembly_manifest": {
+  "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/assembly/v2c_job20151547_1_sympy.json",
+  "schema": "v2b_assembly_manifest_v2",
+  "sha256": "afa59d47f0ce0e39e10f614b21e0dc48f82f1301181e7db8e9e204d9be52b3aa"
+ },
+ "ast_class_state": "not-run-separate-required-gate",
+ "behavioral_state": "not-run-separate-required-gate",
+ "corpus_git_sha": "c0a595d78fb2a2c4b0dfa7f2ee720fde84918c6c",
+ "generator": {
+  "program": "eval_paired.py",
+  "source_commit": "5b3d362f6af2b5e6b4533e002f2465542260f98e",
+  "source_tree_hash": "5a538f5ccb29bbd15c7ae7618f8734b6d4c1a9854f6a1d8fa12d848f4f6b33db"
+ },
+ "language": "python",
+ "mutation_state": "not-run-separate-required-gate",
+ "n_cells": 1771,
+ "n_targets": 77,
+ "paired_schema_version": 2,
+ "repo": "sympy",
+ "run_identity": {
+  "ast_class_state": "not-run-separate-required-gate",
+  "chunk_tokens": 2048,
+  "dtype": "bfloat16",
+  "env_fingerprint": "cece9b716c1eb844ffff8c4000421f50441ea775010082f8724953bb9b9cd962",
+  "manifest_sha256": "afa59d47f0ce0e39e10f614b21e0dc48f82f1301181e7db8e9e204d9be52b3aa",
+  "model": "Qwen/Qwen2.5-Coder-1.5B",
+  "paired_harness_hash": "2988a3d8e49dea2b24f211219a3e7ca0b554d62d25bc3bc03c53f0b5407358ea",
+  "paired_schema_version": 2,
+  "pilot_battery_sha256": "8e0be1ae64cc819903daa5d03c1f81b3491c293ee0484088b56331d3dc4ae574",
+  "revision": "df3ce67c0e24480f20468b6ef2894622d69eb73b"
+ },
+ "run_identity_sha256": "a13f76e114af6dd5ffe36d1211603250abdd9fe87862a504028493f6b790bef7",
+ "schema": "v2b_paired_nll_complete_v2",
+ "target_artifacts": [
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0000.json",
+   "sha256": "864c12b6fb124ab7c7ad3c6ead5eff71452b53d22d68a5b07a9209104967f159",
+   "target_key": "[\"sympy.assumptions.handlers.calculus\",\"_\",7389]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0001.json",
+   "sha256": "f3e019ad7f27aefb8154090805645168000bcc843a728c32816d10b5fa4a0e92",
+   "target_key": "[\"sympy.assumptions.handlers.common\",\"ask_all\",3321]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0002.json",
+   "sha256": "0121dd7f01ceb01645e590c0bdcd5b951bf929fda38fb99c24ba72192fa14c3a",
+   "target_key": "[\"sympy.assumptions.tests.test_wrapper\",\"test_is_extended_real\",908]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0003.json",
+   "sha256": "cafed33fd99c58a136051027625a80dabd716baa6c788dbf5683c8094bc629eb",
+   "target_key": "[\"sympy.codegen.ast\",\"CodeBlock\",18464]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0004.json",
+   "sha256": "7640e1dd411f7572e80603d31a184eb4c400364e7d8c79b68b0948ce010d380d",
+   "target_key": "[\"sympy.combinatorics.fp_groups\",\"descendant_subgroups\",27476]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0005.json",
+   "sha256": "afa7e258bf812137ce5023af78d6adb9f8fb86cebb9482ddfd8f2062e976bdb0",
+   "target_key": "[\"sympy.combinatorics.tests.test_perm_groups\",\"test_random_pr\",15875]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0006.json",
+   "sha256": "bf2d14f717e5b746ee660ea5e401e3d57c74d6450aa98aa9b5000d91419a7fb7",
+   "target_key": "[\"sympy.concrete.tests.test_delta\",\"test_deltasummation_basic_symbolic\",11905]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0007.json",
+   "sha256": "f7aa751dcff93bf0fdde035851f3b9f7e7a4ee21e8861414ef79da959b82d142",
+   "target_key": "[\"sympy.core.evalf\",\"evalf_integer\",16736]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0008.json",
+   "sha256": "6b667a1465c1b956c85426f6fd4f7cfdda597cf43327f24ad83647c206bd90e6",
+   "target_key": "[\"sympy.core.tests.test_args\",\"test_sympy__functions__special__hyper__HyperRep_power2\",93227]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0009.json",
+   "sha256": "30ce53cb5bc915cc86e8ae4662a98d3f2da17fec7152172d232ca62ef795a620",
+   "target_key": "[\"sympy.core.tests.test_args\",\"test_sympy__geometry__line__Ray\",164110]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0010.json",
+   "sha256": "17694806a5289cc39154a4ec9a650f26804be82f5cb9476679e8f76feb901d08",
+   "target_key": "[\"sympy.core.tests.test_args\",\"test_sympy__matrices__expressions__permutation__PermutationMatrix\",116744]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0011.json",
+   "sha256": "50d8e7c85da1546403d4a0587ae232d1b07f1d91cce30fa67528084083ee1365",
+   "target_key": "[\"sympy.core.tests.test_args\",\"test_sympy__series__order__Order\",152765]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0012.json",
+   "sha256": "3d8db05f5da615ed4a3b9c6f5e6af12dc08389a70742dc29ba8072a9701bcc87",
+   "target_key": "[\"sympy.core.tests.test_args\",\"test_sympy__stats__crv_types__WignerSemicircleDistribution\",54119]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0013.json",
+   "sha256": "b947f83ad66cec5c23402aa8a289580bd4cc51dd53463328f8d22f2e8b2be82b",
+   "target_key": "[\"sympy.core.tests.test_noncommutative\",\"test_adjoint\",894]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0014.json",
+   "sha256": "bd7962a5af8b7d7a30db194a867ffa6d4e620f9de992d9e1e43c54353ffe7f67",
+   "target_key": "[\"sympy.core.tests.test_power\",\"test_negative_real\",1531]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0015.json",
+   "sha256": "d94850de55ed8bbb2da98d737595df2f47780fc06a5d9dc4a12d84330ba55629",
+   "target_key": "[\"sympy.core.tests.test_priority\",\"Higher\",322]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0016.json",
+   "sha256": "fad6312b1241b7c7816bf894c59fc780942b7946ddd77066149c5b3fb8ee9602",
+   "target_key": "[\"sympy.core.tests.test_random\",\"test_seed\",930]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0017.json",
+   "sha256": "7aa6dbc112628e28a622be46b47efcadeb01366bfe4265cabe043752e9e59741",
+   "target_key": "[\"sympy.core.tests.test_relational\",\"test_negated_property\",35958]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0018.json",
+   "sha256": "21244da7620c85706e1e51c90b69123bc512e7a418ad3dc76286342f64db075a",
+   "target_key": "[\"sympy.external.ntheory\",\"_is_strong_prp\",7650]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0019.json",
+   "sha256": "e18d71cfccce101427619b873b6ea97e5e1528ca9a8d700d8abf53abafb3b0e9",
+   "target_key": "[\"sympy.functions.elementary.tests.test_piecewise\",\"test_issue_20360\",60000]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0020.json",
+   "sha256": "b99e70603b4e30bafa4d237736b15e726cad66c76a5272f1a25b0d89412d0ff2",
+   "target_key": "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_acot_fdiff\",51247]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0021.json",
+   "sha256": "0f1045f71d774f738219000e401780b45024b11221b498d28753d17c1e14b727",
+   "target_key": "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_issue_25833\",89850]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0022.json",
+   "sha256": "4b5db91e1eb3bf76ead37abd1d91501b708ea5c55ec19a8e87ba124f0ea3d2fb",
+   "target_key": "[\"sympy.holonomic.holonomic\",\"DifferentialOperator\",5405]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0023.json",
+   "sha256": "d22a78932e32ed86a6d0298a4152f301ba6d4daf3654d03866c0658db92a6340",
+   "target_key": "[\"sympy.integrals.manualintegrate\",\"multiplexer\",37902]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0024.json",
+   "sha256": "82f473dfceea1424520f23dc952d90e4e38c5f3a5f49ef8e9273ca670dfc9dd0",
+   "target_key": "[\"sympy.logic.algorithms.dpll\",\"dpll_int_repr\",2942]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0025.json",
+   "sha256": "9ad5491f44d64f3f0518f178de4d8fb2ae630109d671b80ae03df6d3a457ecfa",
+   "target_key": "[\"sympy.matrices.dense\",\"list2numpy\",4408]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0026.json",
+   "sha256": "b4396d7b6ee1f8dee7afc00e0b6182440d390e9cff1908c8c247d65d81b1f141",
+   "target_key": "[\"sympy.matrices.dense\",\"matrix2numpy\",4700]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0027.json",
+   "sha256": "cdc7e2237088707c6142f9c0b565d1ecc5e9a2659acb5d0870b6d96cae862dd3",
+   "target_key": "[\"sympy.matrices.dense\",\"ones\",27006]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0028.json",
+   "sha256": "bb8aeb7677df9aaa318ef11872b6fbf4d2b22b29bef239c3d82bf7bc38ba9e1a",
+   "target_key": "[\"sympy.matrices.expressions.tests.test_matexpr\",\"test_invalid_args\",16707]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0029.json",
+   "sha256": "9533c020d3601b462070e8b07784988950e1c38674ef056340f6dc4a8f1b52d0",
+   "target_key": "[\"sympy.matrices.repmatrix\",\"MutableRepMatrix\",18703]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0030.json",
+   "sha256": "4a36798636fc6a4a33e9a9dbd0b671b44baf7d7c045ea8ed30a7fd411abb5adf",
+   "target_key": "[\"sympy.matrices.tests.test_matrices\",\"test_row_mult\",84912]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0031.json",
+   "sha256": "9bbc4744e2f718dc75e5719c3781593bf943cc79d4e0dab7df4e2a357ff40ef4",
+   "target_key": "[\"sympy.matrices.tests.test_matrixbase\",\"test_issue_14943\",166133]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0032.json",
+   "sha256": "7892a4bc18ee0a2ba0794eedcb3eba779e69145e0efe2527daaff8a328057b4c",
+   "target_key": "[\"sympy.matrices.tests.test_matrixbase\",\"test_jordan_block\",22131]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0033.json",
+   "sha256": "0b953837bb07bbddf03c68f5c4f4a834a7ae3ca95ad49044d6f9abc8677cd009",
+   "target_key": "[\"sympy.physics.mechanics.actuator\",\"LinearDamper\",16808]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0034.json",
+   "sha256": "4fd69b7fb5a4a973d8480d58be5e53c9fc434e577f96b8cc3fbedeff18923b02",
+   "target_key": "[\"sympy.physics.mechanics.tests.test_actuator\",\"TestDuffingSpring\",22068]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0035.json",
+   "sha256": "f33325cc8828c46061b4e2674b97488b4ef3e088ac2481ae6f575e94b47bd294",
+   "target_key": "[\"sympy.physics.quantum.operatorordering\",\"_normal_order_factor\",6245]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0036.json",
+   "sha256": "31421e4418860ccf0e6c14b8fcdb1ec3d62f4af324df8462ce042030589b914e",
+   "target_key": "[\"sympy.physics.quantum.tests.test_represent\",\"test_enumerate_states\",4998]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0037.json",
+   "sha256": "d01906a73faeb2f0bd71ec0822962f310dce5e6514167bcc920d0c6888d700b4",
+   "target_key": "[\"sympy.physics.units.dimensions\",\"DimensionSystem\",10002]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0038.json",
+   "sha256": "17f3f9dbc399d53a5aad67df2829e517d59011aee571dd5cd49b016a0dab2fcf",
+   "target_key": "[\"sympy.physics.units.tests.test_dimensionsystem\",\"test_can_transf_matrix\",1811]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0039.json",
+   "sha256": "a1189f19cb5f1813b524703ac80c2ae6f3bcf1f96a533ad97b7ef4bcc87e4499",
+   "target_key": "[\"sympy.physics.vector.tests.test_frame\",\"test_w_diff_dcm2\",10297]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0040.json",
+   "sha256": "0494af95f46c28be382a8c2e9c00201a3c04f59b23bd07f42781f3493309d99a",
+   "target_key": "[\"sympy.plotting.intervalmath.tests.test_interval_functions\",\"test_sin\",2869]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0041.json",
+   "sha256": "68513e7bda325cd91ccb59549d5fa19a68eff8a251db1b8fd593ffb5fe1b08e4",
+   "target_key": "[\"sympy.plotting.pygletplot.plot_modes\",\"Cylindrical\",3738]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0042.json",
+   "sha256": "5ddec6586f5a70197ea8cb9a66116697ec9d64906b89183f311b43a28349cd67",
+   "target_key": "[\"sympy.plotting.series\",\"_uniform_eval\",1778]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0043.json",
+   "sha256": "ec658b89b8a2909fca98fa7a715768d8b82159797447b6a77f48eb7caf36573c",
+   "target_key": "[\"sympy.polys.benchmarks.bench_groebnertools\",\"time_vertex_color_12_vertices_23_edges\",675]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0044.json",
+   "sha256": "b059a8eb66b32c5c9c1baa705b0a9fb4b16e2cdbd345acc7d10d64809a1cf7c1",
+   "target_key": "[\"sympy.polys.densebasic\",\"dup_pretty\",45609]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0045.json",
+   "sha256": "37c17bd08bb6bec20c5f2b4dc96e0da8ddfa9b43f7c26fa038a42d052fdd125f",
+   "target_key": "[\"sympy.polys.domains.tests.test_domains\",\"test_RR_Float\",39855]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0046.json",
+   "sha256": "2d7d2be1a54a09aeb6fcdf46bdd4f357ca912a5ae4dc9d8f17d94306cfddafe7",
+   "target_key": "[\"sympy.polys.domains.tests.test_polynomialring\",\"test_globalring\",411]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0047.json",
+   "sha256": "5ffb54b6792b5a511f4ac709dd0b608c7923c93774c51467838ef23230e42e91",
+   "target_key": "[\"sympy.polys.euclidtools\",\"dup_inner_gcd\",33742]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0048.json",
+   "sha256": "f9071fdfefbd04ad7fcbfa5a0f9805a04e11f7a997bada26a9b220232f3e2756",
+   "target_key": "[\"sympy.polys.fields\",\"field\",1484]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0049.json",
+   "sha256": "40a4cae773a71d181a4a9e5954298b7a0a4249f5b52dfc0e5ad6e81523441938",
+   "target_key": "[\"sympy.polys.matrices.tests.test_domainmatrix\",\"test_DomainMatrix_to_dense\",8653]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0050.json",
+   "sha256": "4f96edf69bf7fe9cd40ce13f77959f58208e8a592b66fb1b354fea687a8dba34",
+   "target_key": "[\"sympy.polys.numberfields.subfield\",\"_switch_domain\",7278]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0051.json",
+   "sha256": "d59a10a307fde5a0e4e917e001c9da30a5a18b664afdf78e404d57c09c41c65d",
+   "target_key": "[\"sympy.polys.tests.test_factortools\",\"test_dup_zz_mignotte_bound\",1079]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0052.json",
+   "sha256": "908b68c48c61e53a06e5ec8e89ec7a3ed0dae05b09a6bfa6b31b04c0ae558b59",
+   "target_key": "[\"sympy.polys.tests.test_rootisolation\",\"test_dup_mignotte_sep_bound_squared\",1517]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0053.json",
+   "sha256": "bfcc2134a3f7c4633f77f0fbf657d1f747dd38a73f659a0cb8c8f77d376010aa",
+   "target_key": "[\"sympy.printing.pretty.tests.test_pretty\",\"test_pretty_matrix\",79048]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0054.json",
+   "sha256": "f7f7e69fae0382373e263152fe5b8eba1955542590437a7d8cee5ca035b0b124",
+   "target_key": "[\"sympy.printing.pretty.tests.test_pretty\",\"test_pretty_ndim_arrays\",80861]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0055.json",
+   "sha256": "0917ffa2fae8e9d2f27e2f2597dd308b70a165609dec3308c36d83e59c6c408d",
+   "target_key": "[\"sympy.printing.tests.test_precedence\",\"test_Integral\",793]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0056.json",
+   "sha256": "278a24b693ad6865c8486bc5d84170c5dfcae0db662bb498292331a8e7f4fbb9",
+   "target_key": "[\"sympy.printing.tests.test_pycode\",\"test_beta\",14423]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0057.json",
+   "sha256": "457b8b8a6933f1162d0cbe997816f1957df5bcc78726391fe13ffe44a0169520",
+   "target_key": "[\"sympy.printing.tests.test_theanocode\",\"test_global_cache\",16904]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0058.json",
+   "sha256": "1b0272179d9fbf329c5bf749a8f08c8e7d89505e80eac7d0c8b671d4847ab103",
+   "target_key": "[\"sympy.series.tests.test_limits\",\"test_issue_6366\",20726]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0059.json",
+   "sha256": "a94442284fe88f60d4c5c4ebf0294e577447e453a577728ab602ca76f6f5384b",
+   "target_key": "[\"sympy.simplify.tests.test_combsimp\",\"test_issue_14528\",2795]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0060.json",
+   "sha256": "afafe6069f0fa3215a468c1c31d7c28a30f299eb8f57d6b9ea532b9f0896d27e",
+   "target_key": "[\"sympy.simplify.trigsimp\",\"_eapply\",46746]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0061.json",
+   "sha256": "c72c7e0ba15162843fc26b6431c175140ee3701e2ac85c008e319e1305f907d9",
+   "target_key": "[\"sympy.solvers.diophantine.diophantine\",\"GeneralSumOfSquares\",31128]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0062.json",
+   "sha256": "88a01989d6fafd41cf7ad4b75f7b81787e2a740990324e740b3d6011ef82dd5e",
+   "target_key": "[\"sympy.solvers.ode.ode\",\"check_nonlinear_2eq_order2\",69049]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0063.json",
+   "sha256": "4191d177cb92b3fe7f57c6b165dcbb7c0a9f6795a28651d70b54ad5cf6801a65",
+   "target_key": "[\"sympy.solvers.ode.tests.test_single\",\"_get_examples_ode_sol_euler_homogeneous\",22794]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0064.json",
+   "sha256": "7cd7ca43acd268c9d7a1fb25a4145d466094e8bdaa6e90beeacb9319dca0cf42",
+   "target_key": "[\"sympy.solvers.tests.test_solveset\",\"test__solveset_multi\",64791]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0065.json",
+   "sha256": "490e9d180dadeeeaa49e591b521ef19e7c253f6cd261c7008597f5c0bab9ffae",
+   "target_key": "[\"sympy.solvers.tests.test_solveset\",\"test_raise_exception_nonlinsolve\",81738]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0066.json",
+   "sha256": "784d176276100163138063ccc654185d99f2ae9efd4471f8a7aa5e40de12555c",
+   "target_key": "[\"sympy.solvers.tests.test_solveset\",\"test_solve_logarithm\",130280]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0067.json",
+   "sha256": "9f2fe89a6de048f6ba7bb2464c0961f4d623df8fc00fd8cacc33e05aab7bc934",
+   "target_key": "[\"sympy.stats.symbolic_probability\",\"Expectation\",4740]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0068.json",
+   "sha256": "33f10e92f69a36fd16993bcbc66303e8dfb1898c19aeffd3b743936fab08fb82",
+   "target_key": "[\"sympy.stats.tests.test_rv\",\"test_characteristic_function\",2827]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0069.json",
+   "sha256": "404438d9f3b498aa071fac4e8bc5b41ea8c1bde21f057490db6cdce30a31cab1",
+   "target_key": "[\"sympy.testing.tests.test_deprecated\",\"test_deprecated_testing_randtest\",92]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0070.json",
+   "sha256": "71f8e1762c756c5d970e51e92844d31889e251a776d456a2ce49d7fedda4b8e3",
+   "target_key": "[\"sympy.utilities.tests.test_codegen_julia\",\"test_jl_InOutArgument_order\",16608]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0071.json",
+   "sha256": "c312442c28b2b1fb804cebe6f903918a49ce376625e9cfb37aa27eab19692565",
+   "target_key": "[\"sympy.utilities.tests.test_lambdify\",\"test_cmath_sinh\",10832]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0072.json",
+   "sha256": "cd1979bdbe61235e2caea1b7cabb1d0eb6d92a8fdc374beb90848dc2014391c0",
+   "target_key": "[\"sympy.utilities.tests.test_misc\",\"test_strlines\",1968]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0073.json",
+   "sha256": "7a58088dc733a383a95d90d9f5cd8c4b46a92cafcb21f839fa90b1ee1eb01678",
+   "target_key": "[\"sympy.utilities.tests.test_wester\",\"test_C12\",6915]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0074.json",
+   "sha256": "9015d341c0caf9cad1987be0d6212ea9e4e69db09a297b5b4575cb7aff4213d4",
+   "target_key": "[\"sympy.utilities.tests.test_wester\",\"test_H15\",14572]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0075.json",
+   "sha256": "62c0600a0d3db1ecbe3b10c6df8742aa7dd1a54d745cf784e6cf4bd3bef354cb",
+   "target_key": "[\"sympy.utilities.tests.test_wester\",\"test_Y12\",91340]"
+  },
+  {
+   "n_cells": 23,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/target-0076.json",
+   "sha256": "a2d48eb608e10311d4a03bb6ce9cb07c101dc4d577da21e33e1cc59d8084539a",
+   "target_key": "[\"sympy.vector.tests.test_functions\",\"test_matrix_to_vector\",7208]"
+  }
+ ]
+}
