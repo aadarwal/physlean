@@ -547,7 +547,11 @@ def build_sample_plan(candidates, n, exclude_keys=frozenset(),
                 unsampled_cells=sorted(
                     label for label in active_labels
                     if quotas[label] == 0 and populations[label] > 0),
-                test_stratum=bool(test_stratum),
+                # the flag is recorded ONLY when the stratum is active:
+                # the default output shape must stay byte-identical to
+                # the sealed pilot law (the draw's in-band gate enforces
+                # this against the committed pilot plan).
+                **(dict(test_stratum=True) if test_stratum else {}),
                 targets=chosen)
 
 
