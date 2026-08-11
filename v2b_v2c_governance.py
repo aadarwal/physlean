@@ -186,7 +186,12 @@ def plan_repo(repo, governance_path, candidates_path, sample_path,
             return None
         if ORIGINAL_PRIMARY in eligible:
             return ORIGINAL_PRIMARY
-        return max(b for b in eligible if b < ORIGINAL_PRIMARY)
+        below = [b for b in eligible if b < ORIGINAL_PRIMARY]
+        _require(below,
+                 "fill fractions violate budget monotonicity: a budget "
+                 "above the original primary is eligible while the "
+                 "original is not")
+        return max(below)
     primary = primary_at(FILL_FLOOR)
     budget_block = dict(
         fill_fractions=fractions, floor=FILL_FLOOR,

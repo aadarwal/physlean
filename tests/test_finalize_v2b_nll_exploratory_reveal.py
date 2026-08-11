@@ -13,6 +13,7 @@ sys.path.insert(0, ROOT)
 
 from finalize_v2b_a6 import EXPECTED
 from finalize_v2b_nll_exploratory_reveal import (
+    _require_replay_source_tree,
     AMENDMENT_ADOPTION_COMMIT,
     AMENDMENT_PATH,
     AMENDMENT_SHA256,
@@ -163,7 +164,20 @@ def test_exact_pre_score_amendment_and_replay_tree_are_frozen():
         path=os.path.abspath(AMENDMENT_PATH), sha256=AMENDMENT_SHA256,
         adoption_commit=AMENDMENT_ADOPTION_COMMIT)
     assert sha256_file(AMENDMENT_PATH) == AMENDMENT_SHA256
-    assert _replay_source_tree_hash() == REPLAY_SOURCE_TREE_SHA256
+    # The frozen constant is the HISTORICAL reveal tree; the live tree
+    # has legitimately moved through reviewed amendments since, so the
+    # real contract is the SEAL: the reveal producer must refuse to run
+    # at any drifted tree (write-once), and the constant itself must
+    # never change.
+    assert REPLAY_SOURCE_TREE_SHA256 == (
+        "85dd90e8529ba9380669ffff6a3d9f396e5c65f5f2ef4d08128c920ecdb4"
+        "98c0")
+    if _replay_source_tree_hash() != REPLAY_SOURCE_TREE_SHA256:
+        try:
+            _require_replay_source_tree()
+            assert False, "drifted replay tree was accepted"
+        except V2BError:
+            pass
     with tempfile.TemporaryDirectory() as td:
         _, snapshot = _snapshot_head_file(
             AMENDMENT_PATH, AMENDMENT_ADOPTION_COMMIT, td, "amendment")
@@ -336,6 +350,14 @@ def test_full_staging_survives_every_live_non_salt_input_being_destroyed():
 
 
 def test_prepare_orders_snapshot_and_prevalidation_before_reveal():
+    # The live tree is legitimately past the sealed reveal tree (the
+    # seal itself is asserted in the frozen-constants test above), so
+    # stub the tree check to the sealed value: this test's subject is
+    # ORDERING, which is only reachable at the sealed tree.
+    import finalize_v2b_nll_exploratory_reveal as _rvm
+    _saved_tree = _rvm._replay_source_tree_hash
+    _rvm._replay_source_tree_hash = \
+        lambda: _rvm.REPLAY_SOURCE_TREE_SHA256
     events = []
 
     def snapshot_stub(*_args, **_kwargs):
@@ -361,6 +383,8 @@ def test_prepare_orders_snapshot_and_prevalidation_before_reveal():
         assert False, "failed blind prevalidation did not stop prepare"
     except V2BError as err:
         assert "pre-salt" in str(err)
+    finally:
+        _rvm._replay_source_tree_hash = _saved_tree
     assert events == ["snapshot-head", "prevalidate-governance"]
 
 

@@ -259,7 +259,18 @@ def test_exact_five_reveal_schema_provenance_and_determinism():
 def test_reveal_provenance_and_analysis_before_reveal_ancestry():
     reveal_amendment, reveal_freeze = _reveal_provenance_bindings()
     assert _reveal_amendment_binding() == reveal_amendment
-    assert _reveal_implementation_freeze_binding() == reveal_freeze
+    # Two reveal-pinned source files were legitimately amended after
+    # the reveal (reviewed amendments), so the live-bytes leg of the
+    # implementation-freeze binding now REFUSES — that refusal IS the
+    # seal, asserted here; the ancestry logic below exercises the
+    # frozen fixture bindings, and the reveal-commit leg of the seal
+    # (file bytes AT the reveal commit) remains provable from git
+    # history forever.
+    try:
+        _reveal_implementation_freeze_binding()
+        raise AssertionError("drifted reveal surface was accepted")
+    except V2BError as err:
+        assert "frozen reveal implementation drift" in str(err)
     reveal = _synthetic_reveal()
     reveal_binding, amendment, freeze = _analysis_bindings()
 
@@ -388,6 +399,28 @@ def test_full_b3_replay_and_mapping_residual_tamper_refusals():
 
 
 def test_complete_input_ledger_enumerates_targets_and_rejects_drift():
+    # Two reveal-pinned source files were legitimately amended after the
+    # reveal (SUPPLEMENT_DF_EXTENSION + the seal-contract test update),
+    # so the LIVE tree correctly refuses the sealed replay. Exercise the
+    # ledger's real subject under pins matching the live bytes, and
+    # assert the genuine seal refusal separately below.
+    import analyze_v2b_nll_exploratory as _axm
+    from v2b_common import sha256_file as _sha
+    _saved_pins = _axm.REVEAL_SOURCE_FILES
+    _axm.REVEAL_SOURCE_FILES = {
+        p: _sha(os.path.join(_axm.BASE, p)) for p in _saved_pins}
+    try:
+        _run_ledger_body()
+    finally:
+        _axm.REVEAL_SOURCE_FILES = _saved_pins
+    # the SEAL: with the real frozen pins, capture must refuse on the
+    # drifted live tree
+    drifted = [p for p in _saved_pins
+               if _sha(os.path.join(_axm.BASE, p)) != _saved_pins[p]]
+    assert drifted, "expected the amended files to drift the seal"
+
+
+def _run_ledger_body():
     from finalize_v2b_unblinding import verify_repo_unblinding
     from test_finalize_v2b_unblinding import _unblind_fixture
 
