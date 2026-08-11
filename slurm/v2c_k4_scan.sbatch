@@ -34,30 +34,19 @@ case "$V2B_TASK" in
   4) V2B_TAG="astropy" ;;
   *) echo "invalid scan task: $V2B_TASK" >&2; exit 1 ;;
 esac
-V2B_CANDIDATES="$V2B_NLL/v2b/candidates/job19982184_${V2B_TASK}_${V2B_TAG}.json"
-V2B_EXTRACTION_DIR="$V2B_NLL/v2a"
-case "$V2B_TAG" in
-  mathlib4)  V2B_EXTRACTION="$V2B_EXTRACTION_DIR/job19915851_0_mathlib4/extraction.json" ;;
-  batteries) V2B_EXTRACTION="$V2B_EXTRACTION_DIR/job19915851_1_batteries/extraction.json" ;;
-  physlib)   V2B_EXTRACTION="$V2B_EXTRACTION_DIR/job19915851_2_physlib/extraction.json" ;;
-  sympy)     V2B_EXTRACTION="$V2B_EXTRACTION_DIR/job19915851_3_sympy/extraction.json" ;;
-  astropy)   V2B_EXTRACTION="$V2B_EXTRACTION_DIR/job19915851_4_astropy/extraction.json" ;;
-esac
-V2B_NEARDUP="$V2B_NLL/v2b/neardup/job19930941_${V2B_TASK}_${V2B_TAG}.json"
-V2B_A6_OUTCOME="results_v2/v2b/a6/a6_outcome_job19930941.json"
 V2B_MANIFEST="results_v2/v2b/assembly/job19991210_${V2B_TASK}_${V2B_TAG}.json"
+git ls-files --error-unmatch "$V2B_MANIFEST" >/dev/null
+# The committed pilot manifest's own chain bindings are the single
+# source of truth for input paths (the scan re-verifies each sha).
+V2B_CANDIDATES=$("$V2B_PY" -c "import json; print(json.load(open('$V2B_MANIFEST'))['bindings']['candidates']['path'])")
+V2B_EXTRACTION=$("$V2B_PY" -c "import json; print(json.load(open('$V2B_MANIFEST'))['bindings']['extraction']['path'])")
+V2B_NEARDUP=$("$V2B_PY" -c "import json; print(json.load(open('$V2B_MANIFEST'))['bindings']['neardup']['path'])")
+V2B_BOUNDARIES=$("$V2B_PY" -c "import json; b=json.load(open('$V2B_MANIFEST'))['bindings'].get('lean_boundaries') or {}; print(b.get('path') or '-')")
+V2B_A6_OUTCOME="results_v2/v2b/a6/a6_outcome_job19930941.json"
 V2B_EXTRA_ARGS=()
-case "$V2B_TAG" in
-  mathlib4)
-    V2B_EXTRA_ARGS+=(--lean-boundaries "$V2B_MAIN/v2b/lean_boundaries/job19975833_0_mathlib4.json")
-    ;;
-  batteries)
-    V2B_EXTRA_ARGS+=(--lean-boundaries "$V2B_MAIN/v2b/lean_boundaries/job19975833_1_batteries.json")
-    ;;
-  physlib)
-    V2B_EXTRA_ARGS+=(--lean-boundaries "$V2B_MAIN/v2b/lean_boundaries/job19975833_2_physlib.json")
-    ;;
-esac
+if [[ "$V2B_BOUNDARIES" != "-" ]]; then
+  V2B_EXTRA_ARGS+=(--lean-boundaries "$V2B_BOUNDARIES")
+fi
 case "$V2B_TAG" in
   mathlib4|batteries|physlib)
     V2B_EXTRA_ARGS+=(--corpus-root "$SLURM_SUBMIT_DIR/corpora/$V2B_TAG")
@@ -67,7 +56,7 @@ for V2B_INPUT in "$V2B_CANDIDATES" "$V2B_EXTRACTION" "$V2B_NEARDUP"; do
   [[ -f "$V2B_INPUT" ]] || {
     echo "missing pinned scan input: $V2B_INPUT" >&2; exit 1; }
 done
-git ls-files --error-unmatch "$V2B_A6_OUTCOME" "$V2B_MANIFEST" >/dev/null
+git ls-files --error-unmatch "$V2B_A6_OUTCOME" >/dev/null
 
 V2B_OUT="results_v2/v2c/k4_scan_${SLURM_ARRAY_JOB_ID:-manual}_${V2B_TASK}_${V2B_TAG}.json"
 "$V2B_PY" scan_v2c_k4_mass.py \

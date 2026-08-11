@@ -69,8 +69,9 @@ def scan_repo(repo, candidates_path, extraction_path, neardup_path,
     if language == "lean":
         _require(boundaries_path is not None,
                  "lean scan requires the boundary overlay")
-        bnd_binding, boundaries = artifact_binding(boundaries_path)
-        boundary_index = load_boundary_overlay(boundaries, repo)
+        bnd_binding, _boundary_artifact, boundary_index = \
+            load_boundary_overlay(boundaries_path, extraction_path,
+                                  expected_repo=repo)
 
     units = _unit_index(extraction, language, boundary_index,
                         corpus_root=corpus_root)
