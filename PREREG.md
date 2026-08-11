@@ -538,6 +538,24 @@ arxiv_manifest) must be committed before measurement.
 
 ## 13. Disagreement log
 
+- ADOPTED (2026-08-10, V2-c feasibility amendment; POST-REVEAL by
+  construction and disclosed as such — the exploratory NLL reveal made
+  pilot means public before this rule was written, so it is NOT a
+  pre-outcome amendment for NLL quantities; every operative quantity is
+  restricted to pre-pilot frozen constants, the committed BLIND
+  governance components, and model-free candidate/assembly structure):
+  V2C_FEASIBILITY_AMENDMENT_DRAFT.md at sha256 49ff6d8f9650...bc37,
+  two-round adversarial review (FIX-FIRST -> folded -> ADOPTABLE),
+  human scale gate granted 2026-08-10. Replaces the failed absolute-
+  halfwidth N rule with standardized power (0.9 at alpha .025 against
+  0.5*sigma_target, N in [40,400], 0.2/0.8 anchor sensitivity
+  predeclared, post-reveal anchor choice disclosed); per-repo primary
+  budget from model-free k4-fill fractions (60% floor, 50/70%
+  sensitivity, original-16KiB co-report for every moved repo); frozen
+  test-module stratum with exclude-test sensitivity. V2-c results under
+  this rule carry `confirmatory-with-post-pilot-amended-governance`
+  with the amendment hash embedded. Implementation requires its own
+  delta review before any draw.
 - ADOPTED (2026-08-10 overnight, epoch-2 night batch; PRE-EXECUTION — no
   interior/supplement cell scored or read, no supplement draw, epoch-1
   32b scoring in flight at its frozen tree): EPOCH2_NIGHT_AMENDMENT.md.

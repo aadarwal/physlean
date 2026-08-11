@@ -1,9 +1,14 @@
-# V2-c feasibility amendment — DRAFT FOR REVIEW (not adopted)
+# V2-c feasibility amendment — ADOPTED
 
-Date: 2026-08-09 EDT. Status: DRAFT. Adoption requires independent
-adversarial review AND the explicit human scale gate that already governs
-V2-c (DESIGN_V2 §10). Nothing here authorizes a draw, a score, or a
-governance recomputation.
+Date: 2026-08-09 EDT. Status: **ADOPTED 2026-08-10**: independent
+adversarial review round 1 FIX-FIRST (blockers a/b/c + two concerns,
+all folded in at commit df72f81), round 2 ADOPTABLE; the explicit
+human scale gate (DESIGN_V2 §10) was granted by the campaign owner on
+2026-08-10 ("launch") against this draft at sha256
+49ff6d8f9650921eeb02d0e0e404fa7d991f277a020fe783a10d4b1bced7bc37.
+Checklist item 4 (governance implementation + its own delta review,
+sha-pinned eligibility inputs) executes next; no draw or score may
+run before that review passes.
 
 ## Boundary honesty — what has been seen
 
