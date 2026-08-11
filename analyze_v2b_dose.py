@@ -32,7 +32,7 @@ from layout import PRODUCTION_CHUNK_TOKENS
 from prepare_v2b_masked_deltas import _cell_bpb, _load_target
 from provenance import head_commit, source_clean, source_tree_hash
 from v2b_a6_blind import require_committed
-from v2b_common import V2BError, artifact_binding, sha256_file, \
+from v2b_common import cell_scoreable, V2BError, artifact_binding, sha256_file, \
     write_new_json
 
 AMENDMENT_PATH = "results_v2/v2b/POST_LADDER_CONSUMERS_AMENDMENT.md"
@@ -69,7 +69,7 @@ def extract_rows(cells_by_id, language, key, contrasts):
     """Complete-case oriented deltas for one target, as canonical rows."""
     out = {}
     for name, minuend, subtrahend, eligibility in contrasts:
-        if not all(cells_by_id[cell].get("eligible") is True
+        if not all(cell_scoreable(cells_by_id[cell])
                    for cell in eligibility):
             continue
         delta = _cell_bpb(cells_by_id, minuend, key) \
@@ -272,7 +272,7 @@ def analyze_repo(mode, repo, manifest_path, sample_path, candidates_path,
                 manifest_value, manifest_row)
             key = row["target_key"]
             for budget in BUDGETS:
-                if cells_by_id[f"{ref}:{budget}"].get("eligible") is True:
+                if cell_scoreable(cells_by_id[f"{ref}:{budget}"]):
                     ref_eligible_keys[budget].add(key)
                 extracted = extract_rows(
                     cells_by_id, language, key,

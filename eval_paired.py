@@ -414,6 +414,10 @@ def target_cell_specs(target, blobs):
     return specs
 
 
+class CapacityExceeded(V2BError):
+    """Prompt exceeds the model's context window (recorded, not fatal)."""
+
+
 def score_prompt(model, tokenizer, device, context, prefix, body,
                  max_position_embeddings,
                  chunk=PRODUCTION_CHUNK_TOKENS):
@@ -436,9 +440,15 @@ def score_prompt(model, tokenizer, device, context, prefix, body,
     if len(ids) < 2 or len(ids) != len(offsets):
         raise V2BError("paired tokenizer returned malformed/short encoding")
     if len(ids) > max_position_embeddings:
-        raise V2BError(
+        # V2C_CAPACITY_ELIGIBILITY_AMENDMENT: an over-window prompt is a
+        # recorded model-capacity exclusion, never a truncation and never
+        # a silent drop; the caller records the cell unscored.
+        err = CapacityExceeded(
             f"paired prompt has {len(ids)} tokens, exceeding model maximum "
             f"{max_position_embeddings}")
+        err.prompt_tokens = len(ids)
+        err.model_max = max_position_embeddings
+        raise err
     ledger = body_token_ledger(text, offsets, body_start, token_ids=ids)
     tensor = torch.tensor(ids, dtype=torch.long)
     nll = eval_window(model, tensor, device, chunk)
@@ -744,9 +754,19 @@ def evaluate(args):
             cells = []
             boundary_signature = body_layout_signature = None
             for spec in target_cell_specs(target, concrete):
-                score = score_prompt(
-                    model, tokenizer, device, spec.pop("context"), prefix,
-                    body, max_positions, PRODUCTION_CHUNK_TOKENS)
+                try:
+                    score = score_prompt(
+                        model, tokenizer, device, spec.pop("context"),
+                        prefix, body, max_positions,
+                        PRODUCTION_CHUNK_TOKENS)
+                except CapacityExceeded as err:
+                    # the manifest grid metadata is untouched; the cell
+                    # is recorded unscored with its capacity facts
+                    cells.append(dict(
+                        spec, capacity_excluded=True,
+                        capacity_prompt_tokens=err.prompt_tokens,
+                        capacity_model_max=err.model_max))
+                    continue
                 observed_boundary = sha256_json([
                     score["boundary_ledger"]["boundary_signature"],
                     score["boundary_ledger"]["exact_body_bytes"],

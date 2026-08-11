@@ -197,3 +197,11 @@ def artifact_binding(path, schema=None):
     value, digest = load_json(path, schema=schema)
     return dict(path=os.path.abspath(path), sha256=digest,
                 schema=value.get("schema")), value
+
+
+def cell_scoreable(cell):
+    """V2C_CAPACITY_ELIGIBILITY_AMENDMENT: a cell enters complete-case
+    contrasts only when the assembly marked it eligible AND scoring did
+    not record a model-capacity exclusion."""
+    return isinstance(cell, dict) and cell.get("eligible") is True \
+        and not cell.get("capacity_excluded")
