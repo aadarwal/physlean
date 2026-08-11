@@ -166,7 +166,12 @@ def scan_repo(repo, candidates_path, extraction_path, neardup_path,
         _require(checked_n > 0,
                  "pilot cross-check matched no targets; refusing an "
                  "unvalidated scan")
-        crosscheck = dict(n_checked=checked_n, status="exact")
+        crosscheck = dict(
+            n_checked=checked_n, status="exact",
+            note=("exactness is certified on the pilot targets only; "
+                  "all other candidates rest on the shared-"
+                  "implementation argument (the scan imports "
+                  "_components/make_chunk from the assembler itself)"))
 
     return dict(
         schema=SCAN_SCHEMA, repo=repo, language=language,
