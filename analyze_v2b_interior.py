@@ -107,6 +107,13 @@ def replication_gate(interior_manifest, pilot_manifest,
                     pcell.get("eligible"):
                 cell_mismatch = f"eligibility-differs:{cell_id}"
                 break
+            # capacity-classification hygiene (review nit): a capacity-
+            # excluded cell on either side is non-comparable, never a
+            # crash inside the bpb comparison
+            if bool(icell.get("capacity_excluded")) != \
+                    bool(pcell.get("capacity_excluded")):
+                cell_mismatch = f"capacity-differs:{cell_id}"
+                break
         if cell_mismatch is not None:
             discarded.append(dict(target=key, reason=cell_mismatch))
             continue
@@ -114,7 +121,8 @@ def replication_gate(interior_manifest, pilot_manifest,
         for cell_id, icell in icells.items():
             if not (cell_id.endswith(":16384") or cell_id == "k1"):
                 continue
-            if icell.get("eligible") is not True:
+            if icell.get("eligible") is not True \
+                    or icell.get("capacity_excluded"):
                 continue
             ib = _cell_bpb(icells, cell_id, key)
             pb = _cell_bpb(pcells, cell_id, key)
