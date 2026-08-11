@@ -46,6 +46,8 @@ V2B_A6_OUTCOME="results_v2/v2b/a6/a6_outcome_job19930941.json"
 V2B_EXTRA_ARGS=()
 if [[ "$V2B_BOUNDARIES" != "-" ]]; then
   V2B_EXTRA_ARGS+=(--lean-boundaries "$V2B_BOUNDARIES")
+  V2B_K7=$("$V2B_PY" -c "import json; print(json.load(open('$V2B_MANIFEST'))['bindings']['k7_order']['path'])")
+  V2B_EXTRA_ARGS+=(--k7-order "$V2B_K7")
 fi
 for V2B_INPUT in "$V2B_CANDIDATES" "$V2B_EXTRACTION" "$V2B_NEARDUP"; do
   [[ -f "$V2B_INPUT" ]] || {

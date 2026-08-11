@@ -16,8 +16,8 @@ import argparse
 import sys
 
 from prepare_v2b_assembly import (
-    BUDGET_GRID, EXPECTED, _a6_exclusion_sets, _edges, _unit_index,
-    _unit_payload)
+    BUDGET_GRID, EXPECTED, _a6_exclusion_sets, _corpus_root, _edges,
+    _load_k7_order, _unit_index, _unit_payload)
 from provenance import head_commit, source_clean, source_tree_hash
 from v2b_a6_blind import require_committed
 from v2b_assemble import _components, _graph_nodes, make_chunk
@@ -39,7 +39,7 @@ def _require(condition, message):
 
 
 def scan_repo(repo, candidates_path, extraction_path, neardup_path,
-              outcome_path, boundaries_path=None, corpus_root=None,
+              outcome_path, boundaries_path=None, k7_order_path=None,
               pilot_manifest_path=None):
     _require(repo in EXPECTED, f"unknown corpus {repo!r}")
     language, _corpus_sha = EXPECTED[repo]
@@ -73,6 +73,14 @@ def scan_repo(repo, candidates_path, extraction_path, neardup_path,
             load_boundary_overlay(boundaries_path, extraction_path,
                                   expected_repo=repo)
 
+    corpus_root = None
+    if language == "lean":
+        _require(k7_order_path is not None,
+                 "lean scan requires the sealed k7 order artifact (the "
+                 "corpus-root anchor for null-rel v3 extraction rows)")
+        _k7_binding, k7_rows = _load_k7_order(
+            k7_order_path, repo, language, EXPECTED[repo][1])
+        corpus_root = _corpus_root(extraction, k7_rows)
     units, _sources = _unit_index(extraction, language, boundary_index,
                                   corpus_root=corpus_root)
     edges = _edges(extraction, language)
@@ -201,7 +209,7 @@ def main():
     ap.add_argument("--neardup", required=True)
     ap.add_argument("--a6-outcome", required=True)
     ap.add_argument("--lean-boundaries")
-    ap.add_argument("--corpus-root")
+    ap.add_argument("--k7-order")
     ap.add_argument("--pilot-manifest",
                     help="committed pilot assembly manifest for the "
                          "exact-mass cross-check (required when one "
@@ -215,7 +223,7 @@ def main():
     artifact = scan_repo(args.repo, args.candidates, args.extraction,
                          args.neardup, args.a6_outcome,
                          boundaries_path=args.lean_boundaries,
-                         corpus_root=args.corpus_root,
+                         k7_order_path=args.k7_order,
                          pilot_manifest_path=args.pilot_manifest)
     digest = write_new_json(args.out, artifact)
     print(f"V2C-K4-SCANNED {args.repo} {args.out} {digest}")
