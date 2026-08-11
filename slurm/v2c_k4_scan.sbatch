@@ -47,11 +47,6 @@ V2B_EXTRA_ARGS=()
 if [[ "$V2B_BOUNDARIES" != "-" ]]; then
   V2B_EXTRA_ARGS+=(--lean-boundaries "$V2B_BOUNDARIES")
 fi
-case "$V2B_TAG" in
-  mathlib4|batteries|physlib)
-    V2B_EXTRA_ARGS+=(--corpus-root "$SLURM_SUBMIT_DIR/corpora/$V2B_TAG")
-    ;;
-esac
 for V2B_INPUT in "$V2B_CANDIDATES" "$V2B_EXTRACTION" "$V2B_NEARDUP"; do
   [[ -f "$V2B_INPUT" ]] || {
     echo "missing pinned scan input: $V2B_INPUT" >&2; exit 1; }

@@ -73,8 +73,8 @@ def scan_repo(repo, candidates_path, extraction_path, neardup_path,
             load_boundary_overlay(boundaries_path, extraction_path,
                                   expected_repo=repo)
 
-    units = _unit_index(extraction, language, boundary_index,
-                        corpus_root=corpus_root)
+    units, _sources = _unit_index(extraction, language, boundary_index,
+                                  corpus_root=corpus_root)
     edges = _edges(extraction, language)
     adjacency = _a6_exclusion_sets(neardup, outcome, language,
                                    set(units))
