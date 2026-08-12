@@ -49,10 +49,26 @@ def reveal_repo(repo, masked_path, complete_path, manifest_path,
                 sample_path, candidates_path, salt,
                 commitment_binding):
     masked_binding, committed_masked = artifact_binding(masked_path)
+    # The committed artifact carries the seal-time generator block the
+    # bare builder never returns (review blocker: comparing with it in
+    # place refuses unconditionally). Its provenance fields encode the
+    # anti-peek proof, so they are required — then stripped for the
+    # value-equality gate.
+    committed_generator = committed_masked.get("generator")
+    _require(isinstance(committed_generator, dict)
+             and committed_generator.get("program")
+             == "prepare_v2b_masked_deltas.py"
+             and bool(committed_generator.get("source_commit"))
+             and bool(committed_generator.get("source_tree_hash")),
+             f"committed masked artifact lacks its seal-time "
+             f"provenance: {repo}")
+    committed_value = {key: value
+                       for key, value in committed_masked.items()
+                       if key != "generator"}
     rebuilt, private = build_masked_deltas(
         complete_path, manifest_path, sample_path, candidates_path,
         salt, commitment_binding)
-    _require(rebuilt == committed_masked,
+    _require(rebuilt == committed_value,
              f"freshly rebuilt masked artifact differs from the "
              f"committed one: {repo} — the sealed chain does not "
              f"reproduce; refusing to reveal")
@@ -152,10 +168,18 @@ def main():
         repos_out[repo] = reveal_repo(repo, *repo_specs[repo], salt,
                                       commitment_binding)
     anchor_note = None
+    anchor_sensitivity = {}
+    threshold_sensitivity = {}
     for repo in REPOS:
-        power = (plan.get("repos") or {}).get(repo, {}).get("power") or {}
+        row = (plan.get("repos") or {}).get(repo, {})
+        power = row.get("power") or {}
         if anchor_note is None:
             anchor_note = power.get("anchor_provenance")
+        anchor_sensitivity[repo] = power.get("anchor_sensitivity")
+        threshold_sensitivity[repo] = (row.get("primary_budget") or {}) \
+            .get("threshold_sensitivity")
+    _require(anchor_note is not None,
+             "plan lacks the anchor-provenance disclosure")
     artifact = dict(
         schema=V2C_REVEAL_SCHEMA,
         claim_status=V2C_CLAIM_LABEL,
@@ -166,6 +190,8 @@ def main():
             sha256=sha256_file(CAPACITY_AMENDMENT_PATH)),
         disclosures=dict(
             anchor_provenance=anchor_note,
+            anchor_sensitivity=anchor_sensitivity,
+            threshold_sensitivity=threshold_sensitivity,
             structurally_ineligible_repos=sorted(
                 r for r, row in (plan.get("repos") or {}).items()
                 if row.get("verdict") == "structurally-ineligible"),

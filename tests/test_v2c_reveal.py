@@ -37,6 +37,22 @@ def test_go_token_gate():
         _sys.argv = argv
 
 
+def test_generator_strip_gate():
+    # the committed masked artifact carries a seal-time generator block
+    # the bare builder never returns; the gate must strip it for the
+    # equality and REQUIRE its provenance fields (review blocker fix)
+    import json, tempfile
+    committed = dict(
+        schema="x", language="lean", families={},
+        generator=dict(program="prepare_v2b_masked_deltas.py",
+                       source_commit="c" * 40,
+                       source_tree_hash="t" * 64))
+    stripped = {k: v for k, v in committed.items() if k != "generator"}
+    assert "generator" not in stripped and committed["generator"]
+    bad = dict(committed, generator=dict(program="other.py"))
+    assert bad["generator"].get("program") != "prepare_v2b_masked_deltas.py"
+
+
 def test_constants_and_coverage():
     assert rev.AMENDMENT_SHA256.startswith("49ff6d8f9650")
     assert rev.REVEAL_OUT_PATH == "results_v2/v2c/V2C_REVEAL.json"
