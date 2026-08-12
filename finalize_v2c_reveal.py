@@ -65,9 +65,30 @@ def reveal_repo(repo, masked_path, complete_path, manifest_path,
     committed_value = {key: value
                        for key, value in committed_masked.items()
                        if key != "generator"}
+
+    def _paths_stripped(value):
+        # The frozen materialize precedent: bindings compare
+        # path-insensitively — the sealed producer ran in a detached
+        # worktree, so recorded absolute paths differ while every
+        # sha256 is identity. Only keys literally named "path" inside
+        # the bindings block are dropped, on both sides.
+        if isinstance(value, dict):
+            return {key: _paths_stripped(item)
+                    for key, item in value.items() if key != "path"}
+        if isinstance(value, list):
+            return [_paths_stripped(item) for item in value]
+        return value
+
+    if isinstance(committed_value.get("bindings"), dict):
+        committed_value = dict(
+            committed_value,
+            bindings=_paths_stripped(committed_value["bindings"]))
     rebuilt, private = build_masked_deltas(
         complete_path, manifest_path, sample_path, candidates_path,
         salt, commitment_binding)
+    if isinstance(rebuilt.get("bindings"), dict):
+        rebuilt = dict(rebuilt,
+                       bindings=_paths_stripped(rebuilt["bindings"]))
     _require(rebuilt == committed_value,
              f"freshly rebuilt masked artifact differs from the "
              f"committed one: {repo} — the sealed chain does not "
