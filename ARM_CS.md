@@ -78,10 +78,16 @@ exponent is always **γ**, never "beta" (the legacy G3 column name).
 - Lag set: {1..32} ∪ round(logspace(32→8192, 20 points)), deduped.
 - Marginals: left marginal over valid left positions, right marginal over
   valid right positions at that lag (paper App. B, Eq. 44–46 analog).
-- Noise floor: within-document byte-shuffle surrogate (seed 4242, 1 rep,
-  same lag set, same masking) AND the analytic √(σ²·log V / N_pairs) bound;
-  a lag is VALID iff ‖C(n)‖_op ≥ 3× max(floors). β̂_corr fits use the
-  maximal contiguous valid prefix range.
+- Noise floor: the within-document byte-shuffle surrogate (seed 4242,
+  1 rep, same lag set, same masking) is THE floor — it is the empirical
+  null with identical marginals, document structure, and estimator. The
+  analytic random-matrix bound 2√V·√(p_max·q_max / N_pairs) is reported
+  as a diagnostic only (it matches the surrogate on uniform marginals —
+  selftest: 5.1e-5 predicted vs 5.0e-5 measured at N=6e6 — but is loose
+  under the skewed marginals of real text). A lag is VALID iff
+  ‖C(n)‖_op ≥ 3× the surrogate floor. β̂_corr fits use all valid lags
+  before the first run of ≥3 consecutive invalid lags (isolated dips are
+  structure — e.g. UTF-8 harmonics — not the death of the signal).
 - β̂_corr: OLS on (log n, log‖C(n)‖_op) over the valid range; uncertainty =
   bootstrap over lag points (1000 resamples) AND over documents (200
   resamples of the doc set, recomputing C(n)) — report both.
