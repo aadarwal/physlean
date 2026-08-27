@@ -19,8 +19,12 @@ that the **data-limited training scaling exponent is determined by two corpus
 statistics**:
 
 - γ — how fast next-token conditional entropy decays with context length:
-  H_n − H_∞ ∝ n^(−γ)  (Hilberg's hypothesis). **This is exactly the exponent
-  Phase 1 fits and has been calling β.**
+  H_n − H_∞ ∝ n^(−γ)  (Hilberg's hypothesis). **This is the quantity the
+  HANDOFF-era Phase-1 fit form was aiming at under the name β — but no
+  legacy exponent is reinterpreted**: pretrained curves measure H_n + KL_n,
+  the G3a holdout gate rejected that global fit form (no headline G3
+  exponent exists), and the arm's γ is a NEW intrinsic estimand from
+  from-scratch models (ARM_CS §1/§6).
 - β — how fast token–token correlations decay with separation:
   ‖C(n)‖_op ∝ n^(−β), where C(n) is the lag-n token co-occurrence covariance
   matrix. **Model-free, computable from the corpus on a CPU. We don't measure
@@ -29,14 +33,18 @@ statistics**:
 Their result (fast-learning regime): **α_D = γ/(2β)** with zero free
 parameters, verified on TinyStories (γ=0.325±0.003, β=0.88±0.06 →
 α_D=0.185±0.013) and WikiText-103 (γ=0.265±0.016, β=0.94±0.16 →
-α_D=0.141±0.025), across GPT-2 (APE/RoPE), LLaMA, Mamba, and n-gram models —
-γ is a property of the *dataset*, not the model. Mechanism: with P training
+α_D=0.141±0.025). The α_D/collapse evidence is GPT-2 (APE/RoPE) and LLaMA;
+Mamba and infini-gram support the architecture-independence of the limiting
+𝓛_n-vs-n curve on TinyStories — γ as a property of the *dataset*. Mechanism: with P training
 tokens you can only resolve correlations at lag n if their strength beats the
 sampling-noise floor O(P^(−1/2)), giving a data-dependent prediction horizon
 n*(P) ∝ P^(1/(2β)); the loss then tracks the entropy at that horizon,
 H_{n*(P)}, i.e. L(P) − H_∞ ∝ P^(−γ/(2β)). They validate it a second,
-sharper way: all n-gram loss curves 𝓛_n(P) collapse onto one master curve
-under the rescaling 𝓛_n·n^γ vs P/n^(2β) (their Eq. 9/42).
+sharper way: the n-gram loss curves 𝓛_n(P) collapse onto one master curve
+under rescaling. NOTE the operative form is the SHIFTED one,
+(𝓛_n − H_∞)·n^γ vs P/n^(2β) (their App. A Eq. 43); the headline Eq. 9/42
+print the unshifted shorthand, which cannot collapse asymptotically when
+H_∞ > 0 — ARM_CS §6 freezes the shifted form as primary.
 
 They test this on **natural language only** (TinyStories = GPT-generated
 children's stories; WikiText = encyclopedia prose), at horizons of **a few
@@ -70,7 +78,9 @@ context conditions (DESIGN_V2). V2-b ran a five-tier NLL-only exploratory
 ladder (0.5B–14B; 32B infeasible, recorded) plus dose curves. **V2-c
 confirmatory reveal (Aug 12, Qwen2.5-Coder-1.5B, within-target paired,
 Holm-corrected): E1a repository-context gain CONFIRMED** — one-sided lower
-95% bound ≈ 0.320 b/B on mathlib4 (n=52), ≈ 0.100 b/B on sympy (n=77);
+95% bound 0.319 b/B on mathlib4 (35 analyzed E1a targets) and 0.090 b/B on
+sympy (49 analyzed; the intersection sensitivities use 34/42 targets with
+bounds 0.320/0.100; 52/77 are the planned repo Ns);
 E2 (dependency relevance beats random same-corpus context) confirmed; E1b
 interface-only non-inferiority NOT established (adjusted p ≈ 1.0) —
 implementations carry predictive load beyond signatures. Behavioral arm:
@@ -104,10 +114,12 @@ confirmatory needs a FRESH sample.
    statistics and per-language *from-scratch data-scaling exponents* —
    never "software/codebase scaling laws"; the growth question remains
    the longitudinal arm's (DESIGN_V2 §11).
-5. Zero-GPU bonus: the G3a run left 88 per-position NLL dump artifacts
-   (0.5B × 5 corpora × stream variants) on POOL. The transfer-side
-   γ̂_transfer can be estimated from those EXISTING dumps with the new
-   estimators — descriptive only, but free.
+5. Zero-GPU bonus: the G3a run left 44 per-position NLL dumps (88
+   dump+meta artifacts) on POOL. The transfer-side γ̂_transfer can be
+   estimated from those EXISTING dumps with the arm's frozen estimator —
+   per-corpus DESCRIPTIVE only; it may return "no reportable exponent"
+   (the G3 holdout verdict stands), and no cross-corpus or cross-language
+   ordering is read from it (PREREG §6 bar).
 6. V2-c's E1b negative (interfaces insufficient) is itself a datum for
    the formality story this arm quantifies: if types alone carried the
    predictive load, one would expect interface-only context to approach
@@ -118,8 +130,8 @@ confirmatory needs a FRESH sample.
 
 | physlean today | the paper | adopt |
 |---|---|---|
-| fitted exponent `beta` in BPB(c)=A·c^(−β)+L∞ | **γ** (entropy/Hilberg exponent), their Eq. 6/21 | **γ** in all NEW-arm outputs; frozen G3 artifacts keep their legacy column names untouched |
-| `Linf` | **H_∞** (entropy rate; theirs in nats/token, ours in bits/byte) | keep name, gloss as H_∞ |
+| fitted exponent `beta` in BPB(c)=A·c^(−β)+L∞ | targets the same object as their **γ** (Eq. 6/21) | legacy `beta` is a MODEL-RELATIVE fit parameter whose global form G3a REJECTED — never reinterpreted as γ; the arm's **γ** is a new intrinsic estimand (ARM_CS §6) |
+| `Linf` | analog of **H_∞** | legacy Linf stays "asymptotic model BPB" (PREREG §1); the arm's **Ĥ_∞** is a new intrinsic estimand |
 | in-context bytes `c` / `ctxb` | context length **n** (theirs in tokens; ours in bytes) | keep bytes; state units |
 | — (not measured) | **β** (correlation-decay exponent), Eq. 7/29 | NEW: measure per corpus |
 | Phase 2 data-scaling slope | **α_D = γ/(2β)** (Eq. 8; in general min{δ, γ/2β}, Eq. 40) | the prediction to test |
@@ -146,23 +158,24 @@ corpus-intrinsic γ. Say so in the writeup, and quote footnote 1 preemptively.
 per-position-NLL dump at final val (already implemented, same CSV schema as
 eval_incontext) *is* their family of n-gram losses: 𝓛_n = mean NLL at
 context n. From-scratch models at the largest data rung, evaluated on
-held-out same-distribution files, give the paper-sanctioned estimator of the
-**intrinsic γ and H_∞ per language** — making "formal languages are more
-predictable" a model-free claim about the languages themselves
-(architecture-independence is their Fig. 2 result; our ladder replicates it
-per language for free).
+held-out same-distribution files, give the paper-style estimator of the
+**intrinsic γ and Ĥ_∞ per language mixture** — corpus-intrinsic ESTIMANDS
+with a model-assisted estimator (one architecture + a capacity guard here;
+architecture-independence is the paper's TinyStories/WikiText result and is
+imported, not re-established by this arm).
 
-**New, from the two together:** transfer-γ̂ (Phase 1) vs intrinsic-γ
-(Phase 2) per language — does pretraining change the *shape* of the context
-curve or only its level, and is the transfer gap larger for Lean (rare in
-pretraining) than Python (saturated)? Nobody has this plot either.
+**From the two together (per-corpus, descriptive only):** the transfer-side
+curve shape vs the intrinsic curve shape for the SAME corpus — does
+pretraining change the shape of the context curve or only its level? This
+stays per-corpus and estimator-gated (either side may return "no reportable
+exponent"); no cross-language transfer-gap ordering is claimed (PREREG §6).
 
 ## 3. The upgraded claim ladder (what we're now testing)
 
-H1 (existing, commit `ab2a4c6` "phase1-formal-more-predictable"): Lean shows
-larger context exponent and lower asymptote than Python on clean matched
-streams, robust across the model ladder. *Unchanged, now stated as: γ_lean >
-γ_python, H∞_lean < H∞_python.*
+H1 (NEW registration for this arm; the `ab2a4c6` trail hypothesis about
+pretrained in-context curves remains its own, unresolved, and is NOT
+co-opted): intrinsic γ̂(lean pool) > γ̂(python pool) and Ĥ_∞(lean pool) <
+Ĥ_∞(python pool), from CS-2 under ARM_CS §6.
 
 H2 (NEW, model-free): the correlation exponent orders languages by
 formality: **β_lean < β_python < β_prose** (formal code has slower-decaying
@@ -172,10 +185,12 @@ BPE-level C(n) both show Lean decaying as fast or faster than Python.
 H3 (NEW, the theory test): per language, the measured Phase 2 data exponent
 matches the zero-parameter prediction: **α̂_D ≈ γ/(2β)**, and the n-gram
 loss curves collapse under (γ, β) rescaling. Falsifiers, each informative:
-(a) collapse fails for code but holds for LaTeX prose → theory is
-prose-specific; (b) α̂_D = δ < γ/(2β) → code sits in the *slow-learning*
+(a) collapse quality differs qualitatively between code and the LaTeX arm
+→ suggestive of domain-specificity (the raw-TeX arm is a FORMAT DIAGNOSTIC
+only, per PREREG §2 — no prose/formality claim rides on it); (b) α̂_D = δ < γ/(2β) → code sits in the *slow-learning*
 regime (within-horizon learning is the bottleneck — their Eq. 40 still
-holds via min{δ, γ/2β}; measure δ_n per their §5 protocol to confirm);
+holds via min{δ, γ/2β}, with a log P correction at the δ = γ/2β boundary,
+their Eq. 39; measure δ_n per their §5 protocol to confirm);
 (c) collapse holds with different exponents than measured → estimation
 problem, revisit fits.
 
@@ -216,12 +231,13 @@ stationary sampling):
 **P0.5 — the arm's analyzer (`analyze_cs.py`, NEW standalone module —
 `analyze_v2.py` is governance-frozen G3 machinery and is not touched),
 testable on synthetic curves and on the existing G3a dumps.**
-- Keep the global 3-param fit, but add the paper's estimators: γ from a
-  power-law fit to the **initial decay** region only (their §4.1.1: the
-  3-param global fit is degenerate when the plateau isn't reached), and the
-  asymptote via their grid-search: for H on a grid (step 1e-2), fit
-  log(𝓛_n − H) ~ log n, pick H maximizing R² (§5; also yields δ_n as the
-  slope when applied along the P-axis).
+- Keep no global 3-param fits. γ per the arm's OWN frozen estimator
+  (ARM_CS §6): initial-decay window with a convergence rule, asymptote by
+  grid-search-R² ALONG n. Attribution note (review B6): the paper's γ
+  protocol fits a fixed small-n window of the largest-P curve judged
+  converged (their §4.1.1/App. C.1), and their §5 grid searches a separate
+  H_n per fixed n ALONG THE P AXIS to extract δ_n; our along-n H_∞ grid is
+  an adaptation, not their method.
 - Add the **collapse machinery**: given per-rung dumps, plot 𝓛_n·n^γ vs
   P/n^(2β); a collapse-residual score scanned over (γ, β) gives an
   independent joint estimate and reproduces their sensitivity analysis
@@ -288,7 +304,7 @@ headline-adjacent sub-claim.
 4. **Non-stationarity of topo streams**: run the statistics and the collapse
    arm on shuffled streams; keep topo-vs-shuffled as its own ablation (it
    measures curriculum/order, a different question).
-5. **Byte-vocab artifacts**: V=257 vs their 8192-BPE; exponents should be
+5. **Byte-vocab artifacts**: V=256 vs their 8192-BPE; exponents should be
    scale-robust (their op-vs-Frobenius and first-few-singular-values checks),
    but verify with the shared-BPE robustness pass in P0.
 
@@ -329,4 +345,6 @@ P0 + P0.5 are CPU-and-analysis work (~1–2 days), independent of cluster
 access, and de-risk everything downstream. P1 adds ~hundreds of short
 byte-GPT runs (minutes each on L40S) to the existing Slurm fan-out — well
 inside the already-planned envelope. No change to corpora, streams,
-contamination machinery, or Phase 1.
+contamination machinery, or the pretrained lanes — for the exploratory
+first pass (the CS-3 confirmatory replication adds new, named, manifested
+corpora).

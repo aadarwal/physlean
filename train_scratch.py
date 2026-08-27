@@ -141,12 +141,23 @@ def main():
     ap.add_argument("--max-train-bytes", type=int, default=0)
     ap.add_argument("--device", default=None)
     ap.add_argument("--out-tag", default="")
+    # ARM_CS CS-2 additive flags (defaults preserve Phase-2 behavior)
+    ap.add_argument("--pool-dir",
+                    default=os.path.join(BASE, "data", "pools"))
+    ap.add_argument("--out-dir",
+                    default=os.path.join(BASE, "results_v2", "scratch"))
+    ap.add_argument("--dump-dir", default=os.path.join(BASE, "nll_dumps"))
+    ap.add_argument("--lr", type=float, default=0.0,
+                    help="override the per-size default lr")
+    ap.add_argument("--no-ckpt", action="store_true")
     args = ap.parse_args()
 
     device = args.device or ("cuda" if torch.cuda.is_available() else
                              "mps" if torch.backends.mps.is_available() else
                              "cpu")
     L, d, h, lr = SIZES[args.size]
+    if args.lr:
+        lr = args.lr
     cuda = torch.cuda.is_available() and (args.device or "cuda") == "cuda"
     mb = args.micro_batch or (
         {"10m": 32, "30m": 24, "100m": 16, "300m": 8} if cuda else
@@ -154,9 +165,9 @@ def main():
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
 
-    train = np.fromfile(os.path.join(BASE, "data", "pools",
+    train = np.fromfile(os.path.join(args.pool_dir,
                                      f"{args.lang}_train.bin"), dtype=np.uint8)
-    val = np.fromfile(os.path.join(BASE, "data", "pools",
+    val = np.fromfile(os.path.join(args.pool_dir,
                                    f"{args.lang}_val.bin"), dtype=np.uint8)
     if args.max_train_bytes:
         train = train[:args.max_train_bytes]
@@ -219,10 +230,9 @@ def main():
             history.append(dict(step=step, tokens=tok_seen, val_bpb=v))
             print(f"[{run}] VAL step {step} bpb={v:.4f}", flush=True)
 
-    os.makedirs(os.path.join(BASE, "nll_dumps"), exist_ok=True)
-    os.makedirs(os.path.join(BASE, "results_v2", "scratch"), exist_ok=True)
-    os.makedirs(os.path.join(BASE, "ckpt"), exist_ok=True)
-    dump = os.path.join(BASE, "nll_dumps", f"{run}__{args.lang}__val.csv.gz")
+    os.makedirs(args.dump_dir, exist_ok=True)
+    os.makedirs(args.out_dir, exist_ok=True)
+    dump = os.path.join(args.dump_dir, f"{run}__{args.lang}__val.csv.gz")
     final = val_bpb(model, val, args.ctx, device,
                     max_bytes=len(val), dump=dump)
     meta = dict(model=run, stream=f"pools/{args.lang}_val.bin",
@@ -236,12 +246,13 @@ def main():
                   train_bytes=int(len(train)), tokens_seen=tok_seen,
                   total_steps=total_steps, final_val_bpb=final,
                   history=history, wall_s=time.time() - t0)
-    with open(os.path.join(BASE, "results_v2", "scratch", run + ".json"),
-              "w") as f:
+    with open(os.path.join(args.out_dir, run + ".json"), "w") as f:
         json.dump(result, f, indent=1)
-    torch.save(dict(model=model.state_dict(), config=dict(
-        n_layer=L, d_model=d, n_head=h, ctx=args.ctx)),
-        os.path.join(BASE, "ckpt", run + ".pt"))
+    if not args.no_ckpt:
+        os.makedirs(os.path.join(BASE, "ckpt"), exist_ok=True)
+        torch.save(dict(model=model.state_dict(), config=dict(
+            n_layer=L, d_model=d, n_head=h, ctx=args.ctx)),
+            os.path.join(BASE, "ckpt", run + ".pt"))
     print(f"[{run}] FINAL val_bpb={final:.4f} ({time.time() - t0:.0f}s)",
           flush=True)
 

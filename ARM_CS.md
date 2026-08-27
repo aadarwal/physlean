@@ -1,183 +1,319 @@
 # ARM_CS — corpus-statistics & from-scratch scaling arm (Cagnetta test)
 
-Status: **DRAFT v0 — awaiting independent fresh-context adversarial review**
-(the campaign's standard adoption path: reviewer verdict ADOPTABLE /
-FIX-FIRST with blockers/concerns/nits; adoption commit records the verdict
-and appends the PREREG §13 registration entry). Rationale and the paper
-mapping live in THEORY.md; this file freezes the design. Nothing here reads
-a model outcome before its gate.
+Status: **DRAFT v1 — post-review revision awaiting re-review.** v0 received
+an independent fresh-context adversarial review (verdict FIX-FIRST: 10
+blockers, 6 concerns, 6 nits; reviewer transcript summarized in the v1
+commit). v1 addresses every blocker as recorded per-section below.
+Adoption = re-review verdict ADOPTABLE + adoption commit carrying the
+PREREG §13 registration entry and the §0 G6 statement.
 
-Relationship to the frozen program: NEW STANDALONE FILES ONLY
-(`lang_stats.py`, `analyze_cs.py`, `train_scratch.py` additive flags,
-`results_cs/` namespace). `eval_incontext.py`, `layout.py`,
-`analyze_v2.py`, the dependency lock, and every `results_v2/` artifact are
-untouched. This arm makes NO repository-context, security, or
-"software scaling law" claim; its quantities are corpus statistics and
-from-scratch data-scaling exponents.
+Rationale and the paper mapping live in THEORY.md; this file freezes the
+design. The paper: Cagnetta, Raventós, Ganguli, Wyart, ICML 2026,
+arXiv:2602.07488 ("the paper").
 
-## 1. Questions and estimands
+## 0. Governance position
 
-Per corpus s (per-repo strata) and pooled per language L ∈ {lean, python,
-cpp, latex-reference}:
+- **G6 fulfillment (review B1).** PREREG §10 blocks Phase 2 (G6) pending a
+  redesign with "smaller N and/or much more D, >= 3 seeds, and an explicit
+  statement of what the fixed-budget comparison identifies." This arm IS
+  that redesign: fixed SMALL N (10m primary; 30m only as capacity guard),
+  the data-limited multi-epoch regime (the paper's setting — model size
+  chosen so it does not constrain), **seeds {0,1,2} at every rung**, and
+  the explicit estimand statement of §1 (data-limited exponent α_D at
+  capacity-unconstrained N; no L(N,D) surface is claimed). Adoption
+  formally unblocks G6 as CS-2/CS-3, preserving the human GPU-scale gate
+  at CS-3. Human compute authorization for this program recorded
+  2026-08-27 (user: "do whatever you think is best … feel free to
+  parallelize on the cluster"); the adoption commit quotes it.
+- **Siblings.** V2 (DESIGN_V2.md) measures repository-context sufficiency
+  on fixed targets; DIRECT (DIRECT_SCALING_STUDY.md, P0-frozen, pinned at
+  commit 4a49240) tests the context-position proxy with pretrained
+  checkpoints. Both declare every quantity model-relative (L = H + KL);
+  neither trains models nor measures corpus statistics. This arm shares
+  corpora and evidence discipline and shares NO estimand. Notation:
+  **β_corr** (never bare β — DIRECT owns β_position_*/β_paired_*);
+  **γ** (never "beta").
+- **Frozen instruments untouched**: `eval_incontext.py`, `layout.py`,
+  `analyze_v2.py`, `requirements-cluster.lock`, everything in
+  `results_v2/`. This arm's files: `lang_stats.py`, `analyze_cs.py`,
+  `cs2_pools.py`, `cs2_launch.py`, `slurm/cs2_rungs.sbatch`, additive
+  flags on `train_scratch.py` (defaults preserve Phase-2 behavior), and
+  the `results_cs/` + `data/cs2/` namespaces.
+- **CS source-clean rule (review B4)**: before any CS measurement job,
+  `git status --porcelain -- . ':(exclude)results_v2' ':(exclude)results_cs'`
+  must be empty; every CS artifact records the commit, a dirty flag, and
+  input-manifest hashes (§3, §4). CS outputs are mode-suffixed and
+  write-once (`--force` required to overwrite).
+- **Pre-adoption exposure disclosure (review B4; PREREG's own pattern)**:
+  before this v1 was frozen, the instrument's selftest, a 3MB/language
+  quick smoke, and one full LOCAL lang_stats pass (incomplete python pool)
+  had been run and observed, and one 0.77MB lean training smoke (rung
+  1/64, ctx 512, val 8.0→5.43 b/B). Observed then: pooled local
+  β_corr ≈ 0.60 (lean) / 1.00 (python) / 0.32 (cpp) / 0.33 (latex) under
+  the v0 estimator. Every CS-1 claim therefore rests on the CANONICAL
+  cluster run under the v1 estimator, and the whole first pass is labeled
+  exploratory regardless (§5); these observations are disclosed, not
+  erased.
 
-- **β̂_corr(L)** — correlation-decay exponent: ‖C(n)‖_op ≍ n^(−β) where C(n) is
-  the lag-n byte–byte covariance matrix (256×256), doc-interior pairs only.
-  Secondary: Frobenius-norm decay; top-10 singular values (spectral
-  breadth); broken-power-law break locations; periodicity peak lags.
-- **Ĥ_k(L)** — small-k conditional entropies (bits/byte), k ≤ 6, via k-gram
-  chain rule (plug-in + Miller–Madow), doc-interior.
-- **γ̂(L)** — entropy-decay (Hilberg) exponent of the from-scratch byte-LM
-  n-gram loss curve 𝓛_n at the largest data rung, initial-decay estimator.
-- **Ĥ_∞(L)** — grid-search asymptote of the same curve.
-- **α̂_D(L)** — data-limited exponent from the lower envelope of L(P)
-  across context lengths T.
-- **The theory test**: α̂_D vs the zero-parameter prediction γ̂/(2β̂_corr), per
-  language, with propagated uncertainty (paper Eq. 56); plus per-language
-  scaling-collapse quality of 𝓛_n·n^γ̂ vs P/n^(2β̂).
-- **Transfer diagnostic (descriptive only)**: γ̂_transfer from the EXISTING
-  G3a 0.5B per-position dumps (5 corpora), same estimators; compared with
-  from-scratch γ̂ per corpus. No new pretrained runs; no cross-family
-  claims; G3 numeric cross-language inference stays barred (PREREG §6).
+## 1. Questions, estimands, non-claims
 
-Hypotheses on the trail (registered at adoption): H2 β_corr(lean) <
-β_corr(python) (slower correlation decay in formal code); H3 α̂_D ≈
-γ̂/(2·β_corr) per language (theory transfers) with predeclared failure
-readings (THEORY.md §3/§6); H4 α_D(lean) > α_D(python) if H2 and the γ
-ordering both hold.
+Per corpus scope (pooled language mixture; per-repo strata >= 5 MB):
 
-Relationship to sibling lanes (following DIRECT_SCALING_STUDY §0's
-pattern): V2 (DESIGN_V2.md) measures repository-context sufficiency on
-fixed targets; DIRECT (DIRECT_SCALING_STUDY.md, P0-frozen 2026-08-09,
-branches codex/direct-scaling-*) tests the essay's context-position proxy
-with pretrained checkpoints. Both declare every quantity model-relative
-(L = H + KL) and neither trains models nor measures corpus-intrinsic
-statistics. This arm shares corpora and evidence discipline with both and
-shares NO estimand and NO claims: its confirmatory path contains no
-pretrained checkpoint anywhere. Notation: this arm's correlation exponent
-is always written **β_corr** in outputs and prose, never bare β, to avoid
-collision with DIRECT's β_position_*/β_paired_* coefficients; the entropy
-exponent is always **γ**, never "beta" (the legacy G3 column name).
+- **β̂_corr** — DOC-INTERIOR sequential correlation decay: the declared
+  estimand is the decay of ‖C(n)‖_op computed from within-document byte
+  pairs, i.e. sequential structure net of document identity. The
+  between-document composition covariance ‖Σ_d w_d (p_d − p̄)(p_d − p̄)ᵀ‖_op
+  is REPORTED alongside as its own quantity, never folded into β_corr
+  (review B7: this is an estimand declaration, not a bias claim).
+- **Ĥ_k** — chain-rule conditional entropies, k ≤ 6, doc-interior,
+  Miller–Madow-corrected (§3).
+- **γ̂, Ĥ_∞** — intrinsic estimands of the corpus (entropy-decay exponent
+  and entropy rate), estimated MODEL-ASSISTEDLY (review C2) from the
+  largest-rung from-scratch byte models under the frozen §6 estimator;
+  reportable only if the §6 convergence rule passes.
+- **α̂_D** — data-limited exponent from the rung ladder (§6).
+- **The theory test (H3)**: per language mixture, compare α̂_D with
+  α_pred = γ̂/(2β̂_corr). Frozen criterion: SUPPORTED iff α̂_D's 95%
+  interval lies within [α_pred − Δ, α_pred + Δ], Δ = max(propagated 95%
+  half-width via THEORY.md Eq. 56 analog, 0.03); REFUTED iff the two 95%
+  intervals are disjoint AND the point gap exceeds Δ; else INDETERMINATE.
+  All three are real outcomes.
+- **H2**: β̂_corr(lean pool) < β̂_corr(python pool), doc-block-bootstrap
+  95% intervals disjoint. Registered as a claim about THESE locked corpus
+  mixtures; any "language" phrasing is exploratory (review C6; cpp is
+  single-repo and is always labeled so).
+- **H4** (conditional on H2 and the γ̂ ordering): α_D(lean pool) >
+  α_D(python pool), same interval rule. Uses INTRINSIC CS-2 γ̂ only —
+  never any legacy G3 quantity (review B3).
+- **Transfer diagnostic** (descriptive, per-corpus): γ̂_transfer from the
+  existing G3a 0.5B dumps under the §6 estimator, which may return "no
+  reportable exponent" (G3's own holdout verdict stands). NO cross-corpus
+  or cross-language ordering is read from it (review B3); PREREG §6's bar
+  on G3 numeric cross-language inference binds here.
+- **LaTeX arm (review B2)**: the raw arXiv TeX bundle is a self-budgeted
+  FORMAT DIAGNOSTIC per PREREG §2/§13 — excluded from matched-P, excluded
+  from every formality contrast and from H2/H3/H4. No Lean-vs-prose claim
+  is made from it. (A genuine prose corpus would require a PREREG
+  amendment; none is made here.)
+- Non-claims: nothing here is a "software/codebase scaling law"; no
+  security claim; no confirmatory language-level claim (repo/domain/
+  ecosystem confounds remain; review C6).
 
 ## 2. Data
 
-- Collection rule: identical to `prep_pools.py` (same POOLS map, exclusion
-  dirs, UTF-8 validity, ≥64-byte floor, SHA1 content dedup) but WITHOUT
-  caps/stride, WITH per-file repo labels and doc boundaries; the collector
-  imports `prep_pools.POOLS`/`EXCLUDE_DIRS` so the two cannot drift.
-- Doc discipline: every pair/k-gram statistic uses within-document pairs
-  only (mask by doc id at each lag); no cross-file leakage into C(n).
-- Strata: per-language pooled (headline) + per-repo where repo ≥ 5 MB.
-- Sensitivities: (a) matched-P — seeded (seed 13) whole-doc subsample of
-  every language to the smallest language total, same estimators; (b)
-  tokenizer scale — shared 8k BPE trained on the union pool, C(n) in token
-  units (CS-1b, cluster; byte-level remains headline since the from-scratch
-  models are byte-level and γ/β must share units).
+- Collection: identical rule to `prep_pools.py` (shared collector import;
+  dedup, exclusions, UTF-8, ≥64 B), ALL files, repo labels + doc
+  boundaries kept.
+- Scopes: pooled per language; per-repo strata ≥ 5 MB; matched-P
+  sensitivity over {lean, python, cpp} ONLY (seeded whole-doc subsample,
+  seed 13, to the smallest of the three; latex excluded per §1).
+- **Common-support sensitivity (review B7)**: all pair statistics
+  recomputed on the sub-corpus of documents ≥ 8192 B, so the document
+  mixture is IDENTICAL at every lag ≤ 4096; divergence between headline
+  and common-support β̂_corr is reported, and where they disagree beyond
+  the doc-block CI the common-support value is primary.
+- **Nested-subset sensitivity (review C4)**: one independent rung ladder
+  (rung seed 31 instead of 29) for lean; actual rung byte totals (from
+  the manifest, not nominal fractions) enter every analysis.
+- BPE robustness (CS-1b, cluster): shared 8k BPE on the union pool,
+  token-level C(n); byte-level remains headline (units must match CS-2's
+  byte models).
 
-## 3. Frozen estimator constants (CS-1, CPU)
+## 3. CS-1 estimator freeze (v1)
 
-- Lag set: {1..32} ∪ round(logspace(32→8192, 20 points)), deduped.
-- Marginals: left marginal over valid left positions, right marginal over
-  valid right positions at that lag (paper App. B, Eq. 44–46 analog).
-- Noise floor: the within-document byte-shuffle surrogate (seed 4242,
-  1 rep, same lag set, same masking) is THE floor — it is the empirical
-  null with identical marginals, document structure, and estimator. The
-  analytic random-matrix bound 2√V·√(p_max·q_max / N_pairs) is reported
-  as a diagnostic only (it matches the surrogate on uniform marginals —
-  selftest: 5.1e-5 predicted vs 5.0e-5 measured at N=6e6 — but is loose
-  under the skewed marginals of real text). A lag is VALID iff
-  ‖C(n)‖_op ≥ 3× the surrogate floor. β̂_corr fits use all valid lags
-  before the first run of ≥3 consecutive invalid lags (isolated dips are
-  structure — e.g. UTF-8 harmonics — not the death of the signal).
-- β̂_corr: OLS on (log n, log‖C(n)‖_op) over the valid range; uncertainty =
-  bootstrap over lag points (1000 resamples) AND over documents (200
-  resamples of the doc set, recomputing C(n)) — report both.
-- Broken power law: two-segment continuous piecewise-linear scan over
-  breaks at valid lags; adopt the break iff ΔBIC ≤ −6; then report
-  (β_corr_short, β_corr_long, n_break) alongside the global β̂_corr.
-- Periodicity: peaks flagged where |residual| > 2×MAD(residuals); peak
-  lags reported (expected: code line lengths; Lean multi-byte UTF-8
-  harmonics at n ∈ {2,3}).
-- H_k: plug-in k-gram entropies via chain rule with Miller–Madow
-  correction; report distinct-context counts and the correction magnitude
-  (estimator bias grows with k; k ≤ 6 only, and any k where the
-  correction exceeds 0.02 b/B is flagged unreliable).
+- Lag set: {1..32} ∪ round(logspace(33 → 8192, 20 points)), deduped.
+- C(n): doc-interior pairs; marginals from the masked left/right endpoint
+  sets at that lag; op norm + Frobenius + top-10 singular values.
+- **Floors (review B7)**: FIVE within-document permutations (seeds
+  4242..4246), identical masking and estimator; floor(n) = max of the
+  five op-norms; a lag is VALID iff ‖C(n)‖_op ≥ 1.5 × floor(n). The
+  permutation spread is reported. The analytic bound
+  2√V·√(p_max·q_max/N_pairs) is a reported diagnostic only.
+- **Fit window (review B7, selection-bias fix)**: window = [1, n_max]
+  where n_max is the last lag before the first run of ≥3 consecutive
+  INVALID lags. ALL lags in the window enter the OLS — valid and invalid
+  alike (dips are data; nothing inside the window is dropped on its
+  outcome).
+- **Adequacy gate**: no β̂_corr is reported unless n_max ≥ 10 (≥1 decade)
+  AND window OLS R² ≥ 0.7; otherwise the scope reports "no reportable
+  β_corr" with its curve (mirrors G3's fit discipline).
+- **Run-length diagnostic**: the Frobenius-norm slope β_corr_fro over the
+  SAME window is always reported next to the op-norm β̂_corr. The op norm
+  is a max statistic and can be dominated by long constant byte runs
+  (whitespace/heavy-tail segments — demonstrated on a Pareto renewal
+  synthetic in the selftest); op-vs-fro slope divergence beyond the
+  doc-block CI flags run-length domination, and the fro slope is then
+  primary for that scope (recorded, not silent).
+- **Broken law (review B8)**: continuous hinge
+  y = a + b₁·min(x − x₀, 0) + b₂·max(x − x₀, 0), x = log n, knot x₀
+  gridded over window lags; 4 parameters; adopted iff ΔBIC ≤ −6 vs the
+  single line; (β_corr_short, β_corr_long, n_break) reported.
+- **Peaks (review B8)**: |residual| > 2 × (1.4826 × MAD) from the single
+  OLS line over the window; peak lags reported with sign. Peaks are a
+  GATE-INDEPENDENT diagnostic — reported even when the adequacy gate
+  withholds β̂_corr (oscillation-dominated scopes are exactly where they
+  matter).
+- **H_k (review B8)**: H_cond(k) = H_k − H_{k−1} (joint k-gram entropies,
+  doc-interior); Miller–Madow-corrected conditional
+  H_cond_mm(k) = H_cond(k) + (m_k − m_{k−1})/(2N ln 2) with m_k the
+  distinct joint k-gram count and m_{k−1} the distinct context count;
+  UNRELIABLE iff |(m_k − m_{k−1})/(2N ln 2)| > 0.02 b/B. Corrected values
+  are what the summary exports.
+- **Uncertainty (review B8)**: document-BLOCK bootstrap, 500 blocks (docs
+  hashed to blocks by seeded shuffle), 200 resamples with block-resample
+  indices fixed across lags (coherent curves), applied to pooled, matched,
+  AND per-repo scopes (100 resamples for strata); reported explicitly as
+  a block bootstrap. Lag-point bootstrap (1000) secondary.
+- **Provenance (review B4)**: every output records git commit + dirty
+  flag + per-scope document-manifest SHA256 (over sorted doc SHA1s) +
+  the estimator constants; quick-mode writes `*.quick.json` (never the
+  canonical name); existing outputs are never overwritten without
+  `--force`.
 
-## 4. CS-2 training grid (from-scratch rungs; GPU, pilot scale)
+## 4. CS-2 training freeze (v1)
 
-- Model: 10m byte-GPT (`train_scratch.py`), byte vocab 256, 1 tok = 1 B.
-- Rungs: P = pool × {1/64, 1/32, 1/16, 1/8, 1/4, 1/2, 1} (whole-doc seeded
-  subsets, nested: each rung's docs ⊂ next rung's).
-- Context lengths: T ∈ {512, 4096} bytes (both required for the envelope
-  α̂_D); seeds {0,1,2} at rungs ≤ 1/16, seed {0} above.
-- Hyperparameters: lr × epochs grid at the SMALLEST rung
-  (lr ∈ {3e-4, 1e-3, 3e-3} × epochs ∈ {1, 2, 4}); winner carried forward
-  rung-to-rung with a one-step spot-check at each rung (Kim-et-al local
-  optimality, as in the paper App. E); batch fixed by memory.
-- Capacity guard (paper protocol): at the largest rung, a 30m model must
-  not beat the tuned 10m by > 0.01 b/B on val; if it does, the affected
-  language escalates to 30m for its top rungs (recorded, not silent).
-- Outputs per run: final-val per-position NLL CSV (existing schema) +
-  val-loss ledger → results_cs/runs/.
-- Cluster: single-GPU L40S jobs, `mit_normal_gpu`, resumable; ~4 langs ×
-  7 rungs × 2 T × (1–3 seeds) ≈ 70–90 runs, minutes→~2 h each — well
-  inside one night of the normal partition.
+- Model: 10m byte-GPT (`train_scratch.py`), vocab 256, 1 tok = 1 B.
+- Context arms: T = 4096 (PRIMARY) and T = 512, trained separately. The
+  learned-positional-parameter delta (~1.15M) is disclosed; sensitivity
+  (review B9): the T=4096 lean model evaluated with 512-byte doc-reset
+  windows vs the T=512 lean model, reported side by side. α̂_D's primary
+  curve is the T=4096 arm; the envelope across both T is a sensitivity.
+- Rungs: nested whole-doc byte-prefix boundaries (cs2_pools manifest),
+  fractions {1/64 … 1}; ACTUAL bytes recorded and used in fits.
+- **Seeds {0,1,2} at EVERY rung** (review B1); seed is the torch/np init
+  and batch-order seed.
+- **Eval (review B9)**: the final per-position NLL dump uses DOC-RESET
+  windows from the val manifest (`--val-manifest`): every document scored
+  from its own start; positions are within-document context lengths; doc
+  id recorded. L_n and L(P) are therefore doc-interior, matching §1's
+  estimand declarations. (Training batches still cross concatenation
+  joins — a standard-practice model-side choice, disclosed, affecting
+  the model not the estimator.)
+- **HP state machine (review B9, frozen)**: metric = final val b/B
+  (doc-reset), seed 0, T = 4096. Rung 1: full grid lr ∈ {3e-4, 1e-3,
+  3e-3} × epochs ∈ {1, 2, 4}. Rung r > 1: evaluate incumbent plus
+  neighbors {lr×3, lr/3} × {epochs, epochs×2} (5 runs); the winner is the
+  new incumbent. Seeds 1–2 and the T=512 arm reuse the per-rung
+  incumbent. All HP runs are recorded; none is deleted.
+- **Capacity guard (review B9)**: at the largest rung, a tuned 30m run
+  (seed 0, T=4096, incumbent HP with the rung-1-style neighbor check)
+  must not beat 10m by > 0.01 b/B; if it does, the language gets a
+  COMPLETE separate 30m ladder (all rungs, all seeds) and the 10m ladder
+  is reported as the undersized arm — curves are never spliced.
+- Grid arithmetic (review C5): per language ≈ 9 + 6×5 HP runs + 7×2×3
+  ladder runs + 1 capacity run ≈ 82; × 3 matched languages + latex
+  diagnostic ladder (seeds {0,1,2}, no formality claims) + the lean
+  rung-seed-31 sensitivity ladder ≈ **~350 runs**, each minutes→~2 h on
+  one L40S. `mit_normal_gpu`, array-throttled.
 
-## 5. Reveal sequencing (order-of-operations discipline)
+## 5. Sequencing (v1 — what is and is not blind; review B10)
 
-1. CS-1 corpus statistics computed and COMMITTED (β̂_corr per language) before
-   any CS-2 training begins. (Statistics precede model outcomes; no blind
-   needed, but the commit fixes β̂ against later temptation.)
-2. CS-2 runs; from the LARGEST rung only, γ̂ and Ĥ_∞ are estimated and the
-   prediction α_D^pred = γ̂/(2β̂_corr) per language is COMMITTED in a
-   registration commit BEFORE any cross-rung envelope/L(P) analysis is
-   executed or plotted (`analyze_cs.py` enforces the two-phase split:
-   `--phase gamma` refuses to read more than the largest rung;
-   `--phase envelope` refuses to run unless the registration commit for
-   that language exists and is clean in git).
-3. Only then is α̂_D revealed and compared. The whole first pass is
-   labeled EXPLORATORY regardless (same data trained the estimates);
-   the confirmatory replication path is a second, disjoint corpus set
-   per language (e.g. The Stack v2 slices for python/cpp; Lean Lake
-   packages held out of the lean pool) with the SAME frozen constants.
+0. `analyze_cs.py` is frozen, selftested, and COMMITTED before any ladder
+   run; its constants are §6's.
+1. CS-1 canonical run (cluster, full clones, v1 estimator) committed;
+   **β̂_corr registration commit**: all languages simultaneously, binding
+   the lang_stats artifact hash, code commit, and constants.
+2. CS-2 runs (HP walk + ladder + capacity guard).
+3. **γ̂ + prediction registration commit** BEFORE the envelope phase:
+   `analyze_cs.py --phase gamma` reads ONLY the top-two-rung artifacts
+   (top rung for the estimate, second for the §6 convergence rule),
+   writes the per-language {γ̂, Ĥ_∞, β̂_corr, α_pred} registration with
+   input hashes; the commit is pushed. `--phase envelope` refuses to run
+   unless that registration file is committed, clean, and byte-identical
+   to HEAD's blob.
+4. Envelope + collapse (§6), comparison under §1's frozen criterion.
+5. **Honesty statement**: per-rung HP tuning and training logs expose val
+   losses along the way, so steps 2–4 are an ORDERING discipline, not
+   blindness; the registration commits bind what was derived from what,
+   and the ENTIRE first pass is EXPLORATORY by declaration. The
+   confirmatory pass is a disjoint-corpus replication with this exact
+   frozen pipeline; its corpora are named and manifested at CS-3 (python/
+   cpp: held-out Stack-v2 slices; lean: Lake packages disjoint from the
+   pool) — "named at CS-3" means no confirmatory claim exists until that
+   registration exists.
 
-## 6. Gates
+## 6. Analysis freeze (v1; reviews B5, B6)
 
-- **CS-0 adoption**: fresh-context adversarial review of this document +
-  THEORY.md; verdict + fixes recorded in the adoption commit; PREREG §13
-  entry appended at adoption (PREREG changes are review boundaries).
-- **CS-1 stats**: `lang_stats.py` run (local first look, cluster
-  canonical with full clone set); committed JSON/CSV + summary; β̂_corr
-  registration commit.
-- **CS-1b**: BPE-tokenized C(n) sensitivity (cluster, CPU).
-- **CS-2 pilot**: smallest-rung HP grid + one full rung ladder for ONE
-  language (lean), reviewed for optimizer health (val curves monotone,
-  no divergence) before the multi-language fan-out.
-- **CS-3 full grid**: the ≈90-run fan-out. Compute is modest but this is
-  the arm's main GPU spend; launches only after CS-2 pilot review.
-- **CS-4 analysis**: two-phase analyze_cs per §5; figures; writeup
-  integration.
+All estimators below are THIS ARM'S (adapted from the paper's protocols
+but frozen here; the paper's own γ protocol fits a fixed small-n window of
+the largest-P curve and grids per-n asymptotes along the P axis — ours
+differ and are not attributed to it).
 
-## 7. Compute & storage
+- **L_n**: mean doc-reset NLL at within-doc position n (1 tok = 1 B),
+  averaged over seeds; per (language, T, rung).
+- **γ̂ / Ĥ_∞** (largest rung, T=4096): window n ∈ [4, 64]. Convergence
+  rule: seed-mean L_n of the top rung and of the second rung must agree
+  within 0.02 b/B over the window, else "γ̂ not reportable — curve still
+  data-limited". Estimator: grid H ∈ [0, min_n L_n] step 0.005; OLS of
+  log(L_n − H) on log n over the window; H* maximizes R²; γ̂ = −slope,
+  Ĥ_∞ = H*. Uncertainty: seed triplet spread × window sensitivity
+  ([4,32] and [8,128] refits); reported as an interval envelope.
+- **Collapse (review B5)**: PRIMARY is the shifted form
+  (L_n(P) − Ĥ_∞)·n^γ̂ vs P/n^(2β̂_corr) over n ∈ [4, 64] × all rungs;
+  the raw published form (L_n·n^γ) is a labeled replication sensitivity
+  only. Collapse quality metric: interpolate each rung's shifted curve
+  onto a 20-point common log grid; metric = mean cross-rung variance ÷
+  variance of the pooled master curve (smaller is better); reported as a
+  DESCRIPTIVE number with a (γ, β) sensitivity sweep reproducing the
+  paper's qualitative deterioration figures. No joint (γ, β) estimator
+  claim (the paper defines none; review B6).
+- **α̂_D**: PRIMARY = OLS slope of log(L(P) − Ĥ_∞) vs log P, where L(P)
+  = seed-mean overall doc-reset val b/B at T=4096, over rungs with
+  L(P) − Ĥ_∞ ≥ 0.02 (asymptote-contaminated rungs excluded by this
+  frozen rule, not by eye). Sensitivities: envelope across T; first-m
+  sweep (m = 4..7); leave-one-rung-out spread; seed spread; RAW
+  (unshifted) envelope slope as the replication sensitivity. If fewer
+  than 4 rungs survive the shift rule, α̂_D is "not reportable".
+- **Regime gates (review B6)**: (a) fast-learning check — δ_n per the
+  paper's §5 protocol (grid H_n along the P axis per n ∈ {1..12}; δ_n =
+  −slope of log(L_n(P) − H_n)); report min_n δ_n against γ̂/(2β̂_corr);
+  if min δ_n < γ̂/(2β̂_corr), the operative prediction becomes
+  min{δ, γ/2β} (Eq. 40) and H3 is evaluated against it (with the
+  boundary-case log correction noted); (b) horizon check — verify
+  n*(P_max) ≪ T via the CS-1 floor-crossing constant (P*_n ≈ n^{2β̂}
+  scaled at the measured detectability point); (c) capacity check — §4's
+  guard. Each gate's failure reading is predeclared in §8.
+- **δ-report**: δ_n values and their fit windows are part of the arm's
+  outputs (they are the paper's second mechanism and diagnose WHERE code
+  deviates, which is a finding either way).
 
-CS-1: CPU-only, ≈30–60 min/language (local M5 or one cluster CPU node);
-outputs < 5 MB. CS-2/3: ≈70–90 single-L40S runs; checkpoints discarded,
-only NLL CSVs + ledgers kept (< 200 MB total on POOL). No preemptable
-partitions (trainings not requeue-safe).
+## 7. Gates
+
+- **CS-0 adoption**: this v1 re-reviewed (fresh-context); verdict +
+  fixes recorded in the adoption commit; PREREG §13 entry + §0 G6
+  statement land there.
+- **CS-1**: canonical cluster stats under v1 + registration commit.
+- **CS-1b**: BPE sensitivity (cluster, CPU).
+- **CS-2**: HP walk + pilot ladder (lean) reviewed for optimizer health;
+  then the full fan-out (§4). Runs under the CS source-clean rule.
+- **CS-3**: replication/scale step — HUMAN GATE (named disjoint corpora
+  with manifests; any 30m escalation ladders; any model-family widening).
+- **CS-4**: analysis per §6; figures; writeup integration.
 
 ## 8. Threats and predeclared readings
 
-- C(n) non-power-law/oscillatory for code → fit regimes + peaks are the
-  finding, not a failure; β_short vs β_long both enter the α_D prediction
-  as a sensitivity band.
-- H_n non-power-law (curvature in log-log) → report curvature diagnostic;
-  the collapse scan over (γ, β) is the sharper instrument and can reject
-  the ansatz family wholesale — that outcome = "code sits outside the
-  paper's universality class", reportable.
-- Slow-learning regime (α̂_D = δ < γ/(2β̂)) → measure δ_n (paper §5
-  protocol) and report the regime per language.
-- Byte-level vocabulary artifacts (UTF-8 harmonics in Lean) → peaks
-  reported; CS-1b BPE sensitivity bounds the tokenization-scale effect.
-- Repo-composition confound in "language" pools → per-repo strata always
-  shown; language claims labeled with composition.
-- Undertuned rungs fake curvature in L(P) → §4 HP protocol + optimizer
-  health review at CS-2.
+1. C(n) non-power-law / oscillatory → hinge + peaks are findings;
+   β_corr_short/long enter H3's prediction as a sensitivity band; if no
+   adequate window exists (§3 gate), H3 is WITHHELD for that scope, never
+   patched from a band (review B7).
+2. Document-mixture drift across lags → common-support sensitivity is
+   primary on disagreement (§2).
+3. Between-document composition covariance → excluded from β_corr by
+   declaration, reported separately; large values flag corpus
+   heterogeneity as its own result.
+4. H_n non-power-law (log-log curvature) → γ̂ window sensitivities +
+   collapse-metric deterioration; "code sits outside the paper's ansatz
+   family" is a reportable outcome.
+5. Slow-learning regime (min δ_n < γ/2β) → H3 evaluated against
+   min{δ, γ/2β}; the regime label per language is itself a headline
+   result.
+6. UTF-8 harmonics (lean lags 2–4) → peaks reported; CS-1b BPE pass
+   bounds tokenization-scale effects.
+7. Repo-composition confound → per-repo strata always shown; claims
+   attach to locked mixtures (§1).
+8. HP-walk outcome visibility → §5 honesty statement; first pass
+   exploratory; confirmatory only via CS-3 replication.
+9. Positional-parameter confound between T arms → §4 sensitivity; α̂_D
+   primary is single-T.
+10. Undertuned rungs faking curvature → §4 state machine; optimizer
+    health review at CS-2 pilot; all HP runs retained.
