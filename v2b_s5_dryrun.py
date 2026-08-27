@@ -49,6 +49,11 @@ STUB_GENERATOR_NOTE = "stub-not-a-model; deterministic dry-run bodies"
 STUB_TARGET_FAIL = "STUB_S5_TARGET_FAIL"
 STUB_SUFFIX_FAIL = "STUB_S5_SUFFIX_FAIL"
 STUB_TYPE_DRIFT = "STUB_S5_TYPE_DRIFT"
+# Post-GO abnormal termination without a terminal record: for a baseline
+# phase this is exactly the §15.A21 HARNESS-INVALID boundary (infrastructure
+# failure, never a model zero), which the complete producer must refuse to
+# finalize.
+STUB_HARNESS_CRASH = "STUB_S5_HARNESS_CRASH"
 _SUFFIX_FAIL_LITERAL = 666
 
 _SYNTH_HEX40 = "1" * 40
@@ -69,6 +74,7 @@ SUFFIX_ROLES = ("prefix", "header", "suffix", "bundle")
 TARGET_FAIL = "STUB_S5_TARGET_FAIL"
 SUFFIX_FAIL = "STUB_S5_SUFFIX_FAIL"
 TYPE_DRIFT = "STUB_S5_TYPE_DRIFT"
+HARNESS_CRASH = "STUB_S5_HARNESS_CRASH"
 SUFFIX_FAIL_LITERAL = 666
 
 
@@ -166,6 +172,8 @@ def main():
         await_authorization(stream, nonce)
         emit(nonce, {"schema": OUTPUT_SCHEMA,
                      "record_type": "phase-go-accepted", "mode": "target"})
+        if HARNESS_CRASH in body:
+            raise SystemExit(3)
         if TARGET_FAIL in body:
             emit(nonce, {"schema": OUTPUT_SCHEMA, "record_type": "target",
                          "status": "verification-failure",
@@ -433,8 +441,8 @@ def write_stub_generation_table(root, target_key, arms, n_draws, *,
 
 
 __all__ = [
-    "STUB_GENERATOR_NOTE", "STUB_MODEL_BINDING", "STUB_SUFFIX_FAIL",
-    "STUB_TARGET_FAIL", "STUB_TOOLCHAIN_PIN", "STUB_TYPE_DRIFT",
-    "build_stub_toolchain", "build_toy_workspace", "default_stub_outcomes",
-    "stub_body", "write_stub_generation_table",
+    "STUB_GENERATOR_NOTE", "STUB_HARNESS_CRASH", "STUB_MODEL_BINDING",
+    "STUB_SUFFIX_FAIL", "STUB_TARGET_FAIL", "STUB_TOOLCHAIN_PIN",
+    "STUB_TYPE_DRIFT", "build_stub_toolchain", "build_toy_workspace",
+    "default_stub_outcomes", "stub_body", "write_stub_generation_table",
 ]
