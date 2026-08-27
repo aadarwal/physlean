@@ -60,6 +60,7 @@ HP_EPOCHS = [1, 2, 4]
 CANON_DEVICE = "cuda"
 CANON_STEP_TOKENS = 49152
 CANON_MB = {"10m": 32, "30m": 24}
+N_PARAMS_BAND = {"10m": (8e6, 14e6), "30m": (24e6, 40e6)}
 REG_PATH = os.path.join("results_cs", "registration_gamma.json")
 _POOL_HASHES = {}
 
@@ -88,11 +89,14 @@ def run_identity_ok(r, cs2_dir=None):
     step_tokens and per-size micro-batch, finite loss; and when a
     cs2_dir is given, the recorded train/val/manifest hashes must match
     the CURRENT pool files (mixed-corpus artifacts are not evidence)."""
+    lo, hi = N_PARAMS_BAND.get(r.get("size"), (0, float("inf")))
     if r.get("device") != CANON_DEVICE \
             or r.get("step_tokens") != CANON_STEP_TOKENS \
             or r.get("micro_batch") != CANON_MB.get(r.get("size")) \
             or not isinstance(r.get("final_val_bpb"), (int, float)) \
-            or not math.isfinite(r["final_val_bpb"]):
+            or not math.isfinite(r["final_val_bpb"]) \
+            or not (lo <= (r.get("n_params") or 0) <= hi) \
+            or not r.get("git_commit") or r.get("git_dirty") is not False:
         return False
     if cs2_dir is not None:
         t, v, m = pool_hashes(cs2_dir, r.get("lang", ""))
@@ -112,7 +116,12 @@ def load_runs(runs_dir, size="10m", cs2_dir=None):
             continue
         r["_path"] = p
         out.append(r)
-    return out
+    # ambiguous run names (round-9): two files claiming one run are
+    # both excluded — their absence then withholds via seed gates
+    names = {}
+    for r in out:
+        names.setdefault(r["run"], []).append(r)
+    return [v[0] for v in names.values() if len(v) == 1]
 
 
 def rung_map(cs2_dir, lang):
@@ -146,7 +155,8 @@ def pooled_binned(runs, nll_dir, lo=GAMMA_LO, hi=GAMMA_HI,
     used = []
     for r in runs:
         dump = os.path.join(nll_dir, f"{r['run']}__{r['lang']}__val.csv.gz")
-        if not os.path.exists(dump):
+        if not os.path.exists(dump) or not r.get("dump_sha256") \
+                or sha256_file(dump) != r["dump_sha256"]:
             return None, None, used
         s, c = curve_sums(dump)
         S += s
@@ -392,6 +402,17 @@ def verify_incumbent(hp, lang, frac, runs_dir, bounds, cs2_dir):
                     abs(inc.get("val_bpb", 9e9) - best[0]) > 1e-9:
                 out = (f"incumbent at {frac:.6f} disagrees with the "
                        f"recomputed winner")
+            elif inc.get("run") not in cands or \
+                    inc.get("run_sha256") != cands.get(inc.get("run")):
+                out = (f"incumbent run at {frac:.6f} is not bound to a "
+                       f"hashed candidate artifact")
+            else:
+                wr = json.load(open(os.path.join(
+                    runs_dir, inc["run"] + ".json")))
+                if (wr["final_val_bpb"], round(wr["lr"], 8),
+                        wr["epochs"]) != best:
+                    out = (f"named winner at {frac:.6f} is not the "
+                           f"recomputed best artifact")
     _HP_VERIFIED[key] = out
     return out
 
@@ -435,6 +456,12 @@ def phase_gamma(args):
     except OSError:
         commit = None
     reg = dict(schema="cs_registration_gamma_v2", commit=commit,
+               evidence=dict(
+                   runs_dir=os.path.relpath(args.runs_dir, BASE),
+                   nll_dir=os.path.relpath(args.nll_dir, BASE),
+                   cs2_dir=os.path.relpath(args.cs2_dir, BASE),
+                   hp=getattr(args, "hp", None),
+                   capacity=getattr(args, "capacity", None)),
                stats_file=args.stats, stats_sha256=sha256_file(args.stats),
                constants=dict(window=[GAMMA_LO, GAMMA_HI], bins=GAMMA_BINS,
                               conv_tol=CONV_TOL, h_step=H_STEP,
@@ -611,6 +638,17 @@ def phase_envelope(args):
         sys.exit("REFUSED: registration not committed-clean-identical to "
                  "HEAD (ARM_CS §5)")
     reg = json.load(open(os.path.join(BASE, args.reg)))
+    # round-9: the envelope may only read the EXACT evidence sources the
+    # registration was produced from — no post-registration substitution
+    ev = reg.get("evidence") or {}
+    mine = dict(runs_dir=os.path.relpath(args.runs_dir, BASE),
+                nll_dir=os.path.relpath(args.nll_dir, BASE),
+                cs2_dir=os.path.relpath(args.cs2_dir, BASE),
+                hp=getattr(args, "hp", None),
+                capacity=getattr(args, "capacity", None))
+    if ev != mine:
+        sys.exit(f"REFUSED: evidence sources differ from registration "
+                 f"({ev} != {mine})")
     # round-3 B4 fix: re-verify every input the registration bound
     for lang, rl in reg["langs"].items():
         for rel, sha in (rl.get("input_sha256") or {}).items():
@@ -720,7 +758,8 @@ def phase_envelope(args):
             for r in rs:
                 d = os.path.join(args.nll_dir,
                                  f"{r['run']}__{r['lang']}__val.csv.gz")
-                if not os.path.exists(d):
+                if not os.path.exists(d) or not r.get("dump_sha256") \
+                        or sha256_file(d) != r["dump_sha256"]:
                     ok = False
                     break
                 s, c = curve_sums(d, 128)
@@ -948,19 +987,8 @@ def _fake_lang(tmp, lang, bounds, g, H, a, delta, seeds=(0, 1, 2),
         for s in seeds:
             LP = H + 39.0 * P ** -a
             run = f"scratch-10m-{lang}-s{s}-r{ri}"
-            json.dump(dict(run=run, lang=lang, size="10m", seed=s,
-                           ctx=4096, lr=1e-3, epochs=2, doc_reset=True,
-                           train_bytes=P, final_val_bpb=LP,
-                           device="cuda", micro_batch=32,
-                           step_tokens=49152,
-                           train_sha256=pool_sha[0],
-                           val_sha256=pool_sha[1],
-                           manifest_sha256=pool_sha[2],
-                           tokens_seen=P),
-                      open(os.path.join(runs_d, run + ".json"), "w"))
-            with gzip.open(os.path.join(nll_d,
-                                        f"{run}__{lang}__val.csv.gz"),
-                           "wt") as f:
+            dump_p = os.path.join(nll_d, f"{run}__{lang}__val.csv.gz")
+            with gzip.open(dump_p, "wt") as f:
                 f.write("win,doc,ctxb,blen,tok,nll\n")
                 rows = []
                 for w in range(100):
@@ -970,6 +998,18 @@ def _fake_lang(tmp, lang, bounds, g, H, a, delta, seeds=(0, 1, 2),
                         rows.append(f"{w},0,{n},1,65,"
                                     f"{max(ln_bits, 0.01) * LN2:.5f}")
                 f.write("\n".join(rows) + "\n")
+            json.dump(dict(run=run, lang=lang, size="10m", seed=s,
+                           ctx=4096, lr=1e-3, epochs=2, doc_reset=True,
+                           train_bytes=P, final_val_bpb=LP,
+                           device="cuda", micro_batch=32,
+                           step_tokens=49152, n_params=10_500_000,
+                           git_commit="feedface", git_dirty=False,
+                           dump_sha256=sha256_file(dump_p),
+                           train_sha256=pool_sha[0],
+                           val_sha256=pool_sha[1],
+                           manifest_sha256=pool_sha[2],
+                           tokens_seen=P),
+                      open(os.path.join(runs_d, run + ".json"), "w"))
 
 
 def selftest():
@@ -1027,6 +1067,9 @@ def selftest():
                        final_val_bpb=val, device="cuda",
                        micro_batch={"10m": 32, "30m": 24}[size],
                        step_tokens=49152,
+                       n_params={"10m": 10_500_000,
+                                 "30m": 30_000_000}[size],
+                       git_commit="feedface", git_dirty=False,
                        train_sha256=pool_sha[lang_][0],
                        val_sha256=pool_sha[lang_][1],
                        manifest_sha256=pool_sha[lang_][2],
@@ -1156,7 +1199,8 @@ def selftest():
                    size="10m", seed=0, ctx=512, lr=1e-3, epochs=2,
                    doc_reset=True, train_bytes=bounds[0],
                    final_val_bpb=2.0, device="cuda", micro_batch=32,
-                   step_tokens=49152,
+                   step_tokens=49152, n_params=10_500_000,
+                   git_commit="feedface", git_dirty=False,
                    train_sha256=pool_sha["lean"][0],
                    val_sha256=pool_sha["lean"][1],
                    manifest_sha256=pool_sha["lean"][2],
@@ -1196,6 +1240,17 @@ def selftest():
     reg2 = json.load(open(os.path.join(tmp, "reg.json")))
     assert "reason" in reg2["langs"]["lean"] and \
         "seed" in reg2["langs"]["lean"]["reason"], reg2["langs"]["lean"]
+    # evidence-source substitution must refuse (round-9)
+    ns_sub = argparse.Namespace(runs_dir=os.path.join(tmp, "elsewhere"),
+                                nll_dir=ns.nll_dir, cs2_dir=ns.cs2_dir,
+                                reg=ns.reg, skip_git_check=True,
+                                force=True, capacity=cap_rel, hp=hp_rel)
+    os.makedirs(ns_sub.runs_dir, exist_ok=True)
+    try:
+        phase_envelope(ns_sub)
+        raise AssertionError("envelope accepted substituted evidence")
+    except SystemExit as ex:
+        assert "evidence sources differ" in str(ex.code), ex.code
     # refusal on uncommitted registration
     ns3 = argparse.Namespace(runs_dir=ns.runs_dir, nll_dir=ns.nll_dir,
                              cs2_dir=ns.cs2_dir, reg=ns.reg,

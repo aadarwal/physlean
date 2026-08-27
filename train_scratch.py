@@ -337,11 +337,23 @@ def main():
                 total_bytes=int(len(val)), n_tokens=int(len(val)),
                 vocab_size=256, overall_bpb=final)
     json.dump(meta, open(dump + ".meta.json", "w"), indent=1)
+    import subprocess as _sp
+    try:
+        _commit = _sp.run(["git", "rev-parse", "HEAD"], cwd=BASE,
+                          capture_output=True, text=True).stdout.strip()
+        _dirty = bool(_sp.run(
+            ["git", "status", "--porcelain", "--", ".",
+             ":(exclude)results_cs", ":(exclude)results_v2"],
+            cwd=BASE, capture_output=True, text=True).stdout.strip())
+    except OSError:
+        _commit, _dirty = None, None
     result = dict(run=run, lang=args.lang, size=args.size, seed=args.seed,
                   n_params=n_params, ctx=args.ctx, lr=lr,
                   epochs=args.epochs, doc_reset=bool(args.val_manifest),
                   device=device, micro_batch=mb,
                   step_tokens=args.step_tokens,
+                  git_commit=_commit, git_dirty=_dirty,
+                  dump_sha256=fsha(dump),
                   train_sha256=fsha(os.path.join(
                       args.pool_dir, f"{args.lang}_train.bin")),
                   val_sha256=fsha(os.path.join(
