@@ -1102,6 +1102,8 @@ def _load_production_inputs(sample_path, implementation_freeze_path,
     freeze_binding, freeze = artifact_binding(
         implementation_freeze_path, FREEZE_SCHEMA)
     _validate_freeze(freeze, freeze_binding, protocol)
+    from freeze_v2b_nll_confirmation import validate_live_freeze
+    validate_live_freeze(freeze, implementation_freeze_path)
     # Import only the reduced-gate validator.  Its production fragment/draw
     # entry points remain unreachable from this module.
     from prepare_v2b_nll_confirmation_gate import validate_reduced_gate

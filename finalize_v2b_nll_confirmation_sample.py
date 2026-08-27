@@ -406,6 +406,9 @@ def prepare(source_gate_path, candidates_path, pilot_sample_path,
                                             BOUND_SAMPLE_SCHEMA)
     implementation_freeze_binding, implementation_freeze = artifact_binding(
         implementation_freeze_path, IMPLEMENTATION_FREEZE_SCHEMA)
+    from freeze_v2b_nll_confirmation import validate_live_freeze
+    validate_live_freeze(implementation_freeze,
+                         implementation_freeze_path)
     inputs = (
         ("candidates", candidates_path, candidate_binding),
         ("pilot_sample", pilot_sample_path, pilot_binding),

@@ -146,6 +146,8 @@ def load_implementation_freeze(path, protocol):
     if value.get("study_id") != protocol["study_id"] \
             or value.get("protocol") != protocol_record():
         raise V2BError("implementation freeze study/protocol binding drift")
+    from freeze_v2b_nll_confirmation import validate_live_freeze
+    validate_live_freeze(value, absolute)
     return value, dict(path=absolute, schema=schema, sha256=digest)
 
 

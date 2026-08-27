@@ -413,6 +413,8 @@ def prepare(salt_path, receipt_path, freeze_path, sample_path, assembly_path,
     freeze_binding, freeze = _artifact_row(
         freeze_path, IMPLEMENTATION_FREEZE_SCHEMA)
     _validate_freeze(freeze)
+    from freeze_v2b_nll_confirmation import validate_live_freeze
+    validate_live_freeze(freeze, freeze_path)
     sample_binding, sample = _artifact_row(sample_path, SAMPLE_SCHEMA)
     _validate_predecessor(sample, SAMPLE_SCHEMA, freeze_binding,
                           "bound sample")

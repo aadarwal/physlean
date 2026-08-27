@@ -1244,6 +1244,8 @@ def prepare(model_id, assembly_path, sample_path, implementation_freeze_path,
         raise V2BError("confirmation protocol raw digest drift")
     freeze_binding, freeze = artifact_binding(
         implementation_freeze_path, IMPLEMENTATION_FREEZE_SCHEMA)
+    from freeze_v2b_nll_confirmation import validate_live_freeze
+    validate_live_freeze(freeze, implementation_freeze_path)
     sample_binding, sample = artifact_binding(
         sample_path, SAMPLE_SCHEMA_CONFIRMATION)
     gate, gate_digest = load_reduced_gate(source_gate_path, protocol_path)
