@@ -1,0 +1,192 @@
+{
+ "checks": {
+  "env-imports": {
+   "ok": true,
+   "detail": {
+    "torch": "2.13.0",
+    "transformers": "5.14.1",
+    "huggingface_hub": "1.27.0",
+    "numpy": "2.5.1",
+    "scipy": "1.18.0",
+    "pandas": "3.0.5"
+   }
+  },
+  "streams-nonzero": {
+   "ok": false,
+   "detail": "FileNotFoundError(2, 'No such file or directory')"
+  },
+  "stream-integrity": {
+   "ok": true,
+   "detail": "all pass"
+  },
+  "disk-headroom": {
+   "ok": false,
+   "detail": {
+    "path": "/Users/aadarwal/src/aadarwal/physlean",
+    "free_gb": 28,
+    "total_gb": 494,
+    "inodes_free": 275118600
+   }
+  },
+  "env-frozen": {
+   "ok": false,
+   "detail": {
+    "lock_ok": false,
+    "lock_problems": [
+     "accelerate: installed None != locked 1.14.0",
+     "cuda-bindings: installed None != locked 13.3.1",
+     "cuda-pathfinder: installed None != locked 1.6.0",
+     "cuda-toolkit: installed None != locked 13.0.3.0",
+     "nvidia-cublas: installed None != locked 13.1.1.3",
+     "nvidia-cuda-cupti: installed None != locked 13.0.85"
+    ],
+    "freeze_ok": false,
+    "freeze_detail": {
+     "only_in_freeze": [
+      "accelerate==1.14.0",
+      "cuda-bindings==13.3.1",
+      "cuda-pathfinder==1.6.0",
+      "cuda-toolkit==13.0.3.0",
+      "nvidia-cublas==13.1.1.3",
+      "nvidia-cuda-cupti==13.0.85"
+     ],
+     "only_live": [
+      "python-binary==f1c4ad59c4adf1e5dfb5e9f558f7b95e4d7a62387d4bb4572fcf84f42648fee3",
+      "torch-cuda==none"
+     ]
+    },
+    "env_fingerprint": "70a3e86ccfcb93a0"
+   }
+  },
+  "arxiv-validated": {
+   "ok": true,
+   "detail": "optional corpus absent \u2014 non-blocking (tri-state)"
+  },
+  "corpus-worktrees": {
+   "ok": false,
+   "detail": "FileNotFoundError(2, 'No such file or directory')"
+  },
+  "streams-inputs-current": {
+   "ok": false,
+   "detail": "FileNotFoundError(2, 'No such file or directory')"
+  },
+  "arm-feasibility-frozen": {
+   "ok": false,
+   "detail": "FileNotFoundError(2, 'No such file or directory')"
+  },
+  "battery-plumbing": {
+   "ok": false,
+   "detail": {
+    "errors": [],
+    "plumbing_pass": true,
+    "item_a_recomputed_ok": true,
+    "item_a_failures": [],
+    "item_a_stored_matches": true,
+    "production_chunk": 2048,
+    "f2_stats": {
+     "n": 8191,
+     "mean_signed": -5.0214402782493693e-08,
+     "mean_abs": 3.1806363208340387e-06,
+     "p50": 6.891787052154541e-07,
+     "p90": 1.0013580322265625e-05,
+     "p99": 2.4080276489257812e-05,
+     "max": 6.4849853515625e-05
+    },
+    "conservation": true,
+    "device": "cuda",
+    "source_tree_match": false,
+    "revisions_match": true,
+    "harness_env_match": false,
+    "e_designated_nonvacuous": true,
+    "e_corpus": "mathlib",
+    "e_eligible": 81
+   }
+  },
+  "source-clean": {
+   "ok": true,
+   "detail": "rc=0 clean"
+  },
+  "corpus-lock-complete": {
+   "ok": false,
+   "detail": "corpora_lock.json missing/unreadable: FileNotFoundError(2, 'No such file or directory')"
+  },
+  "arxiv-pins-strong": {
+   "ok": true,
+   "detail": "optional corpus absent \u2014 non-blocking (tri-state)"
+  },
+  "raw-inventory": {
+   "ok": true,
+   "detail": {
+    "artifacts": 0,
+    "quarantined": 0
+   }
+  },
+  "windows-and-masking-viability": {
+   "ok": false,
+   "detail": {}
+  },
+  "sentinel-artifacts-complete": {
+   "ok": false,
+   "detail": {
+    "verified": 0,
+    "missing": [
+     "q25c-0.5b__physlib__full_topo.csv.gz",
+     "q25c-0.5b__mathlib__full_topo.csv.gz",
+     "q25c-0.5b__qutip__full_topo.csv.gz",
+     "q25c-0.5b__sympy__full_topo.csv.gz",
+     "q25c-0.5b__geant4__full_topo.csv.gz",
+     "q25c-0.5b__physlib__clean_c2024_11.csv.gz",
+     "q25c-0.5b__mathlib__clean_c2024_11.csv.gz",
+     "q25c-0.5b__qutip__clean_c2024_11.csv.gz"
+    ],
+    "phase_variants_defined": 15
+   }
+  },
+  "models-small-mid-pinned": {
+   "ok": false,
+   "detail": {
+    "missing": [
+     "Qwen/Qwen2.5-Coder-1.5B",
+     "Qwen/Qwen2.5-Coder-3B",
+     "Qwen/Qwen2.5-Coder-7B",
+     "Qwen/Qwen3-1.7B-Base",
+     "Qwen/Qwen3-4B-Base",
+     "Qwen/Qwen3.5-2B-Base",
+     "Qwen/Qwen3.5-4B-Base"
+    ],
+    "unpinned": [],
+    "n_ok": 4
+   }
+  },
+  "expected-cells[expected_cells.json]": {
+   "ok": false,
+   "detail": {
+    "n": 152,
+    "frozen_n": 152,
+    "dup": false,
+    "missing_streams": [
+     "physlib/full_topo",
+     "mathlib/full_topo",
+     "qutip/full_topo",
+     "sympy/full_topo",
+     "geant4/full_topo",
+     "physlib/clean_c2024_11",
+     "mathlib/clean_c2024_11",
+     "qutip/clean_c2024_11"
+    ],
+    "drift": [
+     "snapshot not frozen: structural validation failed"
+    ]
+   }
+  },
+  "sentinel-reviewed": {
+   "ok": false,
+   "detail": "no signoff (FileNotFoundError(2, 'No such file or directory')) \u2014 run the G3a sentinel, review its evidence, then commit results_v2/sentinel_signoff.json"
+  },
+  "v2-pilot-reviewed": {
+   "ok": false,
+   "detail": "no signoff (FileNotFoundError(2, 'No such file or directory')) \u2014 complete G3.5 (V2-a extraction validation + V2-b pilot) \u2014 the adopted ordering puts the paired experiment before grid expansion, then commit results_v2/v2_pilot_signoff.json"
+  }
+ },
+ "gate": "g3b"
+}
