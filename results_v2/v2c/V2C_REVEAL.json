@@ -1,0 +1,3825 @@
+{
+ "amendment": {
+  "path": "results_v2/v2b/V2C_FEASIBILITY_AMENDMENT_DRAFT.md",
+  "provenance": "governance amended post-reveal",
+  "sha256": "49ff6d8f9650921eeb02d0e0e404fa7d991f277a020fe783a10d4b1bced7bc37"
+ },
+ "capacity_amendment": {
+  "path": "results_v2/v2b/V2C_CAPACITY_ELIGIBILITY_AMENDMENT.md",
+  "sha256": "28c3bf257cc0bc8114d2ad68f677f45c992c23d82879349f5f6bd3e4393e819c"
+ },
+ "claim_status": "confirmatory-with-post-pilot-amended-governance",
+ "disclosures": {
+  "anchor_provenance": "0.5 chosen post-reveal per the adopted amendment; sensitivity anchors predeclared",
+  "anchor_sensitivity": {
+   "mathlib4": {
+    "fam-803dabcb85dcbbc6": {
+     "0.2": {
+      "chosen_n": 369,
+      "df": 10,
+      "sigma_target": 0.10536244107870486,
+      "threshold_t_sum": 3.6003230000000004,
+      "verdict": "powered"
+     },
+     "0.8": {
+      "chosen_n": 40,
+      "df": 10,
+      "sigma_target": 0.10536244107870486,
+      "threshold_t_sum": 3.6003230000000004,
+      "verdict": "powered"
+     }
+    },
+    "fam-c1244fb5cec557f9": {
+     "0.2": {
+      "chosen_n": 355,
+      "df": 12,
+      "sigma_target": 0.4323253834468567,
+      "threshold_t_sum": 3.53503,
+      "verdict": "powered"
+     },
+     "0.8": {
+      "chosen_n": 40,
+      "df": 12,
+      "sigma_target": 0.4323253834468567,
+      "threshold_t_sum": 3.53503,
+      "verdict": "powered"
+     }
+    },
+    "fam-d244cb8adcd8ac2f": {
+     "0.2": {
+      "chosen_n": 355,
+      "df": 12,
+      "sigma_target": 0.31762204550991713,
+      "threshold_t_sum": 3.53503,
+      "verdict": "powered"
+     },
+     "0.8": {
+      "chosen_n": 40,
+      "df": 12,
+      "sigma_target": 0.31762204550991713,
+      "threshold_t_sum": 3.53503,
+      "verdict": "powered"
+     }
+    }
+   },
+   "sympy": {
+    "fam-163d7a185af3e7a0": {
+     "0.2": {
+      "chosen_n": null,
+      "df": 13,
+      "sigma_target": 0.07923094929118428,
+      "threshold_t_sum": 3.51054,
+      "verdict": "under-powered-at-cap"
+     },
+     "0.8": {
+      "chosen_n": 40,
+      "df": 13,
+      "sigma_target": 0.07923094929118428,
+      "threshold_t_sum": 3.51054,
+      "verdict": "powered"
+     }
+    },
+    "fam-5c63bceed013dfaf": {
+     "0.2": {
+      "chosen_n": null,
+      "df": 13,
+      "sigma_target": 0.028707268400836032,
+      "threshold_t_sum": 3.51054,
+      "verdict": "under-powered-at-cap"
+     },
+     "0.8": {
+      "chosen_n": 40,
+      "df": 13,
+      "sigma_target": 0.028707268400836032,
+      "threshold_t_sum": 3.51054,
+      "verdict": "powered"
+     }
+    },
+    "fam-fc4fc9505a53c188": {
+     "0.2": {
+      "chosen_n": null,
+      "df": 11,
+      "sigma_target": 0.03079246599693975,
+      "threshold_t_sum": 3.5644150000000003,
+      "verdict": "under-powered-at-cap"
+     },
+     "0.8": {
+      "chosen_n": 40,
+      "df": 11,
+      "sigma_target": 0.03079246599693975,
+      "threshold_t_sum": 3.5644150000000003,
+      "verdict": "powered"
+     }
+    }
+   }
+  },
+  "capacity_exclusions_total": 3,
+  "n_by_repo": {
+   "mathlib4": 52,
+   "sympy": 77
+  },
+  "structurally_ineligible_repos": [
+   "astropy",
+   "batteries",
+   "physlib"
+  ],
+  "threshold_sensitivity": {
+   "mathlib4": {
+    "0.5": 16384,
+    "0.7": 4096
+   },
+   "sympy": {
+    "0.5": 16384,
+    "0.7": 16384
+   }
+  }
+ },
+ "generator": {
+  "program": "finalize_v2c_reveal.py",
+  "source_commit": "ae2a773d19290105d226613dfa0ec9a5224d53aa",
+  "source_tree_hash": "bec6fffa8738281eb2916e55c5cb30abd2cab0cb2aede8c121cb82cc6e9c7aa3"
+ },
+ "plan": {
+  "sha256": "e79f1093d80d915563a2e05c436c538601272d79036e863a2954c6393f9eddd2"
+ },
+ "repos": {
+  "mathlib4": {
+   "bindings": {
+    "assembly": {
+     "path": "/orcd/pool/008/aadarwal/v2cmask-m/results_v2/v2c/assembly/v2c_job20151547_0_mathlib4.json",
+     "schema": "v2b_assembly_manifest_v2",
+     "sha256": "57697fbea01b1f0385f227259d10e5fb573236ac8e9358d1bd31723edb2c5861"
+    },
+    "battery": {
+     "sha256": "8e0be1ae64cc819903daa5d03c1f81b3491c293ee0484088b56331d3dc4ae574"
+    },
+    "completion": {
+     "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/c76229a7b309-57697fbea01b-mathlib4/complete.json",
+     "schema": "v2b_paired_nll_complete_v2",
+     "sha256": "a82950325150b43f98f517f40bbb40c334058d9a6192eb0cee7e2a21d622ab1a"
+    }
+   },
+   "capacity_exclusions": [],
+   "centering_by_contrast": {
+    "E1a": {
+     "fid": "fam-cd9047b7d21316d0",
+     "fsum_correction": -1.5860328923216522e-18,
+     "n_rows": 35,
+     "removed_mean_bpb": 0.44021535777815757,
+     "sign": 1,
+     "total_centering_bpb": 0.44021535777815757
+    },
+    "E1b": {
+     "fid": "fam-02a3e6a645462e68",
+     "fsum_correction": -9.79608551139844e-18,
+     "n_rows": 34,
+     "removed_mean_bpb": 0.0717451307440643,
+     "sign": 1,
+     "total_centering_bpb": 0.07174513074406429
+    },
+    "E2": {
+     "fid": "fam-2c34e3232e4d9b6f",
+     "fsum_correction": 4.758098676964957e-18,
+     "n_rows": 35,
+     "removed_mean_bpb": 0.3309837837729541,
+     "sign": 1,
+     "total_centering_bpb": 0.3309837837729541
+    }
+   },
+   "contrasts": {
+    "E1a": {
+     "budget_bytes": 16384,
+     "exploratory_positive_model_based_diagnostic": true,
+     "favorable_direction": "positive",
+     "holm_adjusted_pvalue": 7.701675784106127e-07,
+     "inference": {
+      "ci95_two_sided_bpb": [
+       0.2945827592960728,
+       0.5858479562602423
+      ],
+      "cluster_sizes": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ],
+      "degeneracy_floor_bpb": 2.842170943040401e-14,
+      "degrees_of_freedom": 34,
+      "inference_status": "available",
+      "lower_one_sided_95_bpb": 0.3191851946677501,
+      "n_modules": 35,
+      "n_targets": 35,
+      "standard_error_bpb": 0.07130910989431613,
+      "target_equal_mean_bpb": 0.44021535777815757,
+      "target_keys": [
+       "[\"Mathlib.Algebra.Module.LocalizedModule.Int\",\"IsLocalizedModule.finsetIntegerMultiple_image\"]",
+       "[\"Mathlib.Algebra.Star.Subalgebra\",\"StarAlgHom.ext_of_adjoin_eq_top\"]",
+       "[\"Mathlib.Analysis.Asymptotics.Defs\",\"Asymptotics.IsBigO.congr_left\"]",
+       "[\"Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric\",\"IsGreatest.nnnorm_cfcₙ_nnreal\"]",
+       "[\"Mathlib.Analysis.Convex.Topology\",\"Convex.strictConvex\"]",
+       "[\"Mathlib.Analysis.InnerProductSpace.l2Space\",\"Orthonormal.linearIsometryEquiv_symm_apply_single_one\"]",
+       "[\"Mathlib.Analysis.Normed.Module.PiTensorProduct.ProjectiveSeminorm\",\"PiTensorProduct.liftIsometry_comp_mapL\"]",
+       "[\"Mathlib.CategoryTheory.Functor.KanExtension.Preserves\",\"CategoryTheory.Functor.pointwiseLeftKanExtensionCompIsoOfPreserves\"]",
+       "[\"Mathlib.Combinatorics.SimpleGraph.Density\",\"Rel.edgeDensity_le_one\"]",
+       "[\"Mathlib.Computability.PartrecBasis\",\"Nat.Partrec'.part_iff₁\"]",
+       "[\"Mathlib.Data.Nat.Factorization.LCM\",\"Nat.factorizationLCMLeft_dvd_left\"]",
+       "[\"Mathlib.Data.Num.ZNum\",\"Num.sub_to_nat\"]",
+       "[\"Mathlib.LinearAlgebra.AffineSpace.Simplex.Basic\",\"Affine.Simplex.closedInterior_restrict\"]",
+       "[\"Mathlib.LinearAlgebra.Matrix.Rank\",\"Matrix.eRank_zero\"]",
+       "[\"Mathlib.LinearAlgebra.Matrix.ToLin\",\"LinearMap.toMatrixRight'_id\"]",
+       "[\"Mathlib.MeasureTheory.Function.LpSpace.Basic\",\"MeasureTheory.Lp.norm_exponent_zero\"]",
+       "[\"Mathlib.MeasureTheory.Group.Arithmetic\",\"aemeasurable_inv_iff\"]",
+       "[\"Mathlib.MeasureTheory.Integral.Asymptotics\",\"Asymptotics.IsBigO.eventually_integrableOn\"]",
+       "[\"Mathlib.MeasureTheory.Measure.MeasureSpace\",\"MeasureTheory.le_measure_symmDiff\"]",
+       "[\"Mathlib.MeasureTheory.Measure.Prod\",\"MeasureTheory.Measure.nullMeasurableSet_prod\"]",
+       "[\"Mathlib.MeasureTheory.Measure.Regular\",\"MeasureTheory.Measure.OuterRegular.smul\"]",
+       "[\"Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal\",\"IsCyclotomicExtension.Rat.eq_span_zeta_sub_one_of_liesOver'\"]",
+       "[\"Mathlib.NumberTheory.NumberField.InfinitePlace.Basic\",\"NumberField.InfinitePlace.ext\"]",
+       "[\"Mathlib.Order.ConditionallyCompleteLattice.Basic\",\"lt_csSup_iff'\"]",
+       "[\"Mathlib.Probability.Density\",\"MeasureTheory.pdf\"]",
+       "[\"Mathlib.Probability.Kernel.Composition.IntegralCompProd\",\"MeasureTheory.AEStronglyMeasurable.comp\"]",
+       "[\"Mathlib.Probability.Martingale.Upcrossing\",\"MeasureTheory.lowerCrossingTimeAux\"]",
+       "[\"Mathlib.RingTheory.LaurentSeries\",\"PowerSeries.coe_neg\"]",
+       "[\"Mathlib.RingTheory.Localization.Away.Basic\",\"IsLocalization.Away.mk\"]",
+       "[\"Mathlib.RingTheory.PowerSeries.PiTopology\",\"PowerSeries.WithPiTopology.tsum_pow_mul_one_sub_of_constantCoeff_eq_zero\"]",
+       "[\"Mathlib.RingTheory.SurjectiveOnStalks\",\"RingHom.SurjectiveOnStalks.localRingHom_surjective\"]",
+       "[\"Mathlib.Topology.Algebra.InfiniteSum.ENNReal\",\"ENNReal.tsum_eq_iSup_nat\"]",
+       "[\"Mathlib.Topology.Algebra.Module.ModuleTopology\",\"IsModuleTopology.continuous_bilinear_of_finite_left\"]",
+       "[\"Mathlib.Topology.Algebra.Monoid\",\"Topology.IsInducing.continuousMul\"]",
+       "[\"Mathlib.Topology.NoetherianSpace\",\"TopologicalSpace.NoetherianSpace.finite\"]"
+      ],
+      "target_range_bpb": 2.0428718356895366,
+      "upper_one_sided_95_bpb": 0.561245520888565,
+      "variance_components": {
+       "cluster_sizes": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ],
+       "mode": "all-singleton-conservative",
+       "n_modules": 35,
+       "n_pilot": 35,
+       "sigma_b2": 0.1779746203871879,
+       "sigma_w2": 0.0
+      }
+     },
+     "interpretation_status": "positive-model-based-diagnostic",
+     "metric": "bpb",
+     "orientation": "k1-k4:16384",
+     "raw_one_sided_pvalue": 2.5672252613687093e-07,
+     "target_rows": [
+      {
+       "delta_bpb": 0.11159544288719692,
+       "module": "Mathlib.Algebra.Module.LocalizedModule.Int",
+       "target_key": "[\"Mathlib.Algebra.Module.LocalizedModule.Int\",\"IsLocalizedModule.finsetIntegerMultiple_image\"]"
+      },
+      {
+       "delta_bpb": 0.5206745635339436,
+       "module": "Mathlib.Algebra.Star.Subalgebra",
+       "target_key": "[\"Mathlib.Algebra.Star.Subalgebra\",\"StarAlgHom.ext_of_adjoin_eq_top\"]"
+      },
+      {
+       "delta_bpb": 0.27894671763920154,
+       "module": "Mathlib.Analysis.Asymptotics.Defs",
+       "target_key": "[\"Mathlib.Analysis.Asymptotics.Defs\",\"Asymptotics.IsBigO.congr_left\"]"
+      },
+      {
+       "delta_bpb": 0.5102833232595927,
+       "module": "Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric",
+       "target_key": "[\"Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric\",\"IsGreatest.nnnorm_cfcₙ_nnreal\"]"
+      },
+      {
+       "delta_bpb": 0.5610814683145355,
+       "module": "Mathlib.Analysis.Convex.Topology",
+       "target_key": "[\"Mathlib.Analysis.Convex.Topology\",\"Convex.strictConvex\"]"
+      },
+      {
+       "delta_bpb": 0.3750973569870086,
+       "module": "Mathlib.Analysis.InnerProductSpace.l2Space",
+       "target_key": "[\"Mathlib.Analysis.InnerProductSpace.l2Space\",\"Orthonormal.linearIsometryEquiv_symm_apply_single_one\"]"
+      },
+      {
+       "delta_bpb": 0.09986411568858744,
+       "module": "Mathlib.Analysis.Normed.Module.PiTensorProduct.ProjectiveSeminorm",
+       "target_key": "[\"Mathlib.Analysis.Normed.Module.PiTensorProduct.ProjectiveSeminorm\",\"PiTensorProduct.liftIsometry_comp_mapL\"]"
+      },
+      {
+       "delta_bpb": 0.3115956549301726,
+       "module": "Mathlib.CategoryTheory.Functor.KanExtension.Preserves",
+       "target_key": "[\"Mathlib.CategoryTheory.Functor.KanExtension.Preserves\",\"CategoryTheory.Functor.pointwiseLeftKanExtensionCompIsoOfPreserves\"]"
+      },
+      {
+       "delta_bpb": 0.3353106259374592,
+       "module": "Mathlib.Combinatorics.SimpleGraph.Density",
+       "target_key": "[\"Mathlib.Combinatorics.SimpleGraph.Density\",\"Rel.edgeDensity_le_one\"]"
+      },
+      {
+       "delta_bpb": 0.8485656780121092,
+       "module": "Mathlib.Computability.PartrecBasis",
+       "target_key": "[\"Mathlib.Computability.PartrecBasis\",\"Nat.Partrec'.part_iff₁\"]"
+      },
+      {
+       "delta_bpb": 0.33206879982339943,
+       "module": "Mathlib.Data.Nat.Factorization.LCM",
+       "target_key": "[\"Mathlib.Data.Nat.Factorization.LCM\",\"Nat.factorizationLCMLeft_dvd_left\"]"
+      },
+      {
+       "delta_bpb": 0.49268858737085286,
+       "module": "Mathlib.Data.Num.ZNum",
+       "target_key": "[\"Mathlib.Data.Num.ZNum\",\"Num.sub_to_nat\"]"
+      },
+      {
+       "delta_bpb": 0.19309461645258086,
+       "module": "Mathlib.LinearAlgebra.AffineSpace.Simplex.Basic",
+       "target_key": "[\"Mathlib.LinearAlgebra.AffineSpace.Simplex.Basic\",\"Affine.Simplex.closedInterior_restrict\"]"
+      },
+      {
+       "delta_bpb": 0.11321916895972506,
+       "module": "Mathlib.LinearAlgebra.Matrix.Rank",
+       "target_key": "[\"Mathlib.LinearAlgebra.Matrix.Rank\",\"Matrix.eRank_zero\"]"
+      },
+      {
+       "delta_bpb": 0.18664235230900905,
+       "module": "Mathlib.LinearAlgebra.Matrix.ToLin",
+       "target_key": "[\"Mathlib.LinearAlgebra.Matrix.ToLin\",\"LinearMap.toMatrixRight'_id\"]"
+      },
+      {
+       "delta_bpb": 0.557301800312758,
+       "module": "Mathlib.MeasureTheory.Function.LpSpace.Basic",
+       "target_key": "[\"Mathlib.MeasureTheory.Function.LpSpace.Basic\",\"MeasureTheory.Lp.norm_exponent_zero\"]"
+      },
+      {
+       "delta_bpb": 0.057426954972171096,
+       "module": "Mathlib.MeasureTheory.Group.Arithmetic",
+       "target_key": "[\"Mathlib.MeasureTheory.Group.Arithmetic\",\"aemeasurable_inv_iff\"]"
+      },
+      {
+       "delta_bpb": 0.30778030076391283,
+       "module": "Mathlib.MeasureTheory.Integral.Asymptotics",
+       "target_key": "[\"Mathlib.MeasureTheory.Integral.Asymptotics\",\"Asymptotics.IsBigO.eventually_integrableOn\"]"
+      },
+      {
+       "delta_bpb": 0.28553614915714953,
+       "module": "Mathlib.MeasureTheory.Measure.MeasureSpace",
+       "target_key": "[\"Mathlib.MeasureTheory.Measure.MeasureSpace\",\"MeasureTheory.le_measure_symmDiff\"]"
+      },
+      {
+       "delta_bpb": 0.0888742761516963,
+       "module": "Mathlib.MeasureTheory.Measure.Prod",
+       "target_key": "[\"Mathlib.MeasureTheory.Measure.Prod\",\"MeasureTheory.Measure.nullMeasurableSet_prod\"]"
+      },
+      {
+       "delta_bpb": 0.3736716469837533,
+       "module": "Mathlib.MeasureTheory.Measure.Regular",
+       "target_key": "[\"Mathlib.MeasureTheory.Measure.Regular\",\"MeasureTheory.Measure.OuterRegular.smul\"]"
+      },
+      {
+       "delta_bpb": 0.07136883066144784,
+       "module": "Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal",
+       "target_key": "[\"Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal\",\"IsCyclotomicExtension.Rat.eq_span_zeta_sub_one_of_liesOver'\"]"
+      },
+      {
+       "delta_bpb": 0.3716317942642138,
+       "module": "Mathlib.NumberTheory.NumberField.InfinitePlace.Basic",
+       "target_key": "[\"Mathlib.NumberTheory.NumberField.InfinitePlace.Basic\",\"NumberField.InfinitePlace.ext\"]"
+      },
+      {
+       "delta_bpb": 0.3014461771443565,
+       "module": "Mathlib.Order.ConditionallyCompleteLattice.Basic",
+       "target_key": "[\"Mathlib.Order.ConditionallyCompleteLattice.Basic\",\"lt_csSup_iff'\"]"
+      },
+      {
+       "delta_bpb": 1.7241667439228123,
+       "module": "Mathlib.Probability.Density",
+       "target_key": "[\"Mathlib.Probability.Density\",\"MeasureTheory.pdf\"]"
+      },
+      {
+       "delta_bpb": 0.7237441732375145,
+       "module": "Mathlib.Probability.Kernel.Composition.IntegralCompProd",
+       "target_key": "[\"Mathlib.Probability.Kernel.Composition.IntegralCompProd\",\"MeasureTheory.AEStronglyMeasurable.comp\"]"
+      },
+      {
+       "delta_bpb": 2.1002987906617077,
+       "module": "Mathlib.Probability.Martingale.Upcrossing",
+       "target_key": "[\"Mathlib.Probability.Martingale.Upcrossing\",\"MeasureTheory.lowerCrossingTimeAux\"]"
+      },
+      {
+       "delta_bpb": 0.6803996521659013,
+       "module": "Mathlib.RingTheory.LaurentSeries",
+       "target_key": "[\"Mathlib.RingTheory.LaurentSeries\",\"PowerSeries.coe_neg\"]"
+      },
+      {
+       "delta_bpb": 0.15574611611236577,
+       "module": "Mathlib.RingTheory.Localization.Away.Basic",
+       "target_key": "[\"Mathlib.RingTheory.Localization.Away.Basic\",\"IsLocalization.Away.mk\"]"
+      },
+      {
+       "delta_bpb": 0.529068039515522,
+       "module": "Mathlib.RingTheory.PowerSeries.PiTopology",
+       "target_key": "[\"Mathlib.RingTheory.PowerSeries.PiTopology\",\"PowerSeries.WithPiTopology.tsum_pow_mul_one_sub_of_constantCoeff_eq_zero\"]"
+      },
+      {
+       "delta_bpb": 0.3224375374208015,
+       "module": "Mathlib.RingTheory.SurjectiveOnStalks",
+       "target_key": "[\"Mathlib.RingTheory.SurjectiveOnStalks\",\"RingHom.SurjectiveOnStalks.localRingHom_surjective\"]"
+      },
+      {
+       "delta_bpb": 0.2442405196662224,
+       "module": "Mathlib.Topology.Algebra.InfiniteSum.ENNReal",
+       "target_key": "[\"Mathlib.Topology.Algebra.InfiniteSum.ENNReal\",\"ENNReal.tsum_eq_iSup_nat\"]"
+      },
+      {
+       "delta_bpb": 0.14336759586457448,
+       "module": "Mathlib.Topology.Algebra.Module.ModuleTopology",
+       "target_key": "[\"Mathlib.Topology.Algebra.Module.ModuleTopology\",\"IsModuleTopology.continuous_bilinear_of_finite_left\"]"
+      },
+      {
+       "delta_bpb": 0.6991756484506416,
+       "module": "Mathlib.Topology.Algebra.Monoid",
+       "target_key": "[\"Mathlib.Topology.Algebra.Monoid\",\"Topology.IsInducing.continuousMul\"]"
+      },
+      {
+       "delta_bpb": 0.39912630270061755,
+       "module": "Mathlib.Topology.NoetherianSpace",
+       "target_key": "[\"Mathlib.Topology.NoetherianSpace\",\"TopologicalSpace.NoetherianSpace.finite\"]"
+      }
+     ]
+    },
+    "E1b": {
+     "budget_bytes": 16384,
+     "exploratory_positive_model_based_diagnostic": false,
+     "favorable_direction": "smaller/noninferior",
+     "holm_adjusted_pvalue": 0.9999573393990682,
+     "inference": {
+      "ci95_two_sided_bpb": [
+       0.048141252714065996,
+       0.0953490087740626
+      ],
+      "cluster_sizes": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ],
+      "degeneracy_floor_bpb": 1.4210854715202004e-14,
+      "degrees_of_freedom": 33,
+      "inference_status": "available",
+      "lower_one_sided_95_bpb": 0.05212877260869608,
+      "n_modules": 34,
+      "n_targets": 34,
+      "standard_error_bpb": 0.011557656389549628,
+      "target_equal_mean_bpb": 0.0717451307440643,
+      "target_keys": [
+       "[\"Mathlib.Algebra.Module.LocalizedModule.Int\",\"IsLocalizedModule.finsetIntegerMultiple_image\"]",
+       "[\"Mathlib.Algebra.Star.Subalgebra\",\"StarAlgHom.ext_of_adjoin_eq_top\"]",
+       "[\"Mathlib.Analysis.Asymptotics.Defs\",\"Asymptotics.IsBigO.congr_left\"]",
+       "[\"Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric\",\"IsGreatest.nnnorm_cfcₙ_nnreal\"]",
+       "[\"Mathlib.Analysis.Convex.Topology\",\"Convex.strictConvex\"]",
+       "[\"Mathlib.Analysis.InnerProductSpace.l2Space\",\"Orthonormal.linearIsometryEquiv_symm_apply_single_one\"]",
+       "[\"Mathlib.Analysis.Normed.Module.PiTensorProduct.ProjectiveSeminorm\",\"PiTensorProduct.liftIsometry_comp_mapL\"]",
+       "[\"Mathlib.CategoryTheory.Functor.KanExtension.Preserves\",\"CategoryTheory.Functor.pointwiseLeftKanExtensionCompIsoOfPreserves\"]",
+       "[\"Mathlib.Combinatorics.SimpleGraph.Density\",\"Rel.edgeDensity_le_one\"]",
+       "[\"Mathlib.Computability.PartrecBasis\",\"Nat.Partrec'.part_iff₁\"]",
+       "[\"Mathlib.Data.Nat.Factorization.LCM\",\"Nat.factorizationLCMLeft_dvd_left\"]",
+       "[\"Mathlib.Data.Num.ZNum\",\"Num.sub_to_nat\"]",
+       "[\"Mathlib.LinearAlgebra.AffineSpace.Simplex.Basic\",\"Affine.Simplex.closedInterior_restrict\"]",
+       "[\"Mathlib.LinearAlgebra.Matrix.Rank\",\"Matrix.eRank_zero\"]",
+       "[\"Mathlib.LinearAlgebra.Matrix.ToLin\",\"LinearMap.toMatrixRight'_id\"]",
+       "[\"Mathlib.MeasureTheory.Function.LpSpace.Basic\",\"MeasureTheory.Lp.norm_exponent_zero\"]",
+       "[\"Mathlib.MeasureTheory.Group.Arithmetic\",\"aemeasurable_inv_iff\"]",
+       "[\"Mathlib.MeasureTheory.Integral.Asymptotics\",\"Asymptotics.IsBigO.eventually_integrableOn\"]",
+       "[\"Mathlib.MeasureTheory.Measure.MeasureSpace\",\"MeasureTheory.le_measure_symmDiff\"]",
+       "[\"Mathlib.MeasureTheory.Measure.Prod\",\"MeasureTheory.Measure.nullMeasurableSet_prod\"]",
+       "[\"Mathlib.MeasureTheory.Measure.Regular\",\"MeasureTheory.Measure.OuterRegular.smul\"]",
+       "[\"Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal\",\"IsCyclotomicExtension.Rat.eq_span_zeta_sub_one_of_liesOver'\"]",
+       "[\"Mathlib.NumberTheory.NumberField.InfinitePlace.Basic\",\"NumberField.InfinitePlace.ext\"]",
+       "[\"Mathlib.Probability.Density\",\"MeasureTheory.pdf\"]",
+       "[\"Mathlib.Probability.Kernel.Composition.IntegralCompProd\",\"MeasureTheory.AEStronglyMeasurable.comp\"]",
+       "[\"Mathlib.Probability.Martingale.Upcrossing\",\"MeasureTheory.lowerCrossingTimeAux\"]",
+       "[\"Mathlib.RingTheory.LaurentSeries\",\"PowerSeries.coe_neg\"]",
+       "[\"Mathlib.RingTheory.Localization.Away.Basic\",\"IsLocalization.Away.mk\"]",
+       "[\"Mathlib.RingTheory.PowerSeries.PiTopology\",\"PowerSeries.WithPiTopology.tsum_pow_mul_one_sub_of_constantCoeff_eq_zero\"]",
+       "[\"Mathlib.RingTheory.SurjectiveOnStalks\",\"RingHom.SurjectiveOnStalks.localRingHom_surjective\"]",
+       "[\"Mathlib.Topology.Algebra.InfiniteSum.ENNReal\",\"ENNReal.tsum_eq_iSup_nat\"]",
+       "[\"Mathlib.Topology.Algebra.Module.ModuleTopology\",\"IsModuleTopology.continuous_bilinear_of_finite_left\"]",
+       "[\"Mathlib.Topology.Algebra.Monoid\",\"Topology.IsInducing.continuousMul\"]",
+       "[\"Mathlib.Topology.NoetherianSpace\",\"TopologicalSpace.NoetherianSpace.finite\"]"
+      ],
+      "target_range_bpb": 0.2904529574648132,
+      "upper_one_sided_95_bpb": 0.09136148887943252,
+      "variance_components": {
+       "cluster_sizes": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ],
+       "mode": "all-singleton-conservative",
+       "n_modules": 34,
+       "n_pilot": 34,
+       "sigma_b2": 0.00454170032144251,
+       "sigma_w2": 0.0
+      }
+     },
+     "interpretation_status": "noninferiority-not-established",
+     "metric": "bpb",
+     "orientation": "k3:16384-k4:16384",
+     "raw_one_sided_pvalue": 0.9999573393990682,
+     "target_rows": [
+      {
+       "delta_bpb": 0.06772649233455375,
+       "module": "Mathlib.Algebra.Module.LocalizedModule.Int",
+       "target_key": "[\"Mathlib.Algebra.Module.LocalizedModule.Int\",\"IsLocalizedModule.finsetIntegerMultiple_image\"]"
+      },
+      {
+       "delta_bpb": 0.19773288531057998,
+       "module": "Mathlib.Algebra.Star.Subalgebra",
+       "target_key": "[\"Mathlib.Algebra.Star.Subalgebra\",\"StarAlgHom.ext_of_adjoin_eq_top\"]"
+      },
+      {
+       "delta_bpb": 0.061872178687145896,
+       "module": "Mathlib.Analysis.Asymptotics.Defs",
+       "target_key": "[\"Mathlib.Analysis.Asymptotics.Defs\",\"Asymptotics.IsBigO.congr_left\"]"
+      },
+      {
+       "delta_bpb": 0.031711589312252035,
+       "module": "Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric",
+       "target_key": "[\"Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric\",\"IsGreatest.nnnorm_cfcₙ_nnreal\"]"
+      },
+      {
+       "delta_bpb": 0.03934673697242585,
+       "module": "Mathlib.Analysis.Convex.Topology",
+       "target_key": "[\"Mathlib.Analysis.Convex.Topology\",\"Convex.strictConvex\"]"
+      },
+      {
+       "delta_bpb": -0.06717515845417561,
+       "module": "Mathlib.Analysis.InnerProductSpace.l2Space",
+       "target_key": "[\"Mathlib.Analysis.InnerProductSpace.l2Space\",\"Orthonormal.linearIsometryEquiv_symm_apply_single_one\"]"
+      },
+      {
+       "delta_bpb": -0.02135094318210562,
+       "module": "Mathlib.Analysis.Normed.Module.PiTensorProduct.ProjectiveSeminorm",
+       "target_key": "[\"Mathlib.Analysis.Normed.Module.PiTensorProduct.ProjectiveSeminorm\",\"PiTensorProduct.liftIsometry_comp_mapL\"]"
+      },
+      {
+       "delta_bpb": 0.03992563123232822,
+       "module": "Mathlib.CategoryTheory.Functor.KanExtension.Preserves",
+       "target_key": "[\"Mathlib.CategoryTheory.Functor.KanExtension.Preserves\",\"CategoryTheory.Functor.pointwiseLeftKanExtensionCompIsoOfPreserves\"]"
+      },
+      {
+       "delta_bpb": 0.07779129383070282,
+       "module": "Mathlib.Combinatorics.SimpleGraph.Density",
+       "target_key": "[\"Mathlib.Combinatorics.SimpleGraph.Density\",\"Rel.edgeDensity_le_one\"]"
+      },
+      {
+       "delta_bpb": 0.131847141818641,
+       "module": "Mathlib.Computability.PartrecBasis",
+       "target_key": "[\"Mathlib.Computability.PartrecBasis\",\"Nat.Partrec'.part_iff₁\"]"
+      },
+      {
+       "delta_bpb": 0.1523866635052783,
+       "module": "Mathlib.Data.Nat.Factorization.LCM",
+       "target_key": "[\"Mathlib.Data.Nat.Factorization.LCM\",\"Nat.factorizationLCMLeft_dvd_left\"]"
+      },
+      {
+       "delta_bpb": 0.07936087824201532,
+       "module": "Mathlib.Data.Num.ZNum",
+       "target_key": "[\"Mathlib.Data.Num.ZNum\",\"Num.sub_to_nat\"]"
+      },
+      {
+       "delta_bpb": 0.1751582801870022,
+       "module": "Mathlib.LinearAlgebra.AffineSpace.Simplex.Basic",
+       "target_key": "[\"Mathlib.LinearAlgebra.AffineSpace.Simplex.Basic\",\"Affine.Simplex.closedInterior_restrict\"]"
+      },
+      {
+       "delta_bpb": 0.08715937958698816,
+       "module": "Mathlib.LinearAlgebra.Matrix.Rank",
+       "target_key": "[\"Mathlib.LinearAlgebra.Matrix.Rank\",\"Matrix.eRank_zero\"]"
+      },
+      {
+       "delta_bpb": 0.07910555175145784,
+       "module": "Mathlib.LinearAlgebra.Matrix.ToLin",
+       "target_key": "[\"Mathlib.LinearAlgebra.Matrix.ToLin\",\"LinearMap.toMatrixRight'_id\"]"
+      },
+      {
+       "delta_bpb": 0.08912915891794992,
+       "module": "Mathlib.MeasureTheory.Function.LpSpace.Basic",
+       "target_key": "[\"Mathlib.MeasureTheory.Function.LpSpace.Basic\",\"MeasureTheory.Lp.norm_exponent_zero\"]"
+      },
+      {
+       "delta_bpb": 0.007275498955246151,
+       "module": "Mathlib.MeasureTheory.Group.Arithmetic",
+       "target_key": "[\"Mathlib.MeasureTheory.Group.Arithmetic\",\"aemeasurable_inv_iff\"]"
+      },
+      {
+       "delta_bpb": 0.044963700074993396,
+       "module": "Mathlib.MeasureTheory.Integral.Asymptotics",
+       "target_key": "[\"Mathlib.MeasureTheory.Integral.Asymptotics\",\"Asymptotics.IsBigO.eventually_integrableOn\"]"
+      },
+      {
+       "delta_bpb": 0.06434887731237038,
+       "module": "Mathlib.MeasureTheory.Measure.MeasureSpace",
+       "target_key": "[\"Mathlib.MeasureTheory.Measure.MeasureSpace\",\"MeasureTheory.le_measure_symmDiff\"]"
+      },
+      {
+       "delta_bpb": 0.03719551366401252,
+       "module": "Mathlib.MeasureTheory.Measure.Prod",
+       "target_key": "[\"Mathlib.MeasureTheory.Measure.Prod\",\"MeasureTheory.Measure.nullMeasurableSet_prod\"]"
+      },
+      {
+       "delta_bpb": 0.11928110238922529,
+       "module": "Mathlib.MeasureTheory.Measure.Regular",
+       "target_key": "[\"Mathlib.MeasureTheory.Measure.Regular\",\"MeasureTheory.Measure.OuterRegular.smul\"]"
+      },
+      {
+       "delta_bpb": -0.008315137405768946,
+       "module": "Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal",
+       "target_key": "[\"Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal\",\"IsCyclotomicExtension.Rat.eq_span_zeta_sub_one_of_liesOver'\"]"
+      },
+      {
+       "delta_bpb": -0.04036960617368068,
+       "module": "Mathlib.NumberTheory.NumberField.InfinitePlace.Basic",
+       "target_key": "[\"Mathlib.NumberTheory.NumberField.InfinitePlace.Basic\",\"NumberField.InfinitePlace.ext\"]"
+      },
+      {
+       "delta_bpb": 0.056026931438733274,
+       "module": "Mathlib.Probability.Density",
+       "target_key": "[\"Mathlib.Probability.Density\",\"MeasureTheory.pdf\"]"
+      },
+      {
+       "delta_bpb": 0.2232777990106376,
+       "module": "Mathlib.Probability.Kernel.Composition.IntegralCompProd",
+       "target_key": "[\"Mathlib.Probability.Kernel.Composition.IntegralCompProd\",\"MeasureTheory.AEStronglyMeasurable.comp\"]"
+      },
+      {
+       "delta_bpb": 0.09031322356827864,
+       "module": "Mathlib.Probability.Martingale.Upcrossing",
+       "target_key": "[\"Mathlib.Probability.Martingale.Upcrossing\",\"MeasureTheory.lowerCrossingTimeAux\"]"
+      },
+      {
+       "delta_bpb": 0.05868420501566085,
+       "module": "Mathlib.RingTheory.LaurentSeries",
+       "target_key": "[\"Mathlib.RingTheory.LaurentSeries\",\"PowerSeries.coe_neg\"]"
+      },
+      {
+       "delta_bpb": 0.047754100880976647,
+       "module": "Mathlib.RingTheory.Localization.Away.Basic",
+       "target_key": "[\"Mathlib.RingTheory.Localization.Away.Basic\",\"IsLocalization.Away.mk\"]"
+      },
+      {
+       "delta_bpb": 0.0801393316104616,
+       "module": "Mathlib.RingTheory.PowerSeries.PiTopology",
+       "target_key": "[\"Mathlib.RingTheory.PowerSeries.PiTopology\",\"PowerSeries.WithPiTopology.tsum_pow_mul_one_sub_of_constantCoeff_eq_zero\"]"
+      },
+      {
+       "delta_bpb": 0.12478756558804527,
+       "module": "Mathlib.RingTheory.SurjectiveOnStalks",
+       "target_key": "[\"Mathlib.RingTheory.SurjectiveOnStalks\",\"RingHom.SurjectiveOnStalks.localRingHom_surjective\"]"
+      },
+      {
+       "delta_bpb": -0.007606822274360825,
+       "module": "Mathlib.Topology.Algebra.InfiniteSum.ENNReal",
+       "target_key": "[\"Mathlib.Topology.Algebra.InfiniteSum.ENNReal\",\"ENNReal.tsum_eq_iSup_nat\"]"
+      },
+      {
+       "delta_bpb": 0.04619834795369582,
+       "module": "Mathlib.Topology.Algebra.Module.ModuleTopology",
+       "target_key": "[\"Mathlib.Topology.Algebra.Module.ModuleTopology\",\"IsModuleTopology.continuous_bilinear_of_finite_left\"]"
+      },
+      {
+       "delta_bpb": 0.210295039843711,
+       "module": "Mathlib.Topology.Algebra.Monoid",
+       "target_key": "[\"Mathlib.Topology.Algebra.Monoid\",\"Topology.IsInducing.continuousMul\"]"
+      },
+      {
+       "delta_bpb": 0.06335701379290781,
+       "module": "Mathlib.Topology.NoetherianSpace",
+       "target_key": "[\"Mathlib.Topology.NoetherianSpace\",\"TopologicalSpace.NoetherianSpace.finite\"]"
+      }
+     ]
+    },
+    "E2": {
+     "budget_bytes": 16384,
+     "exploratory_positive_model_based_diagnostic": true,
+     "favorable_direction": "positive",
+     "holm_adjusted_pvalue": 6.353168213687753e-05,
+     "inference": {
+      "ci95_two_sided_bpb": [
+       0.1827266992146197,
+       0.47924086833128854
+      ],
+      "cluster_sizes": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ],
+      "degeneracy_floor_bpb": 1.4210854715202004e-14,
+      "degrees_of_freedom": 34,
+      "inference_status": "available",
+      "lower_one_sided_95_bpb": 0.2077725020036733,
+      "n_modules": 35,
+      "n_targets": 35,
+      "standard_error_bpb": 0.07259419144870732,
+      "target_equal_mean_bpb": 0.3309837837729541,
+      "target_keys": [
+       "[\"Mathlib.Algebra.Module.LocalizedModule.Int\",\"IsLocalizedModule.finsetIntegerMultiple_image\"]",
+       "[\"Mathlib.Algebra.Star.Subalgebra\",\"StarAlgHom.ext_of_adjoin_eq_top\"]",
+       "[\"Mathlib.Analysis.Asymptotics.Defs\",\"Asymptotics.IsBigO.congr_left\"]",
+       "[\"Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric\",\"IsGreatest.nnnorm_cfcₙ_nnreal\"]",
+       "[\"Mathlib.Analysis.Convex.Topology\",\"Convex.strictConvex\"]",
+       "[\"Mathlib.Analysis.InnerProductSpace.l2Space\",\"Orthonormal.linearIsometryEquiv_symm_apply_single_one\"]",
+       "[\"Mathlib.Analysis.Normed.Module.PiTensorProduct.ProjectiveSeminorm\",\"PiTensorProduct.liftIsometry_comp_mapL\"]",
+       "[\"Mathlib.CategoryTheory.Functor.KanExtension.Preserves\",\"CategoryTheory.Functor.pointwiseLeftKanExtensionCompIsoOfPreserves\"]",
+       "[\"Mathlib.Combinatorics.SimpleGraph.Density\",\"Rel.edgeDensity_le_one\"]",
+       "[\"Mathlib.Computability.PartrecBasis\",\"Nat.Partrec'.part_iff₁\"]",
+       "[\"Mathlib.Data.Nat.Factorization.LCM\",\"Nat.factorizationLCMLeft_dvd_left\"]",
+       "[\"Mathlib.Data.Num.ZNum\",\"Num.sub_to_nat\"]",
+       "[\"Mathlib.LinearAlgebra.AffineSpace.Simplex.Basic\",\"Affine.Simplex.closedInterior_restrict\"]",
+       "[\"Mathlib.LinearAlgebra.Matrix.Rank\",\"Matrix.eRank_zero\"]",
+       "[\"Mathlib.LinearAlgebra.Matrix.ToLin\",\"LinearMap.toMatrixRight'_id\"]",
+       "[\"Mathlib.MeasureTheory.Function.LpSpace.Basic\",\"MeasureTheory.Lp.norm_exponent_zero\"]",
+       "[\"Mathlib.MeasureTheory.Group.Arithmetic\",\"aemeasurable_inv_iff\"]",
+       "[\"Mathlib.MeasureTheory.Integral.Asymptotics\",\"Asymptotics.IsBigO.eventually_integrableOn\"]",
+       "[\"Mathlib.MeasureTheory.Measure.MeasureSpace\",\"MeasureTheory.le_measure_symmDiff\"]",
+       "[\"Mathlib.MeasureTheory.Measure.Prod\",\"MeasureTheory.Measure.nullMeasurableSet_prod\"]",
+       "[\"Mathlib.MeasureTheory.Measure.Regular\",\"MeasureTheory.Measure.OuterRegular.smul\"]",
+       "[\"Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal\",\"IsCyclotomicExtension.Rat.eq_span_zeta_sub_one_of_liesOver'\"]",
+       "[\"Mathlib.NumberTheory.NumberField.InfinitePlace.Basic\",\"NumberField.InfinitePlace.ext\"]",
+       "[\"Mathlib.Order.ConditionallyCompleteLattice.Basic\",\"lt_csSup_iff'\"]",
+       "[\"Mathlib.Probability.Density\",\"MeasureTheory.pdf\"]",
+       "[\"Mathlib.Probability.Kernel.Composition.IntegralCompProd\",\"MeasureTheory.AEStronglyMeasurable.comp\"]",
+       "[\"Mathlib.Probability.Martingale.Upcrossing\",\"MeasureTheory.lowerCrossingTimeAux\"]",
+       "[\"Mathlib.RingTheory.LaurentSeries\",\"PowerSeries.coe_neg\"]",
+       "[\"Mathlib.RingTheory.Localization.Away.Basic\",\"IsLocalization.Away.mk\"]",
+       "[\"Mathlib.RingTheory.PowerSeries.PiTopology\",\"PowerSeries.WithPiTopology.tsum_pow_mul_one_sub_of_constantCoeff_eq_zero\"]",
+       "[\"Mathlib.RingTheory.SurjectiveOnStalks\",\"RingHom.SurjectiveOnStalks.localRingHom_surjective\"]",
+       "[\"Mathlib.Topology.Algebra.InfiniteSum.ENNReal\",\"ENNReal.tsum_eq_iSup_nat\"]",
+       "[\"Mathlib.Topology.Algebra.Module.ModuleTopology\",\"IsModuleTopology.continuous_bilinear_of_finite_left\"]",
+       "[\"Mathlib.Topology.Algebra.Monoid\",\"Topology.IsInducing.continuousMul\"]",
+       "[\"Mathlib.Topology.NoetherianSpace\",\"TopologicalSpace.NoetherianSpace.finite\"]"
+      ],
+      "target_range_bpb": 2.082979839655931,
+      "upper_one_sided_95_bpb": 0.45419506554223493,
+      "variance_components": {
+       "cluster_sizes": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ],
+       "mode": "all-singleton-conservative",
+       "n_modules": 35,
+       "n_pilot": 35,
+       "sigma_b2": 0.18444708212320501,
+       "sigma_w2": 0.0
+      }
+     },
+     "interpretation_status": "positive-model-based-diagnostic",
+     "metric": "bpb",
+     "orientation": "k5:0:16384-k4:16384",
+     "raw_one_sided_pvalue": 3.1765841068438763e-05,
+     "target_rows": [
+      {
+       "delta_bpb": 0.06911614751185591,
+       "module": "Mathlib.Algebra.Module.LocalizedModule.Int",
+       "target_key": "[\"Mathlib.Algebra.Module.LocalizedModule.Int\",\"IsLocalizedModule.finsetIntegerMultiple_image\"]"
+      },
+      {
+       "delta_bpb": 0.4290617535535459,
+       "module": "Mathlib.Algebra.Star.Subalgebra",
+       "target_key": "[\"Mathlib.Algebra.Star.Subalgebra\",\"StarAlgHom.ext_of_adjoin_eq_top\"]"
+      },
+      {
+       "delta_bpb": -0.03201691533406714,
+       "module": "Mathlib.Analysis.Asymptotics.Defs",
+       "target_key": "[\"Mathlib.Analysis.Asymptotics.Defs\",\"Asymptotics.IsBigO.congr_left\"]"
+      },
+      {
+       "delta_bpb": 0.4319893688758356,
+       "module": "Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric",
+       "target_key": "[\"Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric\",\"IsGreatest.nnnorm_cfcₙ_nnreal\"]"
+      },
+      {
+       "delta_bpb": 0.4957314150798766,
+       "module": "Mathlib.Analysis.Convex.Topology",
+       "target_key": "[\"Mathlib.Analysis.Convex.Topology\",\"Convex.strictConvex\"]"
+      },
+      {
+       "delta_bpb": 0.348125920957474,
+       "module": "Mathlib.Analysis.InnerProductSpace.l2Space",
+       "target_key": "[\"Mathlib.Analysis.InnerProductSpace.l2Space\",\"Orthonormal.linearIsometryEquiv_symm_apply_single_one\"]"
+      },
+      {
+       "delta_bpb": 0.020682876244818238,
+       "module": "Mathlib.Analysis.Normed.Module.PiTensorProduct.ProjectiveSeminorm",
+       "target_key": "[\"Mathlib.Analysis.Normed.Module.PiTensorProduct.ProjectiveSeminorm\",\"PiTensorProduct.liftIsometry_comp_mapL\"]"
+      },
+      {
+       "delta_bpb": 0.2700953910513152,
+       "module": "Mathlib.CategoryTheory.Functor.KanExtension.Preserves",
+       "target_key": "[\"Mathlib.CategoryTheory.Functor.KanExtension.Preserves\",\"CategoryTheory.Functor.pointwiseLeftKanExtensionCompIsoOfPreserves\"]"
+      },
+      {
+       "delta_bpb": 0.2751169815674108,
+       "module": "Mathlib.Combinatorics.SimpleGraph.Density",
+       "target_key": "[\"Mathlib.Combinatorics.SimpleGraph.Density\",\"Rel.edgeDensity_le_one\"]"
+      },
+      {
+       "delta_bpb": 0.6279305901227791,
+       "module": "Mathlib.Computability.PartrecBasis",
+       "target_key": "[\"Mathlib.Computability.PartrecBasis\",\"Nat.Partrec'.part_iff₁\"]"
+      },
+      {
+       "delta_bpb": 0.23102746395001394,
+       "module": "Mathlib.Data.Nat.Factorization.LCM",
+       "target_key": "[\"Mathlib.Data.Nat.Factorization.LCM\",\"Nat.factorizationLCMLeft_dvd_left\"]"
+      },
+      {
+       "delta_bpb": 0.34502048744387004,
+       "module": "Mathlib.Data.Num.ZNum",
+       "target_key": "[\"Mathlib.Data.Num.ZNum\",\"Num.sub_to_nat\"]"
+      },
+      {
+       "delta_bpb": 0.02831601108878945,
+       "module": "Mathlib.LinearAlgebra.AffineSpace.Simplex.Basic",
+       "target_key": "[\"Mathlib.LinearAlgebra.AffineSpace.Simplex.Basic\",\"Affine.Simplex.closedInterior_restrict\"]"
+      },
+      {
+       "delta_bpb": -0.10467838828628473,
+       "module": "Mathlib.LinearAlgebra.Matrix.Rank",
+       "target_key": "[\"Mathlib.LinearAlgebra.Matrix.Rank\",\"Matrix.eRank_zero\"]"
+      },
+      {
+       "delta_bpb": -0.07273795562365226,
+       "module": "Mathlib.LinearAlgebra.Matrix.ToLin",
+       "target_key": "[\"Mathlib.LinearAlgebra.Matrix.ToLin\",\"LinearMap.toMatrixRight'_id\"]"
+      },
+      {
+       "delta_bpb": 0.3392150488701068,
+       "module": "Mathlib.MeasureTheory.Function.LpSpace.Basic",
+       "target_key": "[\"Mathlib.MeasureTheory.Function.LpSpace.Basic\",\"MeasureTheory.Lp.norm_exponent_zero\"]"
+      },
+      {
+       "delta_bpb": 0.014009697651225506,
+       "module": "Mathlib.MeasureTheory.Group.Arithmetic",
+       "target_key": "[\"Mathlib.MeasureTheory.Group.Arithmetic\",\"aemeasurable_inv_iff\"]"
+      },
+      {
+       "delta_bpb": 0.2387313051646789,
+       "module": "Mathlib.MeasureTheory.Integral.Asymptotics",
+       "target_key": "[\"Mathlib.MeasureTheory.Integral.Asymptotics\",\"Asymptotics.IsBigO.eventually_integrableOn\"]"
+      },
+      {
+       "delta_bpb": 0.33376867715017855,
+       "module": "Mathlib.MeasureTheory.Measure.MeasureSpace",
+       "target_key": "[\"Mathlib.MeasureTheory.Measure.MeasureSpace\",\"MeasureTheory.le_measure_symmDiff\"]"
+      },
+      {
+       "delta_bpb": 0.032344201607234835,
+       "module": "Mathlib.MeasureTheory.Measure.Prod",
+       "target_key": "[\"Mathlib.MeasureTheory.Measure.Prod\",\"MeasureTheory.Measure.nullMeasurableSet_prod\"]"
+      },
+      {
+       "delta_bpb": 0.13826059377102262,
+       "module": "Mathlib.MeasureTheory.Measure.Regular",
+       "target_key": "[\"Mathlib.MeasureTheory.Measure.Regular\",\"MeasureTheory.Measure.OuterRegular.smul\"]"
+      },
+      {
+       "delta_bpb": -0.003687117743894297,
+       "module": "Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal",
+       "target_key": "[\"Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal\",\"IsCyclotomicExtension.Rat.eq_span_zeta_sub_one_of_liesOver'\"]"
+      },
+      {
+       "delta_bpb": 0.1813703776047333,
+       "module": "Mathlib.NumberTheory.NumberField.InfinitePlace.Basic",
+       "target_key": "[\"Mathlib.NumberTheory.NumberField.InfinitePlace.Basic\",\"NumberField.InfinitePlace.ext\"]"
+      },
+      {
+       "delta_bpb": 0.2155685154674013,
+       "module": "Mathlib.Order.ConditionallyCompleteLattice.Basic",
+       "target_key": "[\"Mathlib.Order.ConditionallyCompleteLattice.Basic\",\"lt_csSup_iff'\"]"
+      },
+      {
+       "delta_bpb": 1.6715085558186045,
+       "module": "Mathlib.Probability.Density",
+       "target_key": "[\"Mathlib.Probability.Density\",\"MeasureTheory.pdf\"]"
+      },
+      {
+       "delta_bpb": 0.7569966497143137,
+       "module": "Mathlib.Probability.Kernel.Composition.IntegralCompProd",
+       "target_key": "[\"Mathlib.Probability.Kernel.Composition.IntegralCompProd\",\"MeasureTheory.AEStronglyMeasurable.comp\"]"
+      },
+      {
+       "delta_bpb": 1.9783014513696462,
+       "module": "Mathlib.Probability.Martingale.Upcrossing",
+       "target_key": "[\"Mathlib.Probability.Martingale.Upcrossing\",\"MeasureTheory.lowerCrossingTimeAux\"]"
+      },
+      {
+       "delta_bpb": 0.4479476590929816,
+       "module": "Mathlib.RingTheory.LaurentSeries",
+       "target_key": "[\"Mathlib.RingTheory.LaurentSeries\",\"PowerSeries.coe_neg\"]"
+      },
+      {
+       "delta_bpb": 0.10359737105661726,
+       "module": "Mathlib.RingTheory.Localization.Away.Basic",
+       "target_key": "[\"Mathlib.RingTheory.Localization.Away.Basic\",\"IsLocalization.Away.mk\"]"
+      },
+      {
+       "delta_bpb": 0.4589132477910476,
+       "module": "Mathlib.RingTheory.PowerSeries.PiTopology",
+       "target_key": "[\"Mathlib.RingTheory.PowerSeries.PiTopology\",\"PowerSeries.WithPiTopology.tsum_pow_mul_one_sub_of_constantCoeff_eq_zero\"]"
+      },
+      {
+       "delta_bpb": 0.18520555338568645,
+       "module": "Mathlib.RingTheory.SurjectiveOnStalks",
+       "target_key": "[\"Mathlib.RingTheory.SurjectiveOnStalks\",\"RingHom.SurjectiveOnStalks.localRingHom_surjective\"]"
+      },
+      {
+       "delta_bpb": 0.09363979234174791,
+       "module": "Mathlib.Topology.Algebra.InfiniteSum.ENNReal",
+       "target_key": "[\"Mathlib.Topology.Algebra.InfiniteSum.ENNReal\",\"ENNReal.tsum_eq_iSup_nat\"]"
+      },
+      {
+       "delta_bpb": 0.11600670470135777,
+       "module": "Mathlib.Topology.Algebra.Module.ModuleTopology",
+       "target_key": "[\"Mathlib.Topology.Algebra.Module.ModuleTopology\",\"IsModuleTopology.continuous_bilinear_of_finite_left\"]"
+      },
+      {
+       "delta_bpb": 0.6383654384001455,
+       "module": "Mathlib.Topology.Algebra.Monoid",
+       "target_key": "[\"Mathlib.Topology.Algebra.Monoid\",\"Topology.IsInducing.continuousMul\"]"
+      },
+      {
+       "delta_bpb": 0.2815875606349778,
+       "module": "Mathlib.Topology.NoetherianSpace",
+       "target_key": "[\"Mathlib.Topology.NoetherianSpace\",\"TopologicalSpace.NoetherianSpace.finite\"]"
+      }
+     ]
+    }
+   },
+   "e1b_assay": {
+    "active_assay_pvalue": 9.030922293917826e-07,
+    "e1a_intersection_lower_one_sided_95_bpb": 0.31985733847393427,
+    "e1a_on_intersection_inference": {
+     "ci95_two_sided_bpb": [
+      0.2945618762834334,
+      0.5940317322513406
+     ],
+     "cluster_sizes": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+     ],
+     "degeneracy_floor_bpb": 2.842170943040401e-14,
+     "degrees_of_freedom": 33,
+     "inference_status": "available",
+     "lower_one_sided_95_bpb": 0.31985733847393427,
+     "n_modules": 34,
+     "n_targets": 34,
+     "standard_error_bpb": 0.07331781857850159,
+     "target_equal_mean_bpb": 0.444296804267387,
+     "target_keys": [
+      "[\"Mathlib.Algebra.Module.LocalizedModule.Int\",\"IsLocalizedModule.finsetIntegerMultiple_image\"]",
+      "[\"Mathlib.Algebra.Star.Subalgebra\",\"StarAlgHom.ext_of_adjoin_eq_top\"]",
+      "[\"Mathlib.Analysis.Asymptotics.Defs\",\"Asymptotics.IsBigO.congr_left\"]",
+      "[\"Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric\",\"IsGreatest.nnnorm_cfcₙ_nnreal\"]",
+      "[\"Mathlib.Analysis.Convex.Topology\",\"Convex.strictConvex\"]",
+      "[\"Mathlib.Analysis.InnerProductSpace.l2Space\",\"Orthonormal.linearIsometryEquiv_symm_apply_single_one\"]",
+      "[\"Mathlib.Analysis.Normed.Module.PiTensorProduct.ProjectiveSeminorm\",\"PiTensorProduct.liftIsometry_comp_mapL\"]",
+      "[\"Mathlib.CategoryTheory.Functor.KanExtension.Preserves\",\"CategoryTheory.Functor.pointwiseLeftKanExtensionCompIsoOfPreserves\"]",
+      "[\"Mathlib.Combinatorics.SimpleGraph.Density\",\"Rel.edgeDensity_le_one\"]",
+      "[\"Mathlib.Computability.PartrecBasis\",\"Nat.Partrec'.part_iff₁\"]",
+      "[\"Mathlib.Data.Nat.Factorization.LCM\",\"Nat.factorizationLCMLeft_dvd_left\"]",
+      "[\"Mathlib.Data.Num.ZNum\",\"Num.sub_to_nat\"]",
+      "[\"Mathlib.LinearAlgebra.AffineSpace.Simplex.Basic\",\"Affine.Simplex.closedInterior_restrict\"]",
+      "[\"Mathlib.LinearAlgebra.Matrix.Rank\",\"Matrix.eRank_zero\"]",
+      "[\"Mathlib.LinearAlgebra.Matrix.ToLin\",\"LinearMap.toMatrixRight'_id\"]",
+      "[\"Mathlib.MeasureTheory.Function.LpSpace.Basic\",\"MeasureTheory.Lp.norm_exponent_zero\"]",
+      "[\"Mathlib.MeasureTheory.Group.Arithmetic\",\"aemeasurable_inv_iff\"]",
+      "[\"Mathlib.MeasureTheory.Integral.Asymptotics\",\"Asymptotics.IsBigO.eventually_integrableOn\"]",
+      "[\"Mathlib.MeasureTheory.Measure.MeasureSpace\",\"MeasureTheory.le_measure_symmDiff\"]",
+      "[\"Mathlib.MeasureTheory.Measure.Prod\",\"MeasureTheory.Measure.nullMeasurableSet_prod\"]",
+      "[\"Mathlib.MeasureTheory.Measure.Regular\",\"MeasureTheory.Measure.OuterRegular.smul\"]",
+      "[\"Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal\",\"IsCyclotomicExtension.Rat.eq_span_zeta_sub_one_of_liesOver'\"]",
+      "[\"Mathlib.NumberTheory.NumberField.InfinitePlace.Basic\",\"NumberField.InfinitePlace.ext\"]",
+      "[\"Mathlib.Probability.Density\",\"MeasureTheory.pdf\"]",
+      "[\"Mathlib.Probability.Kernel.Composition.IntegralCompProd\",\"MeasureTheory.AEStronglyMeasurable.comp\"]",
+      "[\"Mathlib.Probability.Martingale.Upcrossing\",\"MeasureTheory.lowerCrossingTimeAux\"]",
+      "[\"Mathlib.RingTheory.LaurentSeries\",\"PowerSeries.coe_neg\"]",
+      "[\"Mathlib.RingTheory.Localization.Away.Basic\",\"IsLocalization.Away.mk\"]",
+      "[\"Mathlib.RingTheory.PowerSeries.PiTopology\",\"PowerSeries.WithPiTopology.tsum_pow_mul_one_sub_of_constantCoeff_eq_zero\"]",
+      "[\"Mathlib.RingTheory.SurjectiveOnStalks\",\"RingHom.SurjectiveOnStalks.localRingHom_surjective\"]",
+      "[\"Mathlib.Topology.Algebra.InfiniteSum.ENNReal\",\"ENNReal.tsum_eq_iSup_nat\"]",
+      "[\"Mathlib.Topology.Algebra.Module.ModuleTopology\",\"IsModuleTopology.continuous_bilinear_of_finite_left\"]",
+      "[\"Mathlib.Topology.Algebra.Monoid\",\"Topology.IsInducing.continuousMul\"]",
+      "[\"Mathlib.Topology.NoetherianSpace\",\"TopologicalSpace.NoetherianSpace.finite\"]"
+     ],
+     "target_range_bpb": 2.0428718356895366,
+     "upper_one_sided_95_bpb": 0.5687362700608397,
+     "variance_components": {
+      "cluster_sizes": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ],
+      "mode": "all-singleton-conservative",
+      "n_modules": 34,
+      "n_pilot": 34,
+      "sigma_b2": 0.18276708571774244,
+      "sigma_w2": 0.0
+     }
+    },
+    "e1b_upper_one_sided_95_bpb": 0.09136148887943252,
+    "holm_adjusted_pvalue": 0.9999573393990682,
+    "interface_compatible": false,
+    "intersection": "E1a eligible intersect E1b eligible",
+    "intersection_union_pvalue": 0.9999573393990682,
+    "label": "noninferiority-not-established",
+    "margin_bpb": 0.02,
+    "noninferiority_pvalue": 0.9999573393990682,
+    "pointwise_active_assay": true,
+    "pointwise_noninferiority": false,
+    "requires_k4x_sensitivity": false,
+    "target_rows": [
+     {
+      "delta_bpb": 0.11159544288719692,
+      "module": "Mathlib.Algebra.Module.LocalizedModule.Int",
+      "target_key": "[\"Mathlib.Algebra.Module.LocalizedModule.Int\",\"IsLocalizedModule.finsetIntegerMultiple_image\"]"
+     },
+     {
+      "delta_bpb": 0.5206745635339436,
+      "module": "Mathlib.Algebra.Star.Subalgebra",
+      "target_key": "[\"Mathlib.Algebra.Star.Subalgebra\",\"StarAlgHom.ext_of_adjoin_eq_top\"]"
+     },
+     {
+      "delta_bpb": 0.27894671763920154,
+      "module": "Mathlib.Analysis.Asymptotics.Defs",
+      "target_key": "[\"Mathlib.Analysis.Asymptotics.Defs\",\"Asymptotics.IsBigO.congr_left\"]"
+     },
+     {
+      "delta_bpb": 0.5102833232595927,
+      "module": "Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric",
+      "target_key": "[\"Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric\",\"IsGreatest.nnnorm_cfcₙ_nnreal\"]"
+     },
+     {
+      "delta_bpb": 0.5610814683145355,
+      "module": "Mathlib.Analysis.Convex.Topology",
+      "target_key": "[\"Mathlib.Analysis.Convex.Topology\",\"Convex.strictConvex\"]"
+     },
+     {
+      "delta_bpb": 0.3750973569870086,
+      "module": "Mathlib.Analysis.InnerProductSpace.l2Space",
+      "target_key": "[\"Mathlib.Analysis.InnerProductSpace.l2Space\",\"Orthonormal.linearIsometryEquiv_symm_apply_single_one\"]"
+     },
+     {
+      "delta_bpb": 0.09986411568858744,
+      "module": "Mathlib.Analysis.Normed.Module.PiTensorProduct.ProjectiveSeminorm",
+      "target_key": "[\"Mathlib.Analysis.Normed.Module.PiTensorProduct.ProjectiveSeminorm\",\"PiTensorProduct.liftIsometry_comp_mapL\"]"
+     },
+     {
+      "delta_bpb": 0.3115956549301726,
+      "module": "Mathlib.CategoryTheory.Functor.KanExtension.Preserves",
+      "target_key": "[\"Mathlib.CategoryTheory.Functor.KanExtension.Preserves\",\"CategoryTheory.Functor.pointwiseLeftKanExtensionCompIsoOfPreserves\"]"
+     },
+     {
+      "delta_bpb": 0.3353106259374592,
+      "module": "Mathlib.Combinatorics.SimpleGraph.Density",
+      "target_key": "[\"Mathlib.Combinatorics.SimpleGraph.Density\",\"Rel.edgeDensity_le_one\"]"
+     },
+     {
+      "delta_bpb": 0.8485656780121092,
+      "module": "Mathlib.Computability.PartrecBasis",
+      "target_key": "[\"Mathlib.Computability.PartrecBasis\",\"Nat.Partrec'.part_iff₁\"]"
+     },
+     {
+      "delta_bpb": 0.33206879982339943,
+      "module": "Mathlib.Data.Nat.Factorization.LCM",
+      "target_key": "[\"Mathlib.Data.Nat.Factorization.LCM\",\"Nat.factorizationLCMLeft_dvd_left\"]"
+     },
+     {
+      "delta_bpb": 0.49268858737085286,
+      "module": "Mathlib.Data.Num.ZNum",
+      "target_key": "[\"Mathlib.Data.Num.ZNum\",\"Num.sub_to_nat\"]"
+     },
+     {
+      "delta_bpb": 0.19309461645258086,
+      "module": "Mathlib.LinearAlgebra.AffineSpace.Simplex.Basic",
+      "target_key": "[\"Mathlib.LinearAlgebra.AffineSpace.Simplex.Basic\",\"Affine.Simplex.closedInterior_restrict\"]"
+     },
+     {
+      "delta_bpb": 0.11321916895972506,
+      "module": "Mathlib.LinearAlgebra.Matrix.Rank",
+      "target_key": "[\"Mathlib.LinearAlgebra.Matrix.Rank\",\"Matrix.eRank_zero\"]"
+     },
+     {
+      "delta_bpb": 0.18664235230900905,
+      "module": "Mathlib.LinearAlgebra.Matrix.ToLin",
+      "target_key": "[\"Mathlib.LinearAlgebra.Matrix.ToLin\",\"LinearMap.toMatrixRight'_id\"]"
+     },
+     {
+      "delta_bpb": 0.557301800312758,
+      "module": "Mathlib.MeasureTheory.Function.LpSpace.Basic",
+      "target_key": "[\"Mathlib.MeasureTheory.Function.LpSpace.Basic\",\"MeasureTheory.Lp.norm_exponent_zero\"]"
+     },
+     {
+      "delta_bpb": 0.057426954972171096,
+      "module": "Mathlib.MeasureTheory.Group.Arithmetic",
+      "target_key": "[\"Mathlib.MeasureTheory.Group.Arithmetic\",\"aemeasurable_inv_iff\"]"
+     },
+     {
+      "delta_bpb": 0.30778030076391283,
+      "module": "Mathlib.MeasureTheory.Integral.Asymptotics",
+      "target_key": "[\"Mathlib.MeasureTheory.Integral.Asymptotics\",\"Asymptotics.IsBigO.eventually_integrableOn\"]"
+     },
+     {
+      "delta_bpb": 0.28553614915714953,
+      "module": "Mathlib.MeasureTheory.Measure.MeasureSpace",
+      "target_key": "[\"Mathlib.MeasureTheory.Measure.MeasureSpace\",\"MeasureTheory.le_measure_symmDiff\"]"
+     },
+     {
+      "delta_bpb": 0.0888742761516963,
+      "module": "Mathlib.MeasureTheory.Measure.Prod",
+      "target_key": "[\"Mathlib.MeasureTheory.Measure.Prod\",\"MeasureTheory.Measure.nullMeasurableSet_prod\"]"
+     },
+     {
+      "delta_bpb": 0.3736716469837533,
+      "module": "Mathlib.MeasureTheory.Measure.Regular",
+      "target_key": "[\"Mathlib.MeasureTheory.Measure.Regular\",\"MeasureTheory.Measure.OuterRegular.smul\"]"
+     },
+     {
+      "delta_bpb": 0.07136883066144784,
+      "module": "Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal",
+      "target_key": "[\"Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal\",\"IsCyclotomicExtension.Rat.eq_span_zeta_sub_one_of_liesOver'\"]"
+     },
+     {
+      "delta_bpb": 0.3716317942642138,
+      "module": "Mathlib.NumberTheory.NumberField.InfinitePlace.Basic",
+      "target_key": "[\"Mathlib.NumberTheory.NumberField.InfinitePlace.Basic\",\"NumberField.InfinitePlace.ext\"]"
+     },
+     {
+      "delta_bpb": 1.7241667439228123,
+      "module": "Mathlib.Probability.Density",
+      "target_key": "[\"Mathlib.Probability.Density\",\"MeasureTheory.pdf\"]"
+     },
+     {
+      "delta_bpb": 0.7237441732375145,
+      "module": "Mathlib.Probability.Kernel.Composition.IntegralCompProd",
+      "target_key": "[\"Mathlib.Probability.Kernel.Composition.IntegralCompProd\",\"MeasureTheory.AEStronglyMeasurable.comp\"]"
+     },
+     {
+      "delta_bpb": 2.1002987906617077,
+      "module": "Mathlib.Probability.Martingale.Upcrossing",
+      "target_key": "[\"Mathlib.Probability.Martingale.Upcrossing\",\"MeasureTheory.lowerCrossingTimeAux\"]"
+     },
+     {
+      "delta_bpb": 0.6803996521659013,
+      "module": "Mathlib.RingTheory.LaurentSeries",
+      "target_key": "[\"Mathlib.RingTheory.LaurentSeries\",\"PowerSeries.coe_neg\"]"
+     },
+     {
+      "delta_bpb": 0.15574611611236577,
+      "module": "Mathlib.RingTheory.Localization.Away.Basic",
+      "target_key": "[\"Mathlib.RingTheory.Localization.Away.Basic\",\"IsLocalization.Away.mk\"]"
+     },
+     {
+      "delta_bpb": 0.529068039515522,
+      "module": "Mathlib.RingTheory.PowerSeries.PiTopology",
+      "target_key": "[\"Mathlib.RingTheory.PowerSeries.PiTopology\",\"PowerSeries.WithPiTopology.tsum_pow_mul_one_sub_of_constantCoeff_eq_zero\"]"
+     },
+     {
+      "delta_bpb": 0.3224375374208015,
+      "module": "Mathlib.RingTheory.SurjectiveOnStalks",
+      "target_key": "[\"Mathlib.RingTheory.SurjectiveOnStalks\",\"RingHom.SurjectiveOnStalks.localRingHom_surjective\"]"
+     },
+     {
+      "delta_bpb": 0.2442405196662224,
+      "module": "Mathlib.Topology.Algebra.InfiniteSum.ENNReal",
+      "target_key": "[\"Mathlib.Topology.Algebra.InfiniteSum.ENNReal\",\"ENNReal.tsum_eq_iSup_nat\"]"
+     },
+     {
+      "delta_bpb": 0.14336759586457448,
+      "module": "Mathlib.Topology.Algebra.Module.ModuleTopology",
+      "target_key": "[\"Mathlib.Topology.Algebra.Module.ModuleTopology\",\"IsModuleTopology.continuous_bilinear_of_finite_left\"]"
+     },
+     {
+      "delta_bpb": 0.6991756484506416,
+      "module": "Mathlib.Topology.Algebra.Monoid",
+      "target_key": "[\"Mathlib.Topology.Algebra.Monoid\",\"Topology.IsInducing.continuousMul\"]"
+     },
+     {
+      "delta_bpb": 0.39912630270061755,
+      "module": "Mathlib.Topology.NoetherianSpace",
+      "target_key": "[\"Mathlib.Topology.NoetherianSpace\",\"TopologicalSpace.NoetherianSpace.finite\"]"
+     }
+    ]
+   },
+   "eligible_intersections": {
+    "pairwise": {
+     "E1a&E1b": {
+      "n": 34,
+      "target_keys": [
+       "[\"Mathlib.Algebra.Module.LocalizedModule.Int\",\"IsLocalizedModule.finsetIntegerMultiple_image\"]",
+       "[\"Mathlib.Algebra.Star.Subalgebra\",\"StarAlgHom.ext_of_adjoin_eq_top\"]",
+       "[\"Mathlib.Analysis.Asymptotics.Defs\",\"Asymptotics.IsBigO.congr_left\"]",
+       "[\"Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric\",\"IsGreatest.nnnorm_cfcₙ_nnreal\"]",
+       "[\"Mathlib.Analysis.Convex.Topology\",\"Convex.strictConvex\"]",
+       "[\"Mathlib.Analysis.InnerProductSpace.l2Space\",\"Orthonormal.linearIsometryEquiv_symm_apply_single_one\"]",
+       "[\"Mathlib.Analysis.Normed.Module.PiTensorProduct.ProjectiveSeminorm\",\"PiTensorProduct.liftIsometry_comp_mapL\"]",
+       "[\"Mathlib.CategoryTheory.Functor.KanExtension.Preserves\",\"CategoryTheory.Functor.pointwiseLeftKanExtensionCompIsoOfPreserves\"]",
+       "[\"Mathlib.Combinatorics.SimpleGraph.Density\",\"Rel.edgeDensity_le_one\"]",
+       "[\"Mathlib.Computability.PartrecBasis\",\"Nat.Partrec'.part_iff₁\"]",
+       "[\"Mathlib.Data.Nat.Factorization.LCM\",\"Nat.factorizationLCMLeft_dvd_left\"]",
+       "[\"Mathlib.Data.Num.ZNum\",\"Num.sub_to_nat\"]",
+       "[\"Mathlib.LinearAlgebra.AffineSpace.Simplex.Basic\",\"Affine.Simplex.closedInterior_restrict\"]",
+       "[\"Mathlib.LinearAlgebra.Matrix.Rank\",\"Matrix.eRank_zero\"]",
+       "[\"Mathlib.LinearAlgebra.Matrix.ToLin\",\"LinearMap.toMatrixRight'_id\"]",
+       "[\"Mathlib.MeasureTheory.Function.LpSpace.Basic\",\"MeasureTheory.Lp.norm_exponent_zero\"]",
+       "[\"Mathlib.MeasureTheory.Group.Arithmetic\",\"aemeasurable_inv_iff\"]",
+       "[\"Mathlib.MeasureTheory.Integral.Asymptotics\",\"Asymptotics.IsBigO.eventually_integrableOn\"]",
+       "[\"Mathlib.MeasureTheory.Measure.MeasureSpace\",\"MeasureTheory.le_measure_symmDiff\"]",
+       "[\"Mathlib.MeasureTheory.Measure.Prod\",\"MeasureTheory.Measure.nullMeasurableSet_prod\"]",
+       "[\"Mathlib.MeasureTheory.Measure.Regular\",\"MeasureTheory.Measure.OuterRegular.smul\"]",
+       "[\"Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal\",\"IsCyclotomicExtension.Rat.eq_span_zeta_sub_one_of_liesOver'\"]",
+       "[\"Mathlib.NumberTheory.NumberField.InfinitePlace.Basic\",\"NumberField.InfinitePlace.ext\"]",
+       "[\"Mathlib.Probability.Density\",\"MeasureTheory.pdf\"]",
+       "[\"Mathlib.Probability.Kernel.Composition.IntegralCompProd\",\"MeasureTheory.AEStronglyMeasurable.comp\"]",
+       "[\"Mathlib.Probability.Martingale.Upcrossing\",\"MeasureTheory.lowerCrossingTimeAux\"]",
+       "[\"Mathlib.RingTheory.LaurentSeries\",\"PowerSeries.coe_neg\"]",
+       "[\"Mathlib.RingTheory.Localization.Away.Basic\",\"IsLocalization.Away.mk\"]",
+       "[\"Mathlib.RingTheory.PowerSeries.PiTopology\",\"PowerSeries.WithPiTopology.tsum_pow_mul_one_sub_of_constantCoeff_eq_zero\"]",
+       "[\"Mathlib.RingTheory.SurjectiveOnStalks\",\"RingHom.SurjectiveOnStalks.localRingHom_surjective\"]",
+       "[\"Mathlib.Topology.Algebra.InfiniteSum.ENNReal\",\"ENNReal.tsum_eq_iSup_nat\"]",
+       "[\"Mathlib.Topology.Algebra.Module.ModuleTopology\",\"IsModuleTopology.continuous_bilinear_of_finite_left\"]",
+       "[\"Mathlib.Topology.Algebra.Monoid\",\"Topology.IsInducing.continuousMul\"]",
+       "[\"Mathlib.Topology.NoetherianSpace\",\"TopologicalSpace.NoetherianSpace.finite\"]"
+      ]
+     },
+     "E1a&E2": {
+      "n": 35,
+      "target_keys": [
+       "[\"Mathlib.Algebra.Module.LocalizedModule.Int\",\"IsLocalizedModule.finsetIntegerMultiple_image\"]",
+       "[\"Mathlib.Algebra.Star.Subalgebra\",\"StarAlgHom.ext_of_adjoin_eq_top\"]",
+       "[\"Mathlib.Analysis.Asymptotics.Defs\",\"Asymptotics.IsBigO.congr_left\"]",
+       "[\"Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric\",\"IsGreatest.nnnorm_cfcₙ_nnreal\"]",
+       "[\"Mathlib.Analysis.Convex.Topology\",\"Convex.strictConvex\"]",
+       "[\"Mathlib.Analysis.InnerProductSpace.l2Space\",\"Orthonormal.linearIsometryEquiv_symm_apply_single_one\"]",
+       "[\"Mathlib.Analysis.Normed.Module.PiTensorProduct.ProjectiveSeminorm\",\"PiTensorProduct.liftIsometry_comp_mapL\"]",
+       "[\"Mathlib.CategoryTheory.Functor.KanExtension.Preserves\",\"CategoryTheory.Functor.pointwiseLeftKanExtensionCompIsoOfPreserves\"]",
+       "[\"Mathlib.Combinatorics.SimpleGraph.Density\",\"Rel.edgeDensity_le_one\"]",
+       "[\"Mathlib.Computability.PartrecBasis\",\"Nat.Partrec'.part_iff₁\"]",
+       "[\"Mathlib.Data.Nat.Factorization.LCM\",\"Nat.factorizationLCMLeft_dvd_left\"]",
+       "[\"Mathlib.Data.Num.ZNum\",\"Num.sub_to_nat\"]",
+       "[\"Mathlib.LinearAlgebra.AffineSpace.Simplex.Basic\",\"Affine.Simplex.closedInterior_restrict\"]",
+       "[\"Mathlib.LinearAlgebra.Matrix.Rank\",\"Matrix.eRank_zero\"]",
+       "[\"Mathlib.LinearAlgebra.Matrix.ToLin\",\"LinearMap.toMatrixRight'_id\"]",
+       "[\"Mathlib.MeasureTheory.Function.LpSpace.Basic\",\"MeasureTheory.Lp.norm_exponent_zero\"]",
+       "[\"Mathlib.MeasureTheory.Group.Arithmetic\",\"aemeasurable_inv_iff\"]",
+       "[\"Mathlib.MeasureTheory.Integral.Asymptotics\",\"Asymptotics.IsBigO.eventually_integrableOn\"]",
+       "[\"Mathlib.MeasureTheory.Measure.MeasureSpace\",\"MeasureTheory.le_measure_symmDiff\"]",
+       "[\"Mathlib.MeasureTheory.Measure.Prod\",\"MeasureTheory.Measure.nullMeasurableSet_prod\"]",
+       "[\"Mathlib.MeasureTheory.Measure.Regular\",\"MeasureTheory.Measure.OuterRegular.smul\"]",
+       "[\"Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal\",\"IsCyclotomicExtension.Rat.eq_span_zeta_sub_one_of_liesOver'\"]",
+       "[\"Mathlib.NumberTheory.NumberField.InfinitePlace.Basic\",\"NumberField.InfinitePlace.ext\"]",
+       "[\"Mathlib.Order.ConditionallyCompleteLattice.Basic\",\"lt_csSup_iff'\"]",
+       "[\"Mathlib.Probability.Density\",\"MeasureTheory.pdf\"]",
+       "[\"Mathlib.Probability.Kernel.Composition.IntegralCompProd\",\"MeasureTheory.AEStronglyMeasurable.comp\"]",
+       "[\"Mathlib.Probability.Martingale.Upcrossing\",\"MeasureTheory.lowerCrossingTimeAux\"]",
+       "[\"Mathlib.RingTheory.LaurentSeries\",\"PowerSeries.coe_neg\"]",
+       "[\"Mathlib.RingTheory.Localization.Away.Basic\",\"IsLocalization.Away.mk\"]",
+       "[\"Mathlib.RingTheory.PowerSeries.PiTopology\",\"PowerSeries.WithPiTopology.tsum_pow_mul_one_sub_of_constantCoeff_eq_zero\"]",
+       "[\"Mathlib.RingTheory.SurjectiveOnStalks\",\"RingHom.SurjectiveOnStalks.localRingHom_surjective\"]",
+       "[\"Mathlib.Topology.Algebra.InfiniteSum.ENNReal\",\"ENNReal.tsum_eq_iSup_nat\"]",
+       "[\"Mathlib.Topology.Algebra.Module.ModuleTopology\",\"IsModuleTopology.continuous_bilinear_of_finite_left\"]",
+       "[\"Mathlib.Topology.Algebra.Monoid\",\"Topology.IsInducing.continuousMul\"]",
+       "[\"Mathlib.Topology.NoetherianSpace\",\"TopologicalSpace.NoetherianSpace.finite\"]"
+      ]
+     },
+     "E1b&E2": {
+      "n": 34,
+      "target_keys": [
+       "[\"Mathlib.Algebra.Module.LocalizedModule.Int\",\"IsLocalizedModule.finsetIntegerMultiple_image\"]",
+       "[\"Mathlib.Algebra.Star.Subalgebra\",\"StarAlgHom.ext_of_adjoin_eq_top\"]",
+       "[\"Mathlib.Analysis.Asymptotics.Defs\",\"Asymptotics.IsBigO.congr_left\"]",
+       "[\"Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric\",\"IsGreatest.nnnorm_cfcₙ_nnreal\"]",
+       "[\"Mathlib.Analysis.Convex.Topology\",\"Convex.strictConvex\"]",
+       "[\"Mathlib.Analysis.InnerProductSpace.l2Space\",\"Orthonormal.linearIsometryEquiv_symm_apply_single_one\"]",
+       "[\"Mathlib.Analysis.Normed.Module.PiTensorProduct.ProjectiveSeminorm\",\"PiTensorProduct.liftIsometry_comp_mapL\"]",
+       "[\"Mathlib.CategoryTheory.Functor.KanExtension.Preserves\",\"CategoryTheory.Functor.pointwiseLeftKanExtensionCompIsoOfPreserves\"]",
+       "[\"Mathlib.Combinatorics.SimpleGraph.Density\",\"Rel.edgeDensity_le_one\"]",
+       "[\"Mathlib.Computability.PartrecBasis\",\"Nat.Partrec'.part_iff₁\"]",
+       "[\"Mathlib.Data.Nat.Factorization.LCM\",\"Nat.factorizationLCMLeft_dvd_left\"]",
+       "[\"Mathlib.Data.Num.ZNum\",\"Num.sub_to_nat\"]",
+       "[\"Mathlib.LinearAlgebra.AffineSpace.Simplex.Basic\",\"Affine.Simplex.closedInterior_restrict\"]",
+       "[\"Mathlib.LinearAlgebra.Matrix.Rank\",\"Matrix.eRank_zero\"]",
+       "[\"Mathlib.LinearAlgebra.Matrix.ToLin\",\"LinearMap.toMatrixRight'_id\"]",
+       "[\"Mathlib.MeasureTheory.Function.LpSpace.Basic\",\"MeasureTheory.Lp.norm_exponent_zero\"]",
+       "[\"Mathlib.MeasureTheory.Group.Arithmetic\",\"aemeasurable_inv_iff\"]",
+       "[\"Mathlib.MeasureTheory.Integral.Asymptotics\",\"Asymptotics.IsBigO.eventually_integrableOn\"]",
+       "[\"Mathlib.MeasureTheory.Measure.MeasureSpace\",\"MeasureTheory.le_measure_symmDiff\"]",
+       "[\"Mathlib.MeasureTheory.Measure.Prod\",\"MeasureTheory.Measure.nullMeasurableSet_prod\"]",
+       "[\"Mathlib.MeasureTheory.Measure.Regular\",\"MeasureTheory.Measure.OuterRegular.smul\"]",
+       "[\"Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal\",\"IsCyclotomicExtension.Rat.eq_span_zeta_sub_one_of_liesOver'\"]",
+       "[\"Mathlib.NumberTheory.NumberField.InfinitePlace.Basic\",\"NumberField.InfinitePlace.ext\"]",
+       "[\"Mathlib.Probability.Density\",\"MeasureTheory.pdf\"]",
+       "[\"Mathlib.Probability.Kernel.Composition.IntegralCompProd\",\"MeasureTheory.AEStronglyMeasurable.comp\"]",
+       "[\"Mathlib.Probability.Martingale.Upcrossing\",\"MeasureTheory.lowerCrossingTimeAux\"]",
+       "[\"Mathlib.RingTheory.LaurentSeries\",\"PowerSeries.coe_neg\"]",
+       "[\"Mathlib.RingTheory.Localization.Away.Basic\",\"IsLocalization.Away.mk\"]",
+       "[\"Mathlib.RingTheory.PowerSeries.PiTopology\",\"PowerSeries.WithPiTopology.tsum_pow_mul_one_sub_of_constantCoeff_eq_zero\"]",
+       "[\"Mathlib.RingTheory.SurjectiveOnStalks\",\"RingHom.SurjectiveOnStalks.localRingHom_surjective\"]",
+       "[\"Mathlib.Topology.Algebra.InfiniteSum.ENNReal\",\"ENNReal.tsum_eq_iSup_nat\"]",
+       "[\"Mathlib.Topology.Algebra.Module.ModuleTopology\",\"IsModuleTopology.continuous_bilinear_of_finite_left\"]",
+       "[\"Mathlib.Topology.Algebra.Monoid\",\"Topology.IsInducing.continuousMul\"]",
+       "[\"Mathlib.Topology.NoetherianSpace\",\"TopologicalSpace.NoetherianSpace.finite\"]"
+      ]
+     }
+    },
+    "three_way": {
+     "n": 34,
+     "target_keys": [
+      "[\"Mathlib.Algebra.Module.LocalizedModule.Int\",\"IsLocalizedModule.finsetIntegerMultiple_image\"]",
+      "[\"Mathlib.Algebra.Star.Subalgebra\",\"StarAlgHom.ext_of_adjoin_eq_top\"]",
+      "[\"Mathlib.Analysis.Asymptotics.Defs\",\"Asymptotics.IsBigO.congr_left\"]",
+      "[\"Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric\",\"IsGreatest.nnnorm_cfcₙ_nnreal\"]",
+      "[\"Mathlib.Analysis.Convex.Topology\",\"Convex.strictConvex\"]",
+      "[\"Mathlib.Analysis.InnerProductSpace.l2Space\",\"Orthonormal.linearIsometryEquiv_symm_apply_single_one\"]",
+      "[\"Mathlib.Analysis.Normed.Module.PiTensorProduct.ProjectiveSeminorm\",\"PiTensorProduct.liftIsometry_comp_mapL\"]",
+      "[\"Mathlib.CategoryTheory.Functor.KanExtension.Preserves\",\"CategoryTheory.Functor.pointwiseLeftKanExtensionCompIsoOfPreserves\"]",
+      "[\"Mathlib.Combinatorics.SimpleGraph.Density\",\"Rel.edgeDensity_le_one\"]",
+      "[\"Mathlib.Computability.PartrecBasis\",\"Nat.Partrec'.part_iff₁\"]",
+      "[\"Mathlib.Data.Nat.Factorization.LCM\",\"Nat.factorizationLCMLeft_dvd_left\"]",
+      "[\"Mathlib.Data.Num.ZNum\",\"Num.sub_to_nat\"]",
+      "[\"Mathlib.LinearAlgebra.AffineSpace.Simplex.Basic\",\"Affine.Simplex.closedInterior_restrict\"]",
+      "[\"Mathlib.LinearAlgebra.Matrix.Rank\",\"Matrix.eRank_zero\"]",
+      "[\"Mathlib.LinearAlgebra.Matrix.ToLin\",\"LinearMap.toMatrixRight'_id\"]",
+      "[\"Mathlib.MeasureTheory.Function.LpSpace.Basic\",\"MeasureTheory.Lp.norm_exponent_zero\"]",
+      "[\"Mathlib.MeasureTheory.Group.Arithmetic\",\"aemeasurable_inv_iff\"]",
+      "[\"Mathlib.MeasureTheory.Integral.Asymptotics\",\"Asymptotics.IsBigO.eventually_integrableOn\"]",
+      "[\"Mathlib.MeasureTheory.Measure.MeasureSpace\",\"MeasureTheory.le_measure_symmDiff\"]",
+      "[\"Mathlib.MeasureTheory.Measure.Prod\",\"MeasureTheory.Measure.nullMeasurableSet_prod\"]",
+      "[\"Mathlib.MeasureTheory.Measure.Regular\",\"MeasureTheory.Measure.OuterRegular.smul\"]",
+      "[\"Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal\",\"IsCyclotomicExtension.Rat.eq_span_zeta_sub_one_of_liesOver'\"]",
+      "[\"Mathlib.NumberTheory.NumberField.InfinitePlace.Basic\",\"NumberField.InfinitePlace.ext\"]",
+      "[\"Mathlib.Probability.Density\",\"MeasureTheory.pdf\"]",
+      "[\"Mathlib.Probability.Kernel.Composition.IntegralCompProd\",\"MeasureTheory.AEStronglyMeasurable.comp\"]",
+      "[\"Mathlib.Probability.Martingale.Upcrossing\",\"MeasureTheory.lowerCrossingTimeAux\"]",
+      "[\"Mathlib.RingTheory.LaurentSeries\",\"PowerSeries.coe_neg\"]",
+      "[\"Mathlib.RingTheory.Localization.Away.Basic\",\"IsLocalization.Away.mk\"]",
+      "[\"Mathlib.RingTheory.PowerSeries.PiTopology\",\"PowerSeries.WithPiTopology.tsum_pow_mul_one_sub_of_constantCoeff_eq_zero\"]",
+      "[\"Mathlib.RingTheory.SurjectiveOnStalks\",\"RingHom.SurjectiveOnStalks.localRingHom_surjective\"]",
+      "[\"Mathlib.Topology.Algebra.InfiniteSum.ENNReal\",\"ENNReal.tsum_eq_iSup_nat\"]",
+      "[\"Mathlib.Topology.Algebra.Module.ModuleTopology\",\"IsModuleTopology.continuous_bilinear_of_finite_left\"]",
+      "[\"Mathlib.Topology.Algebra.Monoid\",\"Topology.IsInducing.continuousMul\"]",
+      "[\"Mathlib.Topology.NoetherianSpace\",\"TopologicalSpace.NoetherianSpace.finite\"]"
+     ]
+    }
+   },
+   "eligible_target_sets": {
+    "E1a": {
+     "n": 35,
+     "target_keys": [
+      "[\"Mathlib.Algebra.Module.LocalizedModule.Int\",\"IsLocalizedModule.finsetIntegerMultiple_image\"]",
+      "[\"Mathlib.Algebra.Star.Subalgebra\",\"StarAlgHom.ext_of_adjoin_eq_top\"]",
+      "[\"Mathlib.Analysis.Asymptotics.Defs\",\"Asymptotics.IsBigO.congr_left\"]",
+      "[\"Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric\",\"IsGreatest.nnnorm_cfcₙ_nnreal\"]",
+      "[\"Mathlib.Analysis.Convex.Topology\",\"Convex.strictConvex\"]",
+      "[\"Mathlib.Analysis.InnerProductSpace.l2Space\",\"Orthonormal.linearIsometryEquiv_symm_apply_single_one\"]",
+      "[\"Mathlib.Analysis.Normed.Module.PiTensorProduct.ProjectiveSeminorm\",\"PiTensorProduct.liftIsometry_comp_mapL\"]",
+      "[\"Mathlib.CategoryTheory.Functor.KanExtension.Preserves\",\"CategoryTheory.Functor.pointwiseLeftKanExtensionCompIsoOfPreserves\"]",
+      "[\"Mathlib.Combinatorics.SimpleGraph.Density\",\"Rel.edgeDensity_le_one\"]",
+      "[\"Mathlib.Computability.PartrecBasis\",\"Nat.Partrec'.part_iff₁\"]",
+      "[\"Mathlib.Data.Nat.Factorization.LCM\",\"Nat.factorizationLCMLeft_dvd_left\"]",
+      "[\"Mathlib.Data.Num.ZNum\",\"Num.sub_to_nat\"]",
+      "[\"Mathlib.LinearAlgebra.AffineSpace.Simplex.Basic\",\"Affine.Simplex.closedInterior_restrict\"]",
+      "[\"Mathlib.LinearAlgebra.Matrix.Rank\",\"Matrix.eRank_zero\"]",
+      "[\"Mathlib.LinearAlgebra.Matrix.ToLin\",\"LinearMap.toMatrixRight'_id\"]",
+      "[\"Mathlib.MeasureTheory.Function.LpSpace.Basic\",\"MeasureTheory.Lp.norm_exponent_zero\"]",
+      "[\"Mathlib.MeasureTheory.Group.Arithmetic\",\"aemeasurable_inv_iff\"]",
+      "[\"Mathlib.MeasureTheory.Integral.Asymptotics\",\"Asymptotics.IsBigO.eventually_integrableOn\"]",
+      "[\"Mathlib.MeasureTheory.Measure.MeasureSpace\",\"MeasureTheory.le_measure_symmDiff\"]",
+      "[\"Mathlib.MeasureTheory.Measure.Prod\",\"MeasureTheory.Measure.nullMeasurableSet_prod\"]",
+      "[\"Mathlib.MeasureTheory.Measure.Regular\",\"MeasureTheory.Measure.OuterRegular.smul\"]",
+      "[\"Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal\",\"IsCyclotomicExtension.Rat.eq_span_zeta_sub_one_of_liesOver'\"]",
+      "[\"Mathlib.NumberTheory.NumberField.InfinitePlace.Basic\",\"NumberField.InfinitePlace.ext\"]",
+      "[\"Mathlib.Order.ConditionallyCompleteLattice.Basic\",\"lt_csSup_iff'\"]",
+      "[\"Mathlib.Probability.Density\",\"MeasureTheory.pdf\"]",
+      "[\"Mathlib.Probability.Kernel.Composition.IntegralCompProd\",\"MeasureTheory.AEStronglyMeasurable.comp\"]",
+      "[\"Mathlib.Probability.Martingale.Upcrossing\",\"MeasureTheory.lowerCrossingTimeAux\"]",
+      "[\"Mathlib.RingTheory.LaurentSeries\",\"PowerSeries.coe_neg\"]",
+      "[\"Mathlib.RingTheory.Localization.Away.Basic\",\"IsLocalization.Away.mk\"]",
+      "[\"Mathlib.RingTheory.PowerSeries.PiTopology\",\"PowerSeries.WithPiTopology.tsum_pow_mul_one_sub_of_constantCoeff_eq_zero\"]",
+      "[\"Mathlib.RingTheory.SurjectiveOnStalks\",\"RingHom.SurjectiveOnStalks.localRingHom_surjective\"]",
+      "[\"Mathlib.Topology.Algebra.InfiniteSum.ENNReal\",\"ENNReal.tsum_eq_iSup_nat\"]",
+      "[\"Mathlib.Topology.Algebra.Module.ModuleTopology\",\"IsModuleTopology.continuous_bilinear_of_finite_left\"]",
+      "[\"Mathlib.Topology.Algebra.Monoid\",\"Topology.IsInducing.continuousMul\"]",
+      "[\"Mathlib.Topology.NoetherianSpace\",\"TopologicalSpace.NoetherianSpace.finite\"]"
+     ]
+    },
+    "E1b": {
+     "n": 34,
+     "target_keys": [
+      "[\"Mathlib.Algebra.Module.LocalizedModule.Int\",\"IsLocalizedModule.finsetIntegerMultiple_image\"]",
+      "[\"Mathlib.Algebra.Star.Subalgebra\",\"StarAlgHom.ext_of_adjoin_eq_top\"]",
+      "[\"Mathlib.Analysis.Asymptotics.Defs\",\"Asymptotics.IsBigO.congr_left\"]",
+      "[\"Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric\",\"IsGreatest.nnnorm_cfcₙ_nnreal\"]",
+      "[\"Mathlib.Analysis.Convex.Topology\",\"Convex.strictConvex\"]",
+      "[\"Mathlib.Analysis.InnerProductSpace.l2Space\",\"Orthonormal.linearIsometryEquiv_symm_apply_single_one\"]",
+      "[\"Mathlib.Analysis.Normed.Module.PiTensorProduct.ProjectiveSeminorm\",\"PiTensorProduct.liftIsometry_comp_mapL\"]",
+      "[\"Mathlib.CategoryTheory.Functor.KanExtension.Preserves\",\"CategoryTheory.Functor.pointwiseLeftKanExtensionCompIsoOfPreserves\"]",
+      "[\"Mathlib.Combinatorics.SimpleGraph.Density\",\"Rel.edgeDensity_le_one\"]",
+      "[\"Mathlib.Computability.PartrecBasis\",\"Nat.Partrec'.part_iff₁\"]",
+      "[\"Mathlib.Data.Nat.Factorization.LCM\",\"Nat.factorizationLCMLeft_dvd_left\"]",
+      "[\"Mathlib.Data.Num.ZNum\",\"Num.sub_to_nat\"]",
+      "[\"Mathlib.LinearAlgebra.AffineSpace.Simplex.Basic\",\"Affine.Simplex.closedInterior_restrict\"]",
+      "[\"Mathlib.LinearAlgebra.Matrix.Rank\",\"Matrix.eRank_zero\"]",
+      "[\"Mathlib.LinearAlgebra.Matrix.ToLin\",\"LinearMap.toMatrixRight'_id\"]",
+      "[\"Mathlib.MeasureTheory.Function.LpSpace.Basic\",\"MeasureTheory.Lp.norm_exponent_zero\"]",
+      "[\"Mathlib.MeasureTheory.Group.Arithmetic\",\"aemeasurable_inv_iff\"]",
+      "[\"Mathlib.MeasureTheory.Integral.Asymptotics\",\"Asymptotics.IsBigO.eventually_integrableOn\"]",
+      "[\"Mathlib.MeasureTheory.Measure.MeasureSpace\",\"MeasureTheory.le_measure_symmDiff\"]",
+      "[\"Mathlib.MeasureTheory.Measure.Prod\",\"MeasureTheory.Measure.nullMeasurableSet_prod\"]",
+      "[\"Mathlib.MeasureTheory.Measure.Regular\",\"MeasureTheory.Measure.OuterRegular.smul\"]",
+      "[\"Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal\",\"IsCyclotomicExtension.Rat.eq_span_zeta_sub_one_of_liesOver'\"]",
+      "[\"Mathlib.NumberTheory.NumberField.InfinitePlace.Basic\",\"NumberField.InfinitePlace.ext\"]",
+      "[\"Mathlib.Probability.Density\",\"MeasureTheory.pdf\"]",
+      "[\"Mathlib.Probability.Kernel.Composition.IntegralCompProd\",\"MeasureTheory.AEStronglyMeasurable.comp\"]",
+      "[\"Mathlib.Probability.Martingale.Upcrossing\",\"MeasureTheory.lowerCrossingTimeAux\"]",
+      "[\"Mathlib.RingTheory.LaurentSeries\",\"PowerSeries.coe_neg\"]",
+      "[\"Mathlib.RingTheory.Localization.Away.Basic\",\"IsLocalization.Away.mk\"]",
+      "[\"Mathlib.RingTheory.PowerSeries.PiTopology\",\"PowerSeries.WithPiTopology.tsum_pow_mul_one_sub_of_constantCoeff_eq_zero\"]",
+      "[\"Mathlib.RingTheory.SurjectiveOnStalks\",\"RingHom.SurjectiveOnStalks.localRingHom_surjective\"]",
+      "[\"Mathlib.Topology.Algebra.InfiniteSum.ENNReal\",\"ENNReal.tsum_eq_iSup_nat\"]",
+      "[\"Mathlib.Topology.Algebra.Module.ModuleTopology\",\"IsModuleTopology.continuous_bilinear_of_finite_left\"]",
+      "[\"Mathlib.Topology.Algebra.Monoid\",\"Topology.IsInducing.continuousMul\"]",
+      "[\"Mathlib.Topology.NoetherianSpace\",\"TopologicalSpace.NoetherianSpace.finite\"]"
+     ]
+    },
+    "E2": {
+     "n": 35,
+     "target_keys": [
+      "[\"Mathlib.Algebra.Module.LocalizedModule.Int\",\"IsLocalizedModule.finsetIntegerMultiple_image\"]",
+      "[\"Mathlib.Algebra.Star.Subalgebra\",\"StarAlgHom.ext_of_adjoin_eq_top\"]",
+      "[\"Mathlib.Analysis.Asymptotics.Defs\",\"Asymptotics.IsBigO.congr_left\"]",
+      "[\"Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric\",\"IsGreatest.nnnorm_cfcₙ_nnreal\"]",
+      "[\"Mathlib.Analysis.Convex.Topology\",\"Convex.strictConvex\"]",
+      "[\"Mathlib.Analysis.InnerProductSpace.l2Space\",\"Orthonormal.linearIsometryEquiv_symm_apply_single_one\"]",
+      "[\"Mathlib.Analysis.Normed.Module.PiTensorProduct.ProjectiveSeminorm\",\"PiTensorProduct.liftIsometry_comp_mapL\"]",
+      "[\"Mathlib.CategoryTheory.Functor.KanExtension.Preserves\",\"CategoryTheory.Functor.pointwiseLeftKanExtensionCompIsoOfPreserves\"]",
+      "[\"Mathlib.Combinatorics.SimpleGraph.Density\",\"Rel.edgeDensity_le_one\"]",
+      "[\"Mathlib.Computability.PartrecBasis\",\"Nat.Partrec'.part_iff₁\"]",
+      "[\"Mathlib.Data.Nat.Factorization.LCM\",\"Nat.factorizationLCMLeft_dvd_left\"]",
+      "[\"Mathlib.Data.Num.ZNum\",\"Num.sub_to_nat\"]",
+      "[\"Mathlib.LinearAlgebra.AffineSpace.Simplex.Basic\",\"Affine.Simplex.closedInterior_restrict\"]",
+      "[\"Mathlib.LinearAlgebra.Matrix.Rank\",\"Matrix.eRank_zero\"]",
+      "[\"Mathlib.LinearAlgebra.Matrix.ToLin\",\"LinearMap.toMatrixRight'_id\"]",
+      "[\"Mathlib.MeasureTheory.Function.LpSpace.Basic\",\"MeasureTheory.Lp.norm_exponent_zero\"]",
+      "[\"Mathlib.MeasureTheory.Group.Arithmetic\",\"aemeasurable_inv_iff\"]",
+      "[\"Mathlib.MeasureTheory.Integral.Asymptotics\",\"Asymptotics.IsBigO.eventually_integrableOn\"]",
+      "[\"Mathlib.MeasureTheory.Measure.MeasureSpace\",\"MeasureTheory.le_measure_symmDiff\"]",
+      "[\"Mathlib.MeasureTheory.Measure.Prod\",\"MeasureTheory.Measure.nullMeasurableSet_prod\"]",
+      "[\"Mathlib.MeasureTheory.Measure.Regular\",\"MeasureTheory.Measure.OuterRegular.smul\"]",
+      "[\"Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal\",\"IsCyclotomicExtension.Rat.eq_span_zeta_sub_one_of_liesOver'\"]",
+      "[\"Mathlib.NumberTheory.NumberField.InfinitePlace.Basic\",\"NumberField.InfinitePlace.ext\"]",
+      "[\"Mathlib.Order.ConditionallyCompleteLattice.Basic\",\"lt_csSup_iff'\"]",
+      "[\"Mathlib.Probability.Density\",\"MeasureTheory.pdf\"]",
+      "[\"Mathlib.Probability.Kernel.Composition.IntegralCompProd\",\"MeasureTheory.AEStronglyMeasurable.comp\"]",
+      "[\"Mathlib.Probability.Martingale.Upcrossing\",\"MeasureTheory.lowerCrossingTimeAux\"]",
+      "[\"Mathlib.RingTheory.LaurentSeries\",\"PowerSeries.coe_neg\"]",
+      "[\"Mathlib.RingTheory.Localization.Away.Basic\",\"IsLocalization.Away.mk\"]",
+      "[\"Mathlib.RingTheory.PowerSeries.PiTopology\",\"PowerSeries.WithPiTopology.tsum_pow_mul_one_sub_of_constantCoeff_eq_zero\"]",
+      "[\"Mathlib.RingTheory.SurjectiveOnStalks\",\"RingHom.SurjectiveOnStalks.localRingHom_surjective\"]",
+      "[\"Mathlib.Topology.Algebra.InfiniteSum.ENNReal\",\"ENNReal.tsum_eq_iSup_nat\"]",
+      "[\"Mathlib.Topology.Algebra.Module.ModuleTopology\",\"IsModuleTopology.continuous_bilinear_of_finite_left\"]",
+      "[\"Mathlib.Topology.Algebra.Monoid\",\"Topology.IsInducing.continuousMul\"]",
+      "[\"Mathlib.Topology.NoetherianSpace\",\"TopologicalSpace.NoetherianSpace.finite\"]"
+     ]
+    }
+   },
+   "governance": {
+    "repo_n": null,
+    "verdict": "v2c-amended-governance-planned"
+   },
+   "language": "lean",
+   "masked_sha256": "557fdc48ad4477cdcdd54b42ceca89e2b4087af5e2154dfc75a0922bdedb67da",
+   "model": "Qwen/Qwen2.5-Coder-1.5B",
+   "multiplicity": {
+    "adjusted_pvalues": {
+     "E1a": 7.701675784106127e-07,
+     "E1b": 0.9999573393990682,
+     "E2": 6.353168213687753e-05
+    },
+    "deterministic_tie_break": "contrast-name-ascending",
+    "method": "model-based Holm-adjusted diagnostics",
+    "order": [
+     "E1a",
+     "E2",
+     "E1b"
+    ],
+    "raw_pvalues": {
+     "E1a": 2.5672252613687093e-07,
+     "E1b": 0.9999573393990682,
+     "E2": 3.1765841068438763e-05
+    },
+    "scope": "E1a/E1b-IUT/E2 within repository"
+   },
+   "repo": "mathlib4",
+   "revision": "df3ce67c0e24480f20468b6ef2894622d69eb73b",
+   "run_identity_sha256": "39cf197b6405d1fbf25d2848e31153eaad9d8ff59c550b818a246d815bbf2ead",
+   "three_way_n": 34
+  },
+  "sympy": {
+   "bindings": {
+    "assembly": {
+     "path": "/orcd/pool/008/aadarwal/v2cmask-s/results_v2/v2c/assembly/v2c_job20151547_1_sympy.json",
+     "schema": "v2b_assembly_manifest_v2",
+     "sha256": "afa59d47f0ce0e39e10f614b21e0dc48f82f1301181e7db8e9e204d9be52b3aa"
+    },
+    "battery": {
+     "sha256": "8e0be1ae64cc819903daa5d03c1f81b3491c293ee0484088b56331d3dc4ae574"
+    },
+    "completion": {
+     "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2c/paired/q25c-1.5b/5b3d362f6af2-afa59d47f0ce-sympy/complete.json",
+     "schema": "v2b_paired_nll_complete_v2",
+     "sha256": "1173b8c467acbfb2bceb752fa951cfbba4003b5494a9a51f921d0a301ba03ab4"
+    }
+   },
+   "capacity_exclusions": [
+    {
+     "cell_id": "k4:65536",
+     "model_max": 32768,
+     "prompt_tokens": 32856,
+     "target_key": "[\"sympy.holonomic.holonomic\",\"DifferentialOperator\",5405]"
+    },
+    {
+     "cell_id": "k2:65536",
+     "model_max": 32768,
+     "prompt_tokens": 46142,
+     "target_key": "[\"sympy.matrices.tests.test_matrices\",\"test_row_mult\",84912]"
+    },
+    {
+     "cell_id": "k5:0:65536",
+     "model_max": 32768,
+     "prompt_tokens": 36615,
+     "target_key": "[\"sympy.utilities.tests.test_codegen_julia\",\"test_jl_InOutArgument_order\",16608]"
+    }
+   ],
+   "centering_by_contrast": {
+    "E1a": {
+     "fid": "fam-f4220af39d47158f",
+     "fsum_correction": 3.398641912117826e-18,
+     "n_rows": 49,
+     "removed_mean_bpb": 0.12275201220623486,
+     "sign": -1,
+     "total_centering_bpb": 0.12275201220623486
+    },
+    "E1b": {
+     "fid": "fam-3380008c58adbe36",
+     "fsum_correction": 2.3129646346357427e-18,
+     "n_rows": 42,
+     "removed_mean_bpb": 0.05582787741233928,
+     "sign": 1,
+     "total_centering_bpb": 0.05582787741233928
+    },
+    "E2": {
+     "fid": "fam-b597fd6d73ddb0c9",
+     "fsum_correction": -7.93016446160826e-18,
+     "n_rows": 49,
+     "removed_mean_bpb": 0.07171993181001599,
+     "sign": 1,
+     "total_centering_bpb": 0.07171993181001597
+    }
+   },
+   "contrasts": {
+    "E1a": {
+     "budget_bytes": 16384,
+     "exploratory_positive_model_based_diagnostic": true,
+     "favorable_direction": "positive",
+     "holm_adjusted_pvalue": 2.001548571515515e-07,
+     "inference": {
+      "ci95_two_sided_bpb": [
+       0.08393194040586074,
+       0.16157208400660897
+      ],
+      "cluster_sizes": [
+       5,
+       3,
+       2,
+       2,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ],
+      "degeneracy_floor_bpb": 1.4210854715202004e-14,
+      "degrees_of_freedom": 40,
+      "inference_status": "available",
+      "lower_one_sided_95_bpb": 0.09040921581036004,
+      "n_modules": 41,
+      "n_targets": 49,
+      "standard_error_bpb": 0.019207635441719932,
+      "target_equal_mean_bpb": 0.12275201220623486,
+      "target_keys": [
+       "[\"sympy.assumptions.handlers.calculus\",\"_\",7389]",
+       "[\"sympy.assumptions.handlers.common\",\"ask_all\",3321]",
+       "[\"sympy.assumptions.tests.test_wrapper\",\"test_is_extended_real\",908]",
+       "[\"sympy.codegen.ast\",\"CodeBlock\",18464]",
+       "[\"sympy.combinatorics.tests.test_perm_groups\",\"test_random_pr\",15875]",
+       "[\"sympy.concrete.tests.test_delta\",\"test_deltasummation_basic_symbolic\",11905]",
+       "[\"sympy.core.tests.test_args\",\"test_sympy__functions__special__hyper__HyperRep_power2\",93227]",
+       "[\"sympy.core.tests.test_args\",\"test_sympy__geometry__line__Ray\",164110]",
+       "[\"sympy.core.tests.test_args\",\"test_sympy__matrices__expressions__permutation__PermutationMatrix\",116744]",
+       "[\"sympy.core.tests.test_args\",\"test_sympy__series__order__Order\",152765]",
+       "[\"sympy.core.tests.test_args\",\"test_sympy__stats__crv_types__WignerSemicircleDistribution\",54119]",
+       "[\"sympy.core.tests.test_noncommutative\",\"test_adjoint\",894]",
+       "[\"sympy.core.tests.test_priority\",\"Higher\",322]",
+       "[\"sympy.functions.elementary.tests.test_piecewise\",\"test_issue_20360\",60000]",
+       "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_acot_fdiff\",51247]",
+       "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_issue_25833\",89850]",
+       "[\"sympy.holonomic.holonomic\",\"DifferentialOperator\",5405]",
+       "[\"sympy.matrices.repmatrix\",\"MutableRepMatrix\",18703]",
+       "[\"sympy.physics.mechanics.tests.test_actuator\",\"TestDuffingSpring\",22068]",
+       "[\"sympy.physics.quantum.operatorordering\",\"_normal_order_factor\",6245]",
+       "[\"sympy.physics.quantum.tests.test_represent\",\"test_enumerate_states\",4998]",
+       "[\"sympy.physics.units.dimensions\",\"DimensionSystem\",10002]",
+       "[\"sympy.physics.units.tests.test_dimensionsystem\",\"test_can_transf_matrix\",1811]",
+       "[\"sympy.physics.vector.tests.test_frame\",\"test_w_diff_dcm2\",10297]",
+       "[\"sympy.plotting.pygletplot.plot_modes\",\"Cylindrical\",3738]",
+       "[\"sympy.polys.benchmarks.bench_groebnertools\",\"time_vertex_color_12_vertices_23_edges\",675]",
+       "[\"sympy.polys.domains.tests.test_domains\",\"test_RR_Float\",39855]",
+       "[\"sympy.polys.fields\",\"field\",1484]",
+       "[\"sympy.polys.matrices.tests.test_domainmatrix\",\"test_DomainMatrix_to_dense\",8653]",
+       "[\"sympy.polys.tests.test_factortools\",\"test_dup_zz_mignotte_bound\",1079]",
+       "[\"sympy.printing.pretty.tests.test_pretty\",\"test_pretty_ndim_arrays\",80861]",
+       "[\"sympy.printing.tests.test_precedence\",\"test_Integral\",793]",
+       "[\"sympy.printing.tests.test_pycode\",\"test_beta\",14423]",
+       "[\"sympy.printing.tests.test_theanocode\",\"test_global_cache\",16904]",
+       "[\"sympy.series.tests.test_limits\",\"test_issue_6366\",20726]",
+       "[\"sympy.simplify.tests.test_combsimp\",\"test_issue_14528\",2795]",
+       "[\"sympy.simplify.trigsimp\",\"_eapply\",46746]",
+       "[\"sympy.solvers.diophantine.diophantine\",\"GeneralSumOfSquares\",31128]",
+       "[\"sympy.solvers.ode.tests.test_single\",\"_get_examples_ode_sol_euler_homogeneous\",22794]",
+       "[\"sympy.solvers.tests.test_solveset\",\"test__solveset_multi\",64791]",
+       "[\"sympy.solvers.tests.test_solveset\",\"test_raise_exception_nonlinsolve\",81738]",
+       "[\"sympy.solvers.tests.test_solveset\",\"test_solve_logarithm\",130280]",
+       "[\"sympy.stats.symbolic_probability\",\"Expectation\",4740]",
+       "[\"sympy.stats.tests.test_rv\",\"test_characteristic_function\",2827]",
+       "[\"sympy.utilities.tests.test_codegen_julia\",\"test_jl_InOutArgument_order\",16608]",
+       "[\"sympy.utilities.tests.test_lambdify\",\"test_cmath_sinh\",10832]",
+       "[\"sympy.utilities.tests.test_wester\",\"test_H15\",14572]",
+       "[\"sympy.utilities.tests.test_wester\",\"test_Y12\",91340]",
+       "[\"sympy.vector.tests.test_functions\",\"test_matrix_to_vector\",7208]"
+      ],
+      "target_range_bpb": 0.44130960882329584,
+      "upper_one_sided_95_bpb": 0.15509480860210967,
+      "variance_components": {
+       "cluster_sizes": [
+        5,
+        3,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ],
+       "mode": "mom",
+       "msb": 0.0147597391834532,
+       "msw": 0.005565975474222534,
+       "n0": 1.1846938775510203,
+       "n_modules": 41,
+       "n_pilot": 49,
+       "sigma_b2": 0.007760455155078425,
+       "sigma_w2": 0.005565975474222534
+      }
+     },
+     "interpretation_status": "positive-model-based-diagnostic",
+     "metric": "bpb",
+     "orientation": "k1-k4:16384",
+     "raw_one_sided_pvalue": 6.671828571718383e-08,
+     "target_rows": [
+      {
+       "delta_bpb": 0.36956764268138487,
+       "module": "sympy.assumptions.handlers.calculus",
+       "target_key": "[\"sympy.assumptions.handlers.calculus\",\"_\",7389]"
+      },
+      {
+       "delta_bpb": 0.2597238270502893,
+       "module": "sympy.assumptions.handlers.common",
+       "target_key": "[\"sympy.assumptions.handlers.common\",\"ask_all\",3321]"
+      },
+      {
+       "delta_bpb": 0.13661683350028028,
+       "module": "sympy.assumptions.tests.test_wrapper",
+       "target_key": "[\"sympy.assumptions.tests.test_wrapper\",\"test_is_extended_real\",908]"
+      },
+      {
+       "delta_bpb": 0.0070610271620746845,
+       "module": "sympy.codegen.ast",
+       "target_key": "[\"sympy.codegen.ast\",\"CodeBlock\",18464]"
+      },
+      {
+       "delta_bpb": 0.06364340051655804,
+       "module": "sympy.combinatorics.tests.test_perm_groups",
+       "target_key": "[\"sympy.combinatorics.tests.test_perm_groups\",\"test_random_pr\",15875]"
+      },
+      {
+       "delta_bpb": 0.06164756687653189,
+       "module": "sympy.concrete.tests.test_delta",
+       "target_key": "[\"sympy.concrete.tests.test_delta\",\"test_deltasummation_basic_symbolic\",11905]"
+      },
+      {
+       "delta_bpb": 0.02528386353665607,
+       "module": "sympy.core.tests.test_args",
+       "target_key": "[\"sympy.core.tests.test_args\",\"test_sympy__functions__special__hyper__HyperRep_power2\",93227]"
+      },
+      {
+       "delta_bpb": 0.05974394959889201,
+       "module": "sympy.core.tests.test_args",
+       "target_key": "[\"sympy.core.tests.test_args\",\"test_sympy__geometry__line__Ray\",164110]"
+      },
+      {
+       "delta_bpb": 0.024751796166392448,
+       "module": "sympy.core.tests.test_args",
+       "target_key": "[\"sympy.core.tests.test_args\",\"test_sympy__matrices__expressions__permutation__PermutationMatrix\",116744]"
+      },
+      {
+       "delta_bpb": 0.07846077312706823,
+       "module": "sympy.core.tests.test_args",
+       "target_key": "[\"sympy.core.tests.test_args\",\"test_sympy__series__order__Order\",152765]"
+      },
+      {
+       "delta_bpb": 0.027944892223167428,
+       "module": "sympy.core.tests.test_args",
+       "target_key": "[\"sympy.core.tests.test_args\",\"test_sympy__stats__crv_types__WignerSemicircleDistribution\",54119]"
+      },
+      {
+       "delta_bpb": 0.042504690884407115,
+       "module": "sympy.core.tests.test_noncommutative",
+       "target_key": "[\"sympy.core.tests.test_noncommutative\",\"test_adjoint\",894]"
+      },
+      {
+       "delta_bpb": 0.017072656396188213,
+       "module": "sympy.core.tests.test_priority",
+       "target_key": "[\"sympy.core.tests.test_priority\",\"Higher\",322]"
+      },
+      {
+       "delta_bpb": 0.05286015433000768,
+       "module": "sympy.functions.elementary.tests.test_piecewise",
+       "target_key": "[\"sympy.functions.elementary.tests.test_piecewise\",\"test_issue_20360\",60000]"
+      },
+      {
+       "delta_bpb": 0.4204967817828684,
+       "module": "sympy.functions.elementary.tests.test_trigonometric",
+       "target_key": "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_acot_fdiff\",51247]"
+      },
+      {
+       "delta_bpb": 0.2729445299169625,
+       "module": "sympy.functions.elementary.tests.test_trigonometric",
+       "target_key": "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_issue_25833\",89850]"
+      },
+      {
+       "delta_bpb": 0.006075289376197668,
+       "module": "sympy.holonomic.holonomic",
+       "target_key": "[\"sympy.holonomic.holonomic\",\"DifferentialOperator\",5405]"
+      },
+      {
+       "delta_bpb": 0.012036274208965664,
+       "module": "sympy.matrices.repmatrix",
+       "target_key": "[\"sympy.matrices.repmatrix\",\"MutableRepMatrix\",18703]"
+      },
+      {
+       "delta_bpb": -0.0018747871487579115,
+       "module": "sympy.physics.mechanics.tests.test_actuator",
+       "target_key": "[\"sympy.physics.mechanics.tests.test_actuator\",\"TestDuffingSpring\",22068]"
+      },
+      {
+       "delta_bpb": 0.03236562362525908,
+       "module": "sympy.physics.quantum.operatorordering",
+       "target_key": "[\"sympy.physics.quantum.operatorordering\",\"_normal_order_factor\",6245]"
+      },
+      {
+       "delta_bpb": 0.43943482167453796,
+       "module": "sympy.physics.quantum.tests.test_represent",
+       "target_key": "[\"sympy.physics.quantum.tests.test_represent\",\"test_enumerate_states\",4998]"
+      },
+      {
+       "delta_bpb": 0.004443947405306903,
+       "module": "sympy.physics.units.dimensions",
+       "target_key": "[\"sympy.physics.units.dimensions\",\"DimensionSystem\",10002]"
+      },
+      {
+       "delta_bpb": 0.2464987509339956,
+       "module": "sympy.physics.units.tests.test_dimensionsystem",
+       "target_key": "[\"sympy.physics.units.tests.test_dimensionsystem\",\"test_can_transf_matrix\",1811]"
+      },
+      {
+       "delta_bpb": 0.03294247532483713,
+       "module": "sympy.physics.vector.tests.test_frame",
+       "target_key": "[\"sympy.physics.vector.tests.test_frame\",\"test_w_diff_dcm2\",10297]"
+      },
+      {
+       "delta_bpb": 0.29977726878979194,
+       "module": "sympy.plotting.pygletplot.plot_modes",
+       "target_key": "[\"sympy.plotting.pygletplot.plot_modes\",\"Cylindrical\",3738]"
+      },
+      {
+       "delta_bpb": 0.15794645922998996,
+       "module": "sympy.polys.benchmarks.bench_groebnertools",
+       "target_key": "[\"sympy.polys.benchmarks.bench_groebnertools\",\"time_vertex_color_12_vertices_23_edges\",675]"
+      },
+      {
+       "delta_bpb": 0.1211012229383096,
+       "module": "sympy.polys.domains.tests.test_domains",
+       "target_key": "[\"sympy.polys.domains.tests.test_domains\",\"test_RR_Float\",39855]"
+      },
+      {
+       "delta_bpb": 0.11015484040811108,
+       "module": "sympy.polys.fields",
+       "target_key": "[\"sympy.polys.fields\",\"field\",1484]"
+      },
+      {
+       "delta_bpb": 0.2000091775763284,
+       "module": "sympy.polys.matrices.tests.test_domainmatrix",
+       "target_key": "[\"sympy.polys.matrices.tests.test_domainmatrix\",\"test_DomainMatrix_to_dense\",8653]"
+      },
+      {
+       "delta_bpb": 0.20381859617558828,
+       "module": "sympy.polys.tests.test_factortools",
+       "target_key": "[\"sympy.polys.tests.test_factortools\",\"test_dup_zz_mignotte_bound\",1079]"
+      },
+      {
+       "delta_bpb": 0.004827886233711304,
+       "module": "sympy.printing.pretty.tests.test_pretty",
+       "target_key": "[\"sympy.printing.pretty.tests.test_pretty\",\"test_pretty_ndim_arrays\",80861]"
+      },
+      {
+       "delta_bpb": 0.21016193159006247,
+       "module": "sympy.printing.tests.test_precedence",
+       "target_key": "[\"sympy.printing.tests.test_precedence\",\"test_Integral\",793]"
+      },
+      {
+       "delta_bpb": 0.1050637300403986,
+       "module": "sympy.printing.tests.test_pycode",
+       "target_key": "[\"sympy.printing.tests.test_pycode\",\"test_beta\",14423]"
+      },
+      {
+       "delta_bpb": 0.1646103219159583,
+       "module": "sympy.printing.tests.test_theanocode",
+       "target_key": "[\"sympy.printing.tests.test_theanocode\",\"test_global_cache\",16904]"
+      },
+      {
+       "delta_bpb": 0.129870505132465,
+       "module": "sympy.series.tests.test_limits",
+       "target_key": "[\"sympy.series.tests.test_limits\",\"test_issue_6366\",20726]"
+      },
+      {
+       "delta_bpb": 0.17079492088238746,
+       "module": "sympy.simplify.tests.test_combsimp",
+       "target_key": "[\"sympy.simplify.tests.test_combsimp\",\"test_issue_14528\",2795]"
+      },
+      {
+       "delta_bpb": 0.022976460541829336,
+       "module": "sympy.simplify.trigsimp",
+       "target_key": "[\"sympy.simplify.trigsimp\",\"_eapply\",46746]"
+      },
+      {
+       "delta_bpb": 0.004668601668363859,
+       "module": "sympy.solvers.diophantine.diophantine",
+       "target_key": "[\"sympy.solvers.diophantine.diophantine\",\"GeneralSumOfSquares\",31128]"
+      },
+      {
+       "delta_bpb": 0.026465164870514923,
+       "module": "sympy.solvers.ode.tests.test_single",
+       "target_key": "[\"sympy.solvers.ode.tests.test_single\",\"_get_examples_ode_sol_euler_homogeneous\",22794]"
+      },
+      {
+       "delta_bpb": 0.011330156445254758,
+       "module": "sympy.solvers.tests.test_solveset",
+       "target_key": "[\"sympy.solvers.tests.test_solveset\",\"test__solveset_multi\",64791]"
+      },
+      {
+       "delta_bpb": 0.2321968676623185,
+       "module": "sympy.solvers.tests.test_solveset",
+       "target_key": "[\"sympy.solvers.tests.test_solveset\",\"test_raise_exception_nonlinsolve\",81738]"
+      },
+      {
+       "delta_bpb": 0.21421753535258325,
+       "module": "sympy.solvers.tests.test_solveset",
+       "target_key": "[\"sympy.solvers.tests.test_solveset\",\"test_solve_logarithm\",130280]"
+      },
+      {
+       "delta_bpb": 0.03550776576617842,
+       "module": "sympy.stats.symbolic_probability",
+       "target_key": "[\"sympy.stats.symbolic_probability\",\"Expectation\",4740]"
+      },
+      {
+       "delta_bpb": 0.06641243235618066,
+       "module": "sympy.stats.tests.test_rv",
+       "target_key": "[\"sympy.stats.tests.test_rv\",\"test_characteristic_function\",2827]"
+      },
+      {
+       "delta_bpb": 0.16662385935618723,
+       "module": "sympy.utilities.tests.test_codegen_julia",
+       "target_key": "[\"sympy.utilities.tests.test_codegen_julia\",\"test_jl_InOutArgument_order\",16608]"
+      },
+      {
+       "delta_bpb": 0.0700393180734756,
+       "module": "sympy.utilities.tests.test_lambdify",
+       "target_key": "[\"sympy.utilities.tests.test_lambdify\",\"test_cmath_sinh\",10832]"
+      },
+      {
+       "delta_bpb": 0.18388136517687603,
+       "module": "sympy.utilities.tests.test_wester",
+       "target_key": "[\"sympy.utilities.tests.test_wester\",\"test_H15\",14572]"
+      },
+      {
+       "delta_bpb": 0.13610353366125172,
+       "module": "sympy.utilities.tests.test_wester",
+       "target_key": "[\"sympy.utilities.tests.test_wester\",\"test_Y12\",91340]"
+      },
+      {
+       "delta_bpb": 0.2740418951113202,
+       "module": "sympy.vector.tests.test_functions",
+       "target_key": "[\"sympy.vector.tests.test_functions\",\"test_matrix_to_vector\",7208]"
+      }
+     ]
+    },
+    "E1b": {
+     "budget_bytes": 16384,
+     "exploratory_positive_model_based_diagnostic": false,
+     "favorable_direction": "smaller/noninferior",
+     "holm_adjusted_pvalue": 0.9955792206573753,
+     "inference": {
+      "ci95_two_sided_bpb": [
+       0.02935779836358231,
+       0.08229795646109625
+      ],
+      "cluster_sizes": [
+       3,
+       2,
+       2,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ],
+      "degeneracy_floor_bpb": 1.4210854715202004e-14,
+      "degrees_of_freedom": 37,
+      "inference_status": "available",
+      "lower_one_sided_95_bpb": 0.03382951977669948,
+      "n_modules": 38,
+      "n_targets": 42,
+      "standard_error_bpb": 0.012961093844873242,
+      "target_equal_mean_bpb": 0.05582787741233928,
+      "target_keys": [
+       "[\"sympy.assumptions.handlers.calculus\",\"_\",7389]",
+       "[\"sympy.assumptions.handlers.common\",\"ask_all\",3321]",
+       "[\"sympy.assumptions.tests.test_wrapper\",\"test_is_extended_real\",908]",
+       "[\"sympy.codegen.ast\",\"CodeBlock\",18464]",
+       "[\"sympy.combinatorics.tests.test_perm_groups\",\"test_random_pr\",15875]",
+       "[\"sympy.concrete.tests.test_delta\",\"test_deltasummation_basic_symbolic\",11905]",
+       "[\"sympy.core.tests.test_noncommutative\",\"test_adjoint\",894]",
+       "[\"sympy.core.tests.test_priority\",\"Higher\",322]",
+       "[\"sympy.functions.elementary.tests.test_piecewise\",\"test_issue_20360\",60000]",
+       "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_acot_fdiff\",51247]",
+       "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_issue_25833\",89850]",
+       "[\"sympy.holonomic.holonomic\",\"DifferentialOperator\",5405]",
+       "[\"sympy.matrices.repmatrix\",\"MutableRepMatrix\",18703]",
+       "[\"sympy.physics.mechanics.tests.test_actuator\",\"TestDuffingSpring\",22068]",
+       "[\"sympy.physics.quantum.operatorordering\",\"_normal_order_factor\",6245]",
+       "[\"sympy.physics.quantum.tests.test_represent\",\"test_enumerate_states\",4998]",
+       "[\"sympy.physics.units.dimensions\",\"DimensionSystem\",10002]",
+       "[\"sympy.physics.units.tests.test_dimensionsystem\",\"test_can_transf_matrix\",1811]",
+       "[\"sympy.physics.vector.tests.test_frame\",\"test_w_diff_dcm2\",10297]",
+       "[\"sympy.plotting.pygletplot.plot_modes\",\"Cylindrical\",3738]",
+       "[\"sympy.polys.domains.tests.test_domains\",\"test_RR_Float\",39855]",
+       "[\"sympy.polys.fields\",\"field\",1484]",
+       "[\"sympy.polys.matrices.tests.test_domainmatrix\",\"test_DomainMatrix_to_dense\",8653]",
+       "[\"sympy.polys.tests.test_factortools\",\"test_dup_zz_mignotte_bound\",1079]",
+       "[\"sympy.printing.pretty.tests.test_pretty\",\"test_pretty_ndim_arrays\",80861]",
+       "[\"sympy.printing.tests.test_precedence\",\"test_Integral\",793]",
+       "[\"sympy.printing.tests.test_pycode\",\"test_beta\",14423]",
+       "[\"sympy.printing.tests.test_theanocode\",\"test_global_cache\",16904]",
+       "[\"sympy.series.tests.test_limits\",\"test_issue_6366\",20726]",
+       "[\"sympy.simplify.tests.test_combsimp\",\"test_issue_14528\",2795]",
+       "[\"sympy.simplify.trigsimp\",\"_eapply\",46746]",
+       "[\"sympy.solvers.diophantine.diophantine\",\"GeneralSumOfSquares\",31128]",
+       "[\"sympy.solvers.ode.tests.test_single\",\"_get_examples_ode_sol_euler_homogeneous\",22794]",
+       "[\"sympy.solvers.tests.test_solveset\",\"test__solveset_multi\",64791]",
+       "[\"sympy.solvers.tests.test_solveset\",\"test_raise_exception_nonlinsolve\",81738]",
+       "[\"sympy.solvers.tests.test_solveset\",\"test_solve_logarithm\",130280]",
+       "[\"sympy.stats.symbolic_probability\",\"Expectation\",4740]",
+       "[\"sympy.stats.tests.test_rv\",\"test_characteristic_function\",2827]",
+       "[\"sympy.utilities.tests.test_codegen_julia\",\"test_jl_InOutArgument_order\",16608]",
+       "[\"sympy.utilities.tests.test_wester\",\"test_H15\",14572]",
+       "[\"sympy.utilities.tests.test_wester\",\"test_Y12\",91340]",
+       "[\"sympy.vector.tests.test_functions\",\"test_matrix_to_vector\",7208]"
+      ],
+      "target_range_bpb": 0.37330002907076826,
+      "upper_one_sided_95_bpb": 0.07782623504797909,
+      "variance_components": {
+       "cluster_sizes": [
+        3,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ],
+       "mode": "mom",
+       "msb": 0.006647143683651472,
+       "msw": 0.003348843489114976,
+       "n0": 1.1016731016731016,
+       "n_modules": 38,
+       "n_pilot": 42,
+       "sigma_b2": 0.0029939009943397866,
+       "sigma_w2": 0.003348843489114976
+      }
+     },
+     "interpretation_status": "noninferiority-not-established",
+     "metric": "bpb",
+     "orientation": "k3:16384-k4:16384",
+     "raw_one_sided_pvalue": 0.9955792206573753,
+     "target_rows": [
+      {
+       "delta_bpb": 0.18275556176820842,
+       "module": "sympy.assumptions.handlers.calculus",
+       "target_key": "[\"sympy.assumptions.handlers.calculus\",\"_\",7389]"
+      },
+      {
+       "delta_bpb": -0.0127563878212874,
+       "module": "sympy.assumptions.handlers.common",
+       "target_key": "[\"sympy.assumptions.handlers.common\",\"ask_all\",3321]"
+      },
+      {
+       "delta_bpb": 0.08779531988418018,
+       "module": "sympy.assumptions.tests.test_wrapper",
+       "target_key": "[\"sympy.assumptions.tests.test_wrapper\",\"test_is_extended_real\",908]"
+      },
+      {
+       "delta_bpb": 0.003193595782423786,
+       "module": "sympy.codegen.ast",
+       "target_key": "[\"sympy.codegen.ast\",\"CodeBlock\",18464]"
+      },
+      {
+       "delta_bpb": 0.007266530289769757,
+       "module": "sympy.combinatorics.tests.test_perm_groups",
+       "target_key": "[\"sympy.combinatorics.tests.test_perm_groups\",\"test_random_pr\",15875]"
+      },
+      {
+       "delta_bpb": 0.05339516361244773,
+       "module": "sympy.concrete.tests.test_delta",
+       "target_key": "[\"sympy.concrete.tests.test_delta\",\"test_deltasummation_basic_symbolic\",11905]"
+      },
+      {
+       "delta_bpb": 0.011659257029924763,
+       "module": "sympy.core.tests.test_noncommutative",
+       "target_key": "[\"sympy.core.tests.test_noncommutative\",\"test_adjoint\",894]"
+      },
+      {
+       "delta_bpb": -0.0022615365478814153,
+       "module": "sympy.core.tests.test_priority",
+       "target_key": "[\"sympy.core.tests.test_priority\",\"Higher\",322]"
+      },
+      {
+       "delta_bpb": 0.012564411515829432,
+       "module": "sympy.functions.elementary.tests.test_piecewise",
+       "target_key": "[\"sympy.functions.elementary.tests.test_piecewise\",\"test_issue_20360\",60000]"
+      },
+      {
+       "delta_bpb": 0.06275170505357314,
+       "module": "sympy.functions.elementary.tests.test_trigonometric",
+       "target_key": "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_acot_fdiff\",51247]"
+      },
+      {
+       "delta_bpb": 0.037021032231995155,
+       "module": "sympy.functions.elementary.tests.test_trigonometric",
+       "target_key": "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_issue_25833\",89850]"
+      },
+      {
+       "delta_bpb": 0.004319594420026385,
+       "module": "sympy.holonomic.holonomic",
+       "target_key": "[\"sympy.holonomic.holonomic\",\"DifferentialOperator\",5405]"
+      },
+      {
+       "delta_bpb": 0.00492377947362746,
+       "module": "sympy.matrices.repmatrix",
+       "target_key": "[\"sympy.matrices.repmatrix\",\"MutableRepMatrix\",18703]"
+      },
+      {
+       "delta_bpb": -0.0013046835240472787,
+       "module": "sympy.physics.mechanics.tests.test_actuator",
+       "target_key": "[\"sympy.physics.mechanics.tests.test_actuator\",\"TestDuffingSpring\",22068]"
+      },
+      {
+       "delta_bpb": 0.005595263842703896,
+       "module": "sympy.physics.quantum.operatorordering",
+       "target_key": "[\"sympy.physics.quantum.operatorordering\",\"_normal_order_factor\",6245]"
+      },
+      {
+       "delta_bpb": 0.32184905955315796,
+       "module": "sympy.physics.quantum.tests.test_represent",
+       "target_key": "[\"sympy.physics.quantum.tests.test_represent\",\"test_enumerate_states\",4998]"
+      },
+      {
+       "delta_bpb": 0.001380280828921443,
+       "module": "sympy.physics.units.dimensions",
+       "target_key": "[\"sympy.physics.units.dimensions\",\"DimensionSystem\",10002]"
+      },
+      {
+       "delta_bpb": 0.1561694130269068,
+       "module": "sympy.physics.units.tests.test_dimensionsystem",
+       "target_key": "[\"sympy.physics.units.tests.test_dimensionsystem\",\"test_can_transf_matrix\",1811]"
+      },
+      {
+       "delta_bpb": 0.0032671092390274548,
+       "module": "sympy.physics.vector.tests.test_frame",
+       "target_key": "[\"sympy.physics.vector.tests.test_frame\",\"test_w_diff_dcm2\",10297]"
+      },
+      {
+       "delta_bpb": 0.31323505746923674,
+       "module": "sympy.plotting.pygletplot.plot_modes",
+       "target_key": "[\"sympy.plotting.pygletplot.plot_modes\",\"Cylindrical\",3738]"
+      },
+      {
+       "delta_bpb": 0.03429202169301404,
+       "module": "sympy.polys.domains.tests.test_domains",
+       "target_key": "[\"sympy.polys.domains.tests.test_domains\",\"test_RR_Float\",39855]"
+      },
+      {
+       "delta_bpb": 0.09998527909170407,
+       "module": "sympy.polys.fields",
+       "target_key": "[\"sympy.polys.fields\",\"field\",1484]"
+      },
+      {
+       "delta_bpb": 0.14487621580041943,
+       "module": "sympy.polys.matrices.tests.test_domainmatrix",
+       "target_key": "[\"sympy.polys.matrices.tests.test_domainmatrix\",\"test_DomainMatrix_to_dense\",8653]"
+      },
+      {
+       "delta_bpb": 0.05748211188249841,
+       "module": "sympy.polys.tests.test_factortools",
+       "target_key": "[\"sympy.polys.tests.test_factortools\",\"test_dup_zz_mignotte_bound\",1079]"
+      },
+      {
+       "delta_bpb": 0.002954666626686836,
+       "module": "sympy.printing.pretty.tests.test_pretty",
+       "target_key": "[\"sympy.printing.pretty.tests.test_pretty\",\"test_pretty_ndim_arrays\",80861]"
+      },
+      {
+       "delta_bpb": 0.056020399051395886,
+       "module": "sympy.printing.tests.test_precedence",
+       "target_key": "[\"sympy.printing.tests.test_precedence\",\"test_Integral\",793]"
+      },
+      {
+       "delta_bpb": -0.006341203993032812,
+       "module": "sympy.printing.tests.test_pycode",
+       "target_key": "[\"sympy.printing.tests.test_pycode\",\"test_beta\",14423]"
+      },
+      {
+       "delta_bpb": 0.07572894966380261,
+       "module": "sympy.printing.tests.test_theanocode",
+       "target_key": "[\"sympy.printing.tests.test_theanocode\",\"test_global_cache\",16904]"
+      },
+      {
+       "delta_bpb": 0.060000777600730415,
+       "module": "sympy.series.tests.test_limits",
+       "target_key": "[\"sympy.series.tests.test_limits\",\"test_issue_6366\",20726]"
+      },
+      {
+       "delta_bpb": 0.01871330113365488,
+       "module": "sympy.simplify.tests.test_combsimp",
+       "target_key": "[\"sympy.simplify.tests.test_combsimp\",\"test_issue_14528\",2795]"
+      },
+      {
+       "delta_bpb": 0.021634786662561467,
+       "module": "sympy.simplify.trigsimp",
+       "target_key": "[\"sympy.simplify.trigsimp\",\"_eapply\",46746]"
+      },
+      {
+       "delta_bpb": 0.012581902190006322,
+       "module": "sympy.solvers.diophantine.diophantine",
+       "target_key": "[\"sympy.solvers.diophantine.diophantine\",\"GeneralSumOfSquares\",31128]"
+      },
+      {
+       "delta_bpb": 0.00966595160488709,
+       "module": "sympy.solvers.ode.tests.test_single",
+       "target_key": "[\"sympy.solvers.ode.tests.test_single\",\"_get_examples_ode_sol_euler_homogeneous\",22794]"
+      },
+      {
+       "delta_bpb": 0.008627264610279906,
+       "module": "sympy.solvers.tests.test_solveset",
+       "target_key": "[\"sympy.solvers.tests.test_solveset\",\"test__solveset_multi\",64791]"
+      },
+      {
+       "delta_bpb": 0.11694710617170678,
+       "module": "sympy.solvers.tests.test_solveset",
+       "target_key": "[\"sympy.solvers.tests.test_solveset\",\"test_raise_exception_nonlinsolve\",81738]"
+      },
+      {
+       "delta_bpb": 0.10723842379461035,
+       "module": "sympy.solvers.tests.test_solveset",
+       "target_key": "[\"sympy.solvers.tests.test_solveset\",\"test_solve_logarithm\",130280]"
+      },
+      {
+       "delta_bpb": 0.02421613237435022,
+       "module": "sympy.stats.symbolic_probability",
+       "target_key": "[\"sympy.stats.symbolic_probability\",\"Expectation\",4740]"
+      },
+      {
+       "delta_bpb": 0.02573862674013749,
+       "module": "sympy.stats.tests.test_rv",
+       "target_key": "[\"sympy.stats.tests.test_rv\",\"test_characteristic_function\",2827]"
+      },
+      {
+       "delta_bpb": 0.039174949055951314,
+       "module": "sympy.utilities.tests.test_codegen_julia",
+       "target_key": "[\"sympy.utilities.tests.test_codegen_julia\",\"test_jl_InOutArgument_order\",16608]"
+      },
+      {
+       "delta_bpb": -0.051450969517610294,
+       "module": "sympy.utilities.tests.test_wester",
+       "target_key": "[\"sympy.utilities.tests.test_wester\",\"test_H15\",14572]"
+      },
+      {
+       "delta_bpb": 0.05699690821952741,
+       "module": "sympy.utilities.tests.test_wester",
+       "target_key": "[\"sympy.utilities.tests.test_wester\",\"test_Y12\",91340]"
+      },
+      {
+       "delta_bpb": 0.1768677237322236,
+       "module": "sympy.vector.tests.test_functions",
+       "target_key": "[\"sympy.vector.tests.test_functions\",\"test_matrix_to_vector\",7208]"
+      }
+     ]
+    },
+    "E2": {
+     "budget_bytes": 16384,
+     "exploratory_positive_model_based_diagnostic": true,
+     "favorable_direction": "positive",
+     "holm_adjusted_pvalue": 0.00016604451385308488,
+     "inference": {
+      "ci95_two_sided_bpb": [
+       0.0368370210460305,
+       0.10660284257400146
+      ],
+      "cluster_sizes": [
+       5,
+       3,
+       2,
+       2,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ],
+      "degeneracy_floor_bpb": 1.4210854715202004e-14,
+      "degrees_of_freedom": 40,
+      "inference_status": "available",
+      "lower_one_sided_95_bpb": 0.042657366281114016,
+      "n_modules": 41,
+      "n_targets": 49,
+      "standard_error_bpb": 0.01725958253107157,
+      "target_equal_mean_bpb": 0.07171993181001599,
+      "target_keys": [
+       "[\"sympy.assumptions.handlers.calculus\",\"_\",7389]",
+       "[\"sympy.assumptions.handlers.common\",\"ask_all\",3321]",
+       "[\"sympy.assumptions.tests.test_wrapper\",\"test_is_extended_real\",908]",
+       "[\"sympy.codegen.ast\",\"CodeBlock\",18464]",
+       "[\"sympy.combinatorics.tests.test_perm_groups\",\"test_random_pr\",15875]",
+       "[\"sympy.concrete.tests.test_delta\",\"test_deltasummation_basic_symbolic\",11905]",
+       "[\"sympy.core.tests.test_args\",\"test_sympy__functions__special__hyper__HyperRep_power2\",93227]",
+       "[\"sympy.core.tests.test_args\",\"test_sympy__geometry__line__Ray\",164110]",
+       "[\"sympy.core.tests.test_args\",\"test_sympy__matrices__expressions__permutation__PermutationMatrix\",116744]",
+       "[\"sympy.core.tests.test_args\",\"test_sympy__series__order__Order\",152765]",
+       "[\"sympy.core.tests.test_args\",\"test_sympy__stats__crv_types__WignerSemicircleDistribution\",54119]",
+       "[\"sympy.core.tests.test_noncommutative\",\"test_adjoint\",894]",
+       "[\"sympy.core.tests.test_priority\",\"Higher\",322]",
+       "[\"sympy.functions.elementary.tests.test_piecewise\",\"test_issue_20360\",60000]",
+       "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_acot_fdiff\",51247]",
+       "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_issue_25833\",89850]",
+       "[\"sympy.holonomic.holonomic\",\"DifferentialOperator\",5405]",
+       "[\"sympy.matrices.repmatrix\",\"MutableRepMatrix\",18703]",
+       "[\"sympy.physics.mechanics.tests.test_actuator\",\"TestDuffingSpring\",22068]",
+       "[\"sympy.physics.quantum.operatorordering\",\"_normal_order_factor\",6245]",
+       "[\"sympy.physics.quantum.tests.test_represent\",\"test_enumerate_states\",4998]",
+       "[\"sympy.physics.units.dimensions\",\"DimensionSystem\",10002]",
+       "[\"sympy.physics.units.tests.test_dimensionsystem\",\"test_can_transf_matrix\",1811]",
+       "[\"sympy.physics.vector.tests.test_frame\",\"test_w_diff_dcm2\",10297]",
+       "[\"sympy.plotting.pygletplot.plot_modes\",\"Cylindrical\",3738]",
+       "[\"sympy.polys.benchmarks.bench_groebnertools\",\"time_vertex_color_12_vertices_23_edges\",675]",
+       "[\"sympy.polys.domains.tests.test_domains\",\"test_RR_Float\",39855]",
+       "[\"sympy.polys.fields\",\"field\",1484]",
+       "[\"sympy.polys.matrices.tests.test_domainmatrix\",\"test_DomainMatrix_to_dense\",8653]",
+       "[\"sympy.polys.tests.test_factortools\",\"test_dup_zz_mignotte_bound\",1079]",
+       "[\"sympy.printing.pretty.tests.test_pretty\",\"test_pretty_ndim_arrays\",80861]",
+       "[\"sympy.printing.tests.test_precedence\",\"test_Integral\",793]",
+       "[\"sympy.printing.tests.test_pycode\",\"test_beta\",14423]",
+       "[\"sympy.printing.tests.test_theanocode\",\"test_global_cache\",16904]",
+       "[\"sympy.series.tests.test_limits\",\"test_issue_6366\",20726]",
+       "[\"sympy.simplify.tests.test_combsimp\",\"test_issue_14528\",2795]",
+       "[\"sympy.simplify.trigsimp\",\"_eapply\",46746]",
+       "[\"sympy.solvers.diophantine.diophantine\",\"GeneralSumOfSquares\",31128]",
+       "[\"sympy.solvers.ode.tests.test_single\",\"_get_examples_ode_sol_euler_homogeneous\",22794]",
+       "[\"sympy.solvers.tests.test_solveset\",\"test__solveset_multi\",64791]",
+       "[\"sympy.solvers.tests.test_solveset\",\"test_raise_exception_nonlinsolve\",81738]",
+       "[\"sympy.solvers.tests.test_solveset\",\"test_solve_logarithm\",130280]",
+       "[\"sympy.stats.symbolic_probability\",\"Expectation\",4740]",
+       "[\"sympy.stats.tests.test_rv\",\"test_characteristic_function\",2827]",
+       "[\"sympy.utilities.tests.test_codegen_julia\",\"test_jl_InOutArgument_order\",16608]",
+       "[\"sympy.utilities.tests.test_lambdify\",\"test_cmath_sinh\",10832]",
+       "[\"sympy.utilities.tests.test_wester\",\"test_H15\",14572]",
+       "[\"sympy.utilities.tests.test_wester\",\"test_Y12\",91340]",
+       "[\"sympy.vector.tests.test_functions\",\"test_matrix_to_vector\",7208]"
+      ],
+      "target_range_bpb": 0.48031064866168455,
+      "upper_one_sided_95_bpb": 0.10078249733891795,
+      "variance_components": {
+       "cluster_sizes": [
+        5,
+        3,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+       ],
+       "mode": "mom",
+       "msb": 0.01188634820798636,
+       "msw": 0.004376096733274732,
+       "n0": 1.1846938775510203,
+       "n_modules": 41,
+       "n_pilot": 49,
+       "sigma_b2": 0.006339402622926268,
+       "sigma_w2": 0.004376096733274732
+      }
+     },
+     "interpretation_status": "positive-model-based-diagnostic",
+     "metric": "bpb",
+     "orientation": "k5:0:16384-k4:16384",
+     "raw_one_sided_pvalue": 8.302225692654244e-05,
+     "target_rows": [
+      {
+       "delta_bpb": 0.31650609644589345,
+       "module": "sympy.assumptions.handlers.calculus",
+       "target_key": "[\"sympy.assumptions.handlers.calculus\",\"_\",7389]"
+      },
+      {
+       "delta_bpb": 0.285469977115271,
+       "module": "sympy.assumptions.handlers.common",
+       "target_key": "[\"sympy.assumptions.handlers.common\",\"ask_all\",3321]"
+      },
+      {
+       "delta_bpb": 0.11724838981695565,
+       "module": "sympy.assumptions.tests.test_wrapper",
+       "target_key": "[\"sympy.assumptions.tests.test_wrapper\",\"test_is_extended_real\",908]"
+      },
+      {
+       "delta_bpb": -0.0003499549006395486,
+       "module": "sympy.codegen.ast",
+       "target_key": "[\"sympy.codegen.ast\",\"CodeBlock\",18464]"
+      },
+      {
+       "delta_bpb": 0.04868573512701823,
+       "module": "sympy.combinatorics.tests.test_perm_groups",
+       "target_key": "[\"sympy.combinatorics.tests.test_perm_groups\",\"test_random_pr\",15875]"
+      },
+      {
+       "delta_bpb": 0.04584589741078054,
+       "module": "sympy.concrete.tests.test_delta",
+       "target_key": "[\"sympy.concrete.tests.test_delta\",\"test_deltasummation_basic_symbolic\",11905]"
+      },
+      {
+       "delta_bpb": 0.018490079742088432,
+       "module": "sympy.core.tests.test_args",
+       "target_key": "[\"sympy.core.tests.test_args\",\"test_sympy__functions__special__hyper__HyperRep_power2\",93227]"
+      },
+      {
+       "delta_bpb": 0.10555696306899548,
+       "module": "sympy.core.tests.test_args",
+       "target_key": "[\"sympy.core.tests.test_args\",\"test_sympy__geometry__line__Ray\",164110]"
+      },
+      {
+       "delta_bpb": 0.00035037586615260796,
+       "module": "sympy.core.tests.test_args",
+       "target_key": "[\"sympy.core.tests.test_args\",\"test_sympy__matrices__expressions__permutation__PermutationMatrix\",116744]"
+      },
+      {
+       "delta_bpb": 0.033326192917900614,
+       "module": "sympy.core.tests.test_args",
+       "target_key": "[\"sympy.core.tests.test_args\",\"test_sympy__series__order__Order\",152765]"
+      },
+      {
+       "delta_bpb": 0.004567387810002321,
+       "module": "sympy.core.tests.test_args",
+       "target_key": "[\"sympy.core.tests.test_args\",\"test_sympy__stats__crv_types__WignerSemicircleDistribution\",54119]"
+      },
+      {
+       "delta_bpb": 0.003818417828449383,
+       "module": "sympy.core.tests.test_noncommutative",
+       "target_key": "[\"sympy.core.tests.test_noncommutative\",\"test_adjoint\",894]"
+      },
+      {
+       "delta_bpb": -0.001396477212031677,
+       "module": "sympy.core.tests.test_priority",
+       "target_key": "[\"sympy.core.tests.test_priority\",\"Higher\",322]"
+      },
+      {
+       "delta_bpb": -0.04200563525793699,
+       "module": "sympy.functions.elementary.tests.test_piecewise",
+       "target_key": "[\"sympy.functions.elementary.tests.test_piecewise\",\"test_issue_20360\",60000]"
+      },
+      {
+       "delta_bpb": -0.03745676446824009,
+       "module": "sympy.functions.elementary.tests.test_trigonometric",
+       "target_key": "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_acot_fdiff\",51247]"
+      },
+      {
+       "delta_bpb": 0.020713574033747066,
+       "module": "sympy.functions.elementary.tests.test_trigonometric",
+       "target_key": "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_issue_25833\",89850]"
+      },
+      {
+       "delta_bpb": 0.0018234535546182151,
+       "module": "sympy.holonomic.holonomic",
+       "target_key": "[\"sympy.holonomic.holonomic\",\"DifferentialOperator\",5405]"
+      },
+      {
+       "delta_bpb": 0.005965223109073131,
+       "module": "sympy.matrices.repmatrix",
+       "target_key": "[\"sympy.matrices.repmatrix\",\"MutableRepMatrix\",18703]"
+      },
+      {
+       "delta_bpb": -0.002320054713113112,
+       "module": "sympy.physics.mechanics.tests.test_actuator",
+       "target_key": "[\"sympy.physics.mechanics.tests.test_actuator\",\"TestDuffingSpring\",22068]"
+      },
+      {
+       "delta_bpb": 0.017538273230471017,
+       "module": "sympy.physics.quantum.operatorordering",
+       "target_key": "[\"sympy.physics.quantum.operatorordering\",\"_normal_order_factor\",6245]"
+      },
+      {
+       "delta_bpb": 0.43280199011220394,
+       "module": "sympy.physics.quantum.tests.test_represent",
+       "target_key": "[\"sympy.physics.quantum.tests.test_represent\",\"test_enumerate_states\",4998]"
+      },
+      {
+       "delta_bpb": 0.0006540533174272944,
+       "module": "sympy.physics.units.dimensions",
+       "target_key": "[\"sympy.physics.units.dimensions\",\"DimensionSystem\",10002]"
+      },
+      {
+       "delta_bpb": 0.24970654321162628,
+       "module": "sympy.physics.units.tests.test_dimensionsystem",
+       "target_key": "[\"sympy.physics.units.tests.test_dimensionsystem\",\"test_can_transf_matrix\",1811]"
+      },
+      {
+       "delta_bpb": -0.010761096125279646,
+       "module": "sympy.physics.vector.tests.test_frame",
+       "target_key": "[\"sympy.physics.vector.tests.test_frame\",\"test_w_diff_dcm2\",10297]"
+      },
+      {
+       "delta_bpb": 0.2983668763010817,
+       "module": "sympy.plotting.pygletplot.plot_modes",
+       "target_key": "[\"sympy.plotting.pygletplot.plot_modes\",\"Cylindrical\",3738]"
+      },
+      {
+       "delta_bpb": 0.12784194352416778,
+       "module": "sympy.polys.benchmarks.bench_groebnertools",
+       "target_key": "[\"sympy.polys.benchmarks.bench_groebnertools\",\"time_vertex_color_12_vertices_23_edges\",675]"
+      },
+      {
+       "delta_bpb": 0.039065983778278295,
+       "module": "sympy.polys.domains.tests.test_domains",
+       "target_key": "[\"sympy.polys.domains.tests.test_domains\",\"test_RR_Float\",39855]"
+      },
+      {
+       "delta_bpb": 0.05391550298143665,
+       "module": "sympy.polys.fields",
+       "target_key": "[\"sympy.polys.fields\",\"field\",1484]"
+      },
+      {
+       "delta_bpb": 0.10223088779196976,
+       "module": "sympy.polys.matrices.tests.test_domainmatrix",
+       "target_key": "[\"sympy.polys.matrices.tests.test_domainmatrix\",\"test_DomainMatrix_to_dense\",8653]"
+      },
+      {
+       "delta_bpb": 0.07100577764075533,
+       "module": "sympy.polys.tests.test_factortools",
+       "target_key": "[\"sympy.polys.tests.test_factortools\",\"test_dup_zz_mignotte_bound\",1079]"
+      },
+      {
+       "delta_bpb": 0.0050420317801749825,
+       "module": "sympy.printing.pretty.tests.test_pretty",
+       "target_key": "[\"sympy.printing.pretty.tests.test_pretty\",\"test_pretty_ndim_arrays\",80861]"
+      },
+      {
+       "delta_bpb": -0.044996884939863424,
+       "module": "sympy.printing.tests.test_precedence",
+       "target_key": "[\"sympy.printing.tests.test_precedence\",\"test_Integral\",793]"
+      },
+      {
+       "delta_bpb": 0.07879931391207784,
+       "module": "sympy.printing.tests.test_pycode",
+       "target_key": "[\"sympy.printing.tests.test_pycode\",\"test_beta\",14423]"
+      },
+      {
+       "delta_bpb": 0.12102401582771233,
+       "module": "sympy.printing.tests.test_theanocode",
+       "target_key": "[\"sympy.printing.tests.test_theanocode\",\"test_global_cache\",16904]"
+      },
+      {
+       "delta_bpb": 0.07908808953780411,
+       "module": "sympy.series.tests.test_limits",
+       "target_key": "[\"sympy.series.tests.test_limits\",\"test_issue_6366\",20726]"
+      },
+      {
+       "delta_bpb": 0.17211644573828389,
+       "module": "sympy.simplify.tests.test_combsimp",
+       "target_key": "[\"sympy.simplify.tests.test_combsimp\",\"test_issue_14528\",2795]"
+      },
+      {
+       "delta_bpb": 0.00866178045870969,
+       "module": "sympy.simplify.trigsimp",
+       "target_key": "[\"sympy.simplify.trigsimp\",\"_eapply\",46746]"
+      },
+      {
+       "delta_bpb": -0.00013005083015427132,
+       "module": "sympy.solvers.diophantine.diophantine",
+       "target_key": "[\"sympy.solvers.diophantine.diophantine\",\"GeneralSumOfSquares\",31128]"
+      },
+      {
+       "delta_bpb": 0.005119924490771199,
+       "module": "sympy.solvers.ode.tests.test_single",
+       "target_key": "[\"sympy.solvers.ode.tests.test_single\",\"_get_examples_ode_sol_euler_homogeneous\",22794]"
+      },
+      {
+       "delta_bpb": 0.004300469114540129,
+       "module": "sympy.solvers.tests.test_solveset",
+       "target_key": "[\"sympy.solvers.tests.test_solveset\",\"test__solveset_multi\",64791]"
+      },
+      {
+       "delta_bpb": 0.10566148334617231,
+       "module": "sympy.solvers.tests.test_solveset",
+       "target_key": "[\"sympy.solvers.tests.test_solveset\",\"test_raise_exception_nonlinsolve\",81738]"
+      },
+      {
+       "delta_bpb": 0.1598883684407899,
+       "module": "sympy.solvers.tests.test_solveset",
+       "target_key": "[\"sympy.solvers.tests.test_solveset\",\"test_solve_logarithm\",130280]"
+      },
+      {
+       "delta_bpb": 0.03545053767510769,
+       "module": "sympy.stats.symbolic_probability",
+       "target_key": "[\"sympy.stats.symbolic_probability\",\"Expectation\",4740]"
+      },
+      {
+       "delta_bpb": 0.03703838009910564,
+       "module": "sympy.stats.tests.test_rv",
+       "target_key": "[\"sympy.stats.tests.test_rv\",\"test_characteristic_function\",2827]"
+      },
+      {
+       "delta_bpb": 0.16246590138238293,
+       "module": "sympy.utilities.tests.test_codegen_julia",
+       "target_key": "[\"sympy.utilities.tests.test_codegen_julia\",\"test_jl_InOutArgument_order\",16608]"
+      },
+      {
+       "delta_bpb": 0.03811676254495019,
+       "module": "sympy.utilities.tests.test_lambdify",
+       "target_key": "[\"sympy.utilities.tests.test_lambdify\",\"test_cmath_sinh\",10832]"
+      },
+      {
+       "delta_bpb": -0.04750865854948061,
+       "module": "sympy.utilities.tests.test_wester",
+       "target_key": "[\"sympy.utilities.tests.test_wester\",\"test_H15\",14572]"
+      },
+      {
+       "delta_bpb": 0.11677591627620587,
+       "module": "sympy.utilities.tests.test_wester",
+       "target_key": "[\"sympy.utilities.tests.test_wester\",\"test_Y12\",91340]"
+      },
+      {
+       "delta_bpb": 0.1701572193263693,
+       "module": "sympy.vector.tests.test_functions",
+       "target_key": "[\"sympy.vector.tests.test_functions\",\"test_matrix_to_vector\",7208]"
+      }
+     ]
+    }
+   },
+   "e1b_assay": {
+    "active_assay_pvalue": 4.5921834845946603e-07,
+    "e1a_intersection_lower_one_sided_95_bpb": 0.10011221134573474,
+    "e1a_on_intersection_inference": {
+     "ci95_two_sided_bpb": [
+      0.09350109717604872,
+      0.17176926216442112
+     ],
+     "cluster_sizes": [
+      3,
+      2,
+      2,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+     ],
+     "degeneracy_floor_bpb": 1.4210854715202004e-14,
+     "degrees_of_freedom": 37,
+     "inference_status": "available",
+     "lower_one_sided_95_bpb": 0.10011221134573474,
+     "n_modules": 38,
+     "n_targets": 42,
+     "standard_error_bpb": 0.019162032527589953,
+     "target_equal_mean_bpb": 0.13263517967023492,
+     "target_keys": [
+      "[\"sympy.assumptions.handlers.calculus\",\"_\",7389]",
+      "[\"sympy.assumptions.handlers.common\",\"ask_all\",3321]",
+      "[\"sympy.assumptions.tests.test_wrapper\",\"test_is_extended_real\",908]",
+      "[\"sympy.codegen.ast\",\"CodeBlock\",18464]",
+      "[\"sympy.combinatorics.tests.test_perm_groups\",\"test_random_pr\",15875]",
+      "[\"sympy.concrete.tests.test_delta\",\"test_deltasummation_basic_symbolic\",11905]",
+      "[\"sympy.core.tests.test_noncommutative\",\"test_adjoint\",894]",
+      "[\"sympy.core.tests.test_priority\",\"Higher\",322]",
+      "[\"sympy.functions.elementary.tests.test_piecewise\",\"test_issue_20360\",60000]",
+      "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_acot_fdiff\",51247]",
+      "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_issue_25833\",89850]",
+      "[\"sympy.holonomic.holonomic\",\"DifferentialOperator\",5405]",
+      "[\"sympy.matrices.repmatrix\",\"MutableRepMatrix\",18703]",
+      "[\"sympy.physics.mechanics.tests.test_actuator\",\"TestDuffingSpring\",22068]",
+      "[\"sympy.physics.quantum.operatorordering\",\"_normal_order_factor\",6245]",
+      "[\"sympy.physics.quantum.tests.test_represent\",\"test_enumerate_states\",4998]",
+      "[\"sympy.physics.units.dimensions\",\"DimensionSystem\",10002]",
+      "[\"sympy.physics.units.tests.test_dimensionsystem\",\"test_can_transf_matrix\",1811]",
+      "[\"sympy.physics.vector.tests.test_frame\",\"test_w_diff_dcm2\",10297]",
+      "[\"sympy.plotting.pygletplot.plot_modes\",\"Cylindrical\",3738]",
+      "[\"sympy.polys.domains.tests.test_domains\",\"test_RR_Float\",39855]",
+      "[\"sympy.polys.fields\",\"field\",1484]",
+      "[\"sympy.polys.matrices.tests.test_domainmatrix\",\"test_DomainMatrix_to_dense\",8653]",
+      "[\"sympy.polys.tests.test_factortools\",\"test_dup_zz_mignotte_bound\",1079]",
+      "[\"sympy.printing.pretty.tests.test_pretty\",\"test_pretty_ndim_arrays\",80861]",
+      "[\"sympy.printing.tests.test_precedence\",\"test_Integral\",793]",
+      "[\"sympy.printing.tests.test_pycode\",\"test_beta\",14423]",
+      "[\"sympy.printing.tests.test_theanocode\",\"test_global_cache\",16904]",
+      "[\"sympy.series.tests.test_limits\",\"test_issue_6366\",20726]",
+      "[\"sympy.simplify.tests.test_combsimp\",\"test_issue_14528\",2795]",
+      "[\"sympy.simplify.trigsimp\",\"_eapply\",46746]",
+      "[\"sympy.solvers.diophantine.diophantine\",\"GeneralSumOfSquares\",31128]",
+      "[\"sympy.solvers.ode.tests.test_single\",\"_get_examples_ode_sol_euler_homogeneous\",22794]",
+      "[\"sympy.solvers.tests.test_solveset\",\"test__solveset_multi\",64791]",
+      "[\"sympy.solvers.tests.test_solveset\",\"test_raise_exception_nonlinsolve\",81738]",
+      "[\"sympy.solvers.tests.test_solveset\",\"test_solve_logarithm\",130280]",
+      "[\"sympy.stats.symbolic_probability\",\"Expectation\",4740]",
+      "[\"sympy.stats.tests.test_rv\",\"test_characteristic_function\",2827]",
+      "[\"sympy.utilities.tests.test_codegen_julia\",\"test_jl_InOutArgument_order\",16608]",
+      "[\"sympy.utilities.tests.test_wester\",\"test_H15\",14572]",
+      "[\"sympy.utilities.tests.test_wester\",\"test_Y12\",91340]",
+      "[\"sympy.vector.tests.test_functions\",\"test_matrix_to_vector\",7208]"
+     ],
+     "target_range_bpb": 0.44130960882329584,
+     "upper_one_sided_95_bpb": 0.1651581479947351,
+     "variance_components": {
+      "cluster_sizes": [
+       3,
+       2,
+       2,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ],
+      "mode": "mom",
+      "msb": 0.014882613891841173,
+      "msw": 0.010529185946382025,
+      "n0": 1.1016731016731016,
+      "n_modules": 38,
+      "n_pilot": 42,
+      "sigma_b2": 0.003951651300959998,
+      "sigma_w2": 0.010529185946382025
+     }
+    },
+    "e1b_upper_one_sided_95_bpb": 0.07782623504797909,
+    "holm_adjusted_pvalue": 0.9955792206573753,
+    "interface_compatible": false,
+    "intersection": "E1a eligible intersect E1b eligible",
+    "intersection_union_pvalue": 0.9955792206573753,
+    "label": "noninferiority-not-established",
+    "margin_bpb": 0.02,
+    "noninferiority_pvalue": 0.9955792206573753,
+    "pointwise_active_assay": true,
+    "pointwise_noninferiority": false,
+    "requires_k4x_sensitivity": false,
+    "target_rows": [
+     {
+      "delta_bpb": 0.36956764268138487,
+      "module": "sympy.assumptions.handlers.calculus",
+      "target_key": "[\"sympy.assumptions.handlers.calculus\",\"_\",7389]"
+     },
+     {
+      "delta_bpb": 0.2597238270502893,
+      "module": "sympy.assumptions.handlers.common",
+      "target_key": "[\"sympy.assumptions.handlers.common\",\"ask_all\",3321]"
+     },
+     {
+      "delta_bpb": 0.13661683350028028,
+      "module": "sympy.assumptions.tests.test_wrapper",
+      "target_key": "[\"sympy.assumptions.tests.test_wrapper\",\"test_is_extended_real\",908]"
+     },
+     {
+      "delta_bpb": 0.0070610271620746845,
+      "module": "sympy.codegen.ast",
+      "target_key": "[\"sympy.codegen.ast\",\"CodeBlock\",18464]"
+     },
+     {
+      "delta_bpb": 0.06364340051655804,
+      "module": "sympy.combinatorics.tests.test_perm_groups",
+      "target_key": "[\"sympy.combinatorics.tests.test_perm_groups\",\"test_random_pr\",15875]"
+     },
+     {
+      "delta_bpb": 0.06164756687653189,
+      "module": "sympy.concrete.tests.test_delta",
+      "target_key": "[\"sympy.concrete.tests.test_delta\",\"test_deltasummation_basic_symbolic\",11905]"
+     },
+     {
+      "delta_bpb": 0.042504690884407115,
+      "module": "sympy.core.tests.test_noncommutative",
+      "target_key": "[\"sympy.core.tests.test_noncommutative\",\"test_adjoint\",894]"
+     },
+     {
+      "delta_bpb": 0.017072656396188213,
+      "module": "sympy.core.tests.test_priority",
+      "target_key": "[\"sympy.core.tests.test_priority\",\"Higher\",322]"
+     },
+     {
+      "delta_bpb": 0.05286015433000768,
+      "module": "sympy.functions.elementary.tests.test_piecewise",
+      "target_key": "[\"sympy.functions.elementary.tests.test_piecewise\",\"test_issue_20360\",60000]"
+     },
+     {
+      "delta_bpb": 0.4204967817828684,
+      "module": "sympy.functions.elementary.tests.test_trigonometric",
+      "target_key": "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_acot_fdiff\",51247]"
+     },
+     {
+      "delta_bpb": 0.2729445299169625,
+      "module": "sympy.functions.elementary.tests.test_trigonometric",
+      "target_key": "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_issue_25833\",89850]"
+     },
+     {
+      "delta_bpb": 0.006075289376197668,
+      "module": "sympy.holonomic.holonomic",
+      "target_key": "[\"sympy.holonomic.holonomic\",\"DifferentialOperator\",5405]"
+     },
+     {
+      "delta_bpb": 0.012036274208965664,
+      "module": "sympy.matrices.repmatrix",
+      "target_key": "[\"sympy.matrices.repmatrix\",\"MutableRepMatrix\",18703]"
+     },
+     {
+      "delta_bpb": -0.0018747871487579115,
+      "module": "sympy.physics.mechanics.tests.test_actuator",
+      "target_key": "[\"sympy.physics.mechanics.tests.test_actuator\",\"TestDuffingSpring\",22068]"
+     },
+     {
+      "delta_bpb": 0.03236562362525908,
+      "module": "sympy.physics.quantum.operatorordering",
+      "target_key": "[\"sympy.physics.quantum.operatorordering\",\"_normal_order_factor\",6245]"
+     },
+     {
+      "delta_bpb": 0.43943482167453796,
+      "module": "sympy.physics.quantum.tests.test_represent",
+      "target_key": "[\"sympy.physics.quantum.tests.test_represent\",\"test_enumerate_states\",4998]"
+     },
+     {
+      "delta_bpb": 0.004443947405306903,
+      "module": "sympy.physics.units.dimensions",
+      "target_key": "[\"sympy.physics.units.dimensions\",\"DimensionSystem\",10002]"
+     },
+     {
+      "delta_bpb": 0.2464987509339956,
+      "module": "sympy.physics.units.tests.test_dimensionsystem",
+      "target_key": "[\"sympy.physics.units.tests.test_dimensionsystem\",\"test_can_transf_matrix\",1811]"
+     },
+     {
+      "delta_bpb": 0.03294247532483713,
+      "module": "sympy.physics.vector.tests.test_frame",
+      "target_key": "[\"sympy.physics.vector.tests.test_frame\",\"test_w_diff_dcm2\",10297]"
+     },
+     {
+      "delta_bpb": 0.29977726878979194,
+      "module": "sympy.plotting.pygletplot.plot_modes",
+      "target_key": "[\"sympy.plotting.pygletplot.plot_modes\",\"Cylindrical\",3738]"
+     },
+     {
+      "delta_bpb": 0.1211012229383096,
+      "module": "sympy.polys.domains.tests.test_domains",
+      "target_key": "[\"sympy.polys.domains.tests.test_domains\",\"test_RR_Float\",39855]"
+     },
+     {
+      "delta_bpb": 0.11015484040811108,
+      "module": "sympy.polys.fields",
+      "target_key": "[\"sympy.polys.fields\",\"field\",1484]"
+     },
+     {
+      "delta_bpb": 0.2000091775763284,
+      "module": "sympy.polys.matrices.tests.test_domainmatrix",
+      "target_key": "[\"sympy.polys.matrices.tests.test_domainmatrix\",\"test_DomainMatrix_to_dense\",8653]"
+     },
+     {
+      "delta_bpb": 0.20381859617558828,
+      "module": "sympy.polys.tests.test_factortools",
+      "target_key": "[\"sympy.polys.tests.test_factortools\",\"test_dup_zz_mignotte_bound\",1079]"
+     },
+     {
+      "delta_bpb": 0.004827886233711304,
+      "module": "sympy.printing.pretty.tests.test_pretty",
+      "target_key": "[\"sympy.printing.pretty.tests.test_pretty\",\"test_pretty_ndim_arrays\",80861]"
+     },
+     {
+      "delta_bpb": 0.21016193159006247,
+      "module": "sympy.printing.tests.test_precedence",
+      "target_key": "[\"sympy.printing.tests.test_precedence\",\"test_Integral\",793]"
+     },
+     {
+      "delta_bpb": 0.1050637300403986,
+      "module": "sympy.printing.tests.test_pycode",
+      "target_key": "[\"sympy.printing.tests.test_pycode\",\"test_beta\",14423]"
+     },
+     {
+      "delta_bpb": 0.1646103219159583,
+      "module": "sympy.printing.tests.test_theanocode",
+      "target_key": "[\"sympy.printing.tests.test_theanocode\",\"test_global_cache\",16904]"
+     },
+     {
+      "delta_bpb": 0.129870505132465,
+      "module": "sympy.series.tests.test_limits",
+      "target_key": "[\"sympy.series.tests.test_limits\",\"test_issue_6366\",20726]"
+     },
+     {
+      "delta_bpb": 0.17079492088238746,
+      "module": "sympy.simplify.tests.test_combsimp",
+      "target_key": "[\"sympy.simplify.tests.test_combsimp\",\"test_issue_14528\",2795]"
+     },
+     {
+      "delta_bpb": 0.022976460541829336,
+      "module": "sympy.simplify.trigsimp",
+      "target_key": "[\"sympy.simplify.trigsimp\",\"_eapply\",46746]"
+     },
+     {
+      "delta_bpb": 0.004668601668363859,
+      "module": "sympy.solvers.diophantine.diophantine",
+      "target_key": "[\"sympy.solvers.diophantine.diophantine\",\"GeneralSumOfSquares\",31128]"
+     },
+     {
+      "delta_bpb": 0.026465164870514923,
+      "module": "sympy.solvers.ode.tests.test_single",
+      "target_key": "[\"sympy.solvers.ode.tests.test_single\",\"_get_examples_ode_sol_euler_homogeneous\",22794]"
+     },
+     {
+      "delta_bpb": 0.011330156445254758,
+      "module": "sympy.solvers.tests.test_solveset",
+      "target_key": "[\"sympy.solvers.tests.test_solveset\",\"test__solveset_multi\",64791]"
+     },
+     {
+      "delta_bpb": 0.2321968676623185,
+      "module": "sympy.solvers.tests.test_solveset",
+      "target_key": "[\"sympy.solvers.tests.test_solveset\",\"test_raise_exception_nonlinsolve\",81738]"
+     },
+     {
+      "delta_bpb": 0.21421753535258325,
+      "module": "sympy.solvers.tests.test_solveset",
+      "target_key": "[\"sympy.solvers.tests.test_solveset\",\"test_solve_logarithm\",130280]"
+     },
+     {
+      "delta_bpb": 0.03550776576617842,
+      "module": "sympy.stats.symbolic_probability",
+      "target_key": "[\"sympy.stats.symbolic_probability\",\"Expectation\",4740]"
+     },
+     {
+      "delta_bpb": 0.06641243235618066,
+      "module": "sympy.stats.tests.test_rv",
+      "target_key": "[\"sympy.stats.tests.test_rv\",\"test_characteristic_function\",2827]"
+     },
+     {
+      "delta_bpb": 0.16662385935618723,
+      "module": "sympy.utilities.tests.test_codegen_julia",
+      "target_key": "[\"sympy.utilities.tests.test_codegen_julia\",\"test_jl_InOutArgument_order\",16608]"
+     },
+     {
+      "delta_bpb": 0.18388136517687603,
+      "module": "sympy.utilities.tests.test_wester",
+      "target_key": "[\"sympy.utilities.tests.test_wester\",\"test_H15\",14572]"
+     },
+     {
+      "delta_bpb": 0.13610353366125172,
+      "module": "sympy.utilities.tests.test_wester",
+      "target_key": "[\"sympy.utilities.tests.test_wester\",\"test_Y12\",91340]"
+     },
+     {
+      "delta_bpb": 0.2740418951113202,
+      "module": "sympy.vector.tests.test_functions",
+      "target_key": "[\"sympy.vector.tests.test_functions\",\"test_matrix_to_vector\",7208]"
+     }
+    ]
+   },
+   "eligible_intersections": {
+    "pairwise": {
+     "E1a&E1b": {
+      "n": 42,
+      "target_keys": [
+       "[\"sympy.assumptions.handlers.calculus\",\"_\",7389]",
+       "[\"sympy.assumptions.handlers.common\",\"ask_all\",3321]",
+       "[\"sympy.assumptions.tests.test_wrapper\",\"test_is_extended_real\",908]",
+       "[\"sympy.codegen.ast\",\"CodeBlock\",18464]",
+       "[\"sympy.combinatorics.tests.test_perm_groups\",\"test_random_pr\",15875]",
+       "[\"sympy.concrete.tests.test_delta\",\"test_deltasummation_basic_symbolic\",11905]",
+       "[\"sympy.core.tests.test_noncommutative\",\"test_adjoint\",894]",
+       "[\"sympy.core.tests.test_priority\",\"Higher\",322]",
+       "[\"sympy.functions.elementary.tests.test_piecewise\",\"test_issue_20360\",60000]",
+       "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_acot_fdiff\",51247]",
+       "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_issue_25833\",89850]",
+       "[\"sympy.holonomic.holonomic\",\"DifferentialOperator\",5405]",
+       "[\"sympy.matrices.repmatrix\",\"MutableRepMatrix\",18703]",
+       "[\"sympy.physics.mechanics.tests.test_actuator\",\"TestDuffingSpring\",22068]",
+       "[\"sympy.physics.quantum.operatorordering\",\"_normal_order_factor\",6245]",
+       "[\"sympy.physics.quantum.tests.test_represent\",\"test_enumerate_states\",4998]",
+       "[\"sympy.physics.units.dimensions\",\"DimensionSystem\",10002]",
+       "[\"sympy.physics.units.tests.test_dimensionsystem\",\"test_can_transf_matrix\",1811]",
+       "[\"sympy.physics.vector.tests.test_frame\",\"test_w_diff_dcm2\",10297]",
+       "[\"sympy.plotting.pygletplot.plot_modes\",\"Cylindrical\",3738]",
+       "[\"sympy.polys.domains.tests.test_domains\",\"test_RR_Float\",39855]",
+       "[\"sympy.polys.fields\",\"field\",1484]",
+       "[\"sympy.polys.matrices.tests.test_domainmatrix\",\"test_DomainMatrix_to_dense\",8653]",
+       "[\"sympy.polys.tests.test_factortools\",\"test_dup_zz_mignotte_bound\",1079]",
+       "[\"sympy.printing.pretty.tests.test_pretty\",\"test_pretty_ndim_arrays\",80861]",
+       "[\"sympy.printing.tests.test_precedence\",\"test_Integral\",793]",
+       "[\"sympy.printing.tests.test_pycode\",\"test_beta\",14423]",
+       "[\"sympy.printing.tests.test_theanocode\",\"test_global_cache\",16904]",
+       "[\"sympy.series.tests.test_limits\",\"test_issue_6366\",20726]",
+       "[\"sympy.simplify.tests.test_combsimp\",\"test_issue_14528\",2795]",
+       "[\"sympy.simplify.trigsimp\",\"_eapply\",46746]",
+       "[\"sympy.solvers.diophantine.diophantine\",\"GeneralSumOfSquares\",31128]",
+       "[\"sympy.solvers.ode.tests.test_single\",\"_get_examples_ode_sol_euler_homogeneous\",22794]",
+       "[\"sympy.solvers.tests.test_solveset\",\"test__solveset_multi\",64791]",
+       "[\"sympy.solvers.tests.test_solveset\",\"test_raise_exception_nonlinsolve\",81738]",
+       "[\"sympy.solvers.tests.test_solveset\",\"test_solve_logarithm\",130280]",
+       "[\"sympy.stats.symbolic_probability\",\"Expectation\",4740]",
+       "[\"sympy.stats.tests.test_rv\",\"test_characteristic_function\",2827]",
+       "[\"sympy.utilities.tests.test_codegen_julia\",\"test_jl_InOutArgument_order\",16608]",
+       "[\"sympy.utilities.tests.test_wester\",\"test_H15\",14572]",
+       "[\"sympy.utilities.tests.test_wester\",\"test_Y12\",91340]",
+       "[\"sympy.vector.tests.test_functions\",\"test_matrix_to_vector\",7208]"
+      ]
+     },
+     "E1a&E2": {
+      "n": 49,
+      "target_keys": [
+       "[\"sympy.assumptions.handlers.calculus\",\"_\",7389]",
+       "[\"sympy.assumptions.handlers.common\",\"ask_all\",3321]",
+       "[\"sympy.assumptions.tests.test_wrapper\",\"test_is_extended_real\",908]",
+       "[\"sympy.codegen.ast\",\"CodeBlock\",18464]",
+       "[\"sympy.combinatorics.tests.test_perm_groups\",\"test_random_pr\",15875]",
+       "[\"sympy.concrete.tests.test_delta\",\"test_deltasummation_basic_symbolic\",11905]",
+       "[\"sympy.core.tests.test_args\",\"test_sympy__functions__special__hyper__HyperRep_power2\",93227]",
+       "[\"sympy.core.tests.test_args\",\"test_sympy__geometry__line__Ray\",164110]",
+       "[\"sympy.core.tests.test_args\",\"test_sympy__matrices__expressions__permutation__PermutationMatrix\",116744]",
+       "[\"sympy.core.tests.test_args\",\"test_sympy__series__order__Order\",152765]",
+       "[\"sympy.core.tests.test_args\",\"test_sympy__stats__crv_types__WignerSemicircleDistribution\",54119]",
+       "[\"sympy.core.tests.test_noncommutative\",\"test_adjoint\",894]",
+       "[\"sympy.core.tests.test_priority\",\"Higher\",322]",
+       "[\"sympy.functions.elementary.tests.test_piecewise\",\"test_issue_20360\",60000]",
+       "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_acot_fdiff\",51247]",
+       "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_issue_25833\",89850]",
+       "[\"sympy.holonomic.holonomic\",\"DifferentialOperator\",5405]",
+       "[\"sympy.matrices.repmatrix\",\"MutableRepMatrix\",18703]",
+       "[\"sympy.physics.mechanics.tests.test_actuator\",\"TestDuffingSpring\",22068]",
+       "[\"sympy.physics.quantum.operatorordering\",\"_normal_order_factor\",6245]",
+       "[\"sympy.physics.quantum.tests.test_represent\",\"test_enumerate_states\",4998]",
+       "[\"sympy.physics.units.dimensions\",\"DimensionSystem\",10002]",
+       "[\"sympy.physics.units.tests.test_dimensionsystem\",\"test_can_transf_matrix\",1811]",
+       "[\"sympy.physics.vector.tests.test_frame\",\"test_w_diff_dcm2\",10297]",
+       "[\"sympy.plotting.pygletplot.plot_modes\",\"Cylindrical\",3738]",
+       "[\"sympy.polys.benchmarks.bench_groebnertools\",\"time_vertex_color_12_vertices_23_edges\",675]",
+       "[\"sympy.polys.domains.tests.test_domains\",\"test_RR_Float\",39855]",
+       "[\"sympy.polys.fields\",\"field\",1484]",
+       "[\"sympy.polys.matrices.tests.test_domainmatrix\",\"test_DomainMatrix_to_dense\",8653]",
+       "[\"sympy.polys.tests.test_factortools\",\"test_dup_zz_mignotte_bound\",1079]",
+       "[\"sympy.printing.pretty.tests.test_pretty\",\"test_pretty_ndim_arrays\",80861]",
+       "[\"sympy.printing.tests.test_precedence\",\"test_Integral\",793]",
+       "[\"sympy.printing.tests.test_pycode\",\"test_beta\",14423]",
+       "[\"sympy.printing.tests.test_theanocode\",\"test_global_cache\",16904]",
+       "[\"sympy.series.tests.test_limits\",\"test_issue_6366\",20726]",
+       "[\"sympy.simplify.tests.test_combsimp\",\"test_issue_14528\",2795]",
+       "[\"sympy.simplify.trigsimp\",\"_eapply\",46746]",
+       "[\"sympy.solvers.diophantine.diophantine\",\"GeneralSumOfSquares\",31128]",
+       "[\"sympy.solvers.ode.tests.test_single\",\"_get_examples_ode_sol_euler_homogeneous\",22794]",
+       "[\"sympy.solvers.tests.test_solveset\",\"test__solveset_multi\",64791]",
+       "[\"sympy.solvers.tests.test_solveset\",\"test_raise_exception_nonlinsolve\",81738]",
+       "[\"sympy.solvers.tests.test_solveset\",\"test_solve_logarithm\",130280]",
+       "[\"sympy.stats.symbolic_probability\",\"Expectation\",4740]",
+       "[\"sympy.stats.tests.test_rv\",\"test_characteristic_function\",2827]",
+       "[\"sympy.utilities.tests.test_codegen_julia\",\"test_jl_InOutArgument_order\",16608]",
+       "[\"sympy.utilities.tests.test_lambdify\",\"test_cmath_sinh\",10832]",
+       "[\"sympy.utilities.tests.test_wester\",\"test_H15\",14572]",
+       "[\"sympy.utilities.tests.test_wester\",\"test_Y12\",91340]",
+       "[\"sympy.vector.tests.test_functions\",\"test_matrix_to_vector\",7208]"
+      ]
+     },
+     "E1b&E2": {
+      "n": 42,
+      "target_keys": [
+       "[\"sympy.assumptions.handlers.calculus\",\"_\",7389]",
+       "[\"sympy.assumptions.handlers.common\",\"ask_all\",3321]",
+       "[\"sympy.assumptions.tests.test_wrapper\",\"test_is_extended_real\",908]",
+       "[\"sympy.codegen.ast\",\"CodeBlock\",18464]",
+       "[\"sympy.combinatorics.tests.test_perm_groups\",\"test_random_pr\",15875]",
+       "[\"sympy.concrete.tests.test_delta\",\"test_deltasummation_basic_symbolic\",11905]",
+       "[\"sympy.core.tests.test_noncommutative\",\"test_adjoint\",894]",
+       "[\"sympy.core.tests.test_priority\",\"Higher\",322]",
+       "[\"sympy.functions.elementary.tests.test_piecewise\",\"test_issue_20360\",60000]",
+       "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_acot_fdiff\",51247]",
+       "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_issue_25833\",89850]",
+       "[\"sympy.holonomic.holonomic\",\"DifferentialOperator\",5405]",
+       "[\"sympy.matrices.repmatrix\",\"MutableRepMatrix\",18703]",
+       "[\"sympy.physics.mechanics.tests.test_actuator\",\"TestDuffingSpring\",22068]",
+       "[\"sympy.physics.quantum.operatorordering\",\"_normal_order_factor\",6245]",
+       "[\"sympy.physics.quantum.tests.test_represent\",\"test_enumerate_states\",4998]",
+       "[\"sympy.physics.units.dimensions\",\"DimensionSystem\",10002]",
+       "[\"sympy.physics.units.tests.test_dimensionsystem\",\"test_can_transf_matrix\",1811]",
+       "[\"sympy.physics.vector.tests.test_frame\",\"test_w_diff_dcm2\",10297]",
+       "[\"sympy.plotting.pygletplot.plot_modes\",\"Cylindrical\",3738]",
+       "[\"sympy.polys.domains.tests.test_domains\",\"test_RR_Float\",39855]",
+       "[\"sympy.polys.fields\",\"field\",1484]",
+       "[\"sympy.polys.matrices.tests.test_domainmatrix\",\"test_DomainMatrix_to_dense\",8653]",
+       "[\"sympy.polys.tests.test_factortools\",\"test_dup_zz_mignotte_bound\",1079]",
+       "[\"sympy.printing.pretty.tests.test_pretty\",\"test_pretty_ndim_arrays\",80861]",
+       "[\"sympy.printing.tests.test_precedence\",\"test_Integral\",793]",
+       "[\"sympy.printing.tests.test_pycode\",\"test_beta\",14423]",
+       "[\"sympy.printing.tests.test_theanocode\",\"test_global_cache\",16904]",
+       "[\"sympy.series.tests.test_limits\",\"test_issue_6366\",20726]",
+       "[\"sympy.simplify.tests.test_combsimp\",\"test_issue_14528\",2795]",
+       "[\"sympy.simplify.trigsimp\",\"_eapply\",46746]",
+       "[\"sympy.solvers.diophantine.diophantine\",\"GeneralSumOfSquares\",31128]",
+       "[\"sympy.solvers.ode.tests.test_single\",\"_get_examples_ode_sol_euler_homogeneous\",22794]",
+       "[\"sympy.solvers.tests.test_solveset\",\"test__solveset_multi\",64791]",
+       "[\"sympy.solvers.tests.test_solveset\",\"test_raise_exception_nonlinsolve\",81738]",
+       "[\"sympy.solvers.tests.test_solveset\",\"test_solve_logarithm\",130280]",
+       "[\"sympy.stats.symbolic_probability\",\"Expectation\",4740]",
+       "[\"sympy.stats.tests.test_rv\",\"test_characteristic_function\",2827]",
+       "[\"sympy.utilities.tests.test_codegen_julia\",\"test_jl_InOutArgument_order\",16608]",
+       "[\"sympy.utilities.tests.test_wester\",\"test_H15\",14572]",
+       "[\"sympy.utilities.tests.test_wester\",\"test_Y12\",91340]",
+       "[\"sympy.vector.tests.test_functions\",\"test_matrix_to_vector\",7208]"
+      ]
+     }
+    },
+    "three_way": {
+     "n": 42,
+     "target_keys": [
+      "[\"sympy.assumptions.handlers.calculus\",\"_\",7389]",
+      "[\"sympy.assumptions.handlers.common\",\"ask_all\",3321]",
+      "[\"sympy.assumptions.tests.test_wrapper\",\"test_is_extended_real\",908]",
+      "[\"sympy.codegen.ast\",\"CodeBlock\",18464]",
+      "[\"sympy.combinatorics.tests.test_perm_groups\",\"test_random_pr\",15875]",
+      "[\"sympy.concrete.tests.test_delta\",\"test_deltasummation_basic_symbolic\",11905]",
+      "[\"sympy.core.tests.test_noncommutative\",\"test_adjoint\",894]",
+      "[\"sympy.core.tests.test_priority\",\"Higher\",322]",
+      "[\"sympy.functions.elementary.tests.test_piecewise\",\"test_issue_20360\",60000]",
+      "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_acot_fdiff\",51247]",
+      "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_issue_25833\",89850]",
+      "[\"sympy.holonomic.holonomic\",\"DifferentialOperator\",5405]",
+      "[\"sympy.matrices.repmatrix\",\"MutableRepMatrix\",18703]",
+      "[\"sympy.physics.mechanics.tests.test_actuator\",\"TestDuffingSpring\",22068]",
+      "[\"sympy.physics.quantum.operatorordering\",\"_normal_order_factor\",6245]",
+      "[\"sympy.physics.quantum.tests.test_represent\",\"test_enumerate_states\",4998]",
+      "[\"sympy.physics.units.dimensions\",\"DimensionSystem\",10002]",
+      "[\"sympy.physics.units.tests.test_dimensionsystem\",\"test_can_transf_matrix\",1811]",
+      "[\"sympy.physics.vector.tests.test_frame\",\"test_w_diff_dcm2\",10297]",
+      "[\"sympy.plotting.pygletplot.plot_modes\",\"Cylindrical\",3738]",
+      "[\"sympy.polys.domains.tests.test_domains\",\"test_RR_Float\",39855]",
+      "[\"sympy.polys.fields\",\"field\",1484]",
+      "[\"sympy.polys.matrices.tests.test_domainmatrix\",\"test_DomainMatrix_to_dense\",8653]",
+      "[\"sympy.polys.tests.test_factortools\",\"test_dup_zz_mignotte_bound\",1079]",
+      "[\"sympy.printing.pretty.tests.test_pretty\",\"test_pretty_ndim_arrays\",80861]",
+      "[\"sympy.printing.tests.test_precedence\",\"test_Integral\",793]",
+      "[\"sympy.printing.tests.test_pycode\",\"test_beta\",14423]",
+      "[\"sympy.printing.tests.test_theanocode\",\"test_global_cache\",16904]",
+      "[\"sympy.series.tests.test_limits\",\"test_issue_6366\",20726]",
+      "[\"sympy.simplify.tests.test_combsimp\",\"test_issue_14528\",2795]",
+      "[\"sympy.simplify.trigsimp\",\"_eapply\",46746]",
+      "[\"sympy.solvers.diophantine.diophantine\",\"GeneralSumOfSquares\",31128]",
+      "[\"sympy.solvers.ode.tests.test_single\",\"_get_examples_ode_sol_euler_homogeneous\",22794]",
+      "[\"sympy.solvers.tests.test_solveset\",\"test__solveset_multi\",64791]",
+      "[\"sympy.solvers.tests.test_solveset\",\"test_raise_exception_nonlinsolve\",81738]",
+      "[\"sympy.solvers.tests.test_solveset\",\"test_solve_logarithm\",130280]",
+      "[\"sympy.stats.symbolic_probability\",\"Expectation\",4740]",
+      "[\"sympy.stats.tests.test_rv\",\"test_characteristic_function\",2827]",
+      "[\"sympy.utilities.tests.test_codegen_julia\",\"test_jl_InOutArgument_order\",16608]",
+      "[\"sympy.utilities.tests.test_wester\",\"test_H15\",14572]",
+      "[\"sympy.utilities.tests.test_wester\",\"test_Y12\",91340]",
+      "[\"sympy.vector.tests.test_functions\",\"test_matrix_to_vector\",7208]"
+     ]
+    }
+   },
+   "eligible_target_sets": {
+    "E1a": {
+     "n": 49,
+     "target_keys": [
+      "[\"sympy.assumptions.handlers.calculus\",\"_\",7389]",
+      "[\"sympy.assumptions.handlers.common\",\"ask_all\",3321]",
+      "[\"sympy.assumptions.tests.test_wrapper\",\"test_is_extended_real\",908]",
+      "[\"sympy.codegen.ast\",\"CodeBlock\",18464]",
+      "[\"sympy.combinatorics.tests.test_perm_groups\",\"test_random_pr\",15875]",
+      "[\"sympy.concrete.tests.test_delta\",\"test_deltasummation_basic_symbolic\",11905]",
+      "[\"sympy.core.tests.test_args\",\"test_sympy__functions__special__hyper__HyperRep_power2\",93227]",
+      "[\"sympy.core.tests.test_args\",\"test_sympy__geometry__line__Ray\",164110]",
+      "[\"sympy.core.tests.test_args\",\"test_sympy__matrices__expressions__permutation__PermutationMatrix\",116744]",
+      "[\"sympy.core.tests.test_args\",\"test_sympy__series__order__Order\",152765]",
+      "[\"sympy.core.tests.test_args\",\"test_sympy__stats__crv_types__WignerSemicircleDistribution\",54119]",
+      "[\"sympy.core.tests.test_noncommutative\",\"test_adjoint\",894]",
+      "[\"sympy.core.tests.test_priority\",\"Higher\",322]",
+      "[\"sympy.functions.elementary.tests.test_piecewise\",\"test_issue_20360\",60000]",
+      "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_acot_fdiff\",51247]",
+      "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_issue_25833\",89850]",
+      "[\"sympy.holonomic.holonomic\",\"DifferentialOperator\",5405]",
+      "[\"sympy.matrices.repmatrix\",\"MutableRepMatrix\",18703]",
+      "[\"sympy.physics.mechanics.tests.test_actuator\",\"TestDuffingSpring\",22068]",
+      "[\"sympy.physics.quantum.operatorordering\",\"_normal_order_factor\",6245]",
+      "[\"sympy.physics.quantum.tests.test_represent\",\"test_enumerate_states\",4998]",
+      "[\"sympy.physics.units.dimensions\",\"DimensionSystem\",10002]",
+      "[\"sympy.physics.units.tests.test_dimensionsystem\",\"test_can_transf_matrix\",1811]",
+      "[\"sympy.physics.vector.tests.test_frame\",\"test_w_diff_dcm2\",10297]",
+      "[\"sympy.plotting.pygletplot.plot_modes\",\"Cylindrical\",3738]",
+      "[\"sympy.polys.benchmarks.bench_groebnertools\",\"time_vertex_color_12_vertices_23_edges\",675]",
+      "[\"sympy.polys.domains.tests.test_domains\",\"test_RR_Float\",39855]",
+      "[\"sympy.polys.fields\",\"field\",1484]",
+      "[\"sympy.polys.matrices.tests.test_domainmatrix\",\"test_DomainMatrix_to_dense\",8653]",
+      "[\"sympy.polys.tests.test_factortools\",\"test_dup_zz_mignotte_bound\",1079]",
+      "[\"sympy.printing.pretty.tests.test_pretty\",\"test_pretty_ndim_arrays\",80861]",
+      "[\"sympy.printing.tests.test_precedence\",\"test_Integral\",793]",
+      "[\"sympy.printing.tests.test_pycode\",\"test_beta\",14423]",
+      "[\"sympy.printing.tests.test_theanocode\",\"test_global_cache\",16904]",
+      "[\"sympy.series.tests.test_limits\",\"test_issue_6366\",20726]",
+      "[\"sympy.simplify.tests.test_combsimp\",\"test_issue_14528\",2795]",
+      "[\"sympy.simplify.trigsimp\",\"_eapply\",46746]",
+      "[\"sympy.solvers.diophantine.diophantine\",\"GeneralSumOfSquares\",31128]",
+      "[\"sympy.solvers.ode.tests.test_single\",\"_get_examples_ode_sol_euler_homogeneous\",22794]",
+      "[\"sympy.solvers.tests.test_solveset\",\"test__solveset_multi\",64791]",
+      "[\"sympy.solvers.tests.test_solveset\",\"test_raise_exception_nonlinsolve\",81738]",
+      "[\"sympy.solvers.tests.test_solveset\",\"test_solve_logarithm\",130280]",
+      "[\"sympy.stats.symbolic_probability\",\"Expectation\",4740]",
+      "[\"sympy.stats.tests.test_rv\",\"test_characteristic_function\",2827]",
+      "[\"sympy.utilities.tests.test_codegen_julia\",\"test_jl_InOutArgument_order\",16608]",
+      "[\"sympy.utilities.tests.test_lambdify\",\"test_cmath_sinh\",10832]",
+      "[\"sympy.utilities.tests.test_wester\",\"test_H15\",14572]",
+      "[\"sympy.utilities.tests.test_wester\",\"test_Y12\",91340]",
+      "[\"sympy.vector.tests.test_functions\",\"test_matrix_to_vector\",7208]"
+     ]
+    },
+    "E1b": {
+     "n": 42,
+     "target_keys": [
+      "[\"sympy.assumptions.handlers.calculus\",\"_\",7389]",
+      "[\"sympy.assumptions.handlers.common\",\"ask_all\",3321]",
+      "[\"sympy.assumptions.tests.test_wrapper\",\"test_is_extended_real\",908]",
+      "[\"sympy.codegen.ast\",\"CodeBlock\",18464]",
+      "[\"sympy.combinatorics.tests.test_perm_groups\",\"test_random_pr\",15875]",
+      "[\"sympy.concrete.tests.test_delta\",\"test_deltasummation_basic_symbolic\",11905]",
+      "[\"sympy.core.tests.test_noncommutative\",\"test_adjoint\",894]",
+      "[\"sympy.core.tests.test_priority\",\"Higher\",322]",
+      "[\"sympy.functions.elementary.tests.test_piecewise\",\"test_issue_20360\",60000]",
+      "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_acot_fdiff\",51247]",
+      "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_issue_25833\",89850]",
+      "[\"sympy.holonomic.holonomic\",\"DifferentialOperator\",5405]",
+      "[\"sympy.matrices.repmatrix\",\"MutableRepMatrix\",18703]",
+      "[\"sympy.physics.mechanics.tests.test_actuator\",\"TestDuffingSpring\",22068]",
+      "[\"sympy.physics.quantum.operatorordering\",\"_normal_order_factor\",6245]",
+      "[\"sympy.physics.quantum.tests.test_represent\",\"test_enumerate_states\",4998]",
+      "[\"sympy.physics.units.dimensions\",\"DimensionSystem\",10002]",
+      "[\"sympy.physics.units.tests.test_dimensionsystem\",\"test_can_transf_matrix\",1811]",
+      "[\"sympy.physics.vector.tests.test_frame\",\"test_w_diff_dcm2\",10297]",
+      "[\"sympy.plotting.pygletplot.plot_modes\",\"Cylindrical\",3738]",
+      "[\"sympy.polys.domains.tests.test_domains\",\"test_RR_Float\",39855]",
+      "[\"sympy.polys.fields\",\"field\",1484]",
+      "[\"sympy.polys.matrices.tests.test_domainmatrix\",\"test_DomainMatrix_to_dense\",8653]",
+      "[\"sympy.polys.tests.test_factortools\",\"test_dup_zz_mignotte_bound\",1079]",
+      "[\"sympy.printing.pretty.tests.test_pretty\",\"test_pretty_ndim_arrays\",80861]",
+      "[\"sympy.printing.tests.test_precedence\",\"test_Integral\",793]",
+      "[\"sympy.printing.tests.test_pycode\",\"test_beta\",14423]",
+      "[\"sympy.printing.tests.test_theanocode\",\"test_global_cache\",16904]",
+      "[\"sympy.series.tests.test_limits\",\"test_issue_6366\",20726]",
+      "[\"sympy.simplify.tests.test_combsimp\",\"test_issue_14528\",2795]",
+      "[\"sympy.simplify.trigsimp\",\"_eapply\",46746]",
+      "[\"sympy.solvers.diophantine.diophantine\",\"GeneralSumOfSquares\",31128]",
+      "[\"sympy.solvers.ode.tests.test_single\",\"_get_examples_ode_sol_euler_homogeneous\",22794]",
+      "[\"sympy.solvers.tests.test_solveset\",\"test__solveset_multi\",64791]",
+      "[\"sympy.solvers.tests.test_solveset\",\"test_raise_exception_nonlinsolve\",81738]",
+      "[\"sympy.solvers.tests.test_solveset\",\"test_solve_logarithm\",130280]",
+      "[\"sympy.stats.symbolic_probability\",\"Expectation\",4740]",
+      "[\"sympy.stats.tests.test_rv\",\"test_characteristic_function\",2827]",
+      "[\"sympy.utilities.tests.test_codegen_julia\",\"test_jl_InOutArgument_order\",16608]",
+      "[\"sympy.utilities.tests.test_wester\",\"test_H15\",14572]",
+      "[\"sympy.utilities.tests.test_wester\",\"test_Y12\",91340]",
+      "[\"sympy.vector.tests.test_functions\",\"test_matrix_to_vector\",7208]"
+     ]
+    },
+    "E2": {
+     "n": 49,
+     "target_keys": [
+      "[\"sympy.assumptions.handlers.calculus\",\"_\",7389]",
+      "[\"sympy.assumptions.handlers.common\",\"ask_all\",3321]",
+      "[\"sympy.assumptions.tests.test_wrapper\",\"test_is_extended_real\",908]",
+      "[\"sympy.codegen.ast\",\"CodeBlock\",18464]",
+      "[\"sympy.combinatorics.tests.test_perm_groups\",\"test_random_pr\",15875]",
+      "[\"sympy.concrete.tests.test_delta\",\"test_deltasummation_basic_symbolic\",11905]",
+      "[\"sympy.core.tests.test_args\",\"test_sympy__functions__special__hyper__HyperRep_power2\",93227]",
+      "[\"sympy.core.tests.test_args\",\"test_sympy__geometry__line__Ray\",164110]",
+      "[\"sympy.core.tests.test_args\",\"test_sympy__matrices__expressions__permutation__PermutationMatrix\",116744]",
+      "[\"sympy.core.tests.test_args\",\"test_sympy__series__order__Order\",152765]",
+      "[\"sympy.core.tests.test_args\",\"test_sympy__stats__crv_types__WignerSemicircleDistribution\",54119]",
+      "[\"sympy.core.tests.test_noncommutative\",\"test_adjoint\",894]",
+      "[\"sympy.core.tests.test_priority\",\"Higher\",322]",
+      "[\"sympy.functions.elementary.tests.test_piecewise\",\"test_issue_20360\",60000]",
+      "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_acot_fdiff\",51247]",
+      "[\"sympy.functions.elementary.tests.test_trigonometric\",\"test_issue_25833\",89850]",
+      "[\"sympy.holonomic.holonomic\",\"DifferentialOperator\",5405]",
+      "[\"sympy.matrices.repmatrix\",\"MutableRepMatrix\",18703]",
+      "[\"sympy.physics.mechanics.tests.test_actuator\",\"TestDuffingSpring\",22068]",
+      "[\"sympy.physics.quantum.operatorordering\",\"_normal_order_factor\",6245]",
+      "[\"sympy.physics.quantum.tests.test_represent\",\"test_enumerate_states\",4998]",
+      "[\"sympy.physics.units.dimensions\",\"DimensionSystem\",10002]",
+      "[\"sympy.physics.units.tests.test_dimensionsystem\",\"test_can_transf_matrix\",1811]",
+      "[\"sympy.physics.vector.tests.test_frame\",\"test_w_diff_dcm2\",10297]",
+      "[\"sympy.plotting.pygletplot.plot_modes\",\"Cylindrical\",3738]",
+      "[\"sympy.polys.benchmarks.bench_groebnertools\",\"time_vertex_color_12_vertices_23_edges\",675]",
+      "[\"sympy.polys.domains.tests.test_domains\",\"test_RR_Float\",39855]",
+      "[\"sympy.polys.fields\",\"field\",1484]",
+      "[\"sympy.polys.matrices.tests.test_domainmatrix\",\"test_DomainMatrix_to_dense\",8653]",
+      "[\"sympy.polys.tests.test_factortools\",\"test_dup_zz_mignotte_bound\",1079]",
+      "[\"sympy.printing.pretty.tests.test_pretty\",\"test_pretty_ndim_arrays\",80861]",
+      "[\"sympy.printing.tests.test_precedence\",\"test_Integral\",793]",
+      "[\"sympy.printing.tests.test_pycode\",\"test_beta\",14423]",
+      "[\"sympy.printing.tests.test_theanocode\",\"test_global_cache\",16904]",
+      "[\"sympy.series.tests.test_limits\",\"test_issue_6366\",20726]",
+      "[\"sympy.simplify.tests.test_combsimp\",\"test_issue_14528\",2795]",
+      "[\"sympy.simplify.trigsimp\",\"_eapply\",46746]",
+      "[\"sympy.solvers.diophantine.diophantine\",\"GeneralSumOfSquares\",31128]",
+      "[\"sympy.solvers.ode.tests.test_single\",\"_get_examples_ode_sol_euler_homogeneous\",22794]",
+      "[\"sympy.solvers.tests.test_solveset\",\"test__solveset_multi\",64791]",
+      "[\"sympy.solvers.tests.test_solveset\",\"test_raise_exception_nonlinsolve\",81738]",
+      "[\"sympy.solvers.tests.test_solveset\",\"test_solve_logarithm\",130280]",
+      "[\"sympy.stats.symbolic_probability\",\"Expectation\",4740]",
+      "[\"sympy.stats.tests.test_rv\",\"test_characteristic_function\",2827]",
+      "[\"sympy.utilities.tests.test_codegen_julia\",\"test_jl_InOutArgument_order\",16608]",
+      "[\"sympy.utilities.tests.test_lambdify\",\"test_cmath_sinh\",10832]",
+      "[\"sympy.utilities.tests.test_wester\",\"test_H15\",14572]",
+      "[\"sympy.utilities.tests.test_wester\",\"test_Y12\",91340]",
+      "[\"sympy.vector.tests.test_functions\",\"test_matrix_to_vector\",7208]"
+     ]
+    }
+   },
+   "governance": {
+    "repo_n": null,
+    "verdict": "v2c-amended-governance-planned"
+   },
+   "language": "python",
+   "masked_sha256": "29a51a3aa965b2841005ef68b9c7fb91ad72c3ca00aea739ab82e719efdc10fd",
+   "model": "Qwen/Qwen2.5-Coder-1.5B",
+   "multiplicity": {
+    "adjusted_pvalues": {
+     "E1a": 2.001548571515515e-07,
+     "E1b": 0.9955792206573753,
+     "E2": 0.00016604451385308488
+    },
+    "deterministic_tie_break": "contrast-name-ascending",
+    "method": "model-based Holm-adjusted diagnostics",
+    "order": [
+     "E1a",
+     "E2",
+     "E1b"
+    ],
+    "raw_pvalues": {
+     "E1a": 6.671828571718383e-08,
+     "E1b": 0.9955792206573753,
+     "E2": 8.302225692654244e-05
+    },
+    "scope": "E1a/E1b-IUT/E2 within repository"
+   },
+   "repo": "sympy",
+   "revision": "df3ce67c0e24480f20468b6ef2894622d69eb73b",
+   "run_identity_sha256": "a13f76e114af6dd5ffe36d1211603250abdd9fe87862a504028493f6b790bef7",
+   "three_way_n": 42
+  }
+ },
+ "revealed_salt_hex": "16381adb8c3530e8e6e761cc686d7439507cfd5686c7a391fead18b5be60442d",
+ "salt_commitment": {
+  "sha256": "7553ac63ccca7fecb72b57f68a2192fbb5a8825f87b3ef74b85386a63005c2e0"
+ },
+ "schema": "v2c_confirmatory_reveal_v1"
+}

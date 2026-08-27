@@ -44,7 +44,7 @@ import sys
 from eval_paired import COMPLETE_SCHEMA, TARGET_SCHEMA, _target_cell_rows
 from provenance import head_commit, source_clean, source_tree_hash
 from v2b_a6_blind import require_committed
-from v2b_common import (ASSEMBLY_SCHEMA, BOUND_SAMPLE_SCHEMA,
+from v2b_common import (cell_scoreable, ASSEMBLY_SCHEMA, BOUND_SAMPLE_SCHEMA,
                         CANDIDATES_SCHEMA, MASKED_DELTAS_SCHEMA,
                         SALT_COMMITMENT_SCHEMA, V2BError, artifact_binding,
                         load_json, sha256_file, sha256_json,
@@ -323,7 +323,7 @@ def build_masked_deltas(complete_path, manifest_path, sample_path,
         for name, minuend, subtrahend, eligibility in CONTRASTS:
             # eligibility booleans were verified EQUAL to the manifest by
             # the full-grid check; complete-case requires exactly True
-            if not all(cells_by_id[cell_id].get("eligible") is True
+            if not all(cell_scoreable(cells_by_id[cell_id])
                        for cell_id in eligibility):
                 continue
             delta = _cell_bpb(cells_by_id, minuend, key) \

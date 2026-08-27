@@ -38,6 +38,13 @@ BULK_IMPORT_FILES = 100
 CELL_LABELS = tuple(f"L{lt}-D{ct}-C{cohort}"
                     for lt in (1, 2, 3) for ct in (1, 2, 3)
                     for cohort in ("pre", "post"))
+# V2C_FEASIBILITY_AMENDMENT Problem 3: the V2-c draw doubles the label
+# space with a frozen test-module suffix (T = matches the amendment's
+# stratum matcher on the dot-form module or slash-form source path,
+# N = does not). The pilot/supplement 18-cell space is untouched.
+CELL_LABELS_TEST_STRATUM = tuple(f"{label}-{suffix}"
+                                 for label in CELL_LABELS
+                                 for suffix in ("N", "T"))
 
 
 # ------------------------------------------------------------------ git
@@ -342,35 +349,37 @@ def tercile(value, q1, q2):
     return 1 if value <= q1 else 2 if value <= q2 else 3
 
 
-def allocate_quotas(populations, n):
-    """§15.A1 proportional Hamilton over the fixed 18-cell label space.
-    Floors first; remaining seats by descending fractional remainder with
-    ties broken by ascending cell label; a cell never receives more than
-    its population; shortfall is never rebalanced."""
+def allocate_quotas(populations, n, labels=CELL_LABELS):
+    """§15.A1 proportional Hamilton over a fixed label space (the frozen
+    18 cells by default; the V2-c test-stratum draw passes the doubled
+    space). Floors first; remaining seats by descending fractional
+    remainder with ties broken by ascending cell label; a cell never
+    receives more than its population; shortfall is never rebalanced."""
     if not isinstance(n, int) or isinstance(n, bool) or n <= 0:
         raise V2BError(f"invalid sample size {n!r}")
-    unknown = sorted(set(populations) - set(CELL_LABELS))
+    unknown = sorted(set(populations) - set(labels))
     if unknown:
         raise V2BError(f"unknown stratum cells {unknown}")
     for label, population in populations.items():
         if not isinstance(population, int) or isinstance(population, bool) \
                 or population < 0:
             raise V2BError(f"invalid population for {label}: {population!r}")
-    total = sum(populations.get(label, 0) for label in CELL_LABELS)
+    total = sum(populations.get(label, 0) for label in labels)
     if total == 0:
         raise V2BError("empty candidate population")
     quot_rem = {label: divmod(n * populations.get(label, 0), total)
-                for label in CELL_LABELS}
-    quotas = {label: quot_rem[label][0] for label in CELL_LABELS}
+                for label in labels}
+    quotas = {label: quot_rem[label][0] for label in labels}
     remaining = n - sum(quotas.values())
-    order = sorted(CELL_LABELS,
+    order = sorted(labels,
                    key=lambda label: (-quot_rem[label][1], label))
     for label in order[:remaining]:
         quotas[label] += 1
     return quotas
 
 
-def build_sample_plan(candidates, n, exclude_keys=frozenset()):
+def build_sample_plan(candidates, n, exclude_keys=frozenset(),
+                      test_stratum=False):
     """Deterministic §15.A1 plan from a candidates artifact VALUE. Pure:
     the caller decides whether writing it is a real draw.
 
@@ -432,7 +441,9 @@ def build_sample_plan(candidates, n, exclude_keys=frozenset()):
     if tuple(length_cuts) != tercile_cutpoints(raw_body_bytes) \
             or tuple(degree_cuts) != tercile_cutpoints(raw_module_degrees):
         raise V2BError("candidate tercile cutpoints do not recompute")
-    by_cell = {label: [] for label in CELL_LABELS}
+    by_cell = {label: [] for label in
+               (CELL_LABELS_TEST_STRATUM if test_stratum
+                else CELL_LABELS)}
     seen = set()
     provenance_by_file = {}
     for t in targets:
@@ -452,7 +463,9 @@ def build_sample_plan(candidates, n, exclude_keys=frozenset()):
             raise V2BError(f"Python candidate carries Lean span_id: "
                            f"{identity!r}")
         cell = t.get("cell")
-        if cell not in by_cell:
+        # candidates record BASE cells (frozen); the test-stratum suffix
+        # is derived at draw time, so validity is always the base space.
+        if cell not in CELL_LABELS:
             raise V2BError(f"candidate has invalid cell {cell!r}")
         body_bytes, module_degree = t.get("body_bytes"), \
             t.get("module_in_degree")
@@ -484,7 +497,16 @@ def build_sample_plan(candidates, n, exclude_keys=frozenset()):
             raise V2BError(f"candidate priority drift for {identity!r}")
         if key in exclude_keys:
             continue                     # §15.A14: validated, never selected
-        by_cell[cell].append(t)
+        if test_stratum:
+            from v2b_v2c_governance import TEST_STRATUM_RE
+            module_path = str(identity[0])
+            source_path = str(t.get("source_rel") or "")
+            suffix = "T" if (TEST_STRATUM_RE.search(module_path)
+                             or TEST_STRATUM_RE.search(source_path)) \
+                else "N"
+            by_cell[f"{cell}-{suffix}"].append(t)
+        else:
+            by_cell[cell].append(t)
     expected_mode_counts = {"exact-add": 0, "no-add-pre-witness": 0}
     for provenance in provenance_by_file.values():
         expected_mode_counts[provenance["provenance_mode"]] += 1
@@ -501,9 +523,11 @@ def build_sample_plan(candidates, n, exclude_keys=frozenset()):
         raise V2BError(f"excluded identity keys absent from the candidate "
                        f"table: {sorted(missing_exclusions)[:3]}")
     populations = {label: len(rows) for label, rows in by_cell.items()}
-    quotas = allocate_quotas(populations, n)
+    active_labels = CELL_LABELS_TEST_STRATUM if test_stratum \
+        else CELL_LABELS
+    quotas = allocate_quotas(populations, n, labels=active_labels)
     chosen, fills, shortfalls = [], {}, {}
-    for label in CELL_LABELS:
+    for label in active_labels:
         rows = sorted(by_cell[label], key=lambda t: t["priority"])
         take = min(quotas[label], len(rows))
         fills[label] = take
@@ -523,8 +547,13 @@ def build_sample_plan(candidates, n, exclude_keys=frozenset()):
                 cell_populations=populations, cell_fills=fills,
                 shortfalls=shortfalls,
                 unsampled_cells=sorted(
-                    label for label in CELL_LABELS
+                    label for label in active_labels
                     if quotas[label] == 0 and populations[label] > 0),
+                # the flag is recorded ONLY when the stratum is active:
+                # the default output shape must stay byte-identical to
+                # the sealed pilot law (the draw's in-band gate enforces
+                # this against the committed pilot plan).
+                **(dict(test_stratum=True) if test_stratum else {}),
                 targets=chosen)
 
 

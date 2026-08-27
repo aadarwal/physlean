@@ -1,0 +1,98 @@
+{
+ "bindings": {
+  "assembly": {
+   "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/assembly/job19991210_4_astropy.json",
+   "schema": "v2b_assembly_manifest_v2",
+   "sha256": "dab767e9947e069be7ff411a911cbbca3b5a395396dcd4c9e9020a3fbbc28f78"
+  },
+  "candidates": {
+   "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/candidates/job19982184_4_astropy.json",
+   "schema": "v2b_candidates_v2",
+   "sha256": "94ab63535888067c714a78618722643165f56b5541b398d59d19a999487a3974"
+  },
+  "completion": {
+   "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/paired/q25c-1.5b/6db2566599da-dab767e9947e-astropy/complete.json",
+   "schema": "v2b_paired_nll_complete_v2",
+   "sha256": "6ae2e7028f99a4f6895509f4a94768352ed26cae8e16a3ca53c8a6eb9cbff6b3"
+  },
+  "run_identity_sha256": "d694c7a32b2d80ff273e0dd41e8717acd45613999d156c0ffe30c30d6b0341a4",
+  "salt_commitment": {
+   "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/mask/salt_commitment_e734b0d.json",
+   "salt_sha256": "144ce6956a81a24a30e047367b1e6c1c2cdc8dcbd94afb8da94bbfe83091544f",
+   "schema": "v2b_salt_commitment_v1",
+   "sha256": "fe9444b70f621db2523e3bc85c8bdae8dc64f79f1622ce5e3ed5e99fd76f1497"
+  },
+  "sample": {
+   "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/sample/job19989076_sample.json",
+   "schema": "v2b_bound_sample_v2",
+   "sha256": "86090b33389a2c78eabc924ce67ac71b6082c579256fd101c3e9fda69409db9b"
+  }
+ },
+ "budget_bytes": 16384,
+ "corpus_git_sha": "440fe546589c4e496235d712bc29783ecf5a5fec",
+ "families": {
+  "fam-0a1f33e683bb7d3c": [
+   [
+    "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]",
+    -0.0018871644441831176
+   ],
+   [
+    "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]",
+    0.02800331521950751
+   ],
+   [
+    "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]",
+    -0.09508277010600684
+   ],
+   [
+    "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]",
+    0.06896661933068245
+   ]
+  ],
+  "fam-6c2eac7703f8b1a8": [],
+  "fam-fc7b612120f51cc3": [
+   [
+    "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]",
+    0.04238949555393552
+   ],
+   [
+    "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]",
+    0.006169906890919966
+   ],
+   [
+    "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]",
+    -0.011970628911893197
+   ],
+   [
+    "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]",
+    -0.03658877353296229
+   ]
+  ]
+ },
+ "generator": {
+  "program": "prepare_v2b_masked_deltas.py",
+  "source_commit": "6db2566599da66b58200537586b006d85bc767a6",
+  "source_tree_hash": "85dd90e8529ba9380669ffff6a3d9f396e5c65f5f2ef4d08128c920ecdb498c0"
+ },
+ "language": "python",
+ "metric": "bpb",
+ "n_rows_by_family": {
+  "fam-0a1f33e683bb7d3c": 4,
+  "fam-6c2eac7703f8b1a8": 0,
+  "fam-fc7b612120f51cc3": 4
+ },
+ "repo": "astropy",
+ "run_identity": {
+  "ast_class_state": "not-run-separate-required-gate",
+  "chunk_tokens": 2048,
+  "dtype": "bfloat16",
+  "env_fingerprint": "cece9b716c1eb844ffff8c4000421f50441ea775010082f8724953bb9b9cd962",
+  "manifest_sha256": "dab767e9947e069be7ff411a911cbbca3b5a395396dcd4c9e9020a3fbbc28f78",
+  "model": "Qwen/Qwen2.5-Coder-1.5B",
+  "paired_harness_hash": "cfdb3208c549c90ad267fa35ebe49d0bf1301471dbedd0d9f0891d891651d68d",
+  "paired_schema_version": 2,
+  "pilot_battery_sha256": "bd9004b1a8ee1823fff9d697797d5f5e7f1a3bc6f8471ef13036ff7d35a0bf17",
+  "revision": "df3ce67c0e24480f20468b6ef2894622d69eb73b"
+ },
+ "schema": "v2b_masked_deltas_v1"
+}

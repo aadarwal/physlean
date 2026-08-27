@@ -1,0 +1,345 @@
+{
+ "model": "Qwen/Qwen2.5-Coder-7B",
+ "device": "cuda",
+ "gate_eligible": true,
+ "config_notes": {
+  "starcoder2": "config bos/eos id 50256 exceeds vocab_size 49152 (upstream quirk); harmless here \u2014 no special tokens are ever added"
+ },
+ "revision": "0396a76181e127dfc13e5c5ec48a8cee09938b02",
+ "model_revisions": {
+  "Qwen/Qwen2.5-Coder-7B": "0396a76181e127dfc13e5c5ec48a8cee09938b02"
+ },
+ "torch_version": "2.13.0+cu130",
+ "transformers_version": "5.14.1",
+ "harness_commit": "fc7449506dfc1a1787dddaf62dffcd7dac1a7299",
+ "source_tree_hash": "b7632c5deb3a89ac11d5da4532cb98fa247ad31d70c4083a49fedcaf0736cab1",
+ "harness_hash": "3358dd7e81463b730c323934c4b81e994fd1e00072c1894811a4cb9b7259a4d1",
+ "env_fingerprint": "cece9b716c1eb844ffff8c4000421f50441ea775010082f8724953bb9b9cd962",
+ "gpu_name": "NVIDIA L40S",
+ "gpu_driver": "590.48.01",
+ "A_fixed_chunk_semantics": {
+  "families": {
+   "q25c-7b": {
+    "model": "Qwen/Qwen2.5-Coder-7B",
+    "revision": "0396a76181e127dfc13e5c5ec48a8cee09938b02",
+    "cls": "Qwen2ForCausalLM",
+    "n_params": 7615616512,
+    "attn": {
+     "model_type": "qwen2",
+     "sliding_window": null,
+     "layer_types": "['full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', 'full_attention', '"
+    },
+    "attn_resolved": "sdpa",
+    "dtype": "bfloat16",
+    "n_tokens": 8192,
+    "chunk": 2048,
+    "repeat_max_abs": 0.0,
+    "mean_nll": 0.6277666091918945,
+    "causal": {
+     "p": 4095,
+     "vocab": 152064,
+     "orig_token": 92,
+     "perturbed_token": 93,
+     "n_protected": 4094,
+     "n_downstream": 4096,
+     "protected_max_abs": 0.0,
+     "excluded_row_delta": 18.375000230036676,
+     "downstream_max_abs": 4.86334303021431
+    },
+    "class_ok": true,
+    "param_sane": true,
+    "performance": {
+     "scored_tokens": 8191,
+     "seconds": 1.4567035349900834,
+     "tokens_per_second": 5622.9698104328145,
+     "max_memory_allocated_bytes": 32120954880,
+     "max_memory_reserved_bytes": 32642170880
+    }
+   }
+  },
+  "f2": {
+   "model": "Qwen/Qwen2.5-Coder-7B",
+   "revision": "0396a76181e127dfc13e5c5ec48a8cee09938b02",
+   "dtype": "float32",
+   "attn_resolved": "sdpa",
+   "sdp_backend_forced": "MATH",
+   "tf32": {
+    "matmul_allow_tf32": false,
+    "cudnn_allow_tf32": false,
+    "float32_matmul_precision": "highest"
+   },
+   "tokens": 8192,
+   "chunks": [
+    512,
+    2048
+   ],
+   "stats": {
+    "n": 8191,
+    "mean_signed": -9.393467562325277e-08,
+    "mean_abs": 3.0140341413337114e-06,
+    "p50": 2.3469328880310059e-07,
+    "p90": 1.0251998901367188e-05,
+    "p99": 2.9098987579345746e-05,
+    "max": 5.900859832763672e-05
+   },
+   "repeat_max_abs": 0.0
+  },
+  "production_chunk": 2048,
+  "verdict": {
+   "ok": true,
+   "failures": []
+  }
+ },
+ "B_zero_rows": {
+  "q25c-7b/physlib": {
+   "tokens": 166425,
+   "zero_rows": 2942,
+   "zero_share": 0.017677632567222473,
+   "n_groups": 163483
+  },
+  "q25c-7b/mathlib": {
+   "tokens": 178793,
+   "zero_rows": 3798,
+   "zero_share": 0.021242442377498002,
+   "n_groups": 174995
+  },
+  "q25c-7b/qutip": {
+   "tokens": 131866,
+   "zero_rows": 9,
+   "zero_share": 6.825110339283819e-05,
+   "n_groups": 131857
+  },
+  "q25c-7b/sympy": {
+   "tokens": 157070,
+   "zero_rows": 0,
+   "zero_share": 0.0,
+   "n_groups": 157070
+  },
+  "q25c-7b/geant4": {
+   "tokens": 128553,
+   "zero_rows": 0,
+   "zero_share": 0.0,
+   "n_groups": 128553
+  },
+  "q25c-7b/arxiv_old": {
+   "tokens": 191147,
+   "zero_rows": 0,
+   "zero_share": 0.0,
+   "n_groups": 191147
+  },
+  "q25c-7b/arxiv_new": {
+   "tokens": 138887,
+   "zero_rows": 0,
+   "zero_share": 0.0,
+   "n_groups": 138887
+  },
+  "conserv/q25c-7b/physlib": {
+   "n_groups": 16247,
+   "zero_rows": 133,
+   "zero_nll_share": 0.00975426754235348,
+   "boundary_dropped_rows": 0,
+   "boundary_dropped_nll": 0.0,
+   "nll_ok": true,
+   "bytes_ok": true,
+   "conservation_ok": true
+  },
+  "conserv/q25c-7b/mathlib": {
+   "n_groups": 16055,
+   "zero_rows": 325,
+   "zero_nll_share": 0.017615357190552502,
+   "boundary_dropped_rows": 0,
+   "boundary_dropped_nll": 0.0,
+   "nll_ok": true,
+   "bytes_ok": true,
+   "conservation_ok": true
+  },
+  "nllshare/physlib": {
+   "n_groups": 16247,
+   "zero_rows": 133,
+   "zero_nll_share": 0.0005541305841776356,
+   "boundary_dropped_rows": 0,
+   "boundary_dropped_nll": 0.0,
+   "nll_ok": true,
+   "bytes_ok": true,
+   "conservation_ok": true
+  },
+  "nllshare/mathlib": {
+   "n_groups": 16055,
+   "zero_rows": 325,
+   "zero_nll_share": 0.0025761066964364483,
+   "boundary_dropped_rows": 0,
+   "boundary_dropped_nll": 0.0,
+   "nll_ok": true,
+   "bytes_ok": true,
+   "conservation_ok": true
+  },
+  "real_offset_probe": {
+   "q25c-7b/unicode": {
+    "tokens": 12,
+    "overlap_rows": 1,
+    "bytes_conserved": true
+   },
+   "q25c-7b/latex": {
+    "tokens": 48,
+    "overlap_rows": 0,
+    "bytes_conserved": true
+   }
+  },
+  "synthetic_partition_ok": true,
+  "conservation_ok": true
+ },
+ "C_nested_context": {
+  "mathlib": {
+   "targets": [
+    {
+     "1024": 1.0792495012283325,
+     "4096": 1.0352891683578491,
+     "16384": 1.038382649421692,
+     "32256": 1.0236389636993408
+    },
+    {
+     "1024": 0.8336257934570312,
+     "4096": 0.8245764374732971,
+     "16384": 0.8216875791549683,
+     "32256": 0.8279241323471069
+    },
+    {
+     "1024": 1.0818053483963013,
+     "4096": 0.8662837147712708,
+     "16384": 0.841293215751648,
+     "32256": 0.836406946182251
+    }
+   ],
+   "monotonicity_violations": 0
+  },
+  "physlib": {
+   "targets": [
+    {
+     "1024": 1.2148650884628296,
+     "4096": 0.9500848054885864,
+     "16384": 0.7528164386749268,
+     "32256": 0.7554939985275269
+    },
+    {
+     "1024": 1.056034803390503,
+     "4096": 0.5515807867050171,
+     "16384": 0.3768060505390167,
+     "32256": 0.3777362108230591
+    },
+    {
+     "1024": 0.3477746844291687,
+     "4096": 0.3193073570728302,
+     "16384": 0.31517812609672546,
+     "32256": 0.3216550350189209
+    }
+   ],
+   "monotonicity_violations": 0
+  }
+ },
+ "D_duplicate_control": {
+  "file": "Erase.lean",
+  "bytes": 6006,
+  "bpb_per_copy": [
+   0.4690104076548333,
+   0.004699468143022612,
+   0.0004024429824114727,
+   0.0002441016827193732,
+   0.00012304720105611874,
+   0.00010841494518314818,
+   0.00011044922132294296,
+   8.186454359461702e-05
+  ]
+ },
+ "E_meta": {
+  "corpus": "mathlib",
+  "scan_root": "Mathlib",
+  "parser": "^import\\s+(?:all\\s+)?([A-Za-z0-9_.]+)",
+  "n_files_scanned": 8308,
+  "n_eligible_targets": 81,
+  "eligibility_floor": 8,
+  "scope": "machinery validation only \u2014 not physlib evidence, not the V2-b grounding pilot (DESIGN_V2 \u00a79)"
+ },
+ "E_dep_vs_random_context": {
+  "corpus": "mathlib",
+  "rows": [
+   {
+    "ctx_bytes_dep": 16000,
+    "ctx_bytes_rand": 16000,
+    "ctx_tokens_dep": 4556,
+    "ctx_tokens_rand": 4581,
+    "dep": 1.6441535949707031,
+    "rand": 1.8647643327713013,
+    "file": "EquifiberedLimits.lean"
+   },
+   {
+    "ctx_bytes_dep": 16000,
+    "ctx_bytes_rand": 16000,
+    "ctx_tokens_dep": 5554,
+    "ctx_tokens_rand": 5471,
+    "dep": 0.7859764099121094,
+    "rand": 0.8123135566711426,
+    "file": "IsValuedIn.lean"
+   },
+   {
+    "ctx_bytes_dep": 7932,
+    "ctx_bytes_rand": 7932,
+    "ctx_tokens_dep": 2651,
+    "ctx_tokens_rand": 2715,
+    "dep": 0.43329858779907227,
+    "rand": 0.5387710928916931,
+    "file": "Pullback.lean"
+   },
+   {
+    "ctx_bytes_dep": 15667,
+    "ctx_bytes_rand": 15667,
+    "ctx_tokens_dep": 5654,
+    "ctx_tokens_rand": 5292,
+    "dep": 0.6316081881523132,
+    "rand": 0.8682268857955933,
+    "file": "RadonNikodym.lean"
+   },
+   {
+    "ctx_bytes_dep": 16000,
+    "ctx_bytes_rand": 16000,
+    "ctx_tokens_dep": 4281,
+    "ctx_tokens_rand": 4927,
+    "dep": 0.8496214747428894,
+    "rand": 0.8926530480384827,
+    "file": "Tensoriality.lean"
+   },
+   {
+    "ctx_bytes_dep": 16000,
+    "ctx_bytes_rand": 16000,
+    "ctx_tokens_dep": 5458,
+    "ctx_tokens_rand": 5102,
+    "dep": 0.684893012046814,
+    "rand": 0.7517192363739014,
+    "file": "AsTensorProduct.lean"
+   },
+   {
+    "ctx_bytes_dep": 16000,
+    "ctx_bytes_rand": 16000,
+    "ctx_tokens_dep": 6153,
+    "ctx_tokens_rand": 5182,
+    "dep": 0.9069186449050903,
+    "rand": 0.9348716735839844,
+    "file": "Basic.lean"
+   },
+   {
+    "ctx_bytes_dep": 16000,
+    "ctx_bytes_rand": 16000,
+    "ctx_tokens_dep": 5030,
+    "ctx_tokens_rand": 5596,
+    "dep": 1.268679141998291,
+    "rand": 1.2695924043655396,
+    "file": "TuranDensity.lean"
+   }
+  ],
+  "dep_wins": 8,
+  "n": 8,
+  "skipped_insufficient_pool": [],
+  "mean_delta_nats": 0.09097039699554443
+ },
+ "plumbing_pass": true,
+ "identities_unchanged_during_run": true
+}

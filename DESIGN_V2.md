@@ -1768,6 +1768,14 @@ masking producer, or k4 tier revealer has run.
   completion, salt, masked result, or outcome, and remains valid if the later
   boundary audit changes the pilot targets.
 
+  The paired scorer requires this battery as a committed HEAD blob before any
+  model load. It recomputes the frozen pilot verdict and requires exact 1.5B
+  model/revision, CUDA eligibility, token conservation, unchanged-during-run
+  identity, and equality to the current tracked source-tree, numerical-harness,
+  and software-environment fingerprints. The exact battery binding is part of
+  the paired run identity and is rehashed throughout scoring; a source change
+  therefore requires the short public battery to be rerun and recommitted.
+
   INPUT AND BLINDNESS. One artifact governs one exact (repo, final model)
   SLOT; reliability is never pooled across repos or model tiers. The final
   tier is selected first by §8's sole permitted k4 floor/ceiling aggregate,
@@ -1806,6 +1814,13 @@ masking producer, or k4 tier revealer has run.
   NLL masked artifact. The output is constructed from validated fields; it
   records eligibility counts and reliability nuisance quantities under opaque
   ids, never a pass-rate mean or copied arbitrary metadata.
+
+  This eligibility projection is a behavioral-plan derivative, not an input to
+  paired NLL scoring. The two tracks share the committed 20 target identities,
+  but S5 baseline/coverage may be completed after the masked NLL artifact; it
+  gates behavioral generation and the joint reveal, never the already-frozen
+  NLL measurement. Formal NLL salt reveal still waits for both governance
+  constants as specified in §15.A15.
 
   STRATUM SEMANTICS. Allowed Lean classes are {lean-theorem-proof,
   lean-def-typecheck}; allowed Python classes are {python-semantic-covered,

@@ -39,6 +39,7 @@ contrasts as true zero-budget effects; k3s/k4s likewise become
 explicit empty sensitivities when the k4 B* suffix has no whole units.
 """
 import argparse
+import os
 import sys
 
 from finalize_v2b_a6 import EXPECTED
@@ -56,7 +57,8 @@ from v2b_common import (A6_OUTCOME_SCHEMA, ASSEMBLY_SCHEMA,
                         CANDIDATES_SCHEMA, K4X_GRAPH_SCHEMA,
                         K7_ORDER_SCHEMA, NEARDUP_SCHEMA, V2BError,
                         artifact_binding, identity_key, sha256_bytes,
-                        sha256_json, sha256_sorted_json, validate_identity,
+                        relative_source_path, sha256_json,
+                        sha256_sorted_json, validate_identity,
                         write_new_json)
 from v2b_neardup import (LEAN_EXTRACT_SCHEMA, LEXICAL_FLOOR,
                          PYTHON_EXTRACT_SCHEMA, five_grams, lex_unit,
@@ -119,9 +121,14 @@ def _load_k4x(k4x_graph_path, external_extraction_path, repo,
                        "and snapshot extraction (§14.20 hard gate)")
     binding, k4x = artifact_binding(k4x_graph_path, K4X_GRAPH_SCHEMA)
     resolution = k4x.get("resolution")
+    snapshot_root = k4x.get("snapshot_root")
     if k4x.get("repo") != "physlib" \
             or k4x.get("external_repo") != K4X_EXTERNAL_REPO \
             or k4x.get("external_revision") != K4X_EXTERNAL_REVISION \
+            or not isinstance(snapshot_root, str) or not snapshot_root \
+            or not os.path.isabs(snapshot_root) \
+            or os.path.normpath(snapshot_root) != snapshot_root \
+            or not os.path.isdir(snapshot_root) \
             or not isinstance(k4x.get("physlib_extraction"), dict) \
             or k4x["physlib_extraction"].get("sha256") != extraction_sha \
             or not isinstance(k4x.get("external_extraction"), dict) \
@@ -135,21 +142,23 @@ def _load_k4x(k4x_graph_path, external_extraction_path, repo,
             or ext_extraction.get("repo") != K4X_EXTERNAL_EXTRACTION_REPO:
         raise V2BError("k4x snapshot extraction is not the sealed input")
     return dict(binding=binding, value=k4x, external_binding=ext_binding,
-                external_extraction=ext_extraction)
+                external_extraction=ext_extraction,
+                snapshot_root=snapshot_root)
 
 
 def _load_chain(sample_path, repo, candidates_path, extraction_path,
                 neardup_path, outcome_path, keyword_freeze_path,
                 k7_order_path, k4x_graph_path=None,
                 external_extraction_path=None,
-                lean_boundaries_path=None):
+                lean_boundaries_path=None, expected_n=N_PER_CORPUS):
     if repo not in EXPECTED:
         raise V2BError(f"unexpected assembly corpus {repo!r}")
     language, corpus_sha = EXPECTED[repo]
     sample_binding, sample = artifact_binding(sample_path,
                                               BOUND_SAMPLE_SCHEMA)
     if sample.get("sampling_state") != "drawn" \
-            or sample.get("n_requested_per_corpus") != N_PER_CORPUS \
+            or (expected_n is not None
+                and sample.get("n_requested_per_corpus") != expected_n) \
             or not isinstance(sample.get("plans"), dict) \
             or sample.get("plans_sha256") != \
             sha256_sorted_json(sample.get("plans")) \
@@ -259,24 +268,72 @@ def _load_chain(sample_path, repo, candidates_path, extraction_path,
 
 # --------------------------------------------------------- corpus index
 
-def _unit_index(extraction, language, lean_boundaries=None):
+def _source_rel_from_root(corpus_root, source):
+    """Canonical relative source path with lexical and real containment."""
+    if not isinstance(corpus_root, str) or not corpus_root \
+            or not isinstance(source, str) or not source:
+        raise V2BError("source/root path binding is missing")
+    root = os.path.normpath(corpus_root)
+    if not os.path.isabs(root) or root == os.path.sep \
+            or corpus_root not in (root, root + os.sep) \
+            or not os.path.isdir(root) \
+            or not os.path.isabs(source) \
+            or os.path.normpath(source) != source:
+        raise V2BError("source/root path binding is noncanonical")
+    try:
+        if source == root or os.path.commonpath((root, source)) != root:
+            raise V2BError("source is outside corpus root")
+        real_root, real_source = os.path.realpath(root), os.path.realpath(source)
+        if real_source == real_root \
+                or os.path.commonpath((real_root, real_source)) != real_root:
+            raise V2BError("source realpath escapes corpus root")
+    except ValueError as err:
+        raise V2BError(f"source/root path mismatch: {err}") from err
+    rel = relative_source_path(root, source)
+    round_trip = os.path.normpath(os.path.join(
+        root, *rel.split("/")))
+    if os.path.isabs(rel) or rel in ("", ".", "..") \
+            or rel.startswith("../") or round_trip != source:
+        raise V2BError("source relative path does not round-trip")
+    return rel
+
+
+def _unit_index(extraction, language, lean_boundaries=None,
+                corpus_root=None):
     """identity_key -> unit record with source, span, and split fields.
 
     Main-corpus Lean assembly supplies the parser-backed overlay.  The
     separately pinned k4x snapshot deliberately calls this without an
     overlay because it is implementation-only context and is never
-    interface-rendered by the current k4x arm.
+    interface-rendered by the current k4x arm.  A supplied corpus root
+    canonicalizes production Lean v3 rows whose optional `rel` is null.
     """
     if language == "python" and lean_boundaries is not None:
         raise V2BError("Python unit index received Lean boundaries")
     units = {}
     sources = {}
+    source_by_rel = {}
     for f in extraction.get("files", []):
         source = f.get("source")
         source_sha = f.get("source_sha256")
-        rel = f.get("rel") or source
         if not isinstance(source, str) or not _hex(source_sha):
             raise V2BError("extraction file lacks source binding")
+        raw_rel = f.get("rel")
+        if raw_rel is None:
+            if language != "lean" or corpus_root is None:
+                raise V2BError("extraction file lacks canonical source_rel")
+            rel = _source_rel_from_root(corpus_root, source)
+        else:
+            if not isinstance(raw_rel, str) or not raw_rel:
+                raise V2BError("extraction file lacks canonical source_rel")
+            rel = raw_rel
+            if corpus_root is not None \
+                    and _source_rel_from_root(corpus_root, source) != rel:
+                raise V2BError("extraction source_rel disagrees with the "
+                               "sealed corpus root")
+        if rel in source_by_rel:
+            raise V2BError(f"duplicate extraction source_rel {rel}")
+        source_by_rel[rel] = source
         sources[source] = source_sha
         if language == "lean":
             rows = [((f["module"], name), d) for name, d in
@@ -312,21 +369,54 @@ def _unit_index(extraction, language, lean_boundaries=None):
     return units, sources
 
 
-def _corpus_root(extraction):
-    """One consistent corpus root derived from source/rel agreement."""
-    root = None
+def _corpus_root(extraction, k7_rows=None):
+    """One corpus root from extraction paths joined to the sealed k7 ledger."""
+    roots = set()
+    sources = []
     for f in extraction.get("files", []):
         source, rel = f.get("source"), f.get("rel")
+        if not isinstance(source, str) or not source:
+            raise V2BError("extraction file source/rel are inconsistent")
+        sources.append(source)
+        # Production Lean v3 rows leave the optional cross-language `rel`
+        # field null.  Join them to the independently sealed k7 file ledger
+        # by raw source hash plus a path-boundary suffix when that ledger
+        # contains the file.  K7 intentionally omits a small number of
+        # extracted files, so unmatched rows are subsequently admitted only
+        # under the single root proven by the matched anchors.  Module names
+        # are insufficient: Batteries' `runLinter` intentionally lives under
+        # scripts/runLinter.lean.
+        if rel is None and extraction.get("schema") == LEAN_EXTRACT_SCHEMA:
+            source_sha = f.get("source_sha256")
+            matches = [row[0] for row in (k7_rows or [])
+                       if row[2] == source_sha
+                       and (source == row[0]
+                            or source.endswith("/" + row[0]))]
+            if len(matches) > 1:
+                raise V2BError("Lean extraction file has ambiguous k7 "
+                               "source-path/hash matches")
+            if not matches:
+                continue
+            rel = matches[0]
         if not isinstance(source, str) or not isinstance(rel, str) \
                 or not rel or not source.endswith(rel):
             raise V2BError("extraction file source/rel are inconsistent")
         head = source[:len(source) - len(rel)]
-        if root is None:
-            root = head
-        elif root != head:
-            raise V2BError("extraction files disagree on the corpus root")
-    if root is None:
+        roots.add(head)
+    if not sources:
         raise V2BError("extraction exposes no corpus root")
+    if len(roots) != 1:
+        raise V2BError("extraction files disagree on the corpus root")
+    root = next(iter(roots))
+    canonical_root = os.path.normpath(root)
+    if not root or not os.path.isabs(root) \
+            or root != canonical_root + os.sep \
+            or any(not os.path.isabs(source)
+                   or os.path.normpath(source) != source
+                   or source == canonical_root
+                   or os.path.commonpath((canonical_root, source)) !=
+                   canonical_root for source in sources):
+        raise V2BError("extraction source escapes the sealed corpus root")
     return root
 
 
@@ -1124,15 +1214,18 @@ def build_assembly(sample_path, repo, candidates_path, extraction_path,
                    k7_order_path=None, k4x_graph_path=None,
                    external_extraction_path=None,
                    lean_boundaries_path=None, budgets=BUDGET_GRID,
-                   collect=None):
+                   collect=None, expected_n=N_PER_CORPUS):
     bindings, sample, candidates, extraction, neardup, outcome, k7_rows, \
         lean_tokens, k4x_bundle, boundary_index = \
         _load_chain(sample_path, repo, candidates_path, extraction_path,
                     neardup_path, outcome_path, keyword_freeze_path,
                     k7_order_path, k4x_graph_path,
-                    external_extraction_path, lean_boundaries_path)
+                    external_extraction_path, lean_boundaries_path,
+                    expected_n=expected_n)
     language = bindings["language"]
-    units, _ = _unit_index(extraction, language, boundary_index)
+    corpus_root = _corpus_root(extraction, k7_rows)
+    units, _ = _unit_index(extraction, language, boundary_index,
+                           corpus_root=corpus_root)
     edges = _edges(extraction, language)
     adjacency = _a6_exclusion_sets(neardup, outcome, language, set(units))
     external_index = _external_index(extraction, language)
@@ -1141,7 +1234,7 @@ def build_assembly(sample_path, repo, candidates_path, extraction_path,
         language, units,
         {unit["key"]: unit["verbatim_sha256"]
          for unit in neardup.get("units", [])}, cache)
-    k7 = dict(rows=k7_rows, root=_corpus_root(extraction), cache={})
+    k7 = dict(rows=k7_rows, root=corpus_root, cache={})
     k4x_ctx = None
     if k4x_bundle is not None:
         k4x_ctx = _k4x_context(k4x_bundle, units, edges, outcome,
@@ -1208,7 +1301,9 @@ def build_assembly(sample_path, repo, candidates_path, extraction_path,
 def _k4x_context(k4x_bundle, units, edges, outcome, lean_tokens):
     """Corpus-level §15.A13 context: prefixed external unit index,
     combined-edge additions, sealed screening parameters, hard checks."""
-    ext_units, _ = _unit_index(k4x_bundle["external_extraction"], "lean")
+    ext_units, _ = _unit_index(
+        k4x_bundle["external_extraction"], "lean",
+        corpus_root=k4x_bundle["snapshot_root"])
     physlib_rels = {unit["source_rel"] for unit in units.values()}
     for unit in ext_units.values():
         unit["source_rel"] = f"{K4X_EXTERNAL_REPO}/{unit['source_rel']}"
@@ -1268,12 +1363,18 @@ def materialize(manifest_path, sample_path, repo, candidates_path,
     if not isinstance(budgets, list) or not budgets:
         raise V2BError("manifest lacks a budget grid")
     collect = {}
+    # expected_n=None: at re-validation the n POLICY was already enforced
+    # by the assembly CLI at build time; the integrity anchors here are
+    # the sha-bound chain and targets_sha256 equality below, so the
+    # rebuilt chain accepts the sample's own recorded n (the pilot's 20
+    # and the supplement's 120 both re-validate through this one path).
     rebuilt = build_assembly(sample_path, repo, candidates_path,
                              extraction_path, neardup_path, outcome_path,
                              keyword_freeze_path, k7_order_path,
                              k4x_graph_path, external_extraction_path,
                              lean_boundaries_path=lean_boundaries_path,
-                             budgets=tuple(budgets), collect=collect)
+                             budgets=tuple(budgets), collect=collect,
+                             expected_n=None)
     def _paths_stripped(bindings):
         if not isinstance(bindings, dict):
             return None
@@ -1292,10 +1393,33 @@ def materialize(manifest_path, sample_path, repo, candidates_path,
     return collect
 
 
+INTERIOR_ALLOWED_BUDGETS = (4096, 8192, 16384, 32768, 65536)
+
+
+def parse_budgets(text):
+    """DOSE_CURVE_EXPANSION Part B: an explicit budget grid override.
+
+    Must be a sorted comma list drawn from the allowed set, include B*
+    (the frozen k3s/k4s definition requires it), and contain at least two
+    budgets. The default (None) is the frozen BUDGET_GRID."""
+    if text is None:
+        return BUDGET_GRID
+    try:
+        budgets = tuple(int(part) for part in text.split(","))
+    except ValueError as err:
+        raise V2BError(f"malformed --budgets {text!r}") from err
+    if len(budgets) < 2 or len(set(budgets)) != len(budgets)             or list(budgets) != sorted(budgets)             or any(b not in INTERIOR_ALLOWED_BUDGETS for b in budgets)             or B_STAR not in budgets:
+        raise V2BError(
+            f"--budgets must be a sorted unique subset of "
+            f"{INTERIOR_ALLOWED_BUDGETS} containing B*={B_STAR}: {text!r}")
+    return budgets
+
+
 def prepare(sample_path, repo, candidates_path, extraction_path,
             neardup_path, outcome_path, keyword_freeze_path=None,
             k7_order_path=None, k4x_graph_path=None,
-            external_extraction_path=None, lean_boundaries_path=None):
+            external_extraction_path=None, lean_boundaries_path=None,
+            budgets=BUDGET_GRID, expected_n=N_PER_CORPUS):
     if not source_clean():
         raise V2BError("measurement source tree is dirty outside results_v2")
     commit_start, tree_start = head_commit(), source_tree_hash()
@@ -1303,7 +1427,8 @@ def prepare(sample_path, repo, candidates_path, extraction_path,
                               extraction_path, neardup_path, outcome_path,
                               keyword_freeze_path, k7_order_path,
                               k4x_graph_path, external_extraction_path,
-                              lean_boundaries_path=lean_boundaries_path)
+                              lean_boundaries_path=lean_boundaries_path,
+                              budgets=budgets, expected_n=expected_n)
     if not source_clean() or head_commit() != commit_start \
             or source_tree_hash() != tree_start:
         raise V2BError("measurement source drifted during assembly")
@@ -1328,13 +1453,24 @@ def main():
                     help="§15.A13 external graph (required for physlib)")
     ap.add_argument("--k4x-external-extraction",
                     help="pinned-mathlib v3 extraction (physlib only)")
+    ap.add_argument("--expected-n", type=int, default=None,
+                    help="per-corpus sample size the bound sample must "
+                         "declare (default: the frozen pilot 20; the "
+                         "EPOCH2 supplement passes 120)")
+    ap.add_argument("--budgets", default=None,
+                    help="explicit sorted comma budget grid containing "
+                         "B* (DOSE_CURVE_EXPANSION Part B); default is "
+                         "the frozen grid")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     manifest = prepare(args.sample, args.repo, args.candidates,
                        args.extraction, args.neardup, args.a6_outcome,
                        args.lean_keyword_freeze, args.k7_order,
                        args.k4x_graph, args.k4x_external_extraction,
-                       args.lean_boundaries)
+                       args.lean_boundaries,
+                       budgets=parse_budgets(args.budgets),
+                       expected_n=(args.expected_n if args.expected_n
+                                   is not None else N_PER_CORPUS))
     digest = write_new_json(args.out, manifest)
     print(f"[v2b-assembly] {args.repo}: {manifest['n_targets']} targets, "
           f"arms {'/'.join(manifest['arms_included'])} "

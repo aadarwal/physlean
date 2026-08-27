@@ -1,0 +1,282 @@
+{
+ "algorithm": "commitment = SHA256(salt-32-bytes); opaque ids/signs = HMAC-SHA256(salt, '<domain>:<repo>:<contrast>') with domains b3mask:v2b:20260808 / b3flip:v2b:20260808",
+ "behavioral_status": "not-governed-not-a-co-primary-fresh-confirmatory-sample-required",
+ "claim_status": "exploratory-nll-only-one-checkpoint-pilot",
+ "formal_v2b_status": "formal-unblinding-artifact-not-produced-joint-pilot-not-completed",
+ "generator": {
+  "program": "finalize_v2b_nll_exploratory_reveal.py",
+  "source_commit": "d17722947fea979ea38c0f35b2ad00dd6605f8cb",
+  "source_tree_hash": "0a2b29fda01af5c03d2f300e967526f008d098a7a81f797894931aa23bb84b81"
+ },
+ "implementation_freeze": {
+  "adoption_commit": "75f85c6c7c5d6acb33b9a22016445282aa6d4918",
+  "implementation_commit": "e337c0765cc8c82b651ebdaf3df1218eec547c6c",
+  "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/NLL_ONLY_EXPLORATORY_REVEAL_IMPLEMENTATION_FREEZE.json",
+  "schema": "v2b_nll_exploratory_reveal_implementation_freeze_v1",
+  "sha256": "57400b8808c761463c799a371725dc987b05a83239bbef9f0156e7988ee3c967",
+  "source_tree_sha256": "0a2b29fda01af5c03d2f300e967526f008d098a7a81f797894931aa23bb84b81"
+ },
+ "nll_blind_status": "destroyed-by-this-exploratory-reveal",
+ "prospective_amendment": {
+  "adoption_commit": "eccd7638f39c34739273a70a82243546968dea14",
+  "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/NLL_ONLY_EXPLORATORY_REVEAL_AMENDMENT.md",
+  "sha256": "5b9053e00f081ff0e614375bb6eae2c4a93a8330cd2d67257889cf080b6982e2"
+ },
+ "replay_source_tree_sha256": "85dd90e8529ba9380669ffff6a3d9f396e5c65f5f2ef4d08128c920ecdb498c0",
+ "repos": {
+  "astropy": {
+   "bindings": {
+    "completion": {
+     "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/paired/q25c-1.5b/6db2566599da-dab767e9947e-astropy/complete.json",
+     "schema": "v2b_paired_nll_complete_v2",
+     "sha256": "6ae2e7028f99a4f6895509f4a94768352ed26cae8e16a3ca53c8a6eb9cbff6b3"
+    },
+    "governance": {
+     "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/governance/job20005942_4_astropy.json",
+     "schema": "v2b_n_governance_v1",
+     "sha256": "a032a5adf49ae3da65f80f595370cbd86812debd2e539e76ebd7fa63f98b480a"
+    },
+    "masked": {
+     "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/masked/job20005771_4_astropy.json",
+     "schema": "v2b_masked_deltas_v1",
+     "sha256": "15fe1755bd4c6a3ed787e8bf6e1bcc417d1cb5d5f8e89f68a5de5bc4145e64b6"
+    }
+   },
+   "governance_repo_n": null,
+   "governance_verdict": "infeasible",
+   "mapping": {
+    "E1a": {
+     "fid": "fam-0a1f33e683bb7d3c",
+     "fsum_correction": 0.0,
+     "n_rows": 4,
+     "removed_mean_bpb": 0.08129442346833639,
+     "sign": -1,
+     "total_centering_bpb": 0.08129442346833639
+    },
+    "E1b": {
+     "fid": "fam-6c2eac7703f8b1a8",
+     "fsum_correction": null,
+     "n_rows": 0,
+     "removed_mean_bpb": null,
+     "sign": -1,
+     "total_centering_bpb": null
+    },
+    "E2": {
+     "fid": "fam-fc7b612120f51cc3",
+     "fsum_correction": 0.0,
+     "n_rows": 4,
+     "removed_mean_bpb": 0.047964964038321775,
+     "sign": 1,
+     "total_centering_bpb": 0.047964964038321775
+    }
+   },
+   "reconstructed_equal": true,
+   "repo": "astropy"
+  },
+  "batteries": {
+   "bindings": {
+    "completion": {
+     "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/paired/q25c-1.5b/6db2566599da-56daa6151b04-batteries/complete.json",
+     "schema": "v2b_paired_nll_complete_v2",
+     "sha256": "437e5564487c22658076b48b1686622317a6b6cc5df1dc2a2f413e3db20dadd2"
+    },
+    "governance": {
+     "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/governance/job20005942_1_batteries.json",
+     "schema": "v2b_n_governance_v1",
+     "sha256": "20d870bc6820f1bf5363139d1d26b155640bf4173b3d41a6128e5b4132f27a55"
+    },
+    "masked": {
+     "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/masked/job20005771_1_batteries.json",
+     "schema": "v2b_masked_deltas_v1",
+     "sha256": "fd172a29ed3449601b198bd047b092b352b95aace036afa20526898b90c2fcd1"
+    }
+   },
+   "governance_repo_n": null,
+   "governance_verdict": "infeasible",
+   "mapping": {
+    "E1a": {
+     "fid": "fam-6c8e9ac362893c3d",
+     "fsum_correction": null,
+     "n_rows": 0,
+     "removed_mean_bpb": null,
+     "sign": 1,
+     "total_centering_bpb": null
+    },
+    "E1b": {
+     "fid": "fam-92acd0d795f0ec88",
+     "fsum_correction": null,
+     "n_rows": 0,
+     "removed_mean_bpb": null,
+     "sign": -1,
+     "total_centering_bpb": null
+    },
+    "E2": {
+     "fid": "fam-53502049ffed798e",
+     "fsum_correction": null,
+     "n_rows": 0,
+     "removed_mean_bpb": null,
+     "sign": -1,
+     "total_centering_bpb": null
+    }
+   },
+   "reconstructed_equal": true,
+   "repo": "batteries"
+  },
+  "mathlib4": {
+   "bindings": {
+    "completion": {
+     "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/paired/q25c-1.5b/6db2566599da-e82c54b979ea-mathlib4/complete.json",
+     "schema": "v2b_paired_nll_complete_v2",
+     "sha256": "d0988dd6c37ab03af6dd11e6d694ec10085a365f22bf6d9c8fe42fc7e6302067"
+    },
+    "governance": {
+     "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/governance/job20005942_0_mathlib4.json",
+     "schema": "v2b_n_governance_v1",
+     "sha256": "d6590f4779d287af4fb346ca33af5cb27e424b58252b2d266bead273d96eef6c"
+    },
+    "masked": {
+     "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/masked/job20005771_0_mathlib4.json",
+     "schema": "v2b_masked_deltas_v1",
+     "sha256": "9da3fa48891bc51132f63f17f84a530240cf4cb176f1d97a0e24d0932847a7bd"
+    }
+   },
+   "governance_repo_n": null,
+   "governance_verdict": "infeasible",
+   "mapping": {
+    "E1a": {
+     "fid": "fam-c1244fb5cec557f9",
+     "fsum_correction": 1.2810265668751807e-17,
+     "n_rows": 13,
+     "removed_mean_bpb": 0.42385351678807176,
+     "sign": -1,
+     "total_centering_bpb": 0.42385351678807176
+    },
+    "E1b": {
+     "fid": "fam-803dabcb85dcbbc6",
+     "fsum_correction": 6.30808536718839e-19,
+     "n_rows": 11,
+     "removed_mean_bpb": 0.06022680355046448,
+     "sign": -1,
+     "total_centering_bpb": 0.06022680355046448
+    },
+    "E2": {
+     "fid": "fam-d244cb8adcd8ac2f",
+     "fsum_correction": -2.9890619893754213e-17,
+     "n_rows": 13,
+     "removed_mean_bpb": 0.16400567402039984,
+     "sign": -1,
+     "total_centering_bpb": 0.1640056740203998
+    }
+   },
+   "reconstructed_equal": true,
+   "repo": "mathlib4"
+  },
+  "physlib": {
+   "bindings": {
+    "completion": {
+     "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/paired/q25c-1.5b/6db2566599da-996febf3f7d9-physlib/complete.json",
+     "schema": "v2b_paired_nll_complete_v2",
+     "sha256": "076376bca0f7054297107028ada4ab5fc3a70c2331d440ceeb55901d0c6a6b39"
+    },
+    "governance": {
+     "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/governance/job20005942_2_physlib.json",
+     "schema": "v2b_n_governance_v1",
+     "sha256": "8547184eda0d9db21ab6a4561de726060fa30258a1d3311b49e998dd23037d2e"
+    },
+    "masked": {
+     "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/masked/job20005771_2_physlib.json",
+     "schema": "v2b_masked_deltas_v1",
+     "sha256": "bfa77e2e1bd42de86abc3793914f53143400b0ebf90cba54eedb9fdb181d5338"
+    }
+   },
+   "governance_repo_n": null,
+   "governance_verdict": "infeasible",
+   "mapping": {
+    "E1a": {
+     "fid": "fam-8101876a295bbf3d",
+     "fsum_correction": 0.0,
+     "n_rows": 2,
+     "removed_mean_bpb": 0.19475513836237177,
+     "sign": 1,
+     "total_centering_bpb": 0.19475513836237177
+    },
+    "E1b": {
+     "fid": "fam-c7de1cbe2cbf8e3f",
+     "fsum_correction": 0.0,
+     "n_rows": 1,
+     "removed_mean_bpb": 0.06464139039766298,
+     "sign": 1,
+     "total_centering_bpb": 0.06464139039766298
+    },
+    "E2": {
+     "fid": "fam-8f36a66d4c182cc3",
+     "fsum_correction": 0.0,
+     "n_rows": 2,
+     "removed_mean_bpb": 0.1274144206160359,
+     "sign": 1,
+     "total_centering_bpb": 0.1274144206160359
+    }
+   },
+   "reconstructed_equal": true,
+   "repo": "physlib"
+  },
+  "sympy": {
+   "bindings": {
+    "completion": {
+     "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/paired/q25c-1.5b/6db2566599da-1f43e3263a11-sympy/complete.json",
+     "schema": "v2b_paired_nll_complete_v2",
+     "sha256": "5534c15d1bcb6f4716c509d5972b50199e27c20fdeacc814edbfabe930c7401a"
+    },
+    "governance": {
+     "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/governance/job20005942_3_sympy.json",
+     "schema": "v2b_n_governance_v1",
+     "sha256": "e8fbf801af3817259a277537ca16bedf4877e9d2041af413fdaeacba036672b2"
+    },
+    "masked": {
+     "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/masked/job20005771_3_sympy.json",
+     "schema": "v2b_masked_deltas_v1",
+     "sha256": "fa1aa6cb1f63064200fe22eff169601cb7d7a4f8baf8adb8829f5fe01fbf96d8"
+    }
+   },
+   "governance_repo_n": 200,
+   "governance_verdict": "feasible",
+   "mapping": {
+    "E1a": {
+     "fid": "fam-163d7a185af3e7a0",
+     "fsum_correction": 9.251858538542971e-19,
+     "n_rows": 15,
+     "removed_mean_bpb": 0.0588394744172827,
+     "sign": -1,
+     "total_centering_bpb": 0.0588394744172827
+    },
+    "E1b": {
+     "fid": "fam-fc4fc9505a53c188",
+     "fsum_correction": 0.0,
+     "n_rows": 13,
+     "removed_mean_bpb": 0.03320847239091782,
+     "sign": 1,
+     "total_centering_bpb": 0.03320847239091782
+    },
+    "E2": {
+     "fid": "fam-5c63bceed013dfaf",
+     "fsum_correction": -1.3877787807814458e-18,
+     "n_rows": 15,
+     "removed_mean_bpb": 0.02175209872709488,
+     "sign": -1,
+     "total_centering_bpb": 0.02175209872709488
+    }
+   },
+   "reconstructed_equal": true,
+   "repo": "sympy"
+  }
+ },
+ "revealed_salt_hex": "0faa7b8004ea14ca7a009c7260539f6e30c0eaff439a34102aa020f56aa6d749",
+ "salt_commitment": {
+  "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/mask/salt_commitment_e734b0d.json",
+  "salt_sha256": "144ce6956a81a24a30e047367b1e6c1c2cdc8dcbd94afb8da94bbfe83091544f",
+  "schema": "v2b_salt_commitment_v1",
+  "sha256": "fe9444b70f621db2523e3bc85c8bdae8dc64f79f1622ce5e3ed5e99fd76f1497"
+ },
+ "schema": "v2b_nll_exploratory_reveal_v1",
+ "state": "revealed-post-nll-governance-exploratory"
+}

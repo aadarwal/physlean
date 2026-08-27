@@ -1,0 +1,157 @@
+{
+ "assembly_manifest": {
+  "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/assembly/job19991210_2_physlib.json",
+  "schema": "v2b_assembly_manifest_v2",
+  "sha256": "996febf3f7d9967cb0438a69c37757e4a6056d948df6ef254566cdc96daf7b7b"
+ },
+ "ast_class_state": "not-run-separate-required-gate",
+ "behavioral_state": "not-run-separate-required-gate",
+ "corpus_git_sha": "e882411d1b6bcbdfdd336d4c509c6cc72e96842d",
+ "generator": {
+  "program": "eval_paired.py",
+  "source_commit": "554a80bbd738d12d04e6b2501d02bad52dd84a65",
+  "source_tree_hash": "6096279142bde0e9d1446e329b109daf3a286d65a5d5370a5eaa375ac2695357"
+ },
+ "language": "lean",
+ "mutation_state": "not-run-separate-required-gate",
+ "n_cells": 520,
+ "n_targets": 20,
+ "paired_schema_version": 2,
+ "repo": "physlib",
+ "run_identity": {
+  "ast_class_state": "not-run-separate-required-gate",
+  "chunk_tokens": 2048,
+  "dtype": "bfloat16",
+  "env_fingerprint": "cece9b716c1eb844ffff8c4000421f50441ea775010082f8724953bb9b9cd962",
+  "manifest_sha256": "996febf3f7d9967cb0438a69c37757e4a6056d948df6ef254566cdc96daf7b7b",
+  "model": "Qwen/Qwen2.5-Coder-32B",
+  "paired_harness_hash": "6cfe1a62cbd2408cb1fb8fe2fd0943e84c1e18bbb5da73c6718fa99bddcfe9b7",
+  "paired_schema_version": 2,
+  "pilot_battery_sha256": "d91f08953717476f5c97ac112a91e9918079d519b641fdc67cf795de40bd18f9",
+  "revision": "2e12b5f7bc878d424d222e224ed40aee564ec45f"
+ },
+ "run_identity_sha256": "b160623510a0094fed4f3838eb18509fa58b63d4ca54a15a7ac71db4238ec5b4",
+ "schema": "v2b_paired_nll_complete_v2",
+ "target_artifacts": [
+  {
+   "n_cells": 26,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-32b/554a80bbd738-996febf3f7d9-physlib/target-0000.json",
+   "sha256": "ef8f9f653f934a8952590d339d482e8436c1b4dacaacfdcc69a47dd2c7a38197",
+   "target_key": "[\"Physlib.FluidDynamics.Euler.Basic\",\"FluidDynamics.ConvectiveEuler\"]"
+  },
+  {
+   "n_cells": 26,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-32b/554a80bbd738-996febf3f7d9-physlib/target-0001.json",
+   "sha256": "6e927cbcac664ac407d62ce48bd84c10cba024bf3ce384acbd5073ac1c6164af",
+   "target_key": "[\"Physlib.Mathematics.Calculus.AdjFDeriv\",\"adjFDeriv_const\"]"
+  },
+  {
+   "n_cells": 26,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-32b/554a80bbd738-996febf3f7d9-physlib/target-0002.json",
+   "sha256": "eb034960a7cd42b614d53efce3c0d2aa63fee1ab4e727cd6132e368c79bcf1a9",
+   "target_key": "[\"Physlib.Mathematics.CrossProductMatrix\",\"Matrix.crossProductVee_crossProductMatrix\"]"
+  },
+  {
+   "n_cells": 26,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-32b/554a80bbd738-996febf3f7d9-physlib/target-0003.json",
+   "sha256": "2c2c6d0e9387d356054f0a591afdfdc06f4cbbaf27c7aabc11da4d4e1efeaee0",
+   "target_key": "[\"Physlib.Mathematics.LinearPMap\",\"LinearPMap.add_left_le_of_le\"]"
+  },
+  {
+   "n_cells": 26,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-32b/554a80bbd738-996febf3f7d9-physlib/target-0004.json",
+   "sha256": "ba51f6a60acd3f77fba8309e847431018af171d2d227637055a3691507c71e16",
+   "target_key": "[\"Physlib.Mathematics.VariationalCalculus.IsTestFunction\",\"IsTestFunction.sum\"]"
+  },
+  {
+   "n_cells": 26,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-32b/554a80bbd738-996febf3f7d9-physlib/target-0005.json",
+   "sha256": "9e4431e3ac8e79298639c752331ef88e94dd5bdfe7ec20d10b4159dcec74ce29",
+   "target_key": "[\"Physlib.Particles.BeyondTheStandardModel.TwoHDM.Potential\",\"TwoHiggsDoublet.potential\"]"
+  },
+  {
+   "n_cells": 26,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-32b/554a80bbd738-996febf3f7d9-physlib/target-0006.json",
+   "sha256": "c7d9d21a1f8f27feca76a0562847f529a38ea6b3458b7331d0b8a6716ea01033",
+   "target_key": "[\"Physlib.Particles.StandardModel.AnomalyCancellation.NoGrav.One.LinearParameterization\",\"SM.SMNoGrav.One.linearParametersQENeqZero.cube_w_v\"]"
+  },
+  {
+   "n_cells": 26,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-32b/554a80bbd738-996febf3f7d9-physlib/target-0007.json",
+   "sha256": "a09adcb6a3a7963b4e80cac8921d968946b85ec95fdcf0bbe0cc196a8e49eae6",
+   "target_key": "[\"Physlib.QFT.AnomalyCancellation.Basic\",\"ACCSystemLinear.linSolsIncl_injective\"]"
+  },
+  {
+   "n_cells": 26,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-32b/554a80bbd738-996febf3f7d9-physlib/target-0008.json",
+   "sha256": "daafc1231a31e8eb4a30a6396b4d410e1db00fd13cc0f455c97e3924a3fd28f6",
+   "target_key": "[\"Physlib.QFT.PerturbationTheory.WickContraction.ExtractEquiv\",\"WickContraction.extractEquiv_equiv\"]"
+  },
+  {
+   "n_cells": 26,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-32b/554a80bbd738-996febf3f7d9-physlib/target-0009.json",
+   "sha256": "5ac809b30829852f914a79ad93e90f3b5b88326261874a060ef9c388814c235b",
+   "target_key": "[\"Physlib.QFT.PerturbationTheory.WickContraction.Join\",\"WickContraction.joinLiftLeft_or_joinLiftRight_of_mem_join\"]"
+  },
+  {
+   "n_cells": 26,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-32b/554a80bbd738-996febf3f7d9-physlib/target-0010.json",
+   "sha256": "a34a4f69574be9cb51f410e60e2b903ab066d573f97688f6e11550c398609885",
+   "target_key": "[\"Physlib.Relativity.LorentzGroup.Basic\",\"LorentzGroup.toGL_isClosedEmbedding\"]"
+  },
+  {
+   "n_cells": 26,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-32b/554a80bbd738-996febf3f7d9-physlib/target-0011.json",
+   "sha256": "b76987f6b07f9aa3cd77dd11d8f443885b4f0201aba4fd83e0e8532bab5b049c",
+   "target_key": "[\"Physlib.Relativity.Tensors.ComplexTensor.Vector.Pre.Modules\",\"Lorentz.ContrℂModule.lorentzGroupRep\"]"
+  },
+  {
+   "n_cells": 26,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-32b/554a80bbd738-996febf3f7d9-physlib/target-0012.json",
+   "sha256": "50c8ae1d0722a7b9cde7dde8c8eefa1f8435aa60594d41711e539574b56fe52f",
+   "target_key": "[\"Physlib.Relativity.Tensors.RealTensor.Vector.MinkowskiProduct\",\"Lorentz.Vector.IsLorentz\"]"
+  },
+  {
+   "n_cells": 26,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-32b/554a80bbd738-996febf3f7d9-physlib/target-0013.json",
+   "sha256": "a0c29bdff81fd34c4a99f6884c33c4bff226bcdc4d8b88cd38fce0e1cf3fd825",
+   "target_key": "[\"Physlib.Relativity.Tensors.RealTensor.Velocity.Basic\",\"Lorentz.Velocity.zero_le_minkowskiProduct\"]"
+  },
+  {
+   "n_cells": 26,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-32b/554a80bbd738-996febf3f7d9-physlib/target-0014.json",
+   "sha256": "689080d38dd7e01ed15fd9b6867da548bd3c5731f14884906abab7c82482c24c",
+   "target_key": "[\"Physlib.SpaceAndTime.GalileanGroup.Basic\",\"GalileanGroup.act\"]"
+  },
+  {
+   "n_cells": 26,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-32b/554a80bbd738-996febf3f7d9-physlib/target-0015.json",
+   "sha256": "bcfb635f3a49eeedb331661b608f4518d82acfbee5bf04c339632b9e486f0ac5",
+   "target_key": "[\"Physlib.SpaceAndTime.GalileanGroup.Basic\",\"GalileanGroup.ofEuclidean_timeTranslation\"]"
+  },
+  {
+   "n_cells": 26,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-32b/554a80bbd738-996febf3f7d9-physlib/target-0016.json",
+   "sha256": "df6cf4e9ecd9ca40fd6ef4cf80a8cd31ee34ccd67cfbdf13ae49bb00805c835f",
+   "target_key": "[\"Physlib.Units.UnitSystem\",\"LTMCTUnitChoices.toScale_equivUnitSystem\"]"
+  },
+  {
+   "n_cells": 26,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-32b/554a80bbd738-996febf3f7d9-physlib/target-0017.json",
+   "sha256": "c20cd8cbcc1540db5fb59ec7153dc8b123688dae36a40e55e3a2a958a4aeaf54",
+   "target_key": "[\"QuantumInfo.ForMathlib.HermitianMat.Basic\",\"HermitianMat.mat_mk\"]"
+  },
+  {
+   "n_cells": 26,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-32b/554a80bbd738-996febf3f7d9-physlib/target-0018.json",
+   "sha256": "b629b96e764aa69d9723d4ae88da2f3f191ca6d683819d058d6eeec513b928f9",
+   "target_key": "[\"QuantumInfo.ForMathlib.LinearEquiv\",\"Matrix.reindex_toLin'\"]"
+  },
+  {
+   "n_cells": 26,
+   "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-32b/554a80bbd738-996febf3f7d9-physlib/target-0019.json",
+   "sha256": "6575af56827c6d6d4e611232d04b6757c4eaf593d54f040930e131b57ac9f8ef",
+   "target_key": "[\"QuantumInfo.ResourceTheory.SteinsLemma\",\"_private.QuantumInfo.ResourceTheory.SteinsLemma.0.SteinsLemma.σ''\"]"
+  }
+ ]
+}

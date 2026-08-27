@@ -58,6 +58,83 @@ PILOT_FAMILY = "q25c-1p5b"
 PILOT_FAMILIES = {PILOT_FAMILY: PILOT_MODEL}
 PILOT_PARAM_RANGES = {PILOT_FAMILY: (1.2e9, 1.8e9)}
 PILOT_BATTERY_FILE = "battery_pilot_1p5b.json"
+# Exploratory NLL-ladder tier registry (NLL_LADDER_EXPLORATORY_AMENDMENT):
+# every tier scored by eval_paired carries its own write-once instrument
+# battery at the scoring tree, inheriting the 1.5B semantics. Revisions are
+# the append-only models.json pins; param ranges are predeclared loader
+# sanity bounds fixed before any tier battery outcome. The q25c-1.5b entry
+# restates the frozen constants above and must never drift from them.
+PILOT_TIERS = {
+    "q25c-0.5b": dict(
+        model="Qwen/Qwen2.5-Coder-0.5B",
+        revision="8123ea2e9354afb7ffcc6c8641d1b2f5ecf18301",
+        family="q25c-0p5b", param_range=(0.3e9, 0.7e9),
+        battery_file="battery_pilot_0p5b.json"),
+    "q25c-1.5b": dict(
+        model=PILOT_MODEL, revision=PILOT_REVISION,
+        family=PILOT_FAMILY, param_range=PILOT_PARAM_RANGES[PILOT_FAMILY],
+        battery_file=PILOT_BATTERY_FILE),
+    "q25c-3b": dict(
+        model="Qwen/Qwen2.5-Coder-3B",
+        revision="09d9bc5d376b0cfa0100a0694ea7de7232525803",
+        family="q25c-3b", param_range=(2.5e9, 3.5e9),
+        battery_file="battery_pilot_3b.json"),
+    "q25c-7b": dict(
+        model="Qwen/Qwen2.5-Coder-7B",
+        revision="0396a76181e127dfc13e5c5ec48a8cee09938b02",
+        family="q25c-7b", param_range=(6.0e9, 8.5e9),
+        battery_file="battery_pilot_7b.json"),
+    # 14B is a big rung: its battery fp32 semantic leg exceeds L40S memory,
+    # so its battery and scoring run on H200 (human-authorized 2026-08-09).
+    "q25c-14b": dict(
+        model="Qwen/Qwen2.5-Coder-14B",
+        revision="f2ad5164aade432d6d56c24bb71589184d5d613d",
+        family="q25c-14b", param_range=(13.0e9, 16.0e9),
+        battery_file="battery_pilot_14b.json"),
+    # 32B (DOSE_CURVE_EXPANSION amendment, human-authorized 2026-08-09):
+    # H200-only; the fp32 semantic leg (~128GB weights) is MARGINAL on one
+    # 141GB H200 — an OOM there is recorded as tier infeasibility, never
+    # worked around by weakening the leg.
+    "q25c-32b": dict(
+        model="Qwen/Qwen2.5-Coder-32B",
+        revision="2e12b5f7bc878d424d222e224ed40aee564ec45f",
+        family="q25c-32b", param_range=(30.0e9, 35.0e9),
+        battery_file="battery_pilot_32b.json"),
+}
+_ACTIVE_PILOT_TIER = None
+
+
+def resolve_pilot_tier_for_model(model_id):
+    """Map a model id to its unique ladder tier tag; unknown fails closed."""
+    tags = [tag for tag, t in PILOT_TIERS.items() if t["model"] == model_id]
+    if len(tags) != 1:
+        raise RuntimeError(f"no unique pilot tier for model {model_id!r}")
+    return tags[0]
+
+
+def activate_pilot_tier(tag):
+    """Rebind the PILOT_* constants to one ladder tier, once per process.
+
+    The module defaults are the q25c-1.5b tier, so consumers that never
+    activate keep the sealed pilot behavior exactly. A process never
+    legitimately mixes tiers: re-activation with a different tag fails
+    closed (multi-tier tests must importlib.reload this module).
+    """
+    global _ACTIVE_PILOT_TIER, PILOT_MODEL, PILOT_REVISION, PILOT_FAMILY, \
+        PILOT_FAMILIES, PILOT_PARAM_RANGES, PILOT_BATTERY_FILE
+    if tag not in PILOT_TIERS:
+        raise RuntimeError(f"unknown pilot tier {tag!r}")
+    if _ACTIVE_PILOT_TIER not in (None, tag):
+        raise RuntimeError(
+            f"pilot tier already active: {_ACTIVE_PILOT_TIER!r} != {tag!r}")
+    t = PILOT_TIERS[tag]
+    PILOT_MODEL, PILOT_REVISION = t["model"], t["revision"]
+    PILOT_FAMILY = t["family"]
+    PILOT_FAMILIES = {PILOT_FAMILY: PILOT_MODEL}
+    PILOT_PARAM_RANGES = {PILOT_FAMILY: t["param_range"]}
+    PILOT_BATTERY_FILE = t["battery_file"]
+    _ACTIVE_PILOT_TIER = tag
+    return dict(t, tag=tag)
 # Big rungs require a SEPARATE battery --big mode (not yet implemented;
 # the `big` preflight gate FAILS CLOSED until battery_big.json exists):
 # DeepSeek-V2-Lite architecture probe + Qwen3.5 >=131k cache probe.
@@ -323,7 +400,14 @@ def item_A(model, tok, device, res, *, pilot=False):
             "causal_prot", fams[fam]["causal"]["protected_max_abs"],
             "attn", fams[fam]["attn_resolved"])
     # q25c fp32 semantic leg: TF32 off (asserted + recorded), model impl
-    # gated == 'sdpa' in the verdict, torch SDP backend forced MATH
+    # gated == 'sdpa' in the verdict, torch SDP backend forced MATH.
+    # AMENDMENT_32B_FP32_RESIDENCY: the outer battery model is DEAD WEIGHT
+    # during this oracle (never computed with here) — offload it to CPU so
+    # the fp32 reference has the whole device, and restore it afterwards
+    # for the later items. Pure memory lifecycle; no computed value moves.
+    if device == "cuda":
+        model.to("cpu")
+        torch.cuda.empty_cache()
     torch.backends.cuda.matmul.allow_tf32 = False
     torch.backends.cudnn.allow_tf32 = False
     torch.set_float32_matmul_precision("highest")
@@ -353,6 +437,7 @@ def item_A(model, tok, device, res, *, pilot=False):
     del m32
     if device == "cuda":
         torch.cuda.empty_cache()
+        model.to(device)  # restore the outer model for later items
     block = dict(families=fams, f2=f2,
                  production_chunk=PRODUCTION_CHUNK_TOKENS)
     if pilot:
@@ -717,6 +802,10 @@ def main():
                     help="run the prospective Qwen2.5-Coder-1.5B pilot "
                          "instrument battery and publish only its separate "
                          "write-once artifact")
+    ap.add_argument("--pilot-tier", choices=sorted(PILOT_TIERS),
+                    help="run the prospective per-tier ladder instrument "
+                         "battery (NLL_LADDER_EXPLORATORY_AMENDMENT) and "
+                         "publish only that tier's write-once artifact")
     ap.add_argument("--allow-non-cuda", action="store_true",
                     help="device override for local smokes; output is "
                          "marked gate-ineligible")
@@ -724,9 +813,16 @@ def main():
                     help="run on a dirty source tree (dev only); output is "
                          "marked gate-ineligible")
     args = ap.parse_args()
-    if args.pilot:
+    if args.pilot and args.pilot_tier and args.pilot_tier != "q25c-1.5b":
+        ap.error("--pilot is the q25c-1.5b tier; pass --pilot-tier alone")
+    if args.pilot and not args.pilot_tier:
+        args.pilot_tier = "q25c-1.5b"
+    if args.pilot_tier:
+        activate_pilot_tier(args.pilot_tier)
+        args.pilot = True
         if args.model not in (None, PILOT_MODEL):
-            ap.error("--pilot fixes --model to Qwen2.5-Coder-1.5B")
+            ap.error(f"--pilot-tier {args.pilot_tier} fixes --model to "
+                     f"{PILOT_MODEL}")
         args.model = PILOT_MODEL
     else:
         args.model = args.model or FAM_SMALL["q25c"]
@@ -840,6 +936,16 @@ def main():
         res["identities_unchanged_during_run"] = False  # dev: unchecked
     bj = os.path.join(
         OUT, PILOT_BATTERY_FILE if args.pilot else "battery.json")
+    if args.pilot and subprocess.run(
+            ["git", "ls-files", "--error-unmatch", bj],
+            capture_output=True,
+            cwd=os.path.dirname(os.path.abspath(__file__))).returncode == 0:
+        # Pilot-tier batteries are write-once committed evidence (grid
+        # battery.json keeps its rerun-at-current-hash semantics). A
+        # committed tier battery is NEVER replaced by this program.
+        LOG(f"REFUSED: {bj} is committed instrument evidence; a rerun "
+            "requires a reviewed rebind, never an overwrite")
+        sys.exit(1)
     if os.path.exists(bj):  # evidence is never overwritten: a failed
         ts = f"{time.strftime('%Y%m%d-%H%M%S')}-{os.getpid()}"  # survives rerun, collision-proof
         os.rename(bj, f"{bj}.quarantine-{ts}")

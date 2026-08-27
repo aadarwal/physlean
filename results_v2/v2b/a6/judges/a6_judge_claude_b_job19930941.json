@@ -1,0 +1,573 @@
+{
+ "schema": "v2b_a6_blind_judgments_v1",
+ "adjudicator": {
+  "id": "claude-a6-b",
+  "model": "claude-cli-2.1.226-default",
+  "fresh_context": true
+ },
+ "independence_declaration": "fresh-context;blind-presentation-only;no-packet-identities-statistics-roles-sample-salt-or-outcomes",
+ "presentation_sha256": "89685363d5282d3b79cffe2cbf3cac46e75fd4fec1ada7ab4fde38ce8c9336a6",
+ "rubric": "duplicate = the same implementation/specification modulo ONE systematic identifier renaming; a shared syntax skeleton alone is not enough, and differing API calls or referenced constants are not-duplicate",
+ "judgments": [
+  {
+   "pair_id": "P-d45bc25500260139284fb302",
+   "label": "duplicate",
+   "reason": "Identical statement and identical grind [beq_self_iff] proof; the only difference is the systematic Float32 -> Float rename of the namespace and the type."
+  },
+  {
+   "pair_id": "P-cc8ff023e6c1be2bf7bd1b97",
+   "label": "duplicate",
+   "reason": "Identical statement and identical four-step proof (refine NNReal.eq, simp, rw [toReal], field_simp); only the unit type LengthUnit -> TemperatureUnit is renamed."
+  },
+  {
+   "pair_id": "P-1d98773182d806ae23df1abf",
+   "label": "duplicate",
+   "reason": "Same scanl/scanlM specification and the identical one-tactic simp proof; the only substitution is the container type (Vector a n -> Array a). The added section doc comment is non-code."
+  },
+  {
+   "pair_id": "P-eda0f1b04c0df94632bd3863",
+   "label": "duplicate",
+   "reason": "Same class body (test_class assignment plus args = ()); one consistent token substitution FrozenDataclass -> Dataclass covers both the test class name and the referenced class."
+  },
+  {
+   "pair_id": "P-82655638a718737a7a9b38e4",
+   "label": "duplicate",
+   "reason": "Every assertion, numeric literal and comment is identical; the sole difference is one systematic substitution of the module the same constant g0 is imported from."
+  },
+  {
+   "pair_id": "P-a85c45fa5920da86d1faee64",
+   "label": "not-duplicate",
+   "reason": "The statement changes the lattice operation itself (L1 inf L2 vs L1 sup L2): a different referenced operation giving a distinct claim, not an identifier renaming, and the shown body is only the empty where-skeleton."
+  },
+  {
+   "pair_id": "P-343f0a790d536ce0e5f4cf6f",
+   "label": "duplicate",
+   "reason": "Byte-identical implementations, including every symbol and assertion."
+  },
+  {
+   "pair_id": "P-4046c8f7b28fb57d57fcdf03",
+   "label": "not-duplicate",
+   "reason": "Different subject (sqrt(2) vs the integer 1) and many differing expected values: integer, rational, irrational, odd and transcendental answers flip. Only the ask-assertion skeleton is shared."
+  },
+  {
+   "pair_id": "P-5ae678044616f179d440fd82",
+   "label": "duplicate",
+   "reason": "The whole body maps under one systematic AltAz/altaz -> HADec/hadec rename, with identical grids, distances, location and round-trip assertions; the only other change is a dropped docstring sentence."
+  },
+  {
+   "pair_id": "P-6b6ab26295555451a5a6bad2",
+   "label": "duplicate",
+   "reason": "Byte-identical lemma statement and proof script, including the full simp only lemma list."
+  },
+  {
+   "pair_id": "P-f505752736baf741490a4182",
+   "label": "duplicate",
+   "reason": "The go implementation is byte-identical with no renaming at all; the left chunk merely also carries the enclosing declaration of that same function, so the same code appears on both sides."
+  },
+  {
+   "pair_id": "P-4a90abc38de22a45d23c0400",
+   "label": "duplicate",
+   "reason": "Identical matrix literals, addition assertion and ShapeError raises check; only the test function name differs (test_add -> test_sum)."
+  },
+  {
+   "pair_id": "P-5bb64cb0c1e8d85bf1028de3",
+   "label": "duplicate",
+   "reason": "Byte-identical pytest fixture, docstring and both monkeypatch.setenv calls."
+  },
+  {
+   "pair_id": "P-81a0d782c0b9b9d0ec3a5ebc",
+   "label": "not-duplicate",
+   "reason": "Different codegen target passed to codegen ('Julia' vs 'Octave') and a completely different expected source string, with different function signature, indexing syntax and statement terminators."
+  },
+  {
+   "pair_id": "P-721c43a206fa5244ac3d9b3d",
+   "label": "duplicate",
+   "reason": "Identical body x.map Prod.snd; one systematic Ten -> Five substitution covers the definition name, the argument type and the result type."
+  },
+  {
+   "pair_id": "P-23a6d82dda9311c920c4737a",
+   "label": "duplicate",
+   "reason": "Identical attribute and construction Equiv.linearEquiv C toFin13CFun; only the module type ContrCModule -> CoCModule is renamed."
+  },
+  {
+   "pair_id": "P-2295fd796618d8821222a38c",
+   "label": "duplicate",
+   "reason": "Identical recursive body, masks and shift operations; only the machine word type UInt32 -> UInt64 is substituted."
+  },
+  {
+   "pair_id": "P-c6815a02d0b5dd25434991e7",
+   "label": "duplicate",
+   "reason": "Byte-identical test, including every view/Quantity assertion and comment."
+  },
+  {
+   "pair_id": "P-679371e69b5c03640eed62aa",
+   "label": "duplicate",
+   "reason": "Byte-identical class with the same two dunder methods."
+  },
+  {
+   "pair_id": "P-f2d9fb4903902246419594c4",
+   "label": "duplicate",
+   "reason": "Byte-identical lemma statement and proof term."
+  },
+  {
+   "pair_id": "P-a20e62794b300bfe79cc7101",
+   "label": "duplicate",
+   "reason": "Byte-identical one-line simp lemma."
+  },
+  {
+   "pair_id": "P-6bac4bf8d338fa7353c4d2f7",
+   "label": "duplicate",
+   "reason": "Same declaration, same doc and the same two match equations with no renaming; the only difference is the @[inline] compilation attribute, which leaves the implementation and specification unchanged."
+  },
+  {
+   "pair_id": "P-850c3a8edd8a69b0ab7e3bff",
+   "label": "duplicate",
+   "reason": "Same @SKIP('abstract Class') decorator and the same pass body; a single systematic rename SinglePSpace -> ProductPSpace in the test name."
+  },
+  {
+   "pair_id": "P-292a14ddd16e51b737806ab8",
+   "label": "not-duplicate",
+   "reason": "Sky2Pix and Pix2Sky are transposed: the model constructed and the class asserted for its inverse swap roles, so two coupled renamings are required, not one systematic rename."
+  },
+  {
+   "pair_id": "P-ac8537f724fa01ad5baa08ce",
+   "label": "not-duplicate",
+   "reason": "Same test name, but the left adds a pickle dumps/loads round-trip inside a second pytest.warns block and asserts on the round-tripped WCS; control flow and the object under test differ."
+  },
+  {
+   "pair_id": "P-d26b8967932fa1312afbca54",
+   "label": "duplicate",
+   "reason": "Every difference follows one systematic TETE/tete -> CIRS/cirs rename: transform decorator frames, function name, local variables, the *_to_itrs_mat helper and the comments. Structure and logic are identical."
+  },
+  {
+   "pair_id": "P-af71674999c46abde0ad4ca3",
+   "label": "duplicate",
+   "reason": "Identical cast statement and identical three-case match proof on cmp; only the numeral type PosNum -> Num is renamed."
+  },
+  {
+   "pair_id": "P-545b3b610b197aee26b732c2",
+   "label": "duplicate",
+   "reason": "Identical statement and identical simp [scale]; ring proof; only the unit type ChargeUnit -> TimeUnit is renamed."
+  },
+  {
+   "pair_id": "P-ed1dea7da1ec575926e099d8",
+   "label": "duplicate",
+   "reason": "Identical body, linspaces, tolerances and round-trip assertions; one systematic projection-name substitution Polyconic -> PlateCarree in both the model and its inverse class."
+  },
+  {
+   "pair_id": "P-0923d435344c740d2162e9ab",
+   "label": "duplicate",
+   "reason": "Identical docstring and class body; one uniform Pix2Sky -> Sky2Pix substitution applied to both the class name and its projection base class."
+  },
+  {
+   "pair_id": "P-57c8fb7c0be802241485d288",
+   "label": "duplicate",
+   "reason": "Identical foldl/find?/insert body; one systematic List -> Array substitution across the doc, the declaration name and the argument type."
+  },
+  {
+   "pair_id": "P-bf6b4dde50f17620a24d6874",
+   "label": "duplicate",
+   "reason": "Identical statement and identical simp_rw [coe_linearMapAt, if_pos hb] proof; only Trivialization -> Pretrivialization is renamed."
+  },
+  {
+   "pair_id": "P-992372b99575c362436e798f",
+   "label": "duplicate",
+   "reason": "Identical attribute, statement and ConcreteCategory.hom_ext proof term; only the category GrpCat -> Semigrp is renamed."
+  },
+  {
+   "pair_id": "P-bcfef122dbc795a08ecc8d3d",
+   "label": "duplicate",
+   "reason": "Byte-identical notation declaration, including the inherit_doc attribute and the scoped namespace."
+  },
+  {
+   "pair_id": "P-043e9831c69adae9572aabfa",
+   "label": "duplicate",
+   "reason": "Identical hypotheses and identical proof script (funext, hconst, rw, simp); one systematic angularVelocityTensor -> bodyAngularVelocityTensor rename covering the lemma name and the rewritten lemma."
+  },
+  {
+   "pair_id": "P-d41fab3f677f383ad6b22e9b",
+   "label": "duplicate",
+   "reason": "Same one-line definition shape and lambda; a single uniform substitution AppRev -> App maps the doc reference, the declaration name and the called combinator consistently."
+  },
+  {
+   "pair_id": "P-8b90ef794f625a2962607253",
+   "label": "not-duplicate",
+   "reason": "Two independent substitutions are needed: the handler function _set_pow -> _set_div and the handler module handlers.power -> handlers.mul, which is not the image of the first rename."
+  },
+  {
+   "pair_id": "P-bb0c9a79043d2b63863659b3",
+   "label": "duplicate",
+   "reason": "The recursive loop body, its termination proof and the push are byte-identical with no renaming; the right chunk merely also includes the enclosing toAsciiByteArray declaration of that same code."
+  },
+  {
+   "pair_id": "P-029b8a46c044421bfc86cca6",
+   "label": "not-duplicate",
+   "reason": "Beyond StateSpace -> DiscreteStateSpace, every constructor call gains an extra sampling-time argument T, changing the API arity of each call and the system constructed."
+  },
+  {
+   "pair_id": "P-547a2ad99ec1bbf7bbdd18d8",
+   "label": "not-duplicate",
+   "reason": "A different property is proven with a different projection: Faithful/.faithful vs Full/.full, while fullyFaithful is untouched, so the substitution is not uniform and the claim differs."
+  },
+  {
+   "pair_id": "P-3a430a50ae85c4da0ca48f7f",
+   "label": "duplicate",
+   "reason": "Byte-identical elab command, including every let binding, both binderIdent branches and all comments."
+  },
+  {
+   "pair_id": "P-ecd19cccbb3fe6a12c71e086",
+   "label": "not-duplicate",
+   "reason": "Two distinct identifiers change (Magnitude -> Decibel and the referenced MagUnit -> DecibelUnit, not the image of one substitution) and the only shared content is a two-line class skeleton."
+  },
+  {
+   "pair_id": "P-ed82307a50aa605a5645df14",
+   "label": "duplicate",
+   "reason": "Byte-identical theorem statement and two-step proof."
+  },
+  {
+   "pair_id": "P-9b9a4d0fd6bc1eb2eadb903b",
+   "label": "duplicate",
+   "reason": "Roughly eighty lines with identical matrices, null spaces, comments and assertions; the only change is the renaming of the matrix implementation under test (Reductions test shims -> plain zeros/eye/Matrix)."
+  },
+  {
+   "pair_id": "P-0b46ca3eadb56cc4d9270564",
+   "label": "duplicate",
+   "reason": "Same warn-then-delegate body with the same _warnmsg; one systematic errok -> token rename of the wrapper and its target."
+  },
+  {
+   "pair_id": "P-da6c9fe917d25ae08153e3b7",
+   "label": "not-duplicate",
+   "reason": "The declared notation symbol is unchanged and only its target constant differs (fourier vs dft): a changed referenced constant on a one-line skeleton, not an identifier renaming."
+  },
+  {
+   "pair_id": "P-153d9f8b3e75178589f5a2ed",
+   "label": "not-duplicate",
+   "reason": "Unrelated module and class (codegen.scipy_nodes.powm1 vs codegen.cfunctions.hypot) requiring two independent substitutions; only the two-line import-and-_test_args skeleton is shared."
+  },
+  {
+   "pair_id": "P-29044bafb8f8599efb28d3b0",
+   "label": "not-duplicate",
+   "reason": "The left adds two extra metadata entries with large string literals (meta_big, meta_biggerstill), so a different scenario is exercised rather than the same body under a rename."
+  },
+  {
+   "pair_id": "P-7cbdd4cfc09e4f6190dc3246",
+   "label": "duplicate",
+   "reason": "Handler body is byte-identical (same Q.real guard, same Q.even recursion, same control flow); the single substitution is the expression class the predicate is registered for."
+  },
+  {
+   "pair_id": "P-0ac9fbf91ebb96662be6e455",
+   "label": "duplicate",
+   "reason": "Identical statement and simp proof; only the lattice category FinBddDistLat -> BddDistLat is renamed."
+  },
+  {
+   "pair_id": "P-b36b0adc95b8d6fa9578232d",
+   "label": "not-duplicate",
+   "reason": "Same test name, but a different API is exercised: the method call X_slice.jacobian(Y_slice) versus the free function _forward_jacobian(X_slice, Y_slice)."
+  },
+  {
+   "pair_id": "P-58a841dbade76685dc78cc1e",
+   "label": "duplicate",
+   "reason": "Identical statement and identical four-step proof; only the unit type ChargeUnit -> TemperatureUnit is renamed."
+  },
+  {
+   "pair_id": "P-885857a892d84327b274714d",
+   "label": "not-duplicate",
+   "reason": "A different class is constructed (CCDData vs SkyCoord) and a different exception is expected (TypeError vs ValueError); only the three-line raises skeleton matches."
+  },
+  {
+   "pair_id": "P-da8ad08649f503a36dd52617",
+   "label": "duplicate",
+   "reason": "Identical statement and identical simp only [iInf, coe_sInf, Set.biInter_range] proof; only Subsemiring -> NonUnitalSubsemiring is renamed (line wrapping aside)."
+  },
+  {
+   "pair_id": "P-0b4b1663918bad98bdf17130",
+   "label": "not-duplicate",
+   "reason": "Sky2Pix and Pix2Sky are transposed between the constructed model and the asserted inverse class, which needs two coupled renamings rather than one systematic rename."
+  },
+  {
+   "pair_id": "P-f7fb18b42309f6f79f8cc248",
+   "label": "duplicate",
+   "reason": "Byte-identical test, including every matrix, norm order, comment and assertion."
+  },
+  {
+   "pair_id": "P-8b86a7cda281c9d52771f20c",
+   "label": "duplicate",
+   "reason": "Byte-identical test body."
+  },
+  {
+   "pair_id": "P-929fdf5078e3701affe38c11",
+   "label": "not-duplicate",
+   "reason": "The weights literal differs, np.ones((2, 25)) versus np.ones(25), so a different weighting shape is exercised rather than the same code under a renaming."
+  },
+  {
+   "pair_id": "P-60a89613622a795372a8197c",
+   "label": "not-duplicate",
+   "reason": "Every summand becomes x*KD(i, j) and every expected Piecewise value 1 becomes x, so the expressions passed and the expected results differ throughout."
+  },
+  {
+   "pair_id": "P-15d904d401e2152b0bea0b1c",
+   "label": "duplicate",
+   "reason": "Handler logic is byte-identical (same integer-power guard, same invertibility branch); one systematic concept rename LowerTriangular/lower_triangular -> Symmetric/symmetric in the decorator and the final query."
+  },
+  {
+   "pair_id": "P-6d57ed8b500021e3f9ea9a31",
+   "label": "not-duplicate",
+   "reason": "Unrelated module and class (codegen.fnodes.FortranReturn vs stats.frv_types.IdealSolitonDistribution); only the import-and-_test_args skeleton with the literal 10 is shared."
+  },
+  {
+   "pair_id": "P-3931321087731a377204ae59",
+   "label": "duplicate",
+   "reason": "Identical hypotheses and identical proof term; one systematic upperBoundP? -> lowerBoundP? rename covering the theorem name, the hypothesis and the helper lemma."
+  },
+  {
+   "pair_id": "P-b21c3d3bfa7496ad77aa996c",
+   "label": "not-duplicate",
+   "reason": "Three coupled but distinct references change (length -> mass, LengthUnit -> MassUnit, meters -> kilograms, the last not derivable from the first) and the shared content is only a one-line rfl skeleton."
+  },
+  {
+   "pair_id": "P-86ee70c30f77c714957b5613",
+   "label": "not-duplicate",
+   "reason": "The datatype literal differs ('floatComplex' vs 'int'), so a different converter is constructed and exercised despite the shared config/raises skeleton."
+  },
+  {
+   "pair_id": "P-1ced2935e427e5dbfa7349b8",
+   "label": "duplicate",
+   "reason": "Docstring, kwargs, arrays and both norm assertions are identical; one systematic aesara -> theano rename accounts for every difference."
+  },
+  {
+   "pair_id": "P-5055cf01aa3c8723846567b1",
+   "label": "duplicate",
+   "reason": "Identical theorem name and identical statement; the proof term differs only in the renamed spelling of the same helper lemma (image2_assoc with subscript vs plain digit)."
+  },
+  {
+   "pair_id": "P-09b97ddbe0e5df577ec00e28",
+   "label": "duplicate",
+   "reason": "Byte-identical pytest fixture, docstring and both monkeypatch.setenv calls."
+  },
+  {
+   "pair_id": "P-2981bb9365b0e07076b512f0",
+   "label": "duplicate",
+   "reason": "Identical raises match regex and identical BinnedTimeSeries.read call with the same keyword arguments; only the test function name differs."
+  },
+  {
+   "pair_id": "P-eb1363f4fa15df0140acf39a",
+   "label": "duplicate",
+   "reason": "All literals and transpose/conjugate/adjoint assertions are identical; only the constructor of the matrix under test is renamed (Matrix -> OperationsOnlyMatrix)."
+  },
+  {
+   "pair_id": "P-c4c3a88328c15b05a3919d6a",
+   "label": "not-duplicate",
+   "reason": "Two unrelated changes (test index 2 -> 1 and printer class MathMLPresentationPrinter -> MathMLContentPrinter) on a one-line check(...) skeleton."
+  },
+  {
+   "pair_id": "P-4b6fc35264b8d4f2b41d960d",
+   "label": "duplicate",
+   "reason": "The executable body is identical apart from the systematic step_response -> impulse_response rename of the function, the *_numerical_data helper and the plot title text; the remaining differences are docstring prose."
+  },
+  {
+   "pair_id": "P-fa0942b3275aa7aa897106ee",
+   "label": "duplicate",
+   "reason": "Identical signature, defaults and delegation body; one systematic cache -> config substitution in the function name and the *_dir_path helper it calls."
+  },
+  {
+   "pair_id": "P-cea2a73e5666df47d138ef6b",
+   "label": "not-duplicate",
+   "reason": "Out-of-bounds behaviour differs: one returns (self, x) unchanged while the other calls panicWith with a message, so effects and the specification differ, not just the name."
+  },
+  {
+   "pair_id": "P-03cc9779feaf8366dd6ddb9c",
+   "label": "not-duplicate",
+   "reason": "Two independent substitutions: the direction swap Pix2Sky/Sky2Pix plus a different projection family (ConicEquidistant vs ConicOrthomorphic)."
+  },
+  {
+   "pair_id": "P-282956ae4840ba77a710c599",
+   "label": "duplicate",
+   "reason": "Same statement and same two-step proof, with the substantive simp only set and the exact term identical; the coupled Float -> Float32 / UInt64 -> UInt32 change is one transport of the type to its analogue bit width."
+  },
+  {
+   "pair_id": "P-b136bfcb27a27ef742c3736e",
+   "label": "duplicate",
+   "reason": "Identical statement shape and rfl proof; one uniform qHu -> qHd rename covering the lemma name and both projections."
+  },
+  {
+   "pair_id": "P-894ed74fbb66f1158ce8199c",
+   "label": "duplicate",
+   "reason": "Identical statement and identical split/next proof script; only the machine word type UInt32 -> UInt8 is renamed."
+  },
+  {
+   "pair_id": "P-d8d7a963293655ff5c7b6760",
+   "label": "duplicate",
+   "reason": "Identical one-line definition and attribute; one uniform PairingHeap -> BinomialHeap substitution covers the type, the constructor and the doc wording."
+  },
+  {
+   "pair_id": "P-2ef72d498331a11486eda08f",
+   "label": "not-duplicate",
+   "reason": "Unrelated function names and unrelated operands (-oo vs -i3); only the one-line negation skeleton is shared, which is not enough."
+  },
+  {
+   "pair_id": "P-e6b8f76864eafc21280f7ffe",
+   "label": "not-duplicate",
+   "reason": "Different signatures (a set s with hAs and an explicit spectrum hypothesis vs Set.univ) and a different continuity argument passed to hcont.mono, so hypotheses and proof term both change."
+  },
+  {
+   "pair_id": "P-058efc9ee55f73a79a92bc52",
+   "label": "not-duplicate",
+   "reason": "Unrelated class and base class (CelestialError(ValueError) vs CCDData(NDData)); only the class-with-pass skeleton is shared."
+  },
+  {
+   "pair_id": "P-1faf5359bb936df0ef5a2a60",
+   "label": "duplicate",
+   "reason": "Byte-identical doc comment and initialize declaration."
+  },
+  {
+   "pair_id": "P-f3e0eec2cfb77a7944a2e138",
+   "label": "duplicate",
+   "reason": "Byte-identical theorem and rfl proof."
+  },
+  {
+   "pair_id": "P-95503fd738d25e8ca7f14e02",
+   "label": "duplicate",
+   "reason": "Both field declarations, their default-value tactics and the porting-note comments are byte-identical; only the structure name and the bundled map type it extends are transported together."
+  },
+  {
+   "pair_id": "P-f792882321788be4042da5c3",
+   "label": "duplicate",
+   "reason": "Identical statement and identical rw/simp only/rw proof; only the unit type LengthUnit -> ChargeUnit is renamed."
+  },
+  {
+   "pair_id": "P-9adc9159da367cc9bf46218a",
+   "label": "duplicate",
+   "reason": "Identical docstring, expression construction and both theq assertions; one systematic theano_code_ -> aesara_code_ rename."
+  },
+  {
+   "pair_id": "P-f712a82314bb85d814b3e89f",
+   "label": "not-duplicate",
+   "reason": "A different class is instantiated with a different value (EmptyCollection with DList.empty vs Append with DList.append): two changed references on a one-line instance skeleton."
+  },
+  {
+   "pair_id": "P-3781ee3cdff29398da04e4d7",
+   "label": "not-duplicate",
+   "reason": "The statements differ: the inner product arguments are swapped and the two I-terms exchange signs, so a different polarization identity is proven despite the identical simp set."
+  },
+  {
+   "pair_id": "P-57b8e6fa65428d9c8f135e43",
+   "label": "duplicate",
+   "reason": "Identical statement and identical rw/refine/simp proof; only the unit type ChargeUnit -> MassUnit is renamed."
+  },
+  {
+   "pair_id": "P-711d248d481094f969ce8034",
+   "label": "not-duplicate",
+   "reason": "Different filter_origin literal ('astropy.tests' vs 'astropy.wcs') and a different expected outcome (two log entries vs zero), so the behaviour asserted differs."
+  },
+  {
+   "pair_id": "P-33471d70adea4121c191b906",
+   "label": "not-duplicate",
+   "reason": "Beyond the scalar change, the hypothesis differs (0 <= a x vs the predicate p (a x)) and the lemmas are applied differently (isCompact_nnreal vs isCompact with an explicit scalar argument), so several independent changes."
+  },
+  {
+   "pair_id": "P-ee2827ee2744ba5a4a42ec75",
+   "label": "not-duplicate",
+   "reason": "Two independent substitutions: the direction swap Sky2Pix/Pix2Sky plus a different projection (Stereographic vs HEALPixPolar)."
+  },
+  {
+   "pair_id": "P-78ec2a2335a644bd78fbffa5",
+   "label": "not-duplicate",
+   "reason": "Different conclusions: an equality with cast (e triangle rfl) x versus a heterogeneous equality with x, so the theorems state different things despite the shared subst e; rfl proof."
+  },
+  {
+   "pair_id": "P-2c7d92b02dfba61f3fce4034",
+   "label": "duplicate",
+   "reason": "Identical body, seed, pickle round-trip and assertions; the single systematic substitution sip -> sip2 covers the test name and the fixture file it loads."
+  },
+  {
+   "pair_id": "P-ad5847ed910dbfbe7b708670",
+   "label": "not-duplicate",
+   "reason": "The right adds the [IsFibrant X] instance hypothesis, strengthening the assumptions of the lemma; the specifications are therefore different."
+  },
+  {
+   "pair_id": "P-a9f2339edf649c6b9baf342e",
+   "label": "not-duplicate",
+   "reason": "Different backend called (fcode vs ccode) and a completely different assertion: endswith on Fortran parenthesis syntax versus equality with a C bracket string built by % formatting."
+  },
+  {
+   "pair_id": "P-ede0d3c95aa3d064d4e72690",
+   "label": "duplicate",
+   "reason": "Identical statement shape and identical two-tactic proof; one uniform Upper/upper -> Lower/lower substitution across the theorem, the hypothesis class and both helper lemmas."
+  },
+  {
+   "pair_id": "P-c31471237947eebd0279f4d2",
+   "label": "duplicate",
+   "reason": "Identical __slots__/_fields, defaults and both _construct staticmethods; only the class name sum_ -> product_ differs."
+  },
+  {
+   "pair_id": "P-ca3e5891dd43791794f3caa1",
+   "label": "not-duplicate",
+   "reason": "Different path literal ('data.html' vs 'data.tex') and the write call drops the format='html' argument, so a different write path is exercised."
+  },
+  {
+   "pair_id": "P-be2bd2a0eed0bf8e8f879174",
+   "label": "not-duplicate",
+   "reason": "Beyond LombScargle -> LombScargleMultiband, the fixture unpacking gains a band array that is passed as an extra constructor argument, changing the API call arity."
+  },
+  {
+   "pair_id": "P-206c1235fab9640c10e7e529",
+   "label": "duplicate",
+   "reason": "The instance declaration and its CreatesLimitsOfShape/CreatesLimit field are byte-identical with no renaming; the right adds only a to_additive attribute and different doc prose."
+  },
+  {
+   "pair_id": "P-87c7f9eeae958a04e21dd64b",
+   "label": "duplicate",
+   "reason": "Identical definition body (the PUnit term and Functor.punitExt hom); one uniform Cocone -> Cone substitution in the name and type, with the doc wording following the same rename."
+  },
+  {
+   "pair_id": "P-afb4d7b2515f0b56657ba127",
+   "label": "duplicate",
+   "reason": "Handler body is byte-identical (same integer-power guard, same invertibility branch); one systematic concept rename LowerTriangular/lower_triangular -> ComplexElements/complex_elements."
+  },
+  {
+   "pair_id": "P-e2f2f5ba4c0112b26a08c25f",
+   "label": "not-duplicate",
+   "reason": "Different arity throughout (three versus four coupled kets), different coupling schemes and a @slow marker; the assertion bodies are distinct code, not one renamed copy."
+  },
+  {
+   "pair_id": "P-1f0e99fac87a3c59ecb904ed",
+   "label": "duplicate",
+   "reason": "About twenty lines of identical validation, interval handling and array construction; every difference (imax/imin, maximum/minimum, max()/min()) is the image of one systematic max -> min substitution."
+  },
+  {
+   "pair_id": "P-2367fcfbf4a50a185dc2857d",
+   "label": "duplicate",
+   "reason": "Identical equivalence pipeline (Basis.tensorProduct repr, Finsupp.linearEquivFunOnFinite, LinearEquiv.curry) with RightHandedWeyl untouched; one systematic dualRightHanded -> leftHanded rename of the definition and the first factor."
+  },
+  {
+   "pair_id": "P-97b5925b0b60b6d8e688745c",
+   "label": "duplicate",
+   "reason": "Identical docstring, body shape and 'SDM' literal; a single uniform DMZ -> DMQ substitution in the wrapper and its target."
+  },
+  {
+   "pair_id": "P-60de931edbb3a4ace65ad46d",
+   "label": "duplicate",
+   "reason": "Identical statement and identical simp only [iInf, coe_sInf, Set.biInter_range] proof; only Subring -> NonUnitalSubring is renamed."
+  },
+  {
+   "pair_id": "P-936ce9ea4804658dcd51b8ad",
+   "label": "duplicate",
+   "reason": "Identical statement shape and identical anonymous-constructor proof using trans_F with e and e.symm; one uniform IsImmersionOfComplement -> IsSubmersionOfComplement rename."
+  },
+  {
+   "pair_id": "P-8de3e3bfc0172791a4da6734",
+   "label": "duplicate",
+   "reason": "Identical statement and rfl proof; only the hom type HeytingHom -> CoheytingHom is renamed."
+  },
+  {
+   "pair_id": "P-160c18f2e0c7b823c46db5d4",
+   "label": "not-duplicate",
+   "reason": "Three coupled but distinct references change (final -> initial, IsFiltered -> IsCofiltered, Final -> Initial, none derivable from a single substitution) on an inferInstance one-liner."
+  },
+  {
+   "pair_id": "P-07b1a4378c06f4913b1b53f5",
+   "label": "duplicate",
+   "reason": "Identical getLinterValue body and signature; one systematic unnecessarySeqFocus -> unreachableTactic rename covering the definition name and the option constant it reads."
+  }
+ ]
+}

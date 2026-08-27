@@ -1,0 +1,3563 @@
+{
+ "b_star": 16384,
+ "bindings": {
+  "amendment": {
+   "path": "results_v2/v2b/POST_LADDER_CONSUMERS_AMENDMENT.md",
+   "sha256": "26a12e73306e08f7b8bf11eda90aa524f80ece24b4dfcbb98d53a9d8fa5b2fa9"
+  },
+  "assembly_sha256": "dab767e9947e069be7ff411a911cbbca3b5a395396dcd4c9e9020a3fbbc28f78",
+  "batteries": {
+   "q25c-0.5b": {
+    "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/battery/battery_pilot_0p5b.json",
+    "sha256": "dc46a43a85d94798b94fee3371c366ead6abf72a02f4eac5348c1f249c9de446"
+   },
+   "q25c-1.5b": {
+    "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/battery/battery_pilot_1p5b.json",
+    "sha256": "bd9004b1a8ee1823fff9d697797d5f5e7f1a3bc6f8471ef13036ff7d35a0bf17"
+   },
+   "q25c-14b": {
+    "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/battery/battery_pilot_14b.json",
+    "sha256": "9dcc0f4ed9792824ffeed9053be4153f9a37ddd8a70c9cadc2015e84a629640b"
+   },
+   "q25c-3b": {
+    "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/battery/battery_pilot_3b.json",
+    "sha256": "5bd268d520cc97f1ee31d0bcd6cb9dda45621eeb574e2bc1780ef216e6e6d141"
+   },
+   "q25c-7b": {
+    "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/battery/battery_pilot_7b.json",
+    "sha256": "ea89c6ebe66c55aa031b44b3753d0592bacc7515bed4ce5f0e5d57f5b63acf8e"
+   }
+  },
+  "candidates_sha256": "94ab63535888067c714a78618722643165f56b5541b398d59d19a999487a3974",
+  "completions": {
+   "q25c-0.5b": {
+    "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-0.5b/3245ee52bd12-dab767e9947e-astropy/complete.json",
+    "schema": "v2b_paired_nll_complete_v2",
+    "sha256": "e04b9e6391755ffa7a29cf5460dd4fba6515f187cc07226a0f8cb3e88cf869fa"
+   },
+   "q25c-1.5b": {
+    "path": "/orcd/pool/008/aadarwal/physlean-nll-launch/results_v2/v2b/paired/q25c-1.5b/6db2566599da-dab767e9947e-astropy/complete.json",
+    "schema": "v2b_paired_nll_complete_v2",
+    "sha256": "6ae2e7028f99a4f6895509f4a94768352ed26cae8e16a3ca53c8a6eb9cbff6b3"
+   },
+   "q25c-14b": {
+    "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-14b/3245ee52bd12-dab767e9947e-astropy/complete.json",
+    "schema": "v2b_paired_nll_complete_v2",
+    "sha256": "90da00806daeb8c922a6e8803b2cb68a7cefdbc02d6b43634b01b1de3c74b253"
+   },
+   "q25c-3b": {
+    "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-3b/7fd25e62a597-dab767e9947e-astropy/complete.json",
+    "schema": "v2b_paired_nll_complete_v2",
+    "sha256": "7ae8c8cb3af0826188db8cf95d6125e38fbc99d62605ea6cfb150763fbc565f4"
+   },
+   "q25c-7b": {
+    "path": "/orcd/pool/008/aadarwal/physlean-claude-ladder/results_v2/v2b/paired/q25c-7b/7fd25e62a597-dab767e9947e-astropy/complete.json",
+    "schema": "v2b_paired_nll_complete_v2",
+    "sha256": "aa07cffa5eecebbb570d279e4dd72622753ee9d3404b3a155fe7a251a6f6b924"
+   }
+  },
+  "ladder_amendment": {
+   "path": "results_v2/v2b/NLL_LADDER_EXPLORATORY_AMENDMENT.md",
+   "sha256": "9843402c90fee24ff49cec298f47c5d04f7df8406a04f9d9b2a42faa9d2768f6"
+  },
+  "ledger_sha256": "8adec1ef5777610f5885238654e0ab7a13253daf9be0475e5ed30368dd08e016",
+  "manifest_sha256": "dab767e9947e069be7ff411a911cbbca3b5a395396dcd4c9e9020a3fbbc28f78",
+  "reveal_sha256": "a2f88275381adbed8b52e17f9960e8fb6359055a867300179afd46837a4e2509",
+  "sample_sha256": "86090b33389a2c78eabc924ce67ac71b6082c579256fd101c3e9fda69409db9b"
+ },
+ "budgets": [
+  4096,
+  16384,
+  65536
+ ],
+ "claim_status": "exploratory-nll-only-budget-response",
+ "e2_control_note": null,
+ "generator": {
+  "program": "analyze_v2b_dose.py",
+  "source_commit": "e6b14c08882f32f611d7dc6e654d893df75967f1",
+  "source_tree_hash": "a7f8705066cab44b8730798be0c192c61cb3236d64b1748e0f6936946eeae7c6"
+ },
+ "k4x_external": null,
+ "language_pooling": "prohibited",
+ "metric": "bpb",
+ "mode": "budget",
+ "model_pooling": false,
+ "non_bstar_reading_rule": "per-panel Holm is scoped within (repo, tier, budget); non-B* panels' positive diagnostic flags are descriptive context for the dose curve only and are never citable as standalone positive results; B* panels are the only headline-bearing cells",
+ "repo": "astropy",
+ "schema": "v2b_budget_response_v1",
+ "tier_order": [
+  "q25c-0.5b",
+  "q25c-1.5b",
+  "q25c-14b",
+  "q25c-3b",
+  "q25c-7b"
+ ],
+ "tiers": {
+  "q25c-0.5b": {
+   "budgets": {
+    "16384": {
+     "contrasts": {
+      "E1a": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 0.10133229930314208,
+       "inference": {
+        "ci95_two_sided_bpb": [
+         -0.02719755998142806,
+         0.24735301134985863
+        ],
+        "cluster_sizes": [
+         1,
+         1,
+         1,
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": 3,
+        "inference_status": "available",
+        "lower_one_sided_95_bpb": 0.008565040845350883,
+        "n_modules": 4,
+        "n_targets": 4,
+        "standard_error_bpb": 0.04313515002788526,
+        "target_equal_mean_bpb": 0.11007772568421528,
+        "target_keys": [
+         "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]",
+         "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]",
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]",
+         "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        ],
+        "target_range_bpb": 0.20014456291658345,
+        "upper_one_sided_95_bpb": 0.2115904105230797,
+        "variance_components": {
+         "cluster_sizes": [
+          1,
+          1,
+          1,
+          1
+         ],
+         "mode": "all-singleton-conservative",
+         "n_modules": 4,
+         "n_pilot": 4,
+         "sigma_b2": 0.007442564671712678,
+         "sigma_w2": 0.0
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k1-k4:16384",
+       "raw_one_sided_pvalue": 0.041900950447795605,
+       "target_rows": [
+        {
+         "delta_bpb": 0.1379392861154206,
+         "module": "astropy.coordinates.tests.test_erfa_astrom",
+         "target_key": "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]"
+        },
+        {
+         "delta_bpb": 0.07176470077064168,
+         "module": "astropy.modeling.tests.test_fitters",
+         "target_key": "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]"
+        },
+        {
+         "delta_bpb": 0.21537573938369114,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        },
+        {
+         "delta_bpb": 0.015231176467107699,
+         "module": "astropy.wcs.wcsapi.fitswcs",
+         "target_key": "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        }
+       ]
+      },
+      "E1b": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "smaller/noninferior",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [],
+        "degeneracy_floor_bpb": null,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 0,
+        "n_targets": 0,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": null,
+        "target_keys": [],
+        "target_range_bpb": null,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": null
+       },
+       "interpretation_status": "inference-unavailable",
+       "metric": "bpb",
+       "orientation": "k3:16384-k4:16384",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": []
+      },
+      "E2": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 0.10133229930314208,
+       "inference": {
+        "ci95_two_sided_bpb": [
+         -0.01044041998777838,
+         0.16576067388447718
+        ],
+        "cluster_sizes": [
+         1,
+         1,
+         1,
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": 3,
+        "inference_status": "available",
+        "lower_one_sided_95_bpb": 0.012511305644552134,
+        "n_modules": 4,
+        "n_targets": 4,
+        "standard_error_bpb": 0.027683281015963127,
+        "target_equal_mean_bpb": 0.07766012694834941,
+        "target_keys": [
+         "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]",
+         "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]",
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]",
+         "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        ],
+        "target_range_bpb": 0.11871527378906693,
+        "upper_one_sided_95_bpb": 0.14280894825214668,
+        "variance_components": {
+         "cluster_sizes": [
+          1,
+          1,
+          1,
+          1
+         ],
+         "mode": "all-singleton-conservative",
+         "n_modules": 4,
+         "n_pilot": 4,
+         "sigma_b2": 0.0030654561912351382,
+         "sigma_w2": 0.0
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k5:0:16384-k4:16384",
+       "raw_one_sided_pvalue": 0.03377743310104736,
+       "target_rows": [
+        {
+         "delta_bpb": 0.1332327432943603,
+         "module": "astropy.coordinates.tests.test_erfa_astrom",
+         "target_key": "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]"
+        },
+        {
+         "delta_bpb": 0.04910009427317252,
+         "module": "astropy.modeling.tests.test_fitters",
+         "target_key": "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]"
+        },
+        {
+         "delta_bpb": 0.11379020072057144,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        },
+        {
+         "delta_bpb": 0.014517469505293368,
+         "module": "astropy.wcs.wcsapi.fitswcs",
+         "target_key": "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        }
+       ]
+      }
+     },
+     "e1b_assay": {
+      "active_assay_pvalue": 1.0,
+      "e1a_intersection_lower_one_sided_95_bpb": null,
+      "e1a_on_intersection_inference": {
+       "ci95_two_sided_bpb": null,
+       "cluster_sizes": [],
+       "degeneracy_floor_bpb": null,
+       "degrees_of_freedom": null,
+       "inference_status": "insufficient-clusters",
+       "lower_one_sided_95_bpb": null,
+       "n_modules": 0,
+       "n_targets": 0,
+       "standard_error_bpb": null,
+       "target_equal_mean_bpb": null,
+       "target_keys": [],
+       "target_range_bpb": null,
+       "upper_one_sided_95_bpb": null,
+       "variance_components": null
+      },
+      "e1b_upper_one_sided_95_bpb": null,
+      "holm_adjusted_pvalue": 1.0,
+      "intersection_union_pvalue": 1.0,
+      "label": "inference-unavailable",
+      "margin_bpb": 0.02,
+      "noninferiority_pvalue": 1.0
+     },
+     "language": "python",
+     "multiplicity": {
+      "adjusted_pvalues": {
+       "E1a": 0.10133229930314208,
+       "E1b": 1.0,
+       "E2": 0.10133229930314208
+      },
+      "deterministic_tie_break": "contrast-name-ascending",
+      "method": "model-based Holm-adjusted diagnostics",
+      "order": [
+       "E2",
+       "E1a",
+       "E1b"
+      ],
+      "raw_pvalues": {
+       "E1a": 0.041900950447795605,
+       "E1b": 1.0,
+       "E2": 0.03377743310104736
+      },
+      "scope": "E1a/E1b-IUT/E2 within repository"
+     }
+    },
+    "4096": {
+     "contrasts": {
+      "E1a": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 0.05731193051776669,
+       "inference": {
+        "ci95_two_sided_bpb": [
+         0.006270095291025457,
+         0.14976127847650142
+        ],
+        "cluster_sizes": [
+         1,
+         1,
+         1,
+         1,
+         1,
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": 5,
+        "inference_status": "available",
+        "lower_one_sided_95_bpb": 0.02177517885528228,
+        "n_modules": 6,
+        "n_targets": 6,
+        "standard_error_bpb": 0.027910252072385934,
+        "target_equal_mean_bpb": 0.07801568688376344,
+        "target_keys": [
+         "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]",
+         "[\"astropy.io.votable.converters\",\"FloatingPoint\",21281]",
+         "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]",
+         "[\"astropy.stats.tests.test_biweight\",\"test_biweight_location_small\",1855]",
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]",
+         "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        ],
+        "target_range_bpb": 0.19406919930905192,
+        "upper_one_sided_95_bpb": 0.1342561949122446,
+        "variance_components": {
+         "cluster_sizes": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+         ],
+         "mode": "all-singleton-conservative",
+         "n_modules": 6,
+         "n_pilot": 6,
+         "sigma_b2": 0.004673893024464739,
+         "sigma_w2": 0.0
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k1-k4:4096",
+       "raw_one_sided_pvalue": 0.019103976839255563,
+       "target_rows": [
+        {
+         "delta_bpb": 0.05360755888469271,
+         "module": "astropy.coordinates.tests.test_erfa_astrom",
+         "target_key": "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]"
+        },
+        {
+         "delta_bpb": 0.0478877144021197,
+         "module": "astropy.io.votable.converters",
+         "target_key": "[\"astropy.io.votable.converters\",\"FloatingPoint\",21281]"
+        },
+        {
+         "delta_bpb": 0.05024119357574797,
+         "module": "astropy.modeling.tests.test_fitters",
+         "target_key": "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]"
+        },
+        {
+         "delta_bpb": 0.10724504112422917,
+         "module": "astropy.stats.tests.test_biweight",
+         "target_key": "[\"astropy.stats.tests.test_biweight\",\"test_biweight_location_small\",1855]"
+        },
+        {
+         "delta_bpb": 0.2015909063124215,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        },
+        {
+         "delta_bpb": 0.007521707003369571,
+         "module": "astropy.wcs.wcsapi.fitswcs",
+         "target_key": "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        }
+       ]
+      },
+      "E1b": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "smaller/noninferior",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 1,
+        "n_targets": 1,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": 0.030357485117794014,
+        "target_keys": [
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        ],
+        "target_range_bpb": 0.0,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": {
+         "cluster_sizes": [
+          1
+         ],
+         "mode": "insufficient-clusters",
+         "n_modules": 1,
+         "n_pilot": 1
+        }
+       },
+       "interpretation_status": "inference-unavailable",
+       "metric": "bpb",
+       "orientation": "k3:4096-k4:4096",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": [
+        {
+         "delta_bpb": 0.030357485117794014,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        }
+       ]
+      },
+      "E2": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 0.05731193051776669,
+       "inference": {
+        "ci95_two_sided_bpb": [
+         -0.00019799945432374955,
+         0.13810960284298437
+        ],
+        "cluster_sizes": [
+         1,
+         1,
+         1,
+         1,
+         1,
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": 5,
+        "inference_status": "available",
+        "lower_one_sided_95_bpb": 0.01474696708358423,
+        "n_modules": 6,
+        "n_targets": 6,
+        "standard_error_bpb": 0.02690200162790141,
+        "target_equal_mean_bpb": 0.06895580169433031,
+        "target_keys": [
+         "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]",
+         "[\"astropy.io.votable.converters\",\"FloatingPoint\",21281]",
+         "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]",
+         "[\"astropy.stats.tests.test_biweight\",\"test_biweight_location_small\",1855]",
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]",
+         "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        ],
+        "target_range_bpb": 0.1836055329602878,
+        "upper_one_sided_95_bpb": 0.1231646363050764,
+        "variance_components": {
+         "cluster_sizes": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+         ],
+         "mode": "all-singleton-conservative",
+         "n_modules": 6,
+         "n_pilot": 6,
+         "sigma_b2": 0.004342306149525661,
+         "sigma_w2": 0.0
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k5:0:4096-k4:4096",
+       "raw_one_sided_pvalue": 0.025224377407325395,
+       "target_rows": [
+        {
+         "delta_bpb": 0.04735660129315733,
+         "module": "astropy.coordinates.tests.test_erfa_astrom",
+         "target_key": "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]"
+        },
+        {
+         "delta_bpb": 0.03869207811880243,
+         "module": "astropy.io.votable.converters",
+         "target_key": "[\"astropy.io.votable.converters\",\"FloatingPoint\",21281]"
+        },
+        {
+         "delta_bpb": 0.03621497053483358,
+         "module": "astropy.modeling.tests.test_fitters",
+         "target_key": "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]"
+        },
+        {
+         "delta_bpb": 0.1905785971406262,
+         "module": "astropy.stats.tests.test_biweight",
+         "target_key": "[\"astropy.stats.tests.test_biweight\",\"test_biweight_location_small\",1855]"
+        },
+        {
+         "delta_bpb": 0.09391949889822393,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        },
+        {
+         "delta_bpb": 0.006973064180338384,
+         "module": "astropy.wcs.wcsapi.fitswcs",
+         "target_key": "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        }
+       ]
+      }
+     },
+     "e1b_assay": {
+      "active_assay_pvalue": 1.0,
+      "e1a_intersection_lower_one_sided_95_bpb": null,
+      "e1a_on_intersection_inference": {
+       "ci95_two_sided_bpb": null,
+       "cluster_sizes": [
+        1
+       ],
+       "degeneracy_floor_bpb": 1.4210854715202004e-14,
+       "degrees_of_freedom": null,
+       "inference_status": "insufficient-clusters",
+       "lower_one_sided_95_bpb": null,
+       "n_modules": 1,
+       "n_targets": 1,
+       "standard_error_bpb": null,
+       "target_equal_mean_bpb": 0.2015909063124215,
+       "target_keys": [
+        "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+       ],
+       "target_range_bpb": 0.0,
+       "upper_one_sided_95_bpb": null,
+       "variance_components": {
+        "cluster_sizes": [
+         1
+        ],
+        "mode": "insufficient-clusters",
+        "n_modules": 1,
+        "n_pilot": 1
+       }
+      },
+      "e1b_upper_one_sided_95_bpb": null,
+      "holm_adjusted_pvalue": 1.0,
+      "intersection_union_pvalue": 1.0,
+      "label": "inference-unavailable",
+      "margin_bpb": 0.02,
+      "noninferiority_pvalue": 1.0
+     },
+     "language": "python",
+     "multiplicity": {
+      "adjusted_pvalues": {
+       "E1a": 0.05731193051776669,
+       "E1b": 1.0,
+       "E2": 0.05731193051776669
+      },
+      "deterministic_tie_break": "contrast-name-ascending",
+      "method": "model-based Holm-adjusted diagnostics",
+      "order": [
+       "E1a",
+       "E2",
+       "E1b"
+      ],
+      "raw_pvalues": {
+       "E1a": 0.019103976839255563,
+       "E1b": 1.0,
+       "E2": 0.025224377407325395
+      },
+      "scope": "E1a/E1b-IUT/E2 within repository"
+     }
+    },
+    "65536": {
+     "contrasts": {
+      "E1a": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 1,
+        "n_targets": 1,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": 0.20731733018870957,
+        "target_keys": [
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        ],
+        "target_range_bpb": 0.0,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": {
+         "cluster_sizes": [
+          1
+         ],
+         "mode": "insufficient-clusters",
+         "n_modules": 1,
+         "n_pilot": 1
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k1-k4:65536",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": [
+        {
+         "delta_bpb": 0.20731733018870957,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        }
+       ]
+      },
+      "E1b": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "smaller/noninferior",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [],
+        "degeneracy_floor_bpb": null,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 0,
+        "n_targets": 0,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": null,
+        "target_keys": [],
+        "target_range_bpb": null,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": null
+       },
+       "interpretation_status": "inference-unavailable",
+       "metric": "bpb",
+       "orientation": "k3:65536-k4:65536",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": []
+      },
+      "E2": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 1,
+        "n_targets": 1,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": 0.10774831520820749,
+        "target_keys": [
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        ],
+        "target_range_bpb": 0.0,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": {
+         "cluster_sizes": [
+          1
+         ],
+         "mode": "insufficient-clusters",
+         "n_modules": 1,
+         "n_pilot": 1
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k5:0:65536-k4:65536",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": [
+        {
+         "delta_bpb": 0.10774831520820749,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        }
+       ]
+      }
+     },
+     "e1b_assay": {
+      "active_assay_pvalue": 1.0,
+      "e1a_intersection_lower_one_sided_95_bpb": null,
+      "e1a_on_intersection_inference": {
+       "ci95_two_sided_bpb": null,
+       "cluster_sizes": [],
+       "degeneracy_floor_bpb": null,
+       "degrees_of_freedom": null,
+       "inference_status": "insufficient-clusters",
+       "lower_one_sided_95_bpb": null,
+       "n_modules": 0,
+       "n_targets": 0,
+       "standard_error_bpb": null,
+       "target_equal_mean_bpb": null,
+       "target_keys": [],
+       "target_range_bpb": null,
+       "upper_one_sided_95_bpb": null,
+       "variance_components": null
+      },
+      "e1b_upper_one_sided_95_bpb": null,
+      "holm_adjusted_pvalue": 1.0,
+      "intersection_union_pvalue": 1.0,
+      "label": "inference-unavailable",
+      "margin_bpb": 0.02,
+      "noninferiority_pvalue": 1.0
+     },
+     "language": "python",
+     "multiplicity": {
+      "adjusted_pvalues": {
+       "E1a": 1.0,
+       "E1b": 1.0,
+       "E2": 1.0
+      },
+      "deterministic_tie_break": "contrast-name-ascending",
+      "method": "model-based Holm-adjusted diagnostics",
+      "order": [
+       "E1a",
+       "E1b",
+       "E2"
+      ],
+      "raw_pvalues": {
+       "E1a": 1.0,
+       "E1b": 1.0,
+       "E2": 1.0
+      },
+      "scope": "E1a/E1b-IUT/E2 within repository"
+     }
+    }
+   },
+   "common_subset_e1a": {
+    "curve": {
+     "16384": {
+      "mean_bpb": 0.21537573938369114,
+      "n": 1
+     },
+     "4096": {
+      "mean_bpb": 0.2015909063124215,
+      "n": 1
+     },
+     "65536": {
+      "mean_bpb": 0.20731733018870957,
+      "n": 1
+     }
+    },
+    "keys": [
+     "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+    ],
+    "n_common": 1
+   },
+   "language": "python",
+   "model": "Qwen/Qwen2.5-Coder-0.5B",
+   "revision": "8123ea2e9354afb7ffcc6c8641d1b2f5ecf18301",
+   "tier": "q25c-0.5b"
+  },
+  "q25c-1.5b": {
+   "budgets": {
+    "16384": {
+     "contrasts": {
+      "E1a": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 0.10197599719973464,
+       "inference": {
+        "ci95_two_sided_bpb": [
+         -0.029654162870428352,
+         0.19224300980710113
+        ],
+        "cluster_sizes": [
+         1,
+         1,
+         1,
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": 3,
+        "inference_status": "available",
+        "lower_one_sided_95_bpb": -0.000750125364413462,
+        "n_modules": 4,
+        "n_targets": 4,
+        "standard_error_bpb": 0.034862676802297585,
+        "target_equal_mean_bpb": 0.08129442346833639,
+        "target_keys": [
+         "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]",
+         "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]",
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]",
+         "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        ],
+        "target_range_bpb": 0.16404938943668929,
+        "upper_one_sided_95_bpb": 0.16333897230108624,
+        "variance_components": {
+         "cluster_sizes": [
+          1,
+          1,
+          1,
+          1
+         ],
+         "mode": "all-singleton-conservative",
+         "n_modules": 4,
+         "n_pilot": 4,
+         "sigma_b2": 0.004861624935285833,
+         "sigma_w2": 0.0
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k1-k4:16384",
+       "raw_one_sided_pvalue": 0.05098799859986732,
+       "target_rows": [
+        {
+         "delta_bpb": 0.0831815879125195,
+         "module": "astropy.coordinates.tests.test_erfa_astrom",
+         "target_key": "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]"
+        },
+        {
+         "delta_bpb": 0.05329110824882888,
+         "module": "astropy.modeling.tests.test_fitters",
+         "target_key": "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]"
+        },
+        {
+         "delta_bpb": 0.17637719357434323,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        },
+        {
+         "delta_bpb": 0.012327804137653942,
+         "module": "astropy.wcs.wcsapi.fitswcs",
+         "target_key": "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        }
+       ]
+      },
+      "E1b": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "smaller/noninferior",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [],
+        "degeneracy_floor_bpb": null,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 0,
+        "n_targets": 0,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": null,
+        "target_keys": [],
+        "target_range_bpb": null,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": null
+       },
+       "interpretation_status": "inference-unavailable",
+       "metric": "bpb",
+       "orientation": "k3:16384-k4:16384",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": []
+      },
+      "E2": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 0.09490654079229495,
+       "inference": {
+        "ci95_two_sided_bpb": [
+         -0.00494546498195008,
+         0.10087539305859364
+        ],
+        "cluster_sizes": [
+         1,
+         1,
+         1,
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": 3,
+        "inference_status": "available",
+        "lower_one_sided_95_bpb": 0.008838622542984342,
+        "n_modules": 4,
+        "n_targets": 4,
+        "standard_error_bpb": 0.016625711487413094,
+        "target_equal_mean_bpb": 0.047964964038321775,
+        "target_keys": [
+         "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]",
+         "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]",
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]",
+         "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        ],
+        "target_range_bpb": 0.07897826908689781,
+        "upper_one_sided_95_bpb": 0.08709130553365921,
+        "variance_components": {
+         "cluster_sizes": [
+          1,
+          1,
+          1,
+          1
+         ],
+         "mode": "all-singleton-conservative",
+         "n_modules": 4,
+         "n_pilot": 4,
+         "sigma_b2": 0.0011056571298507986,
+         "sigma_w2": 0.0
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k5:0:16384-k4:16384",
+       "raw_one_sided_pvalue": 0.03163551359743165,
+       "target_rows": [
+        {
+         "delta_bpb": 0.0903544595922573,
+         "module": "astropy.coordinates.tests.test_erfa_astrom",
+         "target_key": "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]"
+        },
+        {
+         "delta_bpb": 0.05413487092924174,
+         "module": "astropy.modeling.tests.test_fitters",
+         "target_key": "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]"
+        },
+        {
+         "delta_bpb": 0.03599433512642858,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        },
+        {
+         "delta_bpb": 0.011376190505359485,
+         "module": "astropy.wcs.wcsapi.fitswcs",
+         "target_key": "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        }
+       ]
+      }
+     },
+     "e1b_assay": {
+      "active_assay_pvalue": 1.0,
+      "e1a_intersection_lower_one_sided_95_bpb": null,
+      "e1a_on_intersection_inference": {
+       "ci95_two_sided_bpb": null,
+       "cluster_sizes": [],
+       "degeneracy_floor_bpb": null,
+       "degrees_of_freedom": null,
+       "inference_status": "insufficient-clusters",
+       "lower_one_sided_95_bpb": null,
+       "n_modules": 0,
+       "n_targets": 0,
+       "standard_error_bpb": null,
+       "target_equal_mean_bpb": null,
+       "target_keys": [],
+       "target_range_bpb": null,
+       "upper_one_sided_95_bpb": null,
+       "variance_components": null
+      },
+      "e1b_upper_one_sided_95_bpb": null,
+      "holm_adjusted_pvalue": 1.0,
+      "intersection_union_pvalue": 1.0,
+      "label": "inference-unavailable",
+      "margin_bpb": 0.02,
+      "noninferiority_pvalue": 1.0
+     },
+     "language": "python",
+     "multiplicity": {
+      "adjusted_pvalues": {
+       "E1a": 0.10197599719973464,
+       "E1b": 1.0,
+       "E2": 0.09490654079229495
+      },
+      "deterministic_tie_break": "contrast-name-ascending",
+      "method": "model-based Holm-adjusted diagnostics",
+      "order": [
+       "E2",
+       "E1a",
+       "E1b"
+      ],
+      "raw_pvalues": {
+       "E1a": 0.05098799859986732,
+       "E1b": 1.0,
+       "E2": 0.03163551359743165
+      },
+      "scope": "E1a/E1b-IUT/E2 within repository"
+     }
+    },
+    "4096": {
+     "contrasts": {
+      "E1a": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 0.1725523822548633,
+       "inference": {
+        "ci95_two_sided_bpb": [
+         -0.03202205801191211,
+         0.13598677284319238
+        ],
+        "cluster_sizes": [
+         1,
+         1,
+         1,
+         1,
+         1,
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": 5,
+        "inference_status": "available",
+        "lower_one_sided_95_bpb": -0.013867695464254474,
+        "n_modules": 6,
+        "n_targets": 6,
+        "standard_error_bpb": 0.03267914247728812,
+        "target_equal_mean_bpb": 0.05198235741564013,
+        "target_keys": [
+         "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]",
+         "[\"astropy.io.votable.converters\",\"FloatingPoint\",21281]",
+         "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]",
+         "[\"astropy.stats.tests.test_biweight\",\"test_biweight_location_small\",1855]",
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]",
+         "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        ],
+        "target_range_bpb": 0.21155167991823132,
+        "upper_one_sided_95_bpb": 0.11783241029553473,
+        "variance_components": {
+         "cluster_sizes": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+         ],
+         "mode": "all-singleton-conservative",
+         "n_modules": 6,
+         "n_pilot": 6,
+         "sigma_b2": 0.00640755811830538,
+         "sigma_w2": 0.0
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k1-k4:4096",
+       "raw_one_sided_pvalue": 0.08627619112743165,
+       "target_rows": [
+        {
+         "delta_bpb": 0.020978322991881737,
+         "module": "astropy.coordinates.tests.test_erfa_astrom",
+         "target_key": "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]"
+        },
+        {
+         "delta_bpb": 0.04351904141899837,
+         "module": "astropy.io.votable.converters",
+         "target_key": "[\"astropy.io.votable.converters\",\"FloatingPoint\",21281]"
+        },
+        {
+         "delta_bpb": 0.02994886606186764,
+         "module": "astropy.modeling.tests.test_fitters",
+         "target_key": "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]"
+        },
+        {
+         "delta_bpb": 0.000573194448554526,
+         "module": "astropy.stats.tests.test_biweight",
+         "target_key": "[\"astropy.stats.tests.test_biweight\",\"test_biweight_location_small\",1855]"
+        },
+        {
+         "delta_bpb": 0.21212487436678584,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        },
+        {
+         "delta_bpb": 0.0047498452057526674,
+         "module": "astropy.wcs.wcsapi.fitswcs",
+         "target_key": "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        }
+       ]
+      },
+      "E1b": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "smaller/noninferior",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 1,
+        "n_targets": 1,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": 0.04945463066171407,
+        "target_keys": [
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        ],
+        "target_range_bpb": 0.0,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": {
+         "cluster_sizes": [
+          1
+         ],
+         "mode": "insufficient-clusters",
+         "n_modules": 1,
+         "n_pilot": 1
+        }
+       },
+       "interpretation_status": "inference-unavailable",
+       "metric": "bpb",
+       "orientation": "k3:4096-k4:4096",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": [
+        {
+         "delta_bpb": 0.04945463066171407,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        }
+       ]
+      },
+      "E2": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 0.06775510470603509,
+       "inference": {
+        "ci95_two_sided_bpb": [
+         0.0009463963836726687,
+         0.05878250143551575
+        ],
+        "cluster_sizes": [
+         1,
+         1,
+         1,
+         1,
+         1,
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": 5,
+        "inference_status": "available",
+        "lower_one_sided_95_bpb": 0.007195934661580826,
+        "n_modules": 6,
+        "n_targets": 6,
+        "standard_error_bpb": 0.011249612938206812,
+        "target_equal_mean_bpb": 0.02986444890959421,
+        "target_keys": [
+         "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]",
+         "[\"astropy.io.votable.converters\",\"FloatingPoint\",21281]",
+         "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]",
+         "[\"astropy.stats.tests.test_biweight\",\"test_biweight_location_small\",1855]",
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]",
+         "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        ],
+        "target_range_bpb": 0.07541314360469403,
+        "upper_one_sided_95_bpb": 0.052532963157607596,
+        "variance_components": {
+         "cluster_sizes": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+         ],
+         "mode": "all-singleton-conservative",
+         "n_modules": 6,
+         "n_pilot": 6,
+         "sigma_b2": 0.0007593227475568205,
+         "sigma_w2": 0.0
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k5:0:4096-k4:4096",
+       "raw_one_sided_pvalue": 0.022585034902011695,
+       "target_rows": [
+        {
+         "delta_bpb": 0.02342463348476631,
+         "module": "astropy.coordinates.tests.test_erfa_astrom",
+         "target_key": "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]"
+        },
+        {
+         "delta_bpb": 0.035121579299790096,
+         "module": "astropy.io.votable.converters",
+         "target_key": "[\"astropy.io.votable.converters\",\"FloatingPoint\",21281]"
+        },
+        {
+         "delta_bpb": 0.0312736874779771,
+         "module": "astropy.modeling.tests.test_fitters",
+         "target_key": "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]"
+        },
+        {
+         "delta_bpb": 0.005541169397996759,
+         "module": "astropy.stats.tests.test_biweight",
+         "target_key": "[\"astropy.stats.tests.test_biweight\",\"test_biweight_location_small\",1855]"
+        },
+        {
+         "delta_bpb": 0.07961938370086452,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        },
+        {
+         "delta_bpb": 0.004206240096170488,
+         "module": "astropy.wcs.wcsapi.fitswcs",
+         "target_key": "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        }
+       ]
+      }
+     },
+     "e1b_assay": {
+      "active_assay_pvalue": 1.0,
+      "e1a_intersection_lower_one_sided_95_bpb": null,
+      "e1a_on_intersection_inference": {
+       "ci95_two_sided_bpb": null,
+       "cluster_sizes": [
+        1
+       ],
+       "degeneracy_floor_bpb": 1.4210854715202004e-14,
+       "degrees_of_freedom": null,
+       "inference_status": "insufficient-clusters",
+       "lower_one_sided_95_bpb": null,
+       "n_modules": 1,
+       "n_targets": 1,
+       "standard_error_bpb": null,
+       "target_equal_mean_bpb": 0.21212487436678584,
+       "target_keys": [
+        "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+       ],
+       "target_range_bpb": 0.0,
+       "upper_one_sided_95_bpb": null,
+       "variance_components": {
+        "cluster_sizes": [
+         1
+        ],
+        "mode": "insufficient-clusters",
+        "n_modules": 1,
+        "n_pilot": 1
+       }
+      },
+      "e1b_upper_one_sided_95_bpb": null,
+      "holm_adjusted_pvalue": 1.0,
+      "intersection_union_pvalue": 1.0,
+      "label": "inference-unavailable",
+      "margin_bpb": 0.02,
+      "noninferiority_pvalue": 1.0
+     },
+     "language": "python",
+     "multiplicity": {
+      "adjusted_pvalues": {
+       "E1a": 0.1725523822548633,
+       "E1b": 1.0,
+       "E2": 0.06775510470603509
+      },
+      "deterministic_tie_break": "contrast-name-ascending",
+      "method": "model-based Holm-adjusted diagnostics",
+      "order": [
+       "E2",
+       "E1a",
+       "E1b"
+      ],
+      "raw_pvalues": {
+       "E1a": 0.08627619112743165,
+       "E1b": 1.0,
+       "E2": 0.022585034902011695
+      },
+      "scope": "E1a/E1b-IUT/E2 within repository"
+     }
+    },
+    "65536": {
+     "contrasts": {
+      "E1a": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 1,
+        "n_targets": 1,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": 0.17123846947478982,
+        "target_keys": [
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        ],
+        "target_range_bpb": 0.0,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": {
+         "cluster_sizes": [
+          1
+         ],
+         "mode": "insufficient-clusters",
+         "n_modules": 1,
+         "n_pilot": 1
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k1-k4:65536",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": [
+        {
+         "delta_bpb": 0.17123846947478982,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        }
+       ]
+      },
+      "E1b": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "smaller/noninferior",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [],
+        "degeneracy_floor_bpb": null,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 0,
+        "n_targets": 0,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": null,
+        "target_keys": [],
+        "target_range_bpb": null,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": null
+       },
+       "interpretation_status": "inference-unavailable",
+       "metric": "bpb",
+       "orientation": "k3:65536-k4:65536",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": []
+      },
+      "E2": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 1,
+        "n_targets": 1,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": 0.03853932014088601,
+        "target_keys": [
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        ],
+        "target_range_bpb": 0.0,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": {
+         "cluster_sizes": [
+          1
+         ],
+         "mode": "insufficient-clusters",
+         "n_modules": 1,
+         "n_pilot": 1
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k5:0:65536-k4:65536",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": [
+        {
+         "delta_bpb": 0.03853932014088601,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        }
+       ]
+      }
+     },
+     "e1b_assay": {
+      "active_assay_pvalue": 1.0,
+      "e1a_intersection_lower_one_sided_95_bpb": null,
+      "e1a_on_intersection_inference": {
+       "ci95_two_sided_bpb": null,
+       "cluster_sizes": [],
+       "degeneracy_floor_bpb": null,
+       "degrees_of_freedom": null,
+       "inference_status": "insufficient-clusters",
+       "lower_one_sided_95_bpb": null,
+       "n_modules": 0,
+       "n_targets": 0,
+       "standard_error_bpb": null,
+       "target_equal_mean_bpb": null,
+       "target_keys": [],
+       "target_range_bpb": null,
+       "upper_one_sided_95_bpb": null,
+       "variance_components": null
+      },
+      "e1b_upper_one_sided_95_bpb": null,
+      "holm_adjusted_pvalue": 1.0,
+      "intersection_union_pvalue": 1.0,
+      "label": "inference-unavailable",
+      "margin_bpb": 0.02,
+      "noninferiority_pvalue": 1.0
+     },
+     "language": "python",
+     "multiplicity": {
+      "adjusted_pvalues": {
+       "E1a": 1.0,
+       "E1b": 1.0,
+       "E2": 1.0
+      },
+      "deterministic_tie_break": "contrast-name-ascending",
+      "method": "model-based Holm-adjusted diagnostics",
+      "order": [
+       "E1a",
+       "E1b",
+       "E2"
+      ],
+      "raw_pvalues": {
+       "E1a": 1.0,
+       "E1b": 1.0,
+       "E2": 1.0
+      },
+      "scope": "E1a/E1b-IUT/E2 within repository"
+     }
+    }
+   },
+   "common_subset_e1a": {
+    "curve": {
+     "16384": {
+      "mean_bpb": 0.17637719357434323,
+      "n": 1
+     },
+     "4096": {
+      "mean_bpb": 0.21212487436678584,
+      "n": 1
+     },
+     "65536": {
+      "mean_bpb": 0.17123846947478982,
+      "n": 1
+     }
+    },
+    "keys": [
+     "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+    ],
+    "n_common": 1
+   },
+   "language": "python",
+   "model": "Qwen/Qwen2.5-Coder-1.5B",
+   "revision": "df3ce67c0e24480f20468b6ef2894622d69eb73b",
+   "tier": "q25c-1.5b"
+  },
+  "q25c-14b": {
+   "budgets": {
+    "16384": {
+     "contrasts": {
+      "E1a": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 0.13276261042442092,
+       "inference": {
+        "ci95_two_sided_bpb": [
+         -0.035066210346693355,
+         0.16202473000249043
+        ],
+        "cluster_sizes": [
+         1,
+         1,
+         1,
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": 3,
+        "inference_status": "available",
+        "lower_one_sided_95_bpb": -0.009393400444661498,
+        "n_modules": 4,
+        "n_targets": 4,
+        "standard_error_bpb": 0.030965323582738524,
+        "target_equal_mean_bpb": 0.06347925982789854,
+        "target_keys": [
+         "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]",
+         "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]",
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]",
+         "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        ],
+        "target_range_bpb": 0.1449351861095115,
+        "upper_one_sided_95_bpb": 0.13635192010045857,
+        "variance_components": {
+         "cluster_sizes": [
+          1,
+          1,
+          1,
+          1
+         ],
+         "mode": "all-singleton-conservative",
+         "n_modules": 4,
+         "n_pilot": 4,
+         "sigma_b2": 0.0038354050583348106,
+         "sigma_w2": 0.0
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k1-k4:16384",
+       "raw_one_sided_pvalue": 0.06638130521221046,
+       "target_rows": [
+        {
+         "delta_bpb": 0.05655338675564775,
+         "module": "astropy.coordinates.tests.test_erfa_astrom",
+         "target_key": "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]"
+        },
+        {
+         "delta_bpb": 0.040765838816998634,
+         "module": "astropy.modeling.tests.test_fitters",
+         "target_key": "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]"
+        },
+        {
+         "delta_bpb": 0.15076649992422964,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        },
+        {
+         "delta_bpb": 0.005831313814718131,
+         "module": "astropy.wcs.wcsapi.fitswcs",
+         "target_key": "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        }
+       ]
+      },
+      "E1b": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "smaller/noninferior",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [],
+        "degeneracy_floor_bpb": null,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 0,
+        "n_targets": 0,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": null,
+        "target_keys": [],
+        "target_range_bpb": null,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": null
+       },
+       "interpretation_status": "inference-unavailable",
+       "metric": "bpb",
+       "orientation": "k3:16384-k4:16384",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": []
+      },
+      "E2": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 0.06846425324915156,
+       "inference": {
+        "ci95_two_sided_bpb": [
+         0.0012918735272756457,
+         0.06969992941791947
+        ],
+        "cluster_sizes": [
+         1,
+         1,
+         1,
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": 3,
+        "inference_status": "available",
+        "lower_one_sided_95_bpb": 0.01020261803707697,
+        "n_modules": 4,
+        "n_targets": 4,
+        "standard_error_bpb": 0.010747716676205004,
+        "target_equal_mean_bpb": 0.03549590147259756,
+        "target_keys": [
+         "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]",
+         "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]",
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]",
+         "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        ],
+        "target_range_bpb": 0.04710330498615853,
+        "upper_one_sided_95_bpb": 0.06078918490811815,
+        "variance_components": {
+         "cluster_sizes": [
+          1,
+          1,
+          1,
+          1
+         ],
+         "mode": "all-singleton-conservative",
+         "n_modules": 4,
+         "n_pilot": 4,
+         "sigma_b2": 0.00046205365500790065,
+         "sigma_w2": 0.0
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k5:0:16384-k4:16384",
+       "raw_one_sided_pvalue": 0.022821417749717188,
+       "target_rows": [
+        {
+         "delta_bpb": 0.05194628914976135,
+         "module": "astropy.coordinates.tests.test_erfa_astrom",
+         "target_key": "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]"
+        },
+        {
+         "delta_bpb": 0.04872450040585691,
+         "module": "astropy.modeling.tests.test_fitters",
+         "target_key": "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]"
+        },
+        {
+         "delta_bpb": 0.03646983217116917,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        },
+        {
+         "delta_bpb": 0.00484298416360282,
+         "module": "astropy.wcs.wcsapi.fitswcs",
+         "target_key": "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        }
+       ]
+      }
+     },
+     "e1b_assay": {
+      "active_assay_pvalue": 1.0,
+      "e1a_intersection_lower_one_sided_95_bpb": null,
+      "e1a_on_intersection_inference": {
+       "ci95_two_sided_bpb": null,
+       "cluster_sizes": [],
+       "degeneracy_floor_bpb": null,
+       "degrees_of_freedom": null,
+       "inference_status": "insufficient-clusters",
+       "lower_one_sided_95_bpb": null,
+       "n_modules": 0,
+       "n_targets": 0,
+       "standard_error_bpb": null,
+       "target_equal_mean_bpb": null,
+       "target_keys": [],
+       "target_range_bpb": null,
+       "upper_one_sided_95_bpb": null,
+       "variance_components": null
+      },
+      "e1b_upper_one_sided_95_bpb": null,
+      "holm_adjusted_pvalue": 1.0,
+      "intersection_union_pvalue": 1.0,
+      "label": "inference-unavailable",
+      "margin_bpb": 0.02,
+      "noninferiority_pvalue": 1.0
+     },
+     "language": "python",
+     "multiplicity": {
+      "adjusted_pvalues": {
+       "E1a": 0.13276261042442092,
+       "E1b": 1.0,
+       "E2": 0.06846425324915156
+      },
+      "deterministic_tie_break": "contrast-name-ascending",
+      "method": "model-based Holm-adjusted diagnostics",
+      "order": [
+       "E2",
+       "E1a",
+       "E1b"
+      ],
+      "raw_pvalues": {
+       "E1a": 0.06638130521221046,
+       "E1b": 1.0,
+       "E2": 0.022821417749717188
+      },
+      "scope": "E1a/E1b-IUT/E2 within repository"
+     }
+    },
+    "4096": {
+     "contrasts": {
+      "E1a": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 0.07360886909723298,
+       "inference": {
+        "ci95_two_sided_bpb": [
+         -0.0072870293024224556,
+         0.1122624385610069
+        ],
+        "cluster_sizes": [
+         1,
+         1,
+         1,
+         1,
+         1,
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": 5,
+        "inference_status": "available",
+        "lower_one_sided_95_bpb": 0.005631008225283493,
+        "n_modules": 6,
+        "n_targets": 6,
+        "standard_error_bpb": 0.02325338539354694,
+        "target_equal_mean_bpb": 0.05248770462929222,
+        "target_keys": [
+         "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]",
+         "[\"astropy.io.votable.converters\",\"FloatingPoint\",21281]",
+         "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]",
+         "[\"astropy.stats.tests.test_biweight\",\"test_biweight_location_small\",1855]",
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]",
+         "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        ],
+        "target_range_bpb": 0.1603950440941537,
+        "upper_one_sided_95_bpb": 0.09934440103330094,
+        "variance_components": {
+         "cluster_sizes": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+         ],
+         "mode": "all-singleton-conservative",
+         "n_modules": 6,
+         "n_pilot": 6,
+         "sigma_b2": 0.003244319593564933,
+         "sigma_w2": 0.0
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k1-k4:4096",
+       "raw_one_sided_pvalue": 0.03680443454861649,
+       "target_rows": [
+        {
+         "delta_bpb": 0.01965723794262031,
+         "module": "astropy.coordinates.tests.test_erfa_astrom",
+         "target_key": "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]"
+        },
+        {
+         "delta_bpb": 0.04257687328740217,
+         "module": "astropy.io.votable.converters",
+         "target_key": "[\"astropy.io.votable.converters\",\"FloatingPoint\",21281]"
+        },
+        {
+         "delta_bpb": 0.030761451232534043,
+         "module": "astropy.modeling.tests.test_fitters",
+         "target_key": "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]"
+        },
+        {
+         "delta_bpb": 0.059260375871435844,
+         "module": "astropy.stats.tests.test_biweight",
+         "target_key": "[\"astropy.stats.tests.test_biweight\",\"test_biweight_location_small\",1855]"
+        },
+        {
+         "delta_bpb": 0.1615326667679573,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        },
+        {
+         "delta_bpb": 0.001137622673803601,
+         "module": "astropy.wcs.wcsapi.fitswcs",
+         "target_key": "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        }
+       ]
+      },
+      "E1b": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "smaller/noninferior",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 1,
+        "n_targets": 1,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": 0.042242843717546386,
+        "target_keys": [
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        ],
+        "target_range_bpb": 0.0,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": {
+         "cluster_sizes": [
+          1
+         ],
+         "mode": "insufficient-clusters",
+         "n_modules": 1,
+         "n_pilot": 1
+        }
+       },
+       "interpretation_status": "inference-unavailable",
+       "metric": "bpb",
+       "orientation": "k3:4096-k4:4096",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": [
+        {
+         "delta_bpb": 0.042242843717546386,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        }
+       ]
+      },
+      "E2": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 0.06474915761073068,
+       "inference": {
+        "ci95_two_sided_bpb": [
+         0.0017113319264144278,
+         0.07383890906614969
+        ],
+        "cluster_sizes": [
+         1,
+         1,
+         1,
+         1,
+         1,
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": 5,
+        "inference_status": "available",
+        "lower_one_sided_95_bpb": 0.009505149539538498,
+        "n_modules": 6,
+        "n_targets": 6,
+        "standard_error_bpb": 0.014029425464687622,
+        "target_equal_mean_bpb": 0.03777512049628206,
+        "target_keys": [
+         "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]",
+         "[\"astropy.io.votable.converters\",\"FloatingPoint\",21281]",
+         "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]",
+         "[\"astropy.stats.tests.test_biweight\",\"test_biweight_location_small\",1855]",
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]",
+         "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        ],
+        "target_range_bpb": 0.09549019156318714,
+        "upper_one_sided_95_bpb": 0.06604509145302562,
+        "variance_components": {
+         "cluster_sizes": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+         ],
+         "mode": "all-singleton-conservative",
+         "n_modules": 6,
+         "n_pilot": 6,
+         "sigma_b2": 0.0011809486732153528,
+         "sigma_w2": 0.0
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k5:0:4096-k4:4096",
+       "raw_one_sided_pvalue": 0.021583052536910226,
+       "target_rows": [
+        {
+         "delta_bpb": 0.007709285853303938,
+         "module": "astropy.coordinates.tests.test_erfa_astrom",
+         "target_key": "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]"
+        },
+        {
+         "delta_bpb": 0.03210577496158573,
+         "module": "astropy.io.votable.converters",
+         "target_key": "[\"astropy.io.votable.converters\",\"FloatingPoint\",21281]"
+        },
+        {
+         "delta_bpb": 0.03881360216467622,
+         "module": "astropy.modeling.tests.test_fitters",
+         "target_key": "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]"
+        },
+        {
+         "delta_bpb": 0.09599845196566759,
+         "module": "astropy.stats.tests.test_biweight",
+         "target_key": "[\"astropy.stats.tests.test_biweight\",\"test_biweight_location_small\",1855]"
+        },
+        {
+         "delta_bpb": 0.05151534762997845,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        },
+        {
+         "delta_bpb": 0.0005082604024804482,
+         "module": "astropy.wcs.wcsapi.fitswcs",
+         "target_key": "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        }
+       ]
+      }
+     },
+     "e1b_assay": {
+      "active_assay_pvalue": 1.0,
+      "e1a_intersection_lower_one_sided_95_bpb": null,
+      "e1a_on_intersection_inference": {
+       "ci95_two_sided_bpb": null,
+       "cluster_sizes": [
+        1
+       ],
+       "degeneracy_floor_bpb": 1.4210854715202004e-14,
+       "degrees_of_freedom": null,
+       "inference_status": "insufficient-clusters",
+       "lower_one_sided_95_bpb": null,
+       "n_modules": 1,
+       "n_targets": 1,
+       "standard_error_bpb": null,
+       "target_equal_mean_bpb": 0.1615326667679573,
+       "target_keys": [
+        "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+       ],
+       "target_range_bpb": 0.0,
+       "upper_one_sided_95_bpb": null,
+       "variance_components": {
+        "cluster_sizes": [
+         1
+        ],
+        "mode": "insufficient-clusters",
+        "n_modules": 1,
+        "n_pilot": 1
+       }
+      },
+      "e1b_upper_one_sided_95_bpb": null,
+      "holm_adjusted_pvalue": 1.0,
+      "intersection_union_pvalue": 1.0,
+      "label": "inference-unavailable",
+      "margin_bpb": 0.02,
+      "noninferiority_pvalue": 1.0
+     },
+     "language": "python",
+     "multiplicity": {
+      "adjusted_pvalues": {
+       "E1a": 0.07360886909723298,
+       "E1b": 1.0,
+       "E2": 0.06474915761073068
+      },
+      "deterministic_tie_break": "contrast-name-ascending",
+      "method": "model-based Holm-adjusted diagnostics",
+      "order": [
+       "E2",
+       "E1a",
+       "E1b"
+      ],
+      "raw_pvalues": {
+       "E1a": 0.03680443454861649,
+       "E1b": 1.0,
+       "E2": 0.021583052536910226
+      },
+      "scope": "E1a/E1b-IUT/E2 within repository"
+     }
+    },
+    "65536": {
+     "contrasts": {
+      "E1a": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 1,
+        "n_targets": 1,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": 0.14891806034315658,
+        "target_keys": [
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        ],
+        "target_range_bpb": 0.0,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": {
+         "cluster_sizes": [
+          1
+         ],
+         "mode": "insufficient-clusters",
+         "n_modules": 1,
+         "n_pilot": 1
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k1-k4:65536",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": [
+        {
+         "delta_bpb": 0.14891806034315658,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        }
+       ]
+      },
+      "E1b": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "smaller/noninferior",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [],
+        "degeneracy_floor_bpb": null,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 0,
+        "n_targets": 0,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": null,
+        "target_keys": [],
+        "target_range_bpb": null,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": null
+       },
+       "interpretation_status": "inference-unavailable",
+       "metric": "bpb",
+       "orientation": "k3:65536-k4:65536",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": []
+      },
+      "E2": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 1,
+        "n_targets": 1,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": 0.03815207386400565,
+        "target_keys": [
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        ],
+        "target_range_bpb": 0.0,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": {
+         "cluster_sizes": [
+          1
+         ],
+         "mode": "insufficient-clusters",
+         "n_modules": 1,
+         "n_pilot": 1
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k5:0:65536-k4:65536",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": [
+        {
+         "delta_bpb": 0.03815207386400565,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        }
+       ]
+      }
+     },
+     "e1b_assay": {
+      "active_assay_pvalue": 1.0,
+      "e1a_intersection_lower_one_sided_95_bpb": null,
+      "e1a_on_intersection_inference": {
+       "ci95_two_sided_bpb": null,
+       "cluster_sizes": [],
+       "degeneracy_floor_bpb": null,
+       "degrees_of_freedom": null,
+       "inference_status": "insufficient-clusters",
+       "lower_one_sided_95_bpb": null,
+       "n_modules": 0,
+       "n_targets": 0,
+       "standard_error_bpb": null,
+       "target_equal_mean_bpb": null,
+       "target_keys": [],
+       "target_range_bpb": null,
+       "upper_one_sided_95_bpb": null,
+       "variance_components": null
+      },
+      "e1b_upper_one_sided_95_bpb": null,
+      "holm_adjusted_pvalue": 1.0,
+      "intersection_union_pvalue": 1.0,
+      "label": "inference-unavailable",
+      "margin_bpb": 0.02,
+      "noninferiority_pvalue": 1.0
+     },
+     "language": "python",
+     "multiplicity": {
+      "adjusted_pvalues": {
+       "E1a": 1.0,
+       "E1b": 1.0,
+       "E2": 1.0
+      },
+      "deterministic_tie_break": "contrast-name-ascending",
+      "method": "model-based Holm-adjusted diagnostics",
+      "order": [
+       "E1a",
+       "E1b",
+       "E2"
+      ],
+      "raw_pvalues": {
+       "E1a": 1.0,
+       "E1b": 1.0,
+       "E2": 1.0
+      },
+      "scope": "E1a/E1b-IUT/E2 within repository"
+     }
+    }
+   },
+   "common_subset_e1a": {
+    "curve": {
+     "16384": {
+      "mean_bpb": 0.15076649992422964,
+      "n": 1
+     },
+     "4096": {
+      "mean_bpb": 0.1615326667679573,
+      "n": 1
+     },
+     "65536": {
+      "mean_bpb": 0.14891806034315658,
+      "n": 1
+     }
+    },
+    "keys": [
+     "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+    ],
+    "n_common": 1
+   },
+   "language": "python",
+   "model": "Qwen/Qwen2.5-Coder-14B",
+   "revision": "f2ad5164aade432d6d56c24bb71589184d5d613d",
+   "tier": "q25c-14b"
+  },
+  "q25c-3b": {
+   "budgets": {
+    "16384": {
+     "contrasts": {
+      "E1a": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 0.10815261730141656,
+       "inference": {
+        "ci95_two_sided_bpb": [
+         -0.019082617257837803,
+         0.18360975672723606
+        ],
+        "cluster_sizes": [
+         1,
+         1,
+         1,
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": 3,
+        "inference_status": "available",
+        "lower_one_sided_95_bpb": 0.007319828114288593,
+        "n_modules": 4,
+        "n_targets": 4,
+        "standard_error_bpb": 0.03184537522161788,
+        "target_equal_mean_bpb": 0.08226356973469913,
+        "target_keys": [
+         "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]",
+         "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]",
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]",
+         "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        ],
+        "target_range_bpb": 0.1434270722192041,
+        "upper_one_sided_95_bpb": 0.15720731135510968,
+        "variance_components": {
+         "cluster_sizes": [
+          1,
+          1,
+          1,
+          1
+         ],
+         "mode": "all-singleton-conservative",
+         "n_modules": 4,
+         "n_pilot": 4,
+         "sigma_b2": 0.004056511692022536,
+         "sigma_w2": 0.0
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k1-k4:16384",
+       "raw_one_sided_pvalue": 0.040775913960381036,
+       "target_rows": [
+        {
+         "delta_bpb": 0.11264305176906203,
+         "module": "astropy.coordinates.tests.test_erfa_astrom",
+         "target_key": "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]"
+        },
+        {
+         "delta_bpb": 0.05126728923954266,
+         "module": "astropy.modeling.tests.test_fitters",
+         "target_key": "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]"
+        },
+        {
+         "delta_bpb": 0.15428550507469796,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        },
+        {
+         "delta_bpb": 0.010858432855493871,
+         "module": "astropy.wcs.wcsapi.fitswcs",
+         "target_key": "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        }
+       ]
+      },
+      "E1b": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "smaller/noninferior",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [],
+        "degeneracy_floor_bpb": null,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 0,
+        "n_targets": 0,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": null,
+        "target_keys": [],
+        "target_range_bpb": null,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": null
+       },
+       "interpretation_status": "inference-unavailable",
+       "metric": "bpb",
+       "orientation": "k3:16384-k4:16384",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": []
+      },
+      "E2": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 0.10815261730141656,
+       "inference": {
+        "ci95_two_sided_bpb": [
+         -0.008608936134309596,
+         0.11179257674534243
+        ],
+        "cluster_sizes": [
+         1,
+         1,
+         1,
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": 3,
+        "inference_status": "available",
+        "lower_one_sided_95_bpb": 0.007074408552158365,
+        "n_modules": 4,
+        "n_targets": 4,
+        "standard_error_bpb": 0.018916505241511092,
+        "target_equal_mean_bpb": 0.051591820305516414,
+        "target_keys": [
+         "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]",
+         "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]",
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]",
+         "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        ],
+        "target_range_bpb": 0.09143403805950068,
+        "upper_one_sided_95_bpb": 0.09610923205887446,
+        "variance_components": {
+         "cluster_sizes": [
+          1,
+          1,
+          1,
+          1
+         ],
+         "mode": "all-singleton-conservative",
+         "n_modules": 4,
+         "n_pilot": 4,
+         "sigma_b2": 0.0014313366822084667,
+         "sigma_w2": 0.0
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k5:0:16384-k4:16384",
+       "raw_one_sided_pvalue": 0.036050872433805524,
+       "target_rows": [
+        {
+         "delta_bpb": 0.1022361773912262,
+         "module": "astropy.coordinates.tests.test_erfa_astrom",
+         "target_key": "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]"
+        },
+        {
+         "delta_bpb": 0.04956308082658217,
+         "module": "astropy.modeling.tests.test_fitters",
+         "target_key": "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]"
+        },
+        {
+         "delta_bpb": 0.04376588367253176,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        },
+        {
+         "delta_bpb": 0.010802139331725524,
+         "module": "astropy.wcs.wcsapi.fitswcs",
+         "target_key": "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        }
+       ]
+      }
+     },
+     "e1b_assay": {
+      "active_assay_pvalue": 1.0,
+      "e1a_intersection_lower_one_sided_95_bpb": null,
+      "e1a_on_intersection_inference": {
+       "ci95_two_sided_bpb": null,
+       "cluster_sizes": [],
+       "degeneracy_floor_bpb": null,
+       "degrees_of_freedom": null,
+       "inference_status": "insufficient-clusters",
+       "lower_one_sided_95_bpb": null,
+       "n_modules": 0,
+       "n_targets": 0,
+       "standard_error_bpb": null,
+       "target_equal_mean_bpb": null,
+       "target_keys": [],
+       "target_range_bpb": null,
+       "upper_one_sided_95_bpb": null,
+       "variance_components": null
+      },
+      "e1b_upper_one_sided_95_bpb": null,
+      "holm_adjusted_pvalue": 1.0,
+      "intersection_union_pvalue": 1.0,
+      "label": "inference-unavailable",
+      "margin_bpb": 0.02,
+      "noninferiority_pvalue": 1.0
+     },
+     "language": "python",
+     "multiplicity": {
+      "adjusted_pvalues": {
+       "E1a": 0.10815261730141656,
+       "E1b": 1.0,
+       "E2": 0.10815261730141656
+      },
+      "deterministic_tie_break": "contrast-name-ascending",
+      "method": "model-based Holm-adjusted diagnostics",
+      "order": [
+       "E2",
+       "E1a",
+       "E1b"
+      ],
+      "raw_pvalues": {
+       "E1a": 0.040775913960381036,
+       "E1b": 1.0,
+       "E2": 0.036050872433805524
+      },
+      "scope": "E1a/E1b-IUT/E2 within repository"
+     }
+    },
+    "4096": {
+     "contrasts": {
+      "E1a": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 0.09596157725248619,
+       "inference": {
+        "ci95_two_sided_bpb": [
+         -0.004795821053574137,
+         0.1179595258902907
+        ],
+        "cluster_sizes": [
+         1,
+         1,
+         1,
+         1,
+         1,
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": 5,
+        "inference_status": "available",
+        "lower_one_sided_95_bpb": 0.008468630950168324,
+        "n_modules": 6,
+        "n_targets": 6,
+        "standard_error_bpb": 0.023876956063619996,
+        "target_equal_mean_bpb": 0.05658185241835828,
+        "target_keys": [
+         "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]",
+         "[\"astropy.io.votable.converters\",\"FloatingPoint\",21281]",
+         "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]",
+         "[\"astropy.stats.tests.test_biweight\",\"test_biweight_location_small\",1855]",
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]",
+         "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        ],
+        "target_range_bpb": 0.16778926764969138,
+        "upper_one_sided_95_bpb": 0.10469507388654824,
+        "variance_components": {
+         "cluster_sizes": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+         ],
+         "mode": "all-singleton-conservative",
+         "n_modules": 6,
+         "n_pilot": 6,
+         "sigma_b2": 0.003420654185184238,
+         "sigma_w2": 0.0
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k1-k4:4096",
+       "raw_one_sided_pvalue": 0.0319871924174954,
+       "target_rows": [
+        {
+         "delta_bpb": 0.046483054314316985,
+         "module": "astropy.coordinates.tests.test_erfa_astrom",
+         "target_key": "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]"
+        },
+        {
+         "delta_bpb": 0.041416119281603714,
+         "module": "astropy.io.votable.converters",
+         "target_key": "[\"astropy.io.votable.converters\",\"FloatingPoint\",21281]"
+        },
+        {
+         "delta_bpb": 0.04053611806512092,
+         "module": "astropy.modeling.tests.test_fitters",
+         "target_key": "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]"
+        },
+        {
+         "delta_bpb": 0.03505930747308783,
+         "module": "astropy.stats.tests.test_biweight",
+         "target_key": "[\"astropy.stats.tests.test_biweight\",\"test_biweight_location_small\",1855]"
+        },
+        {
+         "delta_bpb": 0.1718928915128558,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        },
+        {
+         "delta_bpb": 0.0041036238631644295,
+         "module": "astropy.wcs.wcsapi.fitswcs",
+         "target_key": "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        }
+       ]
+      },
+      "E1b": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "smaller/noninferior",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 1,
+        "n_targets": 1,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": 0.03118703034222492,
+        "target_keys": [
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        ],
+        "target_range_bpb": 0.0,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": {
+         "cluster_sizes": [
+          1
+         ],
+         "mode": "insufficient-clusters",
+         "n_modules": 1,
+         "n_pilot": 1
+        }
+       },
+       "interpretation_status": "inference-unavailable",
+       "metric": "bpb",
+       "orientation": "k3:4096-k4:4096",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": [
+        {
+         "delta_bpb": 0.03118703034222492,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        }
+       ]
+      },
+      "E2": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 0.10229912771866831,
+       "inference": {
+        "ci95_two_sided_bpb": [
+         -0.007493297232315909,
+         0.05969946061262675
+        ],
+        "cluster_sizes": [
+         1,
+         1,
+         1,
+         1,
+         1,
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": 5,
+        "inference_status": "available",
+        "lower_one_sided_95_bpb": -0.00023271646233196872,
+        "n_modules": 6,
+        "n_targets": 6,
+        "standard_error_bpb": 0.0130695612598514,
+        "target_equal_mean_bpb": 0.026103081690155423,
+        "target_keys": [
+         "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]",
+         "[\"astropy.io.votable.converters\",\"FloatingPoint\",21281]",
+         "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]",
+         "[\"astropy.stats.tests.test_biweight\",\"test_biweight_location_small\",1855]",
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]",
+         "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        ],
+        "target_range_bpb": 0.09399760953467207,
+        "upper_one_sided_95_bpb": 0.05243887984264281,
+        "variance_components": {
+         "cluster_sizes": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+         ],
+         "mode": "all-singleton-conservative",
+         "n_modules": 6,
+         "n_pilot": 6,
+         "sigma_b2": 0.0010248805891500512,
+         "sigma_w2": 0.0
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k5:0:4096-k4:4096",
+       "raw_one_sided_pvalue": 0.051149563859334155,
+       "target_rows": [
+        {
+         "delta_bpb": 0.03643210977218814,
+         "module": "astropy.coordinates.tests.test_erfa_astrom",
+         "target_key": "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]"
+        },
+        {
+         "delta_bpb": 0.029419019775228483,
+         "module": "astropy.io.votable.converters",
+         "target_key": "[\"astropy.io.votable.converters\",\"FloatingPoint\",21281]"
+        },
+        {
+         "delta_bpb": 0.035594896416377586,
+         "module": "astropy.modeling.tests.test_fitters",
+         "target_key": "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]"
+        },
+        {
+         "delta_bpb": -0.021300316663075858,
+         "module": "astropy.stats.tests.test_biweight",
+         "target_key": "[\"astropy.stats.tests.test_biweight\",\"test_biweight_location_small\",1855]"
+        },
+        {
+         "delta_bpb": 0.07269729287159621,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        },
+        {
+         "delta_bpb": 0.0037754879686179854,
+         "module": "astropy.wcs.wcsapi.fitswcs",
+         "target_key": "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        }
+       ]
+      }
+     },
+     "e1b_assay": {
+      "active_assay_pvalue": 1.0,
+      "e1a_intersection_lower_one_sided_95_bpb": null,
+      "e1a_on_intersection_inference": {
+       "ci95_two_sided_bpb": null,
+       "cluster_sizes": [
+        1
+       ],
+       "degeneracy_floor_bpb": 1.4210854715202004e-14,
+       "degrees_of_freedom": null,
+       "inference_status": "insufficient-clusters",
+       "lower_one_sided_95_bpb": null,
+       "n_modules": 1,
+       "n_targets": 1,
+       "standard_error_bpb": null,
+       "target_equal_mean_bpb": 0.1718928915128558,
+       "target_keys": [
+        "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+       ],
+       "target_range_bpb": 0.0,
+       "upper_one_sided_95_bpb": null,
+       "variance_components": {
+        "cluster_sizes": [
+         1
+        ],
+        "mode": "insufficient-clusters",
+        "n_modules": 1,
+        "n_pilot": 1
+       }
+      },
+      "e1b_upper_one_sided_95_bpb": null,
+      "holm_adjusted_pvalue": 1.0,
+      "intersection_union_pvalue": 1.0,
+      "label": "inference-unavailable",
+      "margin_bpb": 0.02,
+      "noninferiority_pvalue": 1.0
+     },
+     "language": "python",
+     "multiplicity": {
+      "adjusted_pvalues": {
+       "E1a": 0.09596157725248619,
+       "E1b": 1.0,
+       "E2": 0.10229912771866831
+      },
+      "deterministic_tie_break": "contrast-name-ascending",
+      "method": "model-based Holm-adjusted diagnostics",
+      "order": [
+       "E1a",
+       "E2",
+       "E1b"
+      ],
+      "raw_pvalues": {
+       "E1a": 0.0319871924174954,
+       "E1b": 1.0,
+       "E2": 0.051149563859334155
+      },
+      "scope": "E1a/E1b-IUT/E2 within repository"
+     }
+    },
+    "65536": {
+     "contrasts": {
+      "E1a": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 1,
+        "n_targets": 1,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": 0.15726544999864212,
+        "target_keys": [
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        ],
+        "target_range_bpb": 0.0,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": {
+         "cluster_sizes": [
+          1
+         ],
+         "mode": "insufficient-clusters",
+         "n_modules": 1,
+         "n_pilot": 1
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k1-k4:65536",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": [
+        {
+         "delta_bpb": 0.15726544999864212,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        }
+       ]
+      },
+      "E1b": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "smaller/noninferior",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [],
+        "degeneracy_floor_bpb": null,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 0,
+        "n_targets": 0,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": null,
+        "target_keys": [],
+        "target_range_bpb": null,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": null
+       },
+       "interpretation_status": "inference-unavailable",
+       "metric": "bpb",
+       "orientation": "k3:65536-k4:65536",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": []
+      },
+      "E2": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 1,
+        "n_targets": 1,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": 0.05073925788422173,
+        "target_keys": [
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        ],
+        "target_range_bpb": 0.0,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": {
+         "cluster_sizes": [
+          1
+         ],
+         "mode": "insufficient-clusters",
+         "n_modules": 1,
+         "n_pilot": 1
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k5:0:65536-k4:65536",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": [
+        {
+         "delta_bpb": 0.05073925788422173,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        }
+       ]
+      }
+     },
+     "e1b_assay": {
+      "active_assay_pvalue": 1.0,
+      "e1a_intersection_lower_one_sided_95_bpb": null,
+      "e1a_on_intersection_inference": {
+       "ci95_two_sided_bpb": null,
+       "cluster_sizes": [],
+       "degeneracy_floor_bpb": null,
+       "degrees_of_freedom": null,
+       "inference_status": "insufficient-clusters",
+       "lower_one_sided_95_bpb": null,
+       "n_modules": 0,
+       "n_targets": 0,
+       "standard_error_bpb": null,
+       "target_equal_mean_bpb": null,
+       "target_keys": [],
+       "target_range_bpb": null,
+       "upper_one_sided_95_bpb": null,
+       "variance_components": null
+      },
+      "e1b_upper_one_sided_95_bpb": null,
+      "holm_adjusted_pvalue": 1.0,
+      "intersection_union_pvalue": 1.0,
+      "label": "inference-unavailable",
+      "margin_bpb": 0.02,
+      "noninferiority_pvalue": 1.0
+     },
+     "language": "python",
+     "multiplicity": {
+      "adjusted_pvalues": {
+       "E1a": 1.0,
+       "E1b": 1.0,
+       "E2": 1.0
+      },
+      "deterministic_tie_break": "contrast-name-ascending",
+      "method": "model-based Holm-adjusted diagnostics",
+      "order": [
+       "E1a",
+       "E1b",
+       "E2"
+      ],
+      "raw_pvalues": {
+       "E1a": 1.0,
+       "E1b": 1.0,
+       "E2": 1.0
+      },
+      "scope": "E1a/E1b-IUT/E2 within repository"
+     }
+    }
+   },
+   "common_subset_e1a": {
+    "curve": {
+     "16384": {
+      "mean_bpb": 0.15428550507469796,
+      "n": 1
+     },
+     "4096": {
+      "mean_bpb": 0.1718928915128558,
+      "n": 1
+     },
+     "65536": {
+      "mean_bpb": 0.15726544999864212,
+      "n": 1
+     }
+    },
+    "keys": [
+     "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+    ],
+    "n_common": 1
+   },
+   "language": "python",
+   "model": "Qwen/Qwen2.5-Coder-3B",
+   "revision": "09d9bc5d376b0cfa0100a0694ea7de7232525803",
+   "tier": "q25c-3b"
+  },
+  "q25c-7b": {
+   "budgets": {
+    "16384": {
+     "contrasts": {
+      "E1a": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 0.17635864423409164,
+       "inference": {
+        "ci95_two_sided_bpb": [
+         -0.06899466596172929,
+         0.240068220716712
+        ],
+        "cluster_sizes": [
+         1,
+         1,
+         1,
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": 3,
+        "inference_status": "available",
+        "lower_one_sided_95_bpb": -0.02873653576350023,
+        "n_modules": 4,
+        "n_targets": 4,
+        "standard_error_bpb": 0.048557443972095875,
+        "target_equal_mean_bpb": 0.08553677737749135,
+        "target_keys": [
+         "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]",
+         "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]",
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]",
+         "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        ],
+        "target_range_bpb": 0.21755277680298463,
+        "upper_one_sided_95_bpb": 0.19981009051848292,
+        "variance_components": {
+         "cluster_sizes": [
+          1,
+          1,
+          1,
+          1
+         ],
+         "mode": "all-singleton-conservative",
+         "n_modules": 4,
+         "n_pilot": 4,
+         "sigma_b2": 0.009431301460412921,
+         "sigma_w2": 0.0
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k1-k4:16384",
+       "raw_one_sided_pvalue": 0.08817932211704582,
+       "target_rows": [
+        {
+         "delta_bpb": 0.07172643034094184,
+         "module": "astropy.coordinates.tests.test_erfa_astrom",
+         "target_key": "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]"
+        },
+        {
+         "delta_bpb": 0.03613406550531556,
+         "module": "astropy.modeling.tests.test_fitters",
+         "target_key": "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]"
+        },
+        {
+         "delta_bpb": 0.22591969523334632,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        },
+        {
+         "delta_bpb": 0.008366918430361692,
+         "module": "astropy.wcs.wcsapi.fitswcs",
+         "target_key": "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        }
+       ]
+      },
+      "E1b": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "smaller/noninferior",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [],
+        "degeneracy_floor_bpb": null,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 0,
+        "n_targets": 0,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": null,
+        "target_keys": [],
+        "target_range_bpb": null,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": null
+       },
+       "interpretation_status": "inference-unavailable",
+       "metric": "bpb",
+       "orientation": "k3:16384-k4:16384",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": []
+      },
+      "E2": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 0.0662489207922563,
+       "inference": {
+        "ci95_two_sided_bpb": [
+         0.001971972312281932,
+         0.07837217098167809
+        ],
+        "cluster_sizes": [
+         1,
+         1,
+         1,
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": 3,
+        "inference_status": "available",
+        "lower_one_sided_95_bpb": 0.011923762959999532,
+        "n_modules": 4,
+        "n_targets": 4,
+        "standard_error_bpb": 0.012003377067418606,
+        "target_equal_mean_bpb": 0.04017207164698001,
+        "target_keys": [
+         "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]",
+         "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]",
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]",
+         "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        ],
+        "target_range_bpb": 0.056512713682153964,
+        "upper_one_sided_95_bpb": 0.06842038033396049,
+        "variance_components": {
+         "cluster_sizes": [
+          1,
+          1,
+          1,
+          1
+         ],
+         "mode": "all-singleton-conservative",
+         "n_modules": 4,
+         "n_pilot": 4,
+         "sigma_b2": 0.0005763242440905235,
+         "sigma_w2": 0.0
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k5:0:16384-k4:16384",
+       "raw_one_sided_pvalue": 0.02208297359741877,
+       "target_rows": [
+        {
+         "delta_bpb": 0.06387174055653266,
+         "module": "astropy.coordinates.tests.test_erfa_astrom",
+         "target_key": "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]"
+        },
+        {
+         "delta_bpb": 0.039775189714768844,
+         "module": "astropy.modeling.tests.test_fitters",
+         "target_key": "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]"
+        },
+        {
+         "delta_bpb": 0.049682329442239825,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        },
+        {
+         "delta_bpb": 0.007359026874378699,
+         "module": "astropy.wcs.wcsapi.fitswcs",
+         "target_key": "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        }
+       ]
+      }
+     },
+     "e1b_assay": {
+      "active_assay_pvalue": 1.0,
+      "e1a_intersection_lower_one_sided_95_bpb": null,
+      "e1a_on_intersection_inference": {
+       "ci95_two_sided_bpb": null,
+       "cluster_sizes": [],
+       "degeneracy_floor_bpb": null,
+       "degrees_of_freedom": null,
+       "inference_status": "insufficient-clusters",
+       "lower_one_sided_95_bpb": null,
+       "n_modules": 0,
+       "n_targets": 0,
+       "standard_error_bpb": null,
+       "target_equal_mean_bpb": null,
+       "target_keys": [],
+       "target_range_bpb": null,
+       "upper_one_sided_95_bpb": null,
+       "variance_components": null
+      },
+      "e1b_upper_one_sided_95_bpb": null,
+      "holm_adjusted_pvalue": 1.0,
+      "intersection_union_pvalue": 1.0,
+      "label": "inference-unavailable",
+      "margin_bpb": 0.02,
+      "noninferiority_pvalue": 1.0
+     },
+     "language": "python",
+     "multiplicity": {
+      "adjusted_pvalues": {
+       "E1a": 0.17635864423409164,
+       "E1b": 1.0,
+       "E2": 0.0662489207922563
+      },
+      "deterministic_tie_break": "contrast-name-ascending",
+      "method": "model-based Holm-adjusted diagnostics",
+      "order": [
+       "E2",
+       "E1a",
+       "E1b"
+      ],
+      "raw_pvalues": {
+       "E1a": 0.08817932211704582,
+       "E1b": 1.0,
+       "E2": 0.02208297359741877
+      },
+      "scope": "E1a/E1b-IUT/E2 within repository"
+     }
+    },
+    "4096": {
+     "contrasts": {
+      "E1a": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 0.07956354527257366,
+       "inference": {
+        "ci95_two_sided_bpb": [
+         -0.013201576350032912,
+         0.16765292370386853
+        ],
+        "cluster_sizes": [
+         1,
+         1,
+         1,
+         1,
+         1,
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": 5,
+        "inference_status": "available",
+        "lower_one_sided_95_bpb": 0.006340837853096096,
+        "n_modules": 6,
+        "n_targets": 6,
+        "standard_error_bpb": 0.03517773408004519,
+        "target_equal_mean_bpb": 0.07722567367691781,
+        "target_keys": [
+         "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]",
+         "[\"astropy.io.votable.converters\",\"FloatingPoint\",21281]",
+         "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]",
+         "[\"astropy.stats.tests.test_biweight\",\"test_biweight_location_small\",1855]",
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]",
+         "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        ],
+        "target_range_bpb": 0.23605507145260887,
+        "upper_one_sided_95_bpb": 0.1481105095007395,
+        "variance_components": {
+         "cluster_sizes": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+         ],
+         "mode": "all-singleton-conservative",
+         "n_modules": 6,
+         "n_pilot": 6,
+         "sigma_b2": 0.007424837850038235,
+         "sigma_w2": 0.0
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k1-k4:4096",
+       "raw_one_sided_pvalue": 0.03978177263628683,
+       "target_rows": [
+        {
+         "delta_bpb": 0.03738658707925935,
+         "module": "astropy.coordinates.tests.test_erfa_astrom",
+         "target_key": "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]"
+        },
+        {
+         "delta_bpb": 0.04434677448098401,
+         "module": "astropy.io.votable.converters",
+         "target_key": "[\"astropy.io.votable.converters\",\"FloatingPoint\",21281]"
+        },
+        {
+         "delta_bpb": 0.03376051313666084,
+         "module": "astropy.modeling.tests.test_fitters",
+         "target_key": "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]"
+        },
+        {
+         "delta_bpb": 0.10422626880996388,
+         "module": "astropy.stats.tests.test_biweight",
+         "target_key": "[\"astropy.stats.tests.test_biweight\",\"test_biweight_location_small\",1855]"
+        },
+        {
+         "delta_bpb": 0.23984448500362382,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        },
+        {
+         "delta_bpb": 0.0037894135510149474,
+         "module": "astropy.wcs.wcsapi.fitswcs",
+         "target_key": "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        }
+       ]
+      },
+      "E1b": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "smaller/noninferior",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 1,
+        "n_targets": 1,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": 0.09600646289766795,
+        "target_keys": [
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        ],
+        "target_range_bpb": 0.0,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": {
+         "cluster_sizes": [
+          1
+         ],
+         "mode": "insufficient-clusters",
+         "n_modules": 1,
+         "n_pilot": 1
+        }
+       },
+       "interpretation_status": "inference-unavailable",
+       "metric": "bpb",
+       "orientation": "k3:4096-k4:4096",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": [
+        {
+         "delta_bpb": 0.09600646289766795,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        }
+       ]
+      },
+      "E2": {
+       "exploratory_positive_model_based_diagnostic": true,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 0.033002026666212575,
+       "inference": {
+        "ci95_two_sided_bpb": [
+         0.005792408377436546,
+         0.04788451100836734
+        ],
+        "cluster_sizes": [
+         1,
+         1,
+         1,
+         1,
+         1,
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": 5,
+        "inference_status": "available",
+        "lower_one_sided_95_bpb": 0.010340712699690655,
+        "n_modules": 6,
+        "n_targets": 6,
+        "standard_error_bpb": 0.008187270943103701,
+        "target_equal_mean_bpb": 0.026838459692901943,
+        "target_keys": [
+         "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]",
+         "[\"astropy.io.votable.converters\",\"FloatingPoint\",21281]",
+         "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]",
+         "[\"astropy.stats.tests.test_biweight\",\"test_biweight_location_small\",1855]",
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]",
+         "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        ],
+        "target_range_bpb": 0.058224479802880286,
+        "upper_one_sided_95_bpb": 0.04333620668611323,
+        "variance_components": {
+         "cluster_sizes": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+         ],
+         "mode": "all-singleton-conservative",
+         "n_modules": 6,
+         "n_pilot": 6,
+         "sigma_b2": 0.0004021884329747409,
+         "sigma_w2": 0.0
+        }
+       },
+       "interpretation_status": "positive-model-based-diagnostic",
+       "metric": "bpb",
+       "orientation": "k5:0:4096-k4:4096",
+       "raw_one_sided_pvalue": 0.011000675555404193,
+       "target_rows": [
+        {
+         "delta_bpb": 0.020738271649962836,
+         "module": "astropy.coordinates.tests.test_erfa_astrom",
+         "target_key": "[\"astropy.coordinates.tests.test_erfa_astrom\",\"test_interpolation_broadcasting\",3011]"
+        },
+        {
+         "delta_bpb": 0.02589553976122494,
+         "module": "astropy.io.votable.converters",
+         "target_key": "[\"astropy.io.votable.converters\",\"FloatingPoint\",21281]"
+        },
+        {
+         "delta_bpb": 0.03459115008224223,
+         "module": "astropy.modeling.tests.test_fitters",
+         "target_key": "[\"astropy.modeling.tests.test_fitters\",\"test_fitters_with_weights\",37651]"
+        },
+        {
+         "delta_bpb": 0.014559681475127317,
+         "module": "astropy.stats.tests.test_biweight",
+         "target_key": "[\"astropy.stats.tests.test_biweight\",\"test_biweight_location_small\",1855]"
+        },
+        {
+         "delta_bpb": 0.061735297495867314,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        },
+        {
+         "delta_bpb": 0.0035108176929870283,
+         "module": "astropy.wcs.wcsapi.fitswcs",
+         "target_key": "[\"astropy.wcs.wcsapi.fitswcs\",\"FITSWCSAPIMixin\",6489]"
+        }
+       ]
+      }
+     },
+     "e1b_assay": {
+      "active_assay_pvalue": 1.0,
+      "e1a_intersection_lower_one_sided_95_bpb": null,
+      "e1a_on_intersection_inference": {
+       "ci95_two_sided_bpb": null,
+       "cluster_sizes": [
+        1
+       ],
+       "degeneracy_floor_bpb": 1.4210854715202004e-14,
+       "degrees_of_freedom": null,
+       "inference_status": "insufficient-clusters",
+       "lower_one_sided_95_bpb": null,
+       "n_modules": 1,
+       "n_targets": 1,
+       "standard_error_bpb": null,
+       "target_equal_mean_bpb": 0.23984448500362382,
+       "target_keys": [
+        "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+       ],
+       "target_range_bpb": 0.0,
+       "upper_one_sided_95_bpb": null,
+       "variance_components": {
+        "cluster_sizes": [
+         1
+        ],
+        "mode": "insufficient-clusters",
+        "n_modules": 1,
+        "n_pilot": 1
+       }
+      },
+      "e1b_upper_one_sided_95_bpb": null,
+      "holm_adjusted_pvalue": 1.0,
+      "intersection_union_pvalue": 1.0,
+      "label": "inference-unavailable",
+      "margin_bpb": 0.02,
+      "noninferiority_pvalue": 1.0
+     },
+     "language": "python",
+     "multiplicity": {
+      "adjusted_pvalues": {
+       "E1a": 0.07956354527257366,
+       "E1b": 1.0,
+       "E2": 0.033002026666212575
+      },
+      "deterministic_tie_break": "contrast-name-ascending",
+      "method": "model-based Holm-adjusted diagnostics",
+      "order": [
+       "E2",
+       "E1a",
+       "E1b"
+      ],
+      "raw_pvalues": {
+       "E1a": 0.03978177263628683,
+       "E1b": 1.0,
+       "E2": 0.011000675555404193
+      },
+      "scope": "E1a/E1b-IUT/E2 within repository"
+     }
+    },
+    "65536": {
+     "contrasts": {
+      "E1a": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 1,
+        "n_targets": 1,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": 0.2177309407687108,
+        "target_keys": [
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        ],
+        "target_range_bpb": 0.0,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": {
+         "cluster_sizes": [
+          1
+         ],
+         "mode": "insufficient-clusters",
+         "n_modules": 1,
+         "n_pilot": 1
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k1-k4:65536",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": [
+        {
+         "delta_bpb": 0.2177309407687108,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        }
+       ]
+      },
+      "E1b": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "smaller/noninferior",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [],
+        "degeneracy_floor_bpb": null,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 0,
+        "n_targets": 0,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": null,
+        "target_keys": [],
+        "target_range_bpb": null,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": null
+       },
+       "interpretation_status": "inference-unavailable",
+       "metric": "bpb",
+       "orientation": "k3:65536-k4:65536",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": []
+      },
+      "E2": {
+       "exploratory_positive_model_based_diagnostic": false,
+       "favorable_direction": "positive",
+       "holm_adjusted_pvalue": 1.0,
+       "inference": {
+        "ci95_two_sided_bpb": null,
+        "cluster_sizes": [
+         1
+        ],
+        "degeneracy_floor_bpb": 1.4210854715202004e-14,
+        "degrees_of_freedom": null,
+        "inference_status": "insufficient-clusters",
+        "lower_one_sided_95_bpb": null,
+        "n_modules": 1,
+        "n_targets": 1,
+        "standard_error_bpb": null,
+        "target_equal_mean_bpb": 0.05079083136810114,
+        "target_keys": [
+         "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        ],
+        "target_range_bpb": 0.0,
+        "upper_one_sided_95_bpb": null,
+        "variance_components": {
+         "cluster_sizes": [
+          1
+         ],
+         "mode": "insufficient-clusters",
+         "n_modules": 1,
+         "n_pilot": 1
+        }
+       },
+       "interpretation_status": "positive-not-established",
+       "metric": "bpb",
+       "orientation": "k5:0:65536-k4:65536",
+       "raw_one_sided_pvalue": 1.0,
+       "target_rows": [
+        {
+         "delta_bpb": 0.05079083136810114,
+         "module": "astropy.wcs.tests.test_utils",
+         "target_key": "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+        }
+       ]
+      }
+     },
+     "e1b_assay": {
+      "active_assay_pvalue": 1.0,
+      "e1a_intersection_lower_one_sided_95_bpb": null,
+      "e1a_on_intersection_inference": {
+       "ci95_two_sided_bpb": null,
+       "cluster_sizes": [],
+       "degeneracy_floor_bpb": null,
+       "degrees_of_freedom": null,
+       "inference_status": "insufficient-clusters",
+       "lower_one_sided_95_bpb": null,
+       "n_modules": 0,
+       "n_targets": 0,
+       "standard_error_bpb": null,
+       "target_equal_mean_bpb": null,
+       "target_keys": [],
+       "target_range_bpb": null,
+       "upper_one_sided_95_bpb": null,
+       "variance_components": null
+      },
+      "e1b_upper_one_sided_95_bpb": null,
+      "holm_adjusted_pvalue": 1.0,
+      "intersection_union_pvalue": 1.0,
+      "label": "inference-unavailable",
+      "margin_bpb": 0.02,
+      "noninferiority_pvalue": 1.0
+     },
+     "language": "python",
+     "multiplicity": {
+      "adjusted_pvalues": {
+       "E1a": 1.0,
+       "E1b": 1.0,
+       "E2": 1.0
+      },
+      "deterministic_tie_break": "contrast-name-ascending",
+      "method": "model-based Holm-adjusted diagnostics",
+      "order": [
+       "E1a",
+       "E1b",
+       "E2"
+      ],
+      "raw_pvalues": {
+       "E1a": 1.0,
+       "E1b": 1.0,
+       "E2": 1.0
+      },
+      "scope": "E1a/E1b-IUT/E2 within repository"
+     }
+    }
+   },
+   "common_subset_e1a": {
+    "curve": {
+     "16384": {
+      "mean_bpb": 0.22591969523334632,
+      "n": 1
+     },
+     "4096": {
+      "mean_bpb": 0.23984448500362382,
+      "n": 1
+     },
+     "65536": {
+      "mean_bpb": 0.2177309407687108,
+      "n": 1
+     }
+    },
+    "keys": [
+     "[\"astropy.wcs.tests.test_utils\",\"test_slice_nd\",10166]"
+    ],
+    "n_common": 1
+   },
+   "language": "python",
+   "model": "Qwen/Qwen2.5-Coder-7B",
+   "revision": "0396a76181e127dfc13e5c5ec48a8cee09938b02",
+   "tier": "q25c-7b"
+  }
+ },
+ "trend_inference": "none-descriptive-dose-curve-only"
+}

@@ -73,9 +73,17 @@ def test_projected_halfwidth_frozen_t():
     # sigma_b2=50, sigma_w2=0, sizes [2,2]: var = 50*8/16 = 25
     hw = projected_halfwidth(50.0, 0.0, [2, 2], 1)
     assert abs(hw - 12.706205 * 5.0) < 1e-6
+    # SUPPLEMENT_DF_EXTENSION_AMENDMENT: df>=20 breakpoints are IN the
+    # table now (exact hits); a df between breakpoints has no entry in
+    # THIS module's exact-lookup helper and still refuses, while df<1
+    # refuses always.
+    assert abs(T_0975_BY_DF[20] - 2.085963) < 1e-6
+    assert abs(T_0975_BY_DF[120] - 1.979930) < 1e-6
+    hw20 = projected_halfwidth(50.0, 0.0, [2, 2], 20)
+    assert abs(hw20 - 2.085963 * 5.0) < 1e-6
     try:
-        projected_halfwidth(1.0, 1.0, [2, 2], 20)
-        assert False, "df outside the frozen table accepted"
+        projected_halfwidth(1.0, 1.0, [2, 2], 21)
+        assert False, "df without an exact entry accepted"
     except V2BError:
         pass
     try:

@@ -538,6 +538,171 @@ arxiv_manifest) must be committed before measurement.
 
 ## 13. Disagreement log
 
+- ADOPTED (2026-08-10, V2-c feasibility amendment; POST-REVEAL by
+  construction and disclosed as such — the exploratory NLL reveal made
+  pilot means public before this rule was written, so it is NOT a
+  pre-outcome amendment for NLL quantities; every operative quantity is
+  restricted to pre-pilot frozen constants, the committed BLIND
+  governance components, and model-free candidate/assembly structure):
+  V2C_FEASIBILITY_AMENDMENT_DRAFT.md at sha256 49ff6d8f9650...bc37,
+  two-round adversarial review (FIX-FIRST -> folded -> ADOPTABLE),
+  human scale gate granted 2026-08-10. Replaces the failed absolute-
+  halfwidth N rule with standardized power (0.9 at alpha .025 against
+  0.5*sigma_target, N in [40,400], 0.2/0.8 anchor sensitivity
+  predeclared, post-reveal anchor choice disclosed); per-repo primary
+  budget from model-free k4-fill fractions (60% floor, 50/70%
+  sensitivity, original-16KiB co-report for every moved repo); frozen
+  test-module stratum with exclude-test sensitivity. V2-c results under
+  this rule carry `confirmatory-with-post-pilot-amended-governance`
+  with the amendment hash embedded. Implementation requires its own
+  delta review before any draw.
+- ADOPTED (2026-08-10 overnight, epoch-2 night batch; PRE-EXECUTION — no
+  interior/supplement cell scored or read, no supplement draw, epoch-1
+  32b scoring in flight at its frozen tree): EPOCH2_NIGHT_AMENDMENT.md.
+  Epoch discipline (all code in one batch, one tree, instruments
+  re-frozen once): all six tier batteries rebound into
+  results_v2/battery/epoch1/ with preserved basenames then rerun at the
+  epoch-2 tree via battery_epoch.sbatch (refuses until the rebound
+  committed copy exists; sealed artifacts byte-preserved and still
+  bound by sha in sealed evidence). Interior scoring: pinned-sha
+  manifests (mathlib4 1ea57d0c…, sympy da996920…), six tiers x two
+  repos, one submission each; consumer analyze_v2b_interior.py with the
+  precondition-gated 16384 replication gate at PER-TARGET discard
+  granularity (env mismatch tier-wide; incidents abort; discards
+  enumerated) whose REFERENCE side is symmetrically pinned (pilot
+  manifest sha, --pilot-ledger row equality, per-tier pilot tree pins),
+  merging committed {4,16,64} with new {8,32} into five-point curves
+  under the standing non-B* reading rule. Supplement: mathlib4 n=120 via
+  the unchanged build_sample_plan with the 20 pilot identities excluded,
+  emitted bound-sample-compatible (assembly --expected-n 120), full-grid
+  assembly on the pinned chain, six-tier scoring, supplement + pooled
+  panels labeled exploratory-nll-only-supplemented-pilot. Ledger writer
+  gains --repos scoping and --sealed-from-scan. Two-round independent
+  review recorded in the amendment; adoption commit applies the final
+  provenance nit. Execution starts only after epoch-1 drains; no git
+  operation touches the cluster worktree between epoch sync and drain.
+
+- ADOPTED (2026-08-10, 32b fp32-residency correction; OUTCOME-FREE basis
+  — code inspection after two OOMs, no 32b score exists): the battery
+  harness kept the outer bf16 model GPU-resident as dead weight through
+  the fp32 oracle (65+131GB vs 139.8GB), so both recorded 32b
+  infeasibilities measured a harness lifecycle defect, not hardware
+  truth. Fix: offload the outer model to CPU for the oracle, restore
+  after (no computed value moves; sealed batteries byte-unchanged).
+  Supersedes the retry finality clause via its own fresh-reviewed
+  -amendment escape; independent review ADOPTABLE; re-attempt submits
+  with --mem=256G (host-RSS note); a third failure closes q25c-32b
+  permanently. Process failure recorded: the resource-lifecycle audit
+  should have preceded the first infeasibility verdict.
+  AMENDMENT_32B_FP32_RESIDENCY.md.
+
+- ADOPTED (2026-08-10, 32b allocator retry; PRE-RE-ATTEMPT — first 32b
+  battery recorded infeasible, no 32b score exists): one battery
+  re-attempt with PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+  exported by the 32b launches only (allocator segment policy; kernels,
+  dtype, chunk, tokens, fingerprint unchanged — the same remedy class as
+  the 7b H200 move). Independent delta review: ADOPTABLE. Pass restores
+  the six-tier set by the post-pass commit; ANY failure makes q25c-32b
+  infeasibility FINAL absent a fresh reviewed amendment; no other memory
+  remedy is authorized. AMENDMENT_32B_ALLOCATOR_RETRY.md.
+
+- ADOPTED (2026-08-09 night, dose-curve expansion package Part A;
+  POST-FIVE-TIER-EVIDENCE, PRE-32B-OUTCOME — all six committed evidence
+  sets were public; no 32b battery, score, or cell existed; the 32b
+  snapshot download was outcome-free): DOSE_CURVE_EXPANSION_AMENDMENT.md.
+  Part A (executable): tier set extended to SIX with q25c-32b
+  (2e12b5f7bc878d424d222e224ed40aee564ec45f, range (30e9,35e9),
+  battery_pilot_32b.json, H200-only battery AND scoring; the fp32
+  semantic leg is ~128GB on a 141GB H200 — an OOM is recorded as tier
+  infeasibility, never worked around). Review-driven mechanics all
+  implemented pre-outcome: PER-TIER scoring-tree pins with fail-closed
+  None-refusal until the post-scoring pin commit (umbrella review
+  BLOCKER 1 — the prior global pin would have refused every 32b
+  completion); verify_v2b_expansion_consistency.py as the enforced
+  reproduction gate (six-tier reruns must reproduce every committed
+  five-tier block exactly; PASS report required in the evidence commit);
+  ledger v2 with mandatory --prior-ledger byte-identical carry (or an
+  explicit --first-ledger assertion); five-tier v1 artifacts remain
+  untouched evidence. Parts B (interior budgets {8192,32768} for
+  mathlib4+sympy with precondition-gated 16384 replication cells,
+  discard-non-comparable rule, one-assembly-submission) and C (n=120
+  same-draw-law mathlib supplement, pilot identities excluded, separate
+  + pooled panels labeled exploratory-nll-only-supplemented-pilot) are
+  design-frozen and EACH requires a delta review of its implementation
+  commit before execution. Umbrella review: fresh-context consultant,
+  FIX-FIRST (1 blocker, 4 concerns) -> fixes at 136bf1e -> re-review
+  ADOPTABLE; final nit closed in the adoption commit. Maximal
+  compute/parallel execution human-authorized 2026-08-09; per-job
+  measurement identity (single GPU, frozen chunk) never varies.
+- ADOPTED (2026-08-09 late, post-ladder frozen consumers; PRE-CONSUMPTION —
+  the five-tier B* ladder artifacts were public; no 4KiB/64KiB cell and no
+  k4x cell had ever been read): POST_LADDER_CONSUMERS_AMENDMENT.md +
+  analyze_v2b_dose.py, one analyzer with two modes over the twenty-five
+  ledger-bound completions, NO new scoring. Mode budget: standard contrasts
+  at {4096,16384,65536} for all repos, per-budget complete-case panels plus
+  the all-budgets common-subset E1a dose curve; every B* contrast's row
+  count and exact fsum mean must equal the B3 producer's recomputed
+  centering (transitively anchoring the committed ladder artifacts), the
+  sealed tier's B* centering must reproduce the committed reveal, and
+  PhysLib's k4-based statuses stay forced. Mode k4x: PhysLib-only
+  contrasts against the lake-manifest-pinned combined-graph arm
+  (mathlib4 81a5d257) at all three budgets — the separately frozen
+  consumer the reveal amendment required, lifting the forced status
+  exclusively through its committed artifacts; the E2-x control asymmetry
+  (internal k5 universe vs partly-external reference) is recorded in the
+  artifact. Inherits the ladder analyzer's full anti-shopping surface
+  (frozen tier set, ledger row equality, pinned reveal/manifest/scoring
+  -tree anchors, registry battery filenames). READING RULE stamped into
+  every artifact: non-B* panels' positive diagnostic flags are
+  descriptive dose-curve context, never standalone positive results.
+  INDEPENDENT DELTA REVIEW (same fresh-context reviewer as the ladder):
+  FIX-FIRST with two findings — an amendment overclaim of an
+  unimplemented ladder-artifact inference anchor (text corrected to the
+  implemented producer-centering gate) and the per-panel-Holm selective
+  -citation risk (closed by the reading rule) — both resolved in the
+  adoption commit; extraction, panel fidelity, injection defaults, k4x
+  honesty, and sealed anchoring were verified sound. Claim statuses:
+  exploratory-nll-only-budget-response /
+  exploratory-nll-only-physlib-k4x-sensitivity.
+- ADOPTED (2026-08-09, exploratory NLL model ladder; POST-1.5B-REVEAL,
+  PRE-LADDER-OUTCOME — the sealed 1.5B exploratory reveal and analysis were
+  public at drafting; NO other tier's battery, paired score, masked
+  artifact, or analysis existed; model snapshot acquisition was
+  outcome-free): results_v2/v2b/NLL_LADDER_EXPLORATORY_AMENDMENT.md extends
+  the exploratory NLL-only route to Qwen2.5-Coder {0.5B, 3B, 7B, 14B} at
+  models.json-pinned revisions on the SAME committed job19991210 assembly
+  manifests and sealed sample (14B human-authorized 2026-08-09). Frozen
+  content: per-tier write-once instrument batteries (1.5B semantics,
+  predeclared loader param ranges, 14b H200-only launch in BOTH launchers;
+  GPU stays informational-never-gated in evidence per the frozen §4
+  decision); PILOT_TIERS registry + tier-resolved battery validation in
+  eval_paired (cross-tier battery filenames rejected); frozen ladder
+  analyzer analyze_v2b_nll_ladder.py — the unchanged B3 producer under a
+  DECLARED PUBLIC 32-zero-byte salt (no blind exists or is claimed since
+  the reveal), reveal-frozen row reconstruction, unchanged
+  _analyze_repo_rows inference, full-frozen-tier-set-or-nothing, a
+  REQUIRED committed completion ledger (per repo x tier path/sha256/job
+  id, one scoring submission per tier), pinned committed-reveal and
+  five-manifest sha256 anchors, non-sealed completions must be scored at
+  the analyzer's exact source tree, the sealed q25c-1.5b tier must BE the
+  reveal-bound completion and reproduce its salt-independent centering
+  exactly, governance verdict not-run-ladder-exploratory. Claim status:
+  exploratory-nll-only-multi-checkpoint-pilot; cross-tier reading is a
+  descriptive five-tier forest with NO pooled trend statistic; PhysLib
+  stays uninterpretable-pending-k4x-sensitivity per tier. SEQUENCING
+  DISCLOSURE: ladder reveals precede the behavioral arm and formal V2-b
+  unblinding; any later behavioral/unblinding amendment must list the
+  ladder artifacts existing at its adoption. INDEPENDENT REVIEW: a
+  fresh-context reviewer (no shared session state) returned FIX-FIRST
+  (3 blockers: completion shopping, unpinned anchors/subsets, tier-set
+  extensibility; 6 concerns; 3 nits); every blocker and concern was fixed
+  at 780c3ae and verified by re-review verdict ADOPTABLE; the remaining
+  nits are applied in the adoption commit. Scope note: the V2-c
+  feasibility DRAFT (results_v2/v2b/V2C_FEASIBILITY_AMENDMENT_DRAFT.md)
+  rode along in 780c3ae; it is a separate, UNADOPTED draft authorizing
+  nothing. Ladder batteries and scores run only at or after the adoption
+  commit, at one frozen source tree; results are read only through the
+  committed analyzer artifacts.
 - ADOPTED (V2-b empty-rendering representation resolution, 2026-08-08,
   PRE-LABEL/PRE-SAMPLE/PRE-SCORE — the unlabeled A6 packet and sanitized
   presentation existed, but no human label, target draw, assembly artifact,
@@ -1308,7 +1473,10 @@ arxiv_manifest) must be committed before measurement.
   0.5B `battery.json`; throughput/peak memory are recorded without a threshold.
   The battery reads only fixed public corpus bytes and remains target/draw/salt/
   outcome independent, so it may run while the parser boundary audit and A6
-  human labels are pending.
+  human labels are pending. Before the paired scorer loads a model, the battery
+  must be a committed HEAD blob; the scorer recomputes its verdict, requires
+  exact current source-tree/numerical-harness/environment identity, binds its
+  artifact hash into the run identity, and rehashes it throughout execution.
 
 - ADOPTED (2026-08-07 late): reviewer's strategic ordering — v2
   extraction/pilot (G3.5) before grid expansion (G3b); the sentinel grid
@@ -1430,6 +1598,10 @@ arxiv_manifest) must be committed before measurement.
   second tier decision. This resolves the previously inconsistent combination
   of "exactly 20 rows" with mandatory baseline/model-cap exclusions without
   changing thresholds, outcome classes, or the blind reliability estimator.
+  This behavioral eligibility table is not an input to paired NLL scoring:
+  both tracks share the committed 20 identities, but S5 baseline/coverage gates
+  behavioral generation and joint reveal only. Masked NLL production may finish
+  first; formal salt reveal still waits for both frozen governance constants.
   Full detail: DESIGN_V2 §15.A17-A18.
 
 - ADOPTED (2026-08-08, Python behavioral extraction rule; PRE-GENERATION and

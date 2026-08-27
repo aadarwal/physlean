@@ -85,6 +85,20 @@ case "$V2B_TASK" in
     ;;
 esac
 
+V2B_PILOT_BATTERY="results_v2/battery/battery_pilot_1p5b.json"
+[[ -f "$V2B_PILOT_BATTERY" ]] || {
+  echo "missing 1.5B pilot instrument battery: $V2B_PILOT_BATTERY" >&2
+  exit 1
+}
+git ls-files --error-unmatch "$V2B_PILOT_BATTERY" >/dev/null || {
+  echo "pilot instrument battery is not tracked/committed" >&2
+  exit 1
+}
+git diff --quiet HEAD -- "$V2B_PILOT_BATTERY" || {
+  echo "pilot instrument battery differs from HEAD" >&2
+  exit 1
+}
+
 V2B_MANIFEST="results_v2/v2b/assembly/job${V2B_ASSEMBLY_JOB}_${V2B_TASK}_${V2B_TAG}.json"
 [[ -f "$V2B_MANIFEST" ]] || {
   echo "missing committed assembly manifest: $V2B_MANIFEST" >&2
@@ -126,6 +140,7 @@ V2B_OUT_DIR="results_v2/v2b/paired/q25c-1.5b/${V2B_SOURCE_COMMIT:0:12}-${V2B_MAN
 "$V2B_PY" eval_paired.py \
   --model Qwen/Qwen2.5-Coder-1.5B \
   --manifest "$V2B_MANIFEST" \
+  --pilot-battery "$V2B_PILOT_BATTERY" \
   --out-dir "$V2B_OUT_DIR" \
   --dtype bfloat16 \
   --device cuda
