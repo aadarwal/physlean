@@ -78,9 +78,9 @@ def main():
                     choices=["hp", "pick", "walk", "ladder", "capacity",
                              "capacity-verdict"])
     ap.add_argument("--frac", type=float, default=None)
-    ap.add_argument("--expect", type=int, default=0,
-                    help="pick: minimum finished candidates per language "
-                         "(fail-closed below this)")
+    ap.add_argument("--expect-set", choices=["grid", "walk"], default=None,
+                    help="pick: the frozen candidate set to require "
+                         "EXACTLY (fail-closed on extras/gaps/dups)")
     ap.add_argument("--langs", default=",".join(LANGS))
     args = ap.parse_args()
     langs = args.langs.split(",")
@@ -98,17 +98,43 @@ def main():
         return
 
     if args.stage == "pick":
-        assert args.frac is not None
+        assert args.frac is not None and args.expect_set
         inc = load_incumbents()
         deficit = []
         for lang in langs:
             b = boundaries(lang)
             mb = b[fkey_lookup(b, args.frac)]
             runs = scan_rung(lang, mb)
-            if len(runs) < max(args.expect, 1):
-                deficit.append(f"{lang}:{len(runs)}/{args.expect}")
+            # frozen-set exactness (round-5): candidates must be exactly
+            # the frozen combo set — no extras, no gaps, no duplicates
+            if args.expect_set == "grid":
+                want = {(round(lr, 8), ep) for lr in HP_LRS
+                        for ep in HP_EPOCHS}
+            else:
+                prev = FRACS[FRACS.index(args.frac) - 1]
+                cur = inc.get(lang, {}).get(fkey(prev))
+                if cur is None:
+                    deficit.append(f"{lang}:no-prev-incumbent")
+                    continue
+                lr0, ep0 = cur["lr"], cur["epochs"]
+                want = {(round(lr, 8), ep)
+                        for lr in (lr0 * 3, lr0, lr0 / 3)
+                        for ep in (ep0, ep0 * 2)} | {(round(lr0, 8), ep0)}
+            combos = {}
+            bad = None
+            for val, lr, ep, name in runs:
+                key = (round(lr, 8), ep)
+                if key not in want:
+                    bad = f"extra combo {key}"
+                elif key in combos:
+                    bad = f"duplicate combo {key}"
+                else:
+                    combos[key] = (val, lr, ep, name)
+            if bad or set(combos) != want:
+                deficit.append(f"{lang}:{bad or 'missing combos'} "
+                               f"({len(combos)}/{len(want)})")
                 continue
-            best = runs[0]
+            best = min(combos.values())
             inc.setdefault(lang, {})[fkey(args.frac)] = dict(
                 lr=best[1], epochs=best[2], val_bpb=best[0], run=best[3],
                 n_candidates=len(runs))
@@ -203,18 +229,28 @@ def main():
             probes = scan_rung(lang, mb, size="30m")
             lr0, ep0 = cur["lr"], cur["epochs"]
             want = {(round(lr, 8), ep) for lr in (lr0 * 3, lr0, lr0 / 3)
-                    for ep in (ep0, ep0 * 2)} | {(lr0, ep0)}
-            have = {(round(p[1], 8), p[2]) for p in probes}
-            if not want <= have:
+                    for ep in (ep0, ep0 * 2)} | {(round(lr0, 8), ep0)}
+            per_combo = {}
+            for val, lr, ep, name in probes:
+                key = (round(lr, 8), ep)
+                if key in want:
+                    per_combo.setdefault(key, []).append((val, name))
+            dup = [k for k, v in per_combo.items() if len(v) > 1]
+            if dup or set(per_combo) != want:
                 raise SystemExit(
-                    f"verdict refused: {lang} missing frozen 30m "
-                    f"neighbors {sorted(want - have)}")
-            best30 = min(p[0] for p in probes
-                         if (round(p[1], 8), p[2]) in want)
+                    f"verdict refused: {lang} 30m probes must be exactly "
+                    f"the frozen set (missing {sorted(want - set(per_combo))},"
+                    f" duplicates {dup})")
+            best30, best30_run = min(v[0] for v in per_combo.values())
             best10 = cur["val_bpb"]
-            verdict[lang] = dict(fired=bool(best30 < best10 - 0.01),
-                                 best_30m=best30, best_10m=best10,
-                                 n_probes=len(probes))
+            run_shas = {name: _result_sha(name)
+                        for v in per_combo.values() for _, name in v}
+            verdict[lang] = dict(
+                schema="cs_capacity_verdict_v1",
+                fired=bool(best30 < best10 - 0.01),
+                best_30m=best30, best_30m_run=best30_run,
+                best_10m=best10, incumbent_run=cur.get("run"),
+                probe_run_sha256=run_shas)
             print(f"[{lang}] 30m {best30:.4f} vs 10m {best10:.4f} "
                   f"fired={verdict[lang]['fired']}")
         out = os.path.join(BASE, "results_cs", "capacity_verdict.json")
@@ -224,6 +260,14 @@ def main():
         json.dump(verdict, open(out, "w"), indent=1)
         print(f"wrote {out}")
         return
+
+
+def _result_sha(run_name):
+    import hashlib
+    p = os.path.join(BASE, "results_cs", "runs", run_name + ".json")
+    h = hashlib.sha256()
+    h.update(open(p, "rb").read())
+    return h.hexdigest()
 
 
 def fkey_lookup(b, frac):

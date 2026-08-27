@@ -202,11 +202,14 @@ Per corpus scope (pooled language mixture; per-repo strata >= 5 MB):
   the PLUG-IN of the point estimand on each resample (round-4 fix — the
   earlier block-wise cancellation claim was FALSE: within-document
   shuffles preserve whole-document histograms but not lag-masked
-  endpoint marginals): C_data^r and C_permmean^r are each rebuilt from
-  the resampled block joints with their own row/column-sum marginals,
-  and the statistic is op(C_data^r − C_permmean^r) — two matmuls per
-  lag, no identity assumed. Exercised with n_boot>0 in the selftest.
-  Lag-point bootstrap (1000) secondary.
+  endpoint marginals): covariance is NONLINEAR in counts, so EACH
+  permutation's covariance is rebuilt per resample and then averaged —
+  op(C(J_data^r) − mean_i C(J_perm,i^r)) — never the covariance of
+  averaged counts (round-5 fix). Shuffles are held fixed across
+  resamples (a paired block resample of the (data, perm) statistics).
+  The selftest compares the production path against an independent
+  naive reference implementation to 1e-9 and exercises n_boot>0
+  end-to-end. Lag-point bootstrap (1000) secondary.
 - **β positivity gate**: β̂_corr ≤ 0.02 (indistinguishable from flat) →
   "no reportable β_corr" for the scope.
 - **Provenance (review B4, hardened at round 2)**: every output records
@@ -259,11 +262,16 @@ Per corpus scope (pooled language mixture; per-repo strata >= 5 MB):
   ladder (all rungs, all seeds) and the 10m ladder is reported as the
   undersized arm — curves are never spliced (the analyzer filters by
   size everywhere; a mixed-size curve is impossible by construction).
-  ADJUDICATION IS AN ARTIFACT (round-3 fix): `cs2_launch --stage
-  capacity-verdict` writes results_cs/capacity_verdict.json ({lang:
-  {fired, best_30m, best_10m}}); the analyzer's envelope phase WITHHOLDS
-  H3 for any eligible language whose verdict is missing or fired (until
-  its 30m ladder exists and is analyzed as its own arm).
+  ADJUDICATION IS AN ARTIFACT (round-3 fix; schema-complete per round
+  5): `cs2_launch --stage capacity-verdict` requires EXACTLY the six
+  frozen neighbor probes (no duplicates), refuses overwrites, and
+  writes results_cs/capacity_verdict.json with schema
+  cs_capacity_verdict_v1 carrying the selected run identities and
+  result-json SHA256s. The GAMMA phase refuses to register any eligible
+  language whose verdict is missing, schema-incomplete, or fired; the
+  registration sha-binds the verdict so post-registration tampering is
+  refused. HP `pick` likewise requires EXACTLY the frozen candidate set
+  (grid 9 / walk 6; extras, gaps, or duplicates fail-closed).
 - **Fail-closed execution (round-2 NB5 fix)**: `pick` refuses (nonzero
   exit, driver aborts) when a rung's candidate set is incomplete or
   contains non-doc-reset runs; `ladder` refuses on any missing
@@ -321,8 +329,18 @@ differ and are not attributed to it).
 - **γ̂ / Ĥ_∞** (largest rung, T=4096; round-2 NB1 fix): the L_n curve is
   LOG-BINNED over n ∈ [4, 512] (24 log-spaced bins, byte-weighted bin
   means) — binning plus the 12 MB val plus 3-seed pooling is what buys
-  the per-point noise the estimator needs. Requirements before any γ̂ is
-  reported: exactly seeds {0,1,2} present at the top two rungs;
+  the per-point noise the estimator needs. Refit rules (round-5
+  reconciliation — these ARE the frozen §6 gates for refits): a
+  sensitivity-window refit must satisfy the fatal gates (γ > 0.05,
+  interior H*) and its OWN identifiability cap (profile width ≤ 0.3,
+  the degenerate threshold — narrow windows have less H-leverage);
+  failure WITHHOLDS γ̂. The R² certification applies to the primary fit
+  only. An identifiable refit contributes its POINT to the window
+  component plus, when its profile width exceeds the primary standard
+  (0.15), half the EXCESS — borderline-identifiable refits widen hw_γ,
+  never narrow it. Requirements before any γ̂ is reported: exactly
+  seeds {0,1,2} present at the top two rungs (exactly three artifacts
+  each — duplicate-seed artifact sets fail);
   convergence (top-two-rung binned curves agree within 0.02 b/B over the
   window); and the IDENTIFIABILITY GATES on the H-grid fit (grid
   H ∈ [0, min L_n] step 0.005, OLS of log(L_n − H) on log n): γ̂ > 0.05;
@@ -365,9 +383,12 @@ differ and are not attributed to it).
   rule with ≥4 rungs, α̂_D is WITHHELD (sensitivity failure never
   shrinks hw; §1). For an H3-eligible language, α̂_D and H3 are WITHHELD
   outright if any primary-arm (T=4096) rung is missing, has an
-  incomplete seed set, or has duplicate (rung, seed) runs — fail-closed,
-  with the defect named (round-3 fix; descriptive-only scopes may
-  drop-with-note instead). hw_pred is defined in the γ̂ bullet above.
+  incomplete seed set, missing dumps, or duplicate (rung, seed) runs —
+  fail-closed, with the defect named (round-3 fix; descriptive-only
+  scopes may drop-with-note instead). The primary gate covers T=4096
+  ONLY (round-5 fix): T=512 groups enter the envelope sensitivity when
+  complete and are otherwise noted, never withholding — job completion
+  order cannot change the verdict. hw_pred is defined in the γ̂ bullet above.
 - **Regime gates (review B6; round-2 NB2 fix — evaluated BEFORE H3)**:
   (a) fast-learning check — δ_n per the paper's §5 protocol (grid H_n
   along the P axis per n ∈ {1..12}; δ_n = −slope of log(L_n(P) − H_n)).

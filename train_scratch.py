@@ -231,20 +231,36 @@ def main():
             "manifest offsets must be nonempty strictly increasing"
         assert offs[-1] == len(val), \
             f"manifest final offset {offs[-1]} != val bytes {len(val)}"
+    def fsha(p):
+        h = hashlib.sha256()
+        with open(p, "rb") as f:
+            for ch in iter(lambda: f.read(1 << 22), b""):
+                h.update(ch)
+        return h.hexdigest()
+
     if os.path.exists(result_path) and not args.force:
         # the skip is only idempotent if the existing result matches the
-        # CURRENT request (round-4 fix: a stale result must not stand in
-        # for a different configuration)
+        # CURRENT request AND the current input files (round-5 fix:
+        # same-length changed pools must not reuse an old loss/dump)
         prev = json.load(open(result_path))
         want = dict(lang=args.lang, size=args.size, seed=args.seed,
                     ctx=args.ctx, epochs=args.epochs,
-                    train_bytes=len(train))
+                    train_bytes=len(train),
+                    doc_reset=bool(args.val_manifest),
+                    train_sha256=fsha(os.path.join(
+                        args.pool_dir, f"{args.lang}_train.bin")),
+                    val_sha256=fsha(os.path.join(
+                        args.pool_dir, f"{args.lang}_val.bin")),
+                    manifest_sha256=fsha(args.val_manifest)
+                    if args.val_manifest else None)
         got = {k: prev.get(k) for k in want}
         if args.lr:
             want["lr"], got["lr"] = args.lr, prev.get("lr")
         if got != want:
+            diff = {k: (got[k], want[k]) for k in want
+                    if got[k] != want[k]}
             sys.exit(f"[{run}] existing result mismatches request: "
-                     f"{got} != {want} (use --force to rerun)")
+                     f"{diff} (use --force to rerun)")
         print(f"[{run}] result exists and matches, skipping", flush=True)
         return
     model = ByteGPT(L, d, h, args.ctx,
@@ -319,13 +335,6 @@ def main():
                 total_bytes=int(len(val)), n_tokens=int(len(val)),
                 vocab_size=256, overall_bpb=final)
     json.dump(meta, open(dump + ".meta.json", "w"), indent=1)
-    def fsha(p):
-        h = hashlib.sha256()
-        with open(p, "rb") as f:
-            for ch in iter(lambda: f.read(1 << 22), b""):
-                h.update(ch)
-        return h.hexdigest()
-
     result = dict(run=run, lang=args.lang, size=args.size, seed=args.seed,
                   n_params=n_params, ctx=args.ctx, lr=lr,
                   epochs=args.epochs, doc_reset=bool(args.val_manifest),

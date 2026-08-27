@@ -176,6 +176,54 @@ def mat_stats(C):
                 top10=[float(v) for v in sv[:10]])
 
 
+def boot_centered_ops(Jd_blocks, Jp_blocks_list, boot_M):
+    """Per-resample plug-in of the point estimand (round-5 fix):
+    op( C(Jd^r) − mean_i C(Jp_i^r) ). Covariance is nonlinear in counts
+    (marginal outer products), so each permutation's covariance is
+    reconstructed per resample and THEN averaged — never the covariance
+    of averaged counts. Shuffles are held fixed across resamples (a
+    paired block resample of the (data, perm) statistics)."""
+    nb = boot_M.shape[1]
+    n_boot = boot_M.shape[0]
+    Rd = boot_M @ Jd_blocks.reshape(nb, V * V).astype(np.float64)
+    acc = np.zeros((n_boot, V, V))
+    cnt = np.zeros(n_boot, dtype=np.int64)
+    for Jp in Jp_blocks_list:
+        Rp = boot_M @ Jp.reshape(nb, V * V).astype(np.float64)
+        for r in range(n_boot):
+            Cq, Nq, _ = cov_matrix(Rp[r].reshape(V, V))
+            if Cq is not None:
+                acc[r] += Cq
+                cnt[r] += 1
+    row = []
+    for r in range(n_boot):
+        Cd, Nd, _ = cov_matrix(Rd[r].reshape(V, V))
+        if Cd is None or cnt[r] < len(Jp_blocks_list):
+            row.append(float("nan"))
+        else:
+            row.append(op_norm(Cd - acc[r] / cnt[r]))
+    return row
+
+
+def boot_centered_ops_reference(Jd_blocks, Jp_blocks_list, sel_row):
+    """Naive independent implementation for the selftest: explicit
+    multiset block sums, per-permutation covariances, then the mean."""
+    nb = Jd_blocks.shape[0]
+    mult = np.bincount(sel_row, minlength=nb)
+    Jd = np.zeros((V, V))
+    for b in range(nb):
+        Jd += mult[b] * Jd_blocks[b]
+    Cd, _, _ = cov_matrix(Jd)
+    Cps = []
+    for Jp in Jp_blocks_list:
+        Jq = np.zeros((V, V))
+        for b in range(nb):
+            Jq += mult[b] * Jp[b]
+        Cq, _, _ = cov_matrix(Jq)
+        Cps.append(Cq)
+    return op_norm(Cd - np.mean(np.stack(Cps), axis=0))
+
+
 def composition_cov_op(docs):
     """||sum_d w_d (p_d - pbar)(p_d - pbar)^T||_op over doc marginals."""
     D = np.zeros((len(docs), V), dtype=np.float64)
@@ -352,10 +400,11 @@ def analyze_stream(docs, lags, n_blocks, n_boot, tag):
             log(f"  [{tag}] lag {n}: <1000 pairs, stopping")
             break
         Cp = []
-        Pm_blocks = np.zeros_like(J, dtype=np.float64)
+        Jp_list = []
         for xs in shufs:
             Js = lag_joint_blocks(xs, doc_id, doc_block, n, nb)
-            Pm_blocks += Js / len(shufs)
+            if n_boot:
+                Jp_list.append(Js)
             Cpi, Np, _ = cov_matrix(Js.sum(axis=0))
             if Cpi is not None:
                 Cp.append(Cpi)
@@ -381,22 +430,7 @@ def analyze_stream(docs, lags, n_blocks, n_boot, tag):
         floors.append(float(max(loo)))
         floor_spread.append([float(min(loo)), float(max(loo))])
         if n_boot:
-            # PLUG-IN centered bootstrap (ARM_CS §3, round-4 fix): the
-            # resampled statistic is exactly the point estimand on the
-            # resample — C_data^r − C_permmean^r, each with its OWN
-            # marginals (lag-masked endpoint marginals are NOT preserved
-            # by within-doc shuffles, so no cancellation identity is
-            # assumed). Two matmuls per lag; marginals from row/col sums.
-            Rd = boot_M @ J.reshape(nb, V * V).astype(np.float64)
-            Rp = boot_M @ Pm_blocks.reshape(nb, V * V)
-            row = []
-            for r in range(n_boot):
-                Cd, Nd, _ = cov_matrix(Rd[r].reshape(V, V))
-                Cpb, Np2, _ = cov_matrix(Rp[r].reshape(V, V))
-                row.append(op_norm(Cd - Cpb)
-                           if Cd is not None and Cpb is not None
-                           else float("nan"))
-            boot_ops.append(row)
+            boot_ops.append(boot_centered_ops(J, Jp_list, boot_M))
         log(f"  [{tag}] lag {n}: op_seq={st['op']:.3e} "
             f"floor={floors[-1]:.3e}")
 
@@ -498,6 +532,21 @@ def selftest():
     b = r["fit"].get("beta_corr")
     assert ci and ci[0] < ci[1] and b is not None, (ci, b)
     assert ci[0] - 0.3 < b < ci[1] + 0.3, (ci, b)
+    # production-vs-reference replicate check (round-5): the same
+    # estimator via two independent implementations must agree exactly
+    xr, dr, lr_ = build_stream(docs_mk[:6])
+    blk = np.random.default_rng(SEED_BLOCKS).integers(0, 6, 6).astype(
+        np.int32)
+    Jd = lag_joint_blocks(xr, dr, blk, 3, 6)
+    Jp_l = [lag_joint_blocks(within_doc_shuffle(xr, lr_, s), dr, blk, 3, 6)
+            for s in SEED_PERMS[:2]]
+    sel2 = np.random.default_rng(17).integers(0, 6, (3, 6))
+    M2 = np.stack([np.bincount(sel2[q], minlength=6)
+                   for q in range(3)]).astype(np.float64)
+    prod = boot_centered_ops(Jd, Jp_l, M2)
+    for q in range(3):
+        ref = boot_centered_ops_reference(Jd, Jp_l, sel2[q])
+        assert abs(prod[q] - ref) < 1e-9, (q, prod[q], ref)
     # (c) decaying signal with a lag-10 echo: peak at a multiple of 10
     n = 1_500_000
     u = rng.random(n)

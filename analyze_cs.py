@@ -260,8 +260,12 @@ def phase_gamma(args):
             # capacity must be adjudicated un-fired BEFORE gamma/H1 are
             # registered from the 10m model (round-4 fix)
             ce = cap.get(lang)
-            if not isinstance(ce, dict) or "fired" not in ce:
-                entry["reason"] = "capacity unadjudicated (no valid entry)"
+            if not isinstance(ce, dict) or "fired" not in ce or \
+                    ce.get("schema") != "cs_capacity_verdict_v1" or \
+                    not all(k in ce for k in ("best_30m", "best_10m",
+                                              "probe_run_sha256")):
+                entry["reason"] = ("capacity unadjudicated (no valid "
+                                   "schema-complete entry)")
                 reg["langs"][lang] = entry
                 continue
             if ce["fired"]:
@@ -316,7 +320,11 @@ def phase_gamma(args):
             sub = (mt >= lo) & (mt <= hi)
             f2 = gamma_fit(mt[sub], vt[sub], certify=False)
             if "gamma" in f2:
-                win_g.append(f2["gamma"])
+                # point, plus half the identifiability EXCESS beyond the
+                # primary standard (round-5: borderline refits widen
+                # hw_gamma, never narrow it)
+                exc = max(0.0, f2["profile_width"] - PROFILE_WIDTH_MAX)
+                win_g += [f2["gamma"] - exc / 2, f2["gamma"] + exc / 2]
             else:
                 sens_fail = (f"window [{lo},{hi}] refit failed: "
                              f"{f2.get('reason')}")
@@ -422,8 +430,13 @@ def phase_envelope(args):
             ru = rung_of(r, bounds)
             if ru is not None:
                 groups.setdefault((r["ctx"], ru), []).append(r)
+        # the PRIMARY gate covers the T=4096 arm ONLY (round-5 fix: a
+        # partially landed T=512 group must not make H3 order-dependent);
+        # T=512 is the envelope sensitivity and uses complete groups only
         defects = []
         for k, v in sorted(groups.items()):
+            if k[0] != 4096:
+                continue
             seeds = [r.get("seed") for r in v]
             if len(seeds) != len(set(seeds)):
                 defects.append(f"duplicate runs at {k}")
@@ -437,7 +450,8 @@ def phase_envelope(args):
                 d = os.path.join(args.nll_dir,
                                  f"{r['run']}__{r['lang']}__val.csv.gz")
                 if not os.path.exists(d):
-                    defects.append(f"missing dump for {r['run']}")
+                    if ctx == 4096:  # primary-arm dumps are required
+                        defects.append(f"missing dump for {r['run']}")
                 else:
                     env_inputs[os.path.relpath(d, BASE)] = sha256_file(d)
                 env_inputs[os.path.relpath(r["_path"], BASE)] = \
@@ -733,8 +747,11 @@ def selftest():
     # capacity-fired must refuse at the GAMMA level (registration is
     # sha-bound to the capacity state, so post-registration toggling is
     # itself refused — tested at the end)
-    json.dump(dict(lean=dict(fired=True), python=dict(fired=False),
-                   cpp=dict(fired=False)), open(cap_p, "w"))
+    def _cap(fired):
+        return dict(schema="cs_capacity_verdict_v1", fired=fired,
+                    best_30m=1.0, best_10m=1.0, probe_run_sha256={})
+    json.dump(dict(lean=_cap(True), python=_cap(False),
+                   cpp=_cap(False)), open(cap_p, "w"))
     ns = argparse.Namespace(stats=stats_p,
                             runs_dir=os.path.join(tmp, "runs"),
                             nll_dir=os.path.join(tmp, "nll"),
@@ -748,7 +765,7 @@ def selftest():
     reg0 = json.load(open(os.path.join(tmp, "reg.json")))
     assert "capacity fired" in reg0["langs"]["lean"].get("reason", ""), \
         reg0["langs"]["lean"]
-    json.dump({l: dict(fired=False) for l in ("lean", "python", "cpp")},
+    json.dump({l: _cap(False) for l in ("lean", "python", "cpp")},
               open(cap_p, "w"))
     ns.force = True
     phase_gamma(ns)
@@ -782,8 +799,8 @@ def selftest():
     # post-registration capacity tampering must be REFUSED by the
     # input-sha binding (the gamma-level gate handles fired states)
     orig_cap = open(cap_p).read()
-    json.dump(dict(lean=dict(fired=True), python=dict(fired=False),
-                   cpp=dict(fired=False)), open(cap_p, "w"))
+    json.dump(dict(lean=_cap(True), python=_cap(False),
+                   cpp=_cap(False)), open(cap_p, "w"))
     try:
         phase_envelope(ns2)
         raise AssertionError("envelope accepted a tampered capacity file")
@@ -799,6 +816,18 @@ def selftest():
     assert env3["langs"]["python"]["H3"].startswith("WITHHELD"), \
         env3["langs"]["python"]["H3"]
     os.rename(hidden, victim)
+    # a PARTIAL T=512 group must NOT affect the primary verdict (round-5)
+    p512 = os.path.join(tmp, "runs", "scratch-10m-lean-s0-r0c512.json")
+    json.dump(dict(run="scratch-10m-lean-s0-r0c512", lang="lean",
+                   size="10m", seed=0, ctx=512, lr=1e-3, epochs=2,
+                   doc_reset=True, train_bytes=bounds[0],
+                   final_val_bpb=2.0, tokens_seen=bounds[0]),
+              open(p512, "w"))
+    phase_envelope(ns2)
+    env5 = json.load(open(os.path.join(tmp, "analysis_envelope.json")))
+    assert env5["langs"]["lean"]["H3"] == "CONSISTENT", \
+        env5["langs"]["lean"]["H3"]
+    os.remove(p512)
     # duplicate run must withhold H3
     dup = os.path.join(tmp, "runs", "scratch-10m-lean-s0-r3.json")
     import shutil
