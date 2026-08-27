@@ -580,7 +580,8 @@ def buildBundle (before after : Environment) (targetName : Name)
   pure <| .ok bundle
 
 def elaborateGenerated (inputCtx : Parser.InputContext) (prepared : Prepared)
-    : IO (Except String Elab.Command.State) := do
+    (requireTerminalAfter : Bool := false) :
+    IO (Except String Elab.Command.State) := do
   let (stx, nextParserState, parseMessages) :=
     Parser.parseCommand inputCtx (parserContext prepared.commandState)
       prepared.parserState {}
@@ -589,6 +590,13 @@ def elaborateGenerated (inputCtx : Parser.InputContext) (prepared : Prepared)
     return .error "parse-error"
   if Parser.isTerminalCommand stx then
     return .error "terminal-command"
+  if requireTerminalAfter then
+    let (tail, tailState, tailMessages) :=
+      Parser.parseCommand inputCtx (parserContext prepared.commandState)
+        nextParserState {}
+    if allMessageCount tailMessages != 0 || tailState.recovering
+        || tail.hasMissing || !Parser.isTerminalCommand tail then
+      return .error "trailing-target-syntax"
   let state := hardenState { prepared.commandState with messages := {} }
   let context : Elab.Command.Context := {
     cmdPos := prepared.parserState.pos
@@ -662,7 +670,7 @@ def runTargetMode (stream : IO.FS.Stream) (channelNonce : String)
     ("mode", toJson "target")
   ]
   let targetCtx := Parser.mkInputContext targetView manifest.logicalFile
-  match ← elaborateGenerated targetCtx prepared with
+  match ← elaborateGenerated targetCtx prepared true with
   | .error reason =>
       emit channelNonce <| Json.mkObj [
         ("schema", toJson OUTPUT_SCHEMA),

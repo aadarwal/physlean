@@ -296,6 +296,57 @@ all broad lookup roots are absent, and run positive/negative probes on both
 pinned cluster toolchains.  The live validator deterministically rebuilds the
 entire manifest from its content-bound inputs before a launcher may consume it.
 
+### 7.2 Bounded four-phase execution layer
+
+`run_v2b_s5_four_phase.py` is the next bounded implementation layer. Its
+strict, hash-only plan joins the exact source decomposition, supplied offsets,
+visibility contract, pinned Lean and driver, runner bytes, sandbox contract,
+and resource policy. It derives a separate exact-key manifest for each of the
+four phases and launches one fresh process at a time. Candidate target frames
+end exactly at `candidateRetainedEndByte`; candidate suffix frames contain only
+the trusted prefix/header, byte-position-preserving masked body, immutable
+suffix, and strictly revalidated kernel bundle. Plan, visibility, and private
+attempt evidence are never mounted in a child.
+
+Each attempt records an immutable open record and exact frame hashes before
+launch. After a nonce-authenticated `phase-start`, the host fsyncs the raw
+start prefix and GO intent before writing `GO:<nonce>` and closing stdin. Raw
+stdout/stderr, any authenticated GO acknowledgement, and a terminal record are
+then written with complete hash joins. Re-entry reconstructs phase inputs and
+classification from those bytes rather than trusting the summary. A
+GO-committed partial or tampered attempt fails closed and is never retried; at
+most two pre-GO attempts are retained. The target driver additionally parses
+through terminal EOF after the single target command, so a bad retained range
+cannot hide a second generated command that suffix mode would skip.
+
+The default backend requires the content-bound canonical `/usr/bin/bwrap`, an
+empty root, fresh namespaces, no `/proc` or network, private `/tmp`, and exact
+file mounts from `v2b_s5_visibility_v1`. The only other backend is named
+`none-test-only`, is opt-in at the Python API, receives a scrubbed environment,
+and exists solely to execute the real Lean protocol on non-Linux development
+hosts. Its filesystem results are not oracle-isolation evidence.
+
+This layer is still **not a production-scientific verifier**. In particular:
+
+- baseline phases are currently joined to a candidate-bearing invocation,
+  rather than emitted once as an arm-independent prospective certificate;
+- the supplied target/header/end offsets still need a direct hash join to the
+  frozen S4 extraction artifact rather than only source-byte reconstruction;
+- the host uses exact canonical target-type equality. Definitionally equal
+  but nonidentical inferred types require the frozen `Kernel.isDefEq`
+  certificate path before production;
+- the four prefix rebuilds bind their inputs and prior-command count but do
+  not yet emit a canonical pre-target environment/semantic-context digest;
+- a scheduler/host crash after durable GO fails closed on the partial attempt,
+  but there is not yet a separately audited recovery adjudicator that turns a
+  partial candidate attempt into an immutable zero;
+- live projection/driver/runtime hashes are checked before and after each
+  phase, but content-addressed staging or open-fd mounts are still required to
+  eliminate the remaining pathname swap interval completely; and
+- the graph-derived Linux ELF loader closure, real Engaging bubblewrap probes,
+  and exact application of expanded `ModuleSetup` options/plugins remain
+  release gates.
+
 ## 8. Release gates
 
 No behavioral S5 outcome is scientific until all are true:
