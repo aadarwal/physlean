@@ -65,8 +65,9 @@ def scan_rung(lang, mb, ctx=4096, seed=0, size="10m"):
         if (r.get("lang") == lang and r.get("seed") == seed
                 and r.get("ctx") == ctx and r.get("size") == size
                 and r.get("doc_reset")
-                and r.get("device") and r.get("micro_batch")
-                and r.get("step_tokens")
+                and r.get("device") == "cuda"
+                and r.get("step_tokens") == 49152
+                and r.get("micro_batch") == {"10m": 32, "30m": 24}.get(size)
                 and isinstance(r.get("final_val_bpb"), (int, float))
                 and _m.isfinite(r["final_val_bpb"])
                 and abs(r.get("train_bytes", -1) - mb) <= 3):

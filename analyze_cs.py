@@ -55,7 +55,24 @@ DELTA_NS = list(range(1, 13))
 DELTA_FAST_COUNT = 9
 DELTA_R2_MIN = 0.9
 SEEDS = {0, 1, 2}
+HP_LRS = [3e-4, 1e-3, 3e-3]
+HP_EPOCHS = [1, 2, 4]
+CANON_DEVICE = "cuda"
+CANON_STEP_TOKENS = 49152
+CANON_MB = {"10m": 32, "30m": 24}
 REG_PATH = os.path.join("results_cs", "registration_gamma.json")
+_POOL_HASHES = {}
+
+
+def pool_hashes(cs2_dir, lang):
+    key = (cs2_dir, lang)
+    if key not in _POOL_HASHES:
+        _POOL_HASHES[key] = tuple(
+            sha256_file(os.path.join(cs2_dir, f"{lang}_{k}"))
+            if os.path.exists(os.path.join(cs2_dir, f"{lang}_{k}"))
+            else None
+            for k in ("train.bin", "val.bin", "cs2.json"))
+    return _POOL_HASHES[key]
 
 
 def sha256_file(p):
@@ -66,21 +83,32 @@ def sha256_file(p):
     return h.hexdigest()
 
 
-def run_identity_ok(r):
-    """Round-7: artifacts must carry the full v6 identity and a finite
-    loss — pre-v6 or NaN-bearing artifacts are not evidence."""
-    return bool(r.get("device")) and r.get("micro_batch") \
-        and r.get("step_tokens") \
-        and isinstance(r.get("final_val_bpb"), (int, float)) \
-        and math.isfinite(r["final_val_bpb"])
+def run_identity_ok(r, cs2_dir=None):
+    """Round-8: identity is CANONICAL, not truthy — cuda device, frozen
+    step_tokens and per-size micro-batch, finite loss; and when a
+    cs2_dir is given, the recorded train/val/manifest hashes must match
+    the CURRENT pool files (mixed-corpus artifacts are not evidence)."""
+    if r.get("device") != CANON_DEVICE \
+            or r.get("step_tokens") != CANON_STEP_TOKENS \
+            or r.get("micro_batch") != CANON_MB.get(r.get("size")) \
+            or not isinstance(r.get("final_val_bpb"), (int, float)) \
+            or not math.isfinite(r["final_val_bpb"]):
+        return False
+    if cs2_dir is not None:
+        t, v, m = pool_hashes(cs2_dir, r.get("lang", ""))
+        if r.get("train_sha256") != t or r.get("val_sha256") != v \
+                or r.get("manifest_sha256") != m:
+            return False
+    return True
 
 
-def load_runs(runs_dir, size="10m"):
+def load_runs(runs_dir, size="10m", cs2_dir=None):
     out = []
     for p in sorted(glob.glob(os.path.join(runs_dir, "*.json"))):
         r = json.load(open(p))
         if r.get("size") != size or not r.get("doc_reset") \
-                or "-r" not in r.get("run", "") or not run_identity_ok(r):
+                or "-r" not in r.get("run", "") \
+                or not run_identity_ok(r, cs2_dir):
             continue
         r["_path"] = p
         out.append(r)
@@ -226,10 +254,12 @@ def scope_beta(stats, lang):
             scope.get("total_bytes"))
 
 
-def validate_capacity_entry(ce, runs_dir):
-    """Round-6 fix: capacity evidence is VERIFIED, not shape-checked —
-    probe and incumbent result-jsons re-hashed, losses finite, and the
-    fired flag recomputed from the recorded losses."""
+def validate_capacity_entry(ce, runs_dir, lang, bounds, hp, cs2_dir):
+    """Round-8: capacity evidence is verified SEMANTICALLY — probes must
+    be this language's seed-0 ctx-4096 doc-reset TOP-RUNG 30m artifacts
+    forming EXACTLY the frozen neighbor set of the VERIFIED top-rung HP
+    incumbent, and the 10m incumbent file must BE that verified
+    incumbent. Losses are derived from the files; fired is recomputed."""
     if not isinstance(ce, dict) or \
             ce.get("schema") != "cs_capacity_verdict_v1":
         return "no schema-complete entry"
@@ -237,26 +267,46 @@ def validate_capacity_entry(ce, runs_dir):
               "incumbent_run", "incumbent_run_sha256"):
         if k not in ce:
             return f"missing key {k}"
+    top_frac = FRACS[-1]
+    bad = verify_incumbent(hp, lang, top_frac, runs_dir, bounds, cs2_dir)
+    if bad:
+        return f"top-rung incumbent unverified: {bad}"
+    hinc = hp[lang][f"{top_frac:.6f}"]
+    if ce["incumbent_run"] != hinc.get("run") or \
+            ce["incumbent_run_sha256"] != hinc.get("run_sha256"):
+        return "incumbent is not the verified HP incumbent"
+    ip = os.path.join(runs_dir, str(ce["incumbent_run"]) + ".json")
+    if not os.path.exists(ip) or sha256_file(ip) != \
+            ce["incumbent_run_sha256"]:
+        return f"evidence mismatch: {ce['incumbent_run']}"
+    ri = json.load(open(ip))
+    lr0, ep0 = hinc["lr"], hinc["epochs"]
+    want = {(round(lr, 8), ep) for lr in (lr0 * 3, lr0, lr0 / 3)
+            for ep in (ep0, ep0 * 2)} | {(round(lr0, 8), ep0)}
     probes = ce["probe_run_sha256"]
-    if not isinstance(probes, dict) or len(probes) < 6:
-        return "fewer than six hashed probes"
+    if not isinstance(probes, dict):
+        return "malformed probe map"
+    have = {}
     vals30 = []
     for name, sha in probes.items():
         p = os.path.join(runs_dir, str(name) + ".json")
         if not os.path.exists(p) or sha256_file(p) != sha:
             return f"evidence mismatch: {name}"
         r = json.load(open(p))
-        if r.get("size") != "30m" or not run_identity_ok(r):
-            return f"probe {name} is not a valid 30m artifact"
+        if r.get("size") != "30m" or r.get("lang") != lang or \
+                r.get("seed") != 0 or r.get("ctx") != 4096 or \
+                not r.get("doc_reset") or \
+                abs(r.get("train_bytes", -1) - bounds[-1]) > 3 or \
+                not run_identity_ok(r, cs2_dir):
+            return f"probe {name} is not a valid top-rung 30m artifact"
+        ck = (round(r["lr"], 8), r["epochs"])
+        if ck in have:
+            return f"duplicate probe configuration {ck}"
+        have[ck] = True
         vals30.append(r["final_val_bpb"])
-    ip = os.path.join(runs_dir, str(ce["incumbent_run"]) + ".json")
-    if not os.path.exists(ip) or sha256_file(ip) != \
-            ce["incumbent_run_sha256"]:
-        return f"evidence mismatch: {ce['incumbent_run']}"
-    ri = json.load(open(ip))
-    if ri.get("size") != "10m" or not run_identity_ok(ri):
-        return "incumbent is not a valid 10m artifact"
-    # round-7: DERIVE the losses from the evidence, never trust the record
+    if set(have) != want:
+        return ("probe set is not the frozen neighbor set "
+                f"({sorted(set(have) ^ want)})")
     b30, b10 = min(vals30), ri["final_val_bpb"]
     if abs(b30 - ce["best_30m"]) > 1e-9 or abs(b10 - ce["best_10m"]) > 1e-9:
         return "recorded losses disagree with the evidence files"
@@ -276,54 +326,79 @@ def load_hp(args):
 _HP_VERIFIED = {}
 
 
-def verify_incumbent(hp, lang, frac, runs_dir):
-    """Round-7: the incumbent record is re-DERIVED from its hashed
-    candidate evidence — cardinality (grid 9 / walk 6), file hashes,
-    finite 10m seed-0 ctx-4096 artifacts, and winner recomputation."""
+def verify_incumbent(hp, lang, frac, runs_dir, bounds, cs2_dir):
+    """Round-8: incumbents are verified as a CHAIN from rung 1 upward.
+    The required candidate set is DERIVED (rung 1 = the frozen 3x3 grid;
+    later rungs = the frozen neighbor set of the previous rung's
+    VERIFIED incumbent) — expect_set is never trusted. Every candidate
+    must be a semantically valid artifact: this language, seed 0,
+    ctx 4096, doc-reset, this rung's exact byte boundary, canonical
+    identity, and current pool hashes."""
     key = (lang, f"{frac:.6f}")
     if key in _HP_VERIFIED:
         return _HP_VERIFIED[key]
-    inc = (hp.get(lang) or {}).get(f"{frac:.6f}")
+    fi = min(range(len(FRACS)), key=lambda i: abs(FRACS[i] - frac))
     out = None
-    if inc is None:
+    if fi > 0:
+        prev_bad = verify_incumbent(hp, lang, FRACS[fi - 1], runs_dir,
+                                    bounds, cs2_dir)
+        if prev_bad:
+            out = f"chain broken below {frac:.6f}: {prev_bad}"
+    inc = (hp.get(lang) or {}).get(f"{frac:.6f}")
+    if out is None and inc is None:
         out = f"no registered incumbent at frac {frac:.6f}"
-    elif not isinstance(inc.get("candidate_sha256"), dict):
+    if out is None and not isinstance(inc.get("candidate_sha256"), dict):
         out = f"incumbent at {frac:.6f} lacks candidate evidence"
-    else:
-        want_n = 9 if inc.get("expect_set") == "grid" else 6
-        cands = inc["candidate_sha256"]
-        if len(cands) != want_n:
-            out = (f"incumbent at {frac:.6f} has {len(cands)} candidates"
-                   f" != {want_n}")
+    if out is None:
+        if fi == 0:
+            want = {(round(lr, 8), ep) for lr in HP_LRS
+                    for ep in HP_EPOCHS}
         else:
-            best = None
-            for name, sha in cands.items():
-                p = os.path.join(runs_dir, str(name) + ".json")
-                if not os.path.exists(p) or sha256_file(p) != sha:
-                    out = f"candidate evidence mismatch: {name}"
-                    break
-                r = json.load(open(p))
-                if r.get("size") != "10m" or r.get("seed") != 0 or \
-                        r.get("ctx") != 4096 or not run_identity_ok(r):
-                    out = f"candidate {name} is not a valid artifact"
-                    break
-                v = (r["final_val_bpb"], round(r["lr"], 8), r["epochs"])
-                if best is None or v < best:
-                    best = v
-            if out is None:
-                if best is None or \
-                        round(inc["lr"], 8) != best[1] or \
-                        inc["epochs"] != best[2] or \
-                        abs(inc.get("val_bpb", 9e9) - best[0]) > 1e-9:
-                    out = (f"incumbent at {frac:.6f} disagrees with the "
-                           f"recomputed winner")
+            pinc = hp[lang][f"{FRACS[fi - 1]:.6f}"]
+            lr0, ep0 = pinc["lr"], pinc["epochs"]
+            want = {(round(lr, 8), ep)
+                    for lr in (lr0 * 3, lr0, lr0 / 3)
+                    for ep in (ep0, ep0 * 2)} | {(round(lr0, 8), ep0)}
+        cands = inc["candidate_sha256"]
+        have = {}
+        best = None
+        for name, sha in cands.items():
+            p = os.path.join(runs_dir, str(name) + ".json")
+            if not os.path.exists(p) or sha256_file(p) != sha:
+                out = f"candidate evidence mismatch: {name}"
+                break
+            r = json.load(open(p))
+            if r.get("size") != "10m" or r.get("seed") != 0 or \
+                    r.get("ctx") != 4096 or not r.get("doc_reset") or \
+                    r.get("lang") != lang or \
+                    abs(r.get("train_bytes", -1) - bounds[fi]) > 3 or \
+                    not run_identity_ok(r, cs2_dir):
+                out = f"candidate {name} is not a valid artifact"
+                break
+            ck = (round(r["lr"], 8), r["epochs"])
+            if ck in have:
+                out = f"duplicate candidate configuration {ck}"
+                break
+            have[ck] = True
+            v = (r["final_val_bpb"], ck[0], ck[1])
+            if best is None or v < best:
+                best = v
+        if out is None and set(have) != want:
+            out = (f"candidate set at {frac:.6f} is not the frozen set "
+                   f"({sorted(set(have) ^ want)})")
+        if out is None:
+            if best is None or round(inc["lr"], 8) != best[1] or \
+                    inc["epochs"] != best[2] or \
+                    abs(inc.get("val_bpb", 9e9) - best[0]) > 1e-9:
+                out = (f"incumbent at {frac:.6f} disagrees with the "
+                       f"recomputed winner")
     _HP_VERIFIED[key] = out
     return out
 
 
-def hp_mismatch(r, hp, lang, frac, runs_dir):
+def hp_mismatch(r, hp, lang, frac, runs_dir, bounds, cs2_dir):
     """Run-vs-incumbent conformity, on a VERIFIED incumbent only."""
-    bad = verify_incumbent(hp, lang, frac, runs_dir)
+    bad = verify_incumbent(hp, lang, frac, runs_dir, bounds, cs2_dir)
     if bad:
         return bad
     inc = (hp.get(lang) or {}).get(f"{frac:.6f}")
@@ -348,10 +423,11 @@ def load_capacity(args):
 
 def phase_gamma(args):
     _HP_VERIFIED.clear()
+    _POOL_HASHES.clear()
     stats = json.load(open(args.stats))
     cap, cap_path = load_capacity(args)
     hp, hp_path = load_hp(args)
-    runs = load_runs(args.runs_dir)
+    runs = load_runs(args.runs_dir, cs2_dir=args.cs2_dir)
     try:
         commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=BASE,
                                 capture_output=True,
@@ -383,7 +459,9 @@ def phase_gamma(args):
             # capacity must be adjudicated un-fired BEFORE gamma/H1 are
             # registered from the 10m model (round-4 fix)
             ce = cap.get(lang)
-            bad = validate_capacity_entry(ce, args.runs_dir)
+            bad = validate_capacity_entry(ce, args.runs_dir,
+                                          lang, bounds, hp,
+                                          args.cs2_dir)
             if bad:
                 entry["reason"] = f"capacity unadjudicated ({bad})"
                 reg["langs"][lang] = entry
@@ -397,7 +475,8 @@ def phase_gamma(args):
             for r in top_runs + sec_runs:
                 ru = rung_of(r, bounds)
                 bad_hp = hp_mismatch(r, hp, lang, FRACS[ru],
-                                     args.runs_dir)
+                                     args.runs_dir, bounds,
+                                     args.cs2_dir)
                 if bad_hp:
                     break
             if bad_hp:
@@ -527,6 +606,7 @@ def ols_shift(Ps, Ls, H):
 
 def phase_envelope(args):
     _HP_VERIFIED.clear()
+    _POOL_HASHES.clear()
     if not args.skip_git_check and not git_blob_matches(args.reg):
         sys.exit("REFUSED: registration not committed-clean-identical to "
                  "HEAD (ARM_CS §5)")
@@ -543,7 +623,7 @@ def phase_envelope(args):
         sys.exit(f"refusing to overwrite {out_file} (use --force)")
     cap, cap_path = load_capacity(args)
     hp, hp_path = load_hp(args)
-    runs = load_runs(args.runs_dir)
+    runs = load_runs(args.runs_dir, cs2_dir=args.cs2_dir)
     env_inputs = {}
     if os.path.exists(hp_path):
         env_inputs[os.path.relpath(hp_path, BASE)] = sha256_file(hp_path)
@@ -586,7 +666,8 @@ def phase_envelope(args):
                 defects.append(f"incomplete seeds at {k}: {sorted(seeds)}")
             for r in v:
                 bad_hp = hp_mismatch(r, hp, lang, FRACS[k[1]],
-                                     args.runs_dir)
+                                     args.runs_dir, bounds,
+                                     args.cs2_dir)
                 if bad_hp:
                     defects.append(bad_hp)
                     break
@@ -743,7 +824,8 @@ def phase_envelope(args):
                     continue
                 for r in v:
                     hp512_bad = hp_mismatch(r, hp, lang, FRACS[ru],
-                                            args.runs_dir)
+                                            args.runs_dir, bounds,
+                                            args.cs2_dir)
                     if hp512_bad:
                         break
                 if hp512_bad:
@@ -857,7 +939,8 @@ def phase_envelope(args):
               f"H3b={e.get('H3b_collapse_metric')}")
 
 
-def _fake_lang(tmp, lang, bounds, g, H, a, delta, seeds=(0, 1, 2)):
+def _fake_lang(tmp, lang, bounds, g, H, a, delta, seeds=(0, 1, 2),
+               pool_sha=None):
     rng = np.random.default_rng(hash(lang) % 2 ** 31)
     runs_d = os.path.join(tmp, "runs")
     nll_d = os.path.join(tmp, "nll")
@@ -868,8 +951,12 @@ def _fake_lang(tmp, lang, bounds, g, H, a, delta, seeds=(0, 1, 2)):
             json.dump(dict(run=run, lang=lang, size="10m", seed=s,
                            ctx=4096, lr=1e-3, epochs=2, doc_reset=True,
                            train_bytes=P, final_val_bpb=LP,
-                           device="cpu", micro_batch=16,
-                           step_tokens=49152, tokens_seen=P),
+                           device="cuda", micro_batch=32,
+                           step_tokens=49152,
+                           train_sha256=pool_sha[0],
+                           val_sha256=pool_sha[1],
+                           manifest_sha256=pool_sha[2],
+                           tokens_seen=P),
                       open(os.path.join(runs_d, run + ".json"), "w"))
             with gzip.open(os.path.join(nll_d,
                                         f"{run}__{lang}__val.csv.gz"),
@@ -892,19 +979,28 @@ def selftest():
         os.makedirs(os.path.join(tmp, d))
     bounds = [int(50e6 * f) for f in (1 / 64, 1 / 32, 1 / 16, 1 / 8,
                                       1 / 4, 1 / 2, 1)]
+    pool_sha = {}
     for lang in ("lean", "python", "cpp"):
         json.dump(dict(rung_boundaries={str(i): b for i, b in
                                         enumerate(bounds)}),
                   open(os.path.join(tmp, "cs2", f"{lang}_cs2.json"), "w"))
+        open(os.path.join(tmp, "cs2", f"{lang}_train.bin"), "wb").write(
+            lang.encode() * 100)
+        open(os.path.join(tmp, "cs2", f"{lang}_val.bin"), "wb").write(
+            lang.encode() * 50)
+        pool_sha[lang] = tuple(
+            sha256_file(os.path.join(tmp, "cs2", f"{lang}_{k}"))
+            for k in ("train.bin", "val.bin", "cs2.json"))
     beta = 0.7
     g_true, H_true = 0.4, 0.9
     # lean: alpha == gamma/(2 beta) => CONSISTENT; python: off =>
     # INCONSISTENT; cpp: on-prediction but horizon-gated (huge n_det)
     _fake_lang(tmp, "lean", bounds, g_true, H_true,
-               g_true / (2 * beta), 0.6)
-    _fake_lang(tmp, "python", bounds, g_true, H_true, 0.16, 0.6)
+               g_true / (2 * beta), 0.6, pool_sha=pool_sha["lean"])
+    _fake_lang(tmp, "python", bounds, g_true, H_true, 0.16, 0.6,
+               pool_sha=pool_sha["python"])
     _fake_lang(tmp, "cpp", bounds, g_true, H_true,
-               g_true / (2 * beta), 0.6)
+               g_true / (2 * beta), 0.6, pool_sha=pool_sha["cpp"])
     def scope(n_det_lags):
         return dict(fit=dict(beta_corr=beta,
                              ci_doc_block_boot=[beta - 0.02, beta + 0.02],
@@ -922,19 +1018,25 @@ def selftest():
     # itself refused — tested at the end)
     def _mk_run(name, size, lr, ep, val, ctx=4096, seed=0,
                 train_bytes=None):
+        lang_ = name.split("-")[2]
         p = os.path.join(tmp, "runs", name + ".json")
-        json.dump(dict(run=name, lang=name.split("-")[2], size=size,
+        json.dump(dict(run=name, lang=lang_, size=size,
                        seed=seed, ctx=ctx, lr=lr, epochs=ep,
                        doc_reset=True,
                        train_bytes=train_bytes or bounds[-1],
-                       final_val_bpb=val, device="cpu", micro_batch=16,
-                       step_tokens=49152, tokens_seen=1), open(p, "w"))
+                       final_val_bpb=val, device="cuda",
+                       micro_batch={"10m": 32, "30m": 24}[size],
+                       step_tokens=49152,
+                       train_sha256=pool_sha[lang_][0],
+                       val_sha256=pool_sha[lang_][1],
+                       manifest_sha256=pool_sha[lang_][2],
+                       tokens_seen=1), open(p, "w"))
         return p
 
     def _cap(fired, lang):
-        inc_p = os.path.join(tmp, "runs",
-                             f"scratch-10m-{lang}-s0-r6.json")
-        b10 = json.load(open(inc_p))["final_val_bpb"]
+        win = hp_fix[lang][f"{FRACS[-1]:.6f}"]
+        inc_p = os.path.join(tmp, "runs", win["run"] + ".json")
+        b10 = win["val_bpb"]
         pv = (b10 - 0.5) if fired else (b10 + 0.5)
         probes = {}
         for j, (plr, pep) in enumerate([(3e-3, 2), (1e-3, 2),
@@ -947,12 +1049,9 @@ def selftest():
         return dict(schema="cs_capacity_verdict_v1", fired=fired,
                     best_30m=pv, best_10m=b10,
                     best_30m_run=sorted(probes)[0],
-                    incumbent_run=os.path.basename(inc_p)[:-5],
-                    incumbent_run_sha256=sha256_file(inc_p),
+                    incumbent_run=win["run"],
+                    incumbent_run_sha256=win["run_sha256"],
                     probe_run_sha256=probes)
-    json.dump(dict(lean=_cap(True, "lean"),
-                   python=_cap(False, "python"),
-                   cpp=_cap(False, "cpp")), open(cap_p, "w"))
     hp_p = os.path.join(tmp, "hp_incumbents.json")
     hp_fix = {}
     for lang in ("lean", "python", "cpp"):
@@ -983,6 +1082,9 @@ def selftest():
                 expect_set=eset)
     json.dump(hp_fix, open(hp_p, "w"))
     hp_rel = os.path.relpath(hp_p, BASE)
+    json.dump(dict(lean=_cap(True, "lean"),
+                   python=_cap(False, "python"),
+                   cpp=_cap(False, "cpp")), open(cap_p, "w"))
     ns = argparse.Namespace(stats=stats_p,
                             runs_dir=os.path.join(tmp, "runs"),
                             nll_dir=os.path.join(tmp, "nll"),
@@ -1053,9 +1155,12 @@ def selftest():
     json.dump(dict(run="scratch-10m-lean-s0-r0c512", lang="lean",
                    size="10m", seed=0, ctx=512, lr=1e-3, epochs=2,
                    doc_reset=True, train_bytes=bounds[0],
-                   final_val_bpb=2.0, device="cpu", micro_batch=16,
-                   step_tokens=49152, tokens_seen=bounds[0]),
-              open(p512, "w"))
+                   final_val_bpb=2.0, device="cuda", micro_batch=32,
+                   step_tokens=49152,
+                   train_sha256=pool_sha["lean"][0],
+                   val_sha256=pool_sha["lean"][1],
+                   manifest_sha256=pool_sha["lean"][2],
+                   tokens_seen=bounds[0]), open(p512, "w"))
     phase_envelope(ns2)
     env5 = json.load(open(os.path.join(tmp, "analysis_envelope.json")))
     assert env5["langs"]["lean"]["H3"] == "CONSISTENT", \
