@@ -251,6 +251,10 @@ def fit_beta(lags, ops, valid):
         return dict(reason=f"adequacy gate: n_max={n_max} r2={r2:.3f}",
                     window=[int(fl[0]), int(n_max)], beta_unreported=beta,
                     r2=r2, idx=idx, peaks=peaks)
+    if beta <= 0.02:  # positivity gate (ARM_CS §3): flat is not a decay
+        return dict(reason=f"gate: beta {beta:.4f} <= 0.02 (flat)",
+                    window=[int(fl[0]), int(n_max)], beta_unreported=beta,
+                    r2=r2, idx=idx, peaks=peaks)
     rng = np.random.default_rng(11)
     boots = []
     for _ in range(N_LAG_BOOT):
@@ -348,8 +352,10 @@ def analyze_stream(docs, lags, n_blocks, n_boot, tag):
             log(f"  [{tag}] lag {n}: <1000 pairs, stopping")
             break
         Cp = []
+        Pm_blocks = np.zeros_like(J, dtype=np.float64)
         for xs in shufs:
             Js = lag_joint_blocks(xs, doc_id, doc_block, n, nb)
+            Pm_blocks += Js / len(shufs)
             Cpi, Np, _ = cov_matrix(Js.sum(axis=0))
             if Cpi is not None:
                 Cp.append(Cpi)
@@ -375,14 +381,18 @@ def analyze_stream(docs, lags, n_blocks, n_boot, tag):
         floors.append(float(max(loo)))
         floor_spread.append([float(min(loo)), float(max(loo))])
         if n_boot:
-            R = boot_M @ J.reshape(nb, V * V).astype(np.float64)
+            # EXACT centered bootstrap (ARM_CS §3): within-doc shuffles
+            # preserve each block's marginal counts, so the marginal
+            # outer-product terms cancel block-wise and the resampled
+            # centered statistic is just the resampled count difference
+            Jc = J.astype(np.float64) - Pm_blocks
+            R = boot_M @ Jc.reshape(nb, V * V)
+            Nr = boot_M @ J.reshape(nb, V * V).sum(axis=1).astype(
+                np.float64)
             row = []
             for r in range(n_boot):
-                Cb, Nb, _ = cov_matrix(R[r].reshape(V, V))
-                # full-data permutation mean (not resampled): conservative
-                # approximation, widens the bootstrap CI (ARM_CS §3)
-                row.append(op_norm(Cb - Cpm) if Cb is not None
-                           else float("nan"))
+                row.append(op_norm(R[r].reshape(V, V) / Nr[r])
+                           if Nr[r] > 1000 else float("nan"))
             boot_ops.append(row)
         log(f"  [{tag}] lag {n}: op_seq={st['op']:.3e} "
             f"floor={floors[-1]:.3e}")
@@ -636,6 +646,19 @@ def main():
                 result["scopes"][f"{lang}/{repo}"] = analyze_stream(
                     rb, lags, 100, N_DOC_BOOT_STRATA, repo)
 
+    # csupport divergence flag (ARM_CS §2: sensitivity, never a primary)
+    for lang in langs:
+        pool = result["scopes"].get(lang, {})
+        cs = result["scopes"].get(f"{lang}__csupport", {})
+        pf, cf = pool.get("fit") or {}, cs.get("fit") or {}
+        if pf.get("beta_corr") is not None \
+                and cf.get("beta_corr") is not None:
+            ci = pf.get("ci_doc_block_boot") or pf.get("ci_lag_boot")
+            half = (ci[1] - ci[0]) / 2 if ci else 0.0
+            div = abs(pf["beta_corr"] - cf["beta_corr"])
+            pf["csupport_divergence"] = dict(
+                delta=div, material=bool(div > half),
+                beta_csupport=cf["beta_corr"])
     with open(out_json, "w") as f:
         json.dump(result, f, indent=1)
     rows = []

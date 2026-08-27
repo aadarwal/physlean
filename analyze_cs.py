@@ -126,8 +126,11 @@ def pooled_binned(runs, nll_dir, lo=GAMMA_LO, hi=GAMMA_HI,
     return np.array(mids), np.array(vals), used
 
 
-def gamma_fit(mids, vals):
-    """H-grid fit with identifiability gates. Returns dict (maybe reason)."""
+def gamma_fit(mids, vals, certify=True):
+    """H-grid fit with identifiability gates. Sensitivity refits pass
+    certify=False: only the FATAL gates (positive gamma, interior H*)
+    apply — certification gates (profile width, R^2) are properties of
+    the primary fit; a refit failing a fatal gate still withholds."""
     if mids is None or len(mids) < 8:
         return dict(reason="too few binned points")
     y = np.asarray(vals, float)
@@ -157,9 +160,9 @@ def gamma_fit(mids, vals):
         return dict(reason=f"gate: gamma {g:.3f} <= {GAMMA_MIN}", **gates)
     if not gates["interior"]:
         return dict(reason="gate: H* at grid boundary", **gates)
-    if width > PROFILE_WIDTH_MAX:
+    if certify and width > PROFILE_WIDTH_MAX:
         return dict(reason=f"gate: profile width {width:.3f}", **gates)
-    if r2m < MIN_R2:
+    if certify and r2m < MIN_R2:
         return dict(reason=f"gate: r2 {r2m:.3f} < {MIN_R2}", **gates)
     return dict(gamma=g, H_inf=H,
                 profile_lo=min(prof), profile_hi=max(prof), **gates)
@@ -185,26 +188,21 @@ def seed_set(runs):
 
 
 def scope_beta(stats, lang):
-    """Registered beta with csupport preference + withhold enforcement."""
+    """Registered beta from the POOLED scope only (round-3 fix: csupport
+    is a sensitivity, never promoted — it must stay paired with the same
+    mixture gamma/alpha are trained on); withhold rules enforced."""
     scope = stats["scopes"].get(lang) or {}
     fit = scope.get("fit") or {}
-    src = lang
-    cs = stats["scopes"].get(f"{lang}__csupport") or {}
-    csf = cs.get("fit") or {}
     ci = fit.get("ci_doc_block_boot") or fit.get("ci_lag_boot")
-    half = (ci[1] - ci[0]) / 2 if ci else 0.0
-    if csf.get("beta_corr") is not None and fit.get("beta_corr") is not None \
-            and abs(csf["beta_corr"] - fit["beta_corr"]) > half:
-        scope, fit, src = cs, csf, f"{lang}__csupport"
-        ci = fit.get("ci_doc_block_boot") or fit.get("ci_lag_boot") or ci
     if fit.get("beta_corr") is None:
-        return None, None, None, src, "no reportable beta_corr", None, None
+        return None, None, None, lang, "no reportable beta_corr", None, None
     if fit.get("divergence_withhold"):
-        return None, None, None, src, "beta withheld (op-vs-fro)", None, None
+        return (None, None, None, lang, "beta withheld (op-vs-fro)",
+                None, None)
     lags = scope.get("lags") or []
     valid = scope.get("valid") or []
     n_det = max((l for l, v in zip(lags, valid) if v), default=None)
-    return (fit["beta_corr"], ci, fit, src, None, n_det,
+    return (fit["beta_corr"], ci, fit, lang, None, n_det,
             scope.get("total_bytes"))
 
 
@@ -268,15 +266,25 @@ def phase_gamma(args):
         # not an uncertainty component (they are 3x noisier by
         # construction).
         win_g = [fit["gamma"]]
+        sens_fail = None
         for lo, hi in GAMMA_WINDOWS_SENS:
             sub = (mt >= lo) & (mt <= hi)
-            f2 = gamma_fit(mt[sub], vt[sub])
+            f2 = gamma_fit(mt[sub], vt[sub], certify=False)
             if "gamma" in f2:
                 win_g.append(f2["gamma"])
+            else:
+                sens_fail = (f"window [{lo},{hi}] refit failed: "
+                             f"{f2.get('reason')}")
+                break
+        if sens_fail:
+            # sensitivity failure WITHHOLDS, never shrinks hw (round-3)
+            entry["reason"] = f"gamma withheld — {sens_fail}"
+            reg["langs"][lang] = entry
+            continue
         seed_g = []
         for r in top_runs:
             m1, v1, _ = pooled_binned([r], args.nll_dir)
-            f1 = gamma_fit(m1, v1) if m1 is not None else {}
+            f1 = gamma_fit(m1, v1, certify=False) if m1 is not None else {}
             if "gamma" in f1:
                 seed_g.append(f1["gamma"])
         profile_hw = fit["profile_width"] / 2
@@ -297,6 +305,7 @@ def phase_gamma(args):
         else:
             entry["beta_corr"] = beta
             entry["beta_ci"] = ci
+            entry["csupport_divergence"] = bfit.get("csupport_divergence")
             beta_hw = ((ci[1] - ci[0]) / 2) if ci else 0.0
             ap = fit["gamma"] / (2 * beta)
             entry["alpha_pred"] = ap
@@ -335,6 +344,20 @@ def phase_envelope(args):
         sys.exit("REFUSED: registration not committed-clean-identical to "
                  "HEAD (ARM_CS §5)")
     reg = json.load(open(os.path.join(BASE, args.reg)))
+    # round-3 B4 fix: re-verify every input the registration bound
+    for lang, rl in reg["langs"].items():
+        for rel, sha in (rl.get("input_sha256") or {}).items():
+            p = os.path.join(BASE, rel)
+            if not os.path.exists(p) or sha256_file(p) != sha:
+                sys.exit(f"REFUSED: registered input changed: {rel}")
+    out_file = os.path.join(BASE, os.path.dirname(args.reg),
+                            "analysis_envelope.json")
+    if os.path.exists(out_file) and not getattr(args, "force", False):
+        sys.exit(f"refusing to overwrite {out_file} (use --force)")
+    cap_path = os.path.join(BASE, getattr(args, "capacity", "") or
+                            os.path.join("results_cs",
+                                         "capacity_verdict.json"))
+    cap = json.load(open(cap_path)) if os.path.exists(cap_path) else {}
     runs = load_runs(args.runs_dir)
     out = dict(schema="cs_analysis_envelope_v2",
                registration_sha256=sha256_file(
@@ -347,17 +370,34 @@ def phase_envelope(args):
         beta = rl.get("beta_corr")
         bounds = rung_map(args.cs2_dir, lang)
         lruns = [r for r in runs if r["lang"] == lang]
-        # per-(ctx, rung) seed groups; drop incomplete-seed rungs, recorded
+        # per-(ctx, rung) seed groups
         groups = {}
         for r in lruns:
             ru = rung_of(r, bounds)
             if ru is not None:
                 groups.setdefault((r["ctx"], ru), []).append(r)
-        incomplete = sorted(str(k) for k, v in groups.items()
-                            if set(seed_set(v)) != SEEDS)
+        defects = []
+        for k, v in sorted(groups.items()):
+            seeds = [r.get("seed") for r in v]
+            if len(seeds) != len(set(seeds)):
+                defects.append(f"duplicate runs at {k}")
+            elif set(seeds) != SEEDS:
+                defects.append(f"incomplete seeds at {k}: {sorted(seeds)}")
+        for ru in range(len(bounds)):
+            if (4096, ru) not in groups:
+                defects.append(f"missing primary rung {ru}")
+        eligible = lang in H3_ELIGIBLE and not rl.get(
+            "h3_ineligible_reason")
+        if defects and eligible:
+            # fail-closed for the claim-bearing arm (round-3 NB5 fix)
+            out["langs"][lang] = dict(
+                H3=f"WITHHELD ({'; '.join(defects[:4])})",
+                alpha_D=None, defects=defects)
+            continue
         groups = {k: v for k, v in groups.items()
-                  if set(seed_set(v)) == SEEDS}
-        e = dict(incomplete_rungs_dropped=incomplete)
+                  if set(seed_set(v)) == SEEDS
+                  and len(v) == len(SEEDS)}
+        e = dict(defects_noted=defects)
         curve = {}
         for (ctx, ru), rs in groups.items():
             vals = [r["final_val_bpb"] for r in rs]
@@ -443,12 +483,23 @@ def phase_envelope(args):
             # H_inf grid-step systematic (dominant near the shift floor):
             # refit at H +- one grid step, re-applying the shift rule
             hstep_a = [a0]
+            hstep_fail = False
             for Hv in (H - H_STEP, H + H_STEP):
                 pv = sorted((v["P"], v["mean"]) for v in prim.values()
                             if v["mean"] - Hv >= SHIFT_MIN)
                 if len(pv) >= MIN_RUNGS:
                     hstep_a.append(ols_shift([p for p, _ in pv],
                                              [v for _, v in pv], Hv)[0])
+                else:
+                    hstep_fail = True
+            if hstep_fail:
+                # sensitivity failure WITHHOLDS (round-3 fix)
+                e["alpha_D"] = None
+                e["reason"] = ("alpha_D withheld — H_inf±step refit "
+                               "cannot satisfy the shift rule")
+                e["H3"] = "WITHHELD (H-step sensitivity failure)"
+                out["langs"][lang] = e
+                continue
             # quadrature of uncorrelated components (see gamma phase note)
             hw = math.sqrt(
                 ((max(seed_a + [a0]) - min(seed_a + [a0])) / 2) ** 2
@@ -472,7 +523,14 @@ def phase_envelope(args):
             eL = [env[r] for r in sorted(env) if env[r] - H >= SHIFT_MIN]
             if len(eP) >= MIN_RUNGS:
                 e["alpha_D_envelopeT_sens"] = ols_shift(eP, eL, H)[0]
-            # H3: regime gate first, then TOST with fixed margin
+            # gates BEFORE H3: regime, horizon, capacity (ARM_CS §1)
+            if beta and rl.get("n_det") and rl.get("P_corpus"):
+                n_star = rl["n_det"] * (bounds[-1] / rl["P_corpus"]) \
+                    ** (1 / (2 * beta))
+                e["horizon"] = dict(n_star_top=n_star,
+                                    ok=bool(n_star <= 4096 / 4))
+            cap_entry = cap.get(lang) if eligible else None
+            e["capacity"] = cap_entry
             ap = rl.get("alpha_pred")
             ap_hw = rl.get("alpha_pred_hw")
             if rl.get("h3_ineligible_reason"):
@@ -486,44 +544,64 @@ def phase_envelope(args):
                     e["slow_regime_descriptive"] = dict(
                         min_delta=md,
                         operative=min(md, gamma / (2 * beta)),
-                        note="descriptive only; not the zero-parameter "
-                             "test (ARM_CS §6)")
+                        note="descriptive only; never H3 (ARM_CS §6)")
+            elif not (e.get("horizon") or {}).get("ok"):
+                e["H3"] = "INDETERMINATE(horizon)"
+            elif cap_entry is None:
+                e["H3"] = "WITHHELD (capacity unadjudicated)"
+            elif cap_entry.get("fired"):
+                e["H3"] = "WITHHELD (capacity fired; 30m ladder pending)"
             else:
                 center = a0 - ap
                 dhw = math.sqrt(hw ** 2 + ap_hw ** 2)
                 e["H3_diff"] = dict(center=center, hw=dhw)
+                # robustness verdict, NOT a coverage-calibrated test
                 if abs(center) + dhw <= H3_MARGIN:
-                    e["H3"] = "SUPPORTED"
+                    e["H3"] = "CONSISTENT"
                 elif abs(center) - dhw > H3_MARGIN:
-                    e["H3"] = "REFUTED"
+                    e["H3"] = "INCONSISTENT"
                 else:
                     e["H3"] = "INDETERMINATE"
-        # horizon gate
-        if beta and rl.get("n_det") and rl.get("P_corpus"):
-            n_star = rl["n_det"] * (bounds[-1] / rl["P_corpus"]) \
-                ** (1 / (2 * beta))
-            e["horizon"] = dict(n_star_top=n_star,
-                                ok=bool(n_star <= 4096 / 4))
-        # H3b: shifted collapse metric (descriptive)
-        grids = []
-        for ru in sorted(ln_by_rung):
-            c = ln_by_rung[ru]
-            ns = np.arange(GAMMA_LO, min(128, len(c) - 1))
-            y = (c[ns] - H) * ns ** gamma
-            if beta:
-                xv = bounds[ru] / ns ** (2 * beta)
+        # H3b: collapse metrics (descriptive; window frozen [4, 64])
+        def collapse_metric(gam, bet, shifted=True):
+            grids = []
+            for ru in sorted(ln_by_rung):
+                c = ln_by_rung[ru]
+                ns = np.arange(GAMMA_LO, min(64, len(c) - 1) + 1)
+                y = ((c[ns] - H) if shifted else c[ns]) * ns ** gam
+                xv = bounds[ru] / ns ** (2 * bet)
                 okm = ~np.isnan(y) & (y > 0)
                 if okm.sum() > 5:
                     o = np.argsort(xv[okm])
                     grids.append((np.log(xv[okm][o]), np.log(y[okm][o])))
-        if len(grids) >= 3:
-            gx = np.linspace(max(g[0].min() for g in grids),
-                             min(g[0].max() for g in grids), COLLAPSE_PTS)
-            if gx[0] < gx[-1]:
-                M = np.stack([np.interp(gx, g[0], g[1]) for g in grids])
-                e["H3b_collapse_metric"] = float(
-                    M.var(axis=0).mean() / max(M.mean(axis=0).var(), 1e-12))
-                e["H3b_n_curves"] = len(grids)
+            if len(grids) < 3:
+                return None, len(grids)
+            # pointwise over the UNION grid: with a 64x P range and the
+            # frozen [4,64] n window, full common support is empty by
+            # arithmetic; variance is taken where >=3 rung curves overlap
+            gx = np.linspace(min(g[0].min() for g in grids),
+                             max(g[0].max() for g in grids), COLLAPSE_PTS)
+            cols, means = [], []
+            for xq in gx:
+                ys = [np.interp(xq, g[0], g[1]) for g in grids
+                      if g[0][0] <= xq <= g[0][-1]]
+                if len(ys) >= 3:
+                    cols.append(np.var(ys))
+                    means.append(np.mean(ys))
+            if len(cols) < 5:
+                return None, len(grids)
+            return float(np.mean(cols)
+                         / max(np.var(means), 1e-12)), len(grids)
+        if beta:
+            m0, ncur = collapse_metric(gamma, beta, shifted=True)
+            e["H3b_collapse_metric"] = m0
+            e["H3b_n_curves"] = ncur
+            e["H3b_raw_form_sens"], _ = collapse_metric(gamma, beta,
+                                                        shifted=False)
+            e["H3b_sweep"] = {
+                f"g{dg:+.1f}_b{db:+.1f}": collapse_metric(
+                    gamma + dg, beta + db, shifted=True)[0]
+                for dg in (-0.1, 0.0, 0.1) for db in (-0.1, 0.0, 0.1)}
         out["langs"][lang] = e
     path = os.path.join(BASE, os.path.dirname(args.reg),
                         "analysis_envelope.json")
@@ -570,58 +648,97 @@ def selftest():
         os.makedirs(os.path.join(tmp, d))
     bounds = [int(50e6 * f) for f in (1 / 64, 1 / 32, 1 / 16, 1 / 8,
                                       1 / 4, 1 / 2, 1)]
-    for lang in ("lean", "python"):
+    for lang in ("lean", "python", "cpp"):
         json.dump(dict(rung_boundaries={str(i): b for i, b in
                                         enumerate(bounds)}),
                   open(os.path.join(tmp, "cs2", f"{lang}_cs2.json"), "w"))
     beta = 0.7
     g_true, H_true = 0.4, 0.9
-    # lean: alpha == gamma/(2 beta) => SUPPORTED; python: off => REFUTED
+    # lean: alpha == gamma/(2 beta) => CONSISTENT; python: off =>
+    # INCONSISTENT; cpp: on-prediction but horizon-gated (huge n_det)
     _fake_lang(tmp, "lean", bounds, g_true, H_true,
                g_true / (2 * beta), 0.6)
     _fake_lang(tmp, "python", bounds, g_true, H_true, 0.16, 0.6)
-    stats = dict(scopes={
-        lang: dict(fit=dict(beta_corr=beta,
-                            ci_doc_block_boot=[beta - 0.02, beta + 0.02],
-                            divergence_withhold=False),
-                   lags=[1, 2, 4, 8, 16, 32], valid=[True] * 6,
-                   total_bytes=120_000_000)
-        for lang in ("lean", "python")})
+    _fake_lang(tmp, "cpp", bounds, g_true, H_true,
+               g_true / (2 * beta), 0.6)
+    def scope(n_det_lags):
+        return dict(fit=dict(beta_corr=beta,
+                             ci_doc_block_boot=[beta - 0.02, beta + 0.02],
+                             divergence_withhold=False),
+                    lags=n_det_lags, valid=[True] * len(n_det_lags),
+                    total_bytes=120_000_000)
+    stats = dict(scopes=dict(lean=scope([1, 2, 4, 8, 16, 32]),
+                             python=scope([1, 2, 4, 8, 16, 32]),
+                             cpp=scope([1, 64, 512, 4096])))
     stats_p = os.path.join(tmp, "lang_stats.json")
     json.dump(stats, open(stats_p, "w"))
+    cap_p = os.path.join(tmp, "capacity_verdict.json")
+    json.dump({l: dict(fired=False) for l in ("lean", "python", "cpp")},
+              open(cap_p, "w"))
     ns = argparse.Namespace(stats=stats_p,
                             runs_dir=os.path.join(tmp, "runs"),
                             nll_dir=os.path.join(tmp, "nll"),
                             cs2_dir=os.path.join(tmp, "cs2"),
-                            langs="lean,python",
+                            langs="lean,python,cpp",
                             reg=os.path.relpath(
                                 os.path.join(tmp, "reg.json"), BASE),
                             force=False)
     phase_gamma(ns)
     reg = json.load(open(os.path.join(tmp, "reg.json")))
-    for lang in ("lean", "python"):
+    for lang in ("lean", "python", "cpp"):
         e = reg["langs"][lang]
-        assert "gamma" in e, e.get("reason")
-        assert abs(e["gamma"] - g_true) < 0.08, f"{lang} gamma {e['gamma']}"
-        assert abs(e["H_inf"] - H_true) < 0.06, f"{lang} H {e['H_inf']}"
+        assert "gamma" in e, (lang, e.get("reason"))
+        assert abs(e["gamma"] - g_true) < 0.08, f"{lang} {e['gamma']}"
+        assert abs(e["H_inf"] - H_true) < 0.06, f"{lang} {e['H_inf']}"
         assert e["input_sha256"], "no input hashes bound"
+    cap_rel = os.path.relpath(cap_p, BASE)
     ns2 = argparse.Namespace(runs_dir=ns.runs_dir, nll_dir=ns.nll_dir,
                              cs2_dir=ns.cs2_dir, reg=ns.reg,
-                             skip_git_check=True)
+                             skip_git_check=True, force=True,
+                             capacity=cap_rel)
     phase_envelope(ns2)
     env = json.load(open(os.path.join(tmp, "analysis_envelope.json")))
     el, ep = env["langs"]["lean"], env["langs"]["python"]
     assert el["fast_learning"]["established"], el["fast_learning"]
-    assert el["H3"] == "SUPPORTED", (el["H3"], el.get("H3_diff"))
-    assert ep["H3"] == "REFUTED", (ep["H3"], ep.get("H3_diff"))
+    assert el["H3"] == "CONSISTENT", (el["H3"], el.get("H3_diff"))
+    assert ep["H3"] == "INCONSISTENT", (ep["H3"], ep.get("H3_diff"))
+    assert env["langs"]["cpp"]["H3"] == "INDETERMINATE(horizon)", \
+        env["langs"]["cpp"].get("H3")
     assert len(el["delta_n"]) >= 10 and \
-        abs(float(el["delta_n"]["4"]["delta"]) - 0.6) < 0.1, el["delta_n"].get("4")
+        abs(float(el["delta_n"]["4"]["delta"]) - 0.6) < 0.1, \
+        el["delta_n"].get("4")
     assert el.get("H3b_collapse_metric") is not None
-    assert el["horizon"]["n_star_top"] > 0
-    # seed-incompleteness must fail closed
-    victim = glob.glob(os.path.join(tmp, "runs",
-                                    "scratch-10m-lean-s2-r6.json"))[0]
-    os.remove(victim)
+    assert el.get("H3b_raw_form_sens") is not None
+    assert len(el.get("H3b_sweep") or {}) == 9
+    # capacity-fired withholding
+    json.dump(dict(lean=dict(fired=True), python=dict(fired=False),
+                   cpp=dict(fired=False)), open(cap_p, "w"))
+    phase_envelope(ns2)
+    env2 = json.load(open(os.path.join(tmp, "analysis_envelope.json")))
+    assert env2["langs"]["lean"]["H3"].startswith("WITHHELD (capacity"), \
+        env2["langs"]["lean"]["H3"]
+    json.dump({l: dict(fired=False) for l in ("lean", "python", "cpp")},
+              open(cap_p, "w"))
+    # LOWER-rung seed deletion must withhold H3 (round-3 adversarial)
+    victim = os.path.join(tmp, "runs", "scratch-10m-python-s2-r0.json")
+    hidden = victim + ".hidden"
+    os.rename(victim, hidden)
+    phase_envelope(ns2)
+    env3 = json.load(open(os.path.join(tmp, "analysis_envelope.json")))
+    assert env3["langs"]["python"]["H3"].startswith("WITHHELD"), \
+        env3["langs"]["python"]["H3"]
+    os.rename(hidden, victim)
+    # duplicate run must withhold H3
+    dup = os.path.join(tmp, "runs", "scratch-10m-lean-s0-r3.json")
+    import shutil
+    shutil.copy(dup, dup.replace("-r3.json", "-r3dup.json"))
+    phase_envelope(ns2)
+    env4 = json.load(open(os.path.join(tmp, "analysis_envelope.json")))
+    assert env4["langs"]["lean"]["H3"].startswith("WITHHELD"), \
+        env4["langs"]["lean"]["H3"]
+    os.remove(dup.replace("-r3.json", "-r3dup.json"))
+    # TOP-rung seed incompleteness must fail closed at gamma
+    os.remove(os.path.join(tmp, "runs", "scratch-10m-lean-s2-r6.json"))
     ns.force = True
     phase_gamma(ns)
     reg2 = json.load(open(os.path.join(tmp, "reg.json")))
@@ -630,7 +747,8 @@ def selftest():
     # refusal on uncommitted registration
     ns3 = argparse.Namespace(runs_dir=ns.runs_dir, nll_dir=ns.nll_dir,
                              cs2_dir=ns.cs2_dir, reg=ns.reg,
-                             skip_git_check=False)
+                             skip_git_check=False, force=True,
+                             capacity=cap_rel)
     try:
         phase_envelope(ns3)
         raise AssertionError("envelope did not refuse uncommitted reg")
@@ -652,6 +770,9 @@ def main():
                     default=os.path.join(BASE, "results_cs", "nll"))
     ap.add_argument("--cs2-dir", default=os.path.join(BASE, "data", "cs2"))
     ap.add_argument("--reg", default=REG_PATH)
+    ap.add_argument("--capacity",
+                    default=os.path.join("results_cs",
+                                         "capacity_verdict.json"))
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--skip-git-check", action="store_true",
                     help="selftest only; never for real analyses")

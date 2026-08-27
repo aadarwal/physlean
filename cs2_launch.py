@@ -56,13 +56,13 @@ def emit(tasks, stage):
           f"{path}")
 
 
-def scan_rung(lang, mb, ctx=4096, seed=0):
+def scan_rung(lang, mb, ctx=4096, seed=0, size="10m"):
     """Return [(final_val_bpb, lr, epochs, run)] for finished runs."""
     out = []
     for p in glob.glob(os.path.join(BASE, "results_cs", "runs", "*.json")):
         r = json.load(open(p))
         if (r.get("lang") == lang and r.get("seed") == seed
-                and r.get("ctx") == ctx and r.get("size") == "10m"
+                and r.get("ctx") == ctx and r.get("size") == size
                 and r.get("doc_reset")
                 and abs(r.get("train_bytes", -1) - mb) <= 3):
             ep = r.get("epochs")
@@ -75,7 +75,8 @@ def scan_rung(lang, mb, ctx=4096, seed=0):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--stage", required=True,
-                    choices=["hp", "pick", "walk", "ladder", "capacity"])
+                    choices=["hp", "pick", "walk", "ladder", "capacity",
+                             "capacity-verdict"])
     ap.add_argument("--frac", type=float, default=None)
     ap.add_argument("--expect", type=int, default=0,
                     help="pick: minimum finished candidates per language "
@@ -185,6 +186,34 @@ def main():
         print("submit with: sbatch --export=ALL,CS2_SIZE=30m "
               "--array=... slurm/cs2_rungs.sbatch data/cs2/"
               "tasks_capacity.txt")
+        return
+
+    if args.stage == "capacity-verdict":
+        # adjudication artifact (ARM_CS §4): best tuned 30m probe vs the
+        # tuned 10m incumbent; envelope withholds H3 without this file
+        inc = load_incumbents()
+        verdict = {}
+        for lang in langs:
+            b = boundaries(lang)
+            f = FRACS[-1]
+            mb = b[fkey_lookup(b, f)]
+            cur = inc.get(lang, {}).get(fkey(f))
+            if cur is None:
+                raise SystemExit(f"verdict refused: no incumbent {lang}")
+            probes = scan_rung(lang, mb, size="30m")
+            if len(probes) < 6:
+                raise SystemExit(f"verdict refused: {lang} has "
+                                 f"{len(probes)}/6 30m probes")
+            best30 = probes[0][0]
+            best10 = cur["val_bpb"]
+            verdict[lang] = dict(fired=bool(best30 < best10 - 0.01),
+                                 best_30m=best30, best_10m=best10,
+                                 n_probes=len(probes))
+            print(f"[{lang}] 30m {best30:.4f} vs 10m {best10:.4f} "
+                  f"fired={verdict[lang]['fired']}")
+        out = os.path.join(BASE, "results_cs", "capacity_verdict.json")
+        json.dump(verdict, open(out, "w"), indent=1)
+        print(f"wrote {out}")
         return
 
 

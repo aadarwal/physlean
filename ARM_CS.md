@@ -82,11 +82,20 @@ Per corpus scope (pooled language mixture; per-repo strata >= 5 MB):
   h = √(hw_α² + hw_pred²), the quadrature of the §6 half-widths
   (worst-case stacking of every sensitivity was shown to make M
   unreachable even for a clean synthetic; quadrature of uncorrelated
-  components is the frozen combination rule). REGIME GATE FIRST (§6):
-  if fast learning is not established, H3 = INDETERMINATE(regime) and
-  the slow-regime comparison is reported descriptively. Otherwise:
-  SUPPORTED iff |c| + h ≤ M; REFUTED iff |c| − h > M; else
-  INDETERMINATE. Scaling collapse is **H3b**, a
+  components is the frozen combination rule). **H3 is a frozen
+  ROBUSTNESS verdict, not a coverage-calibrated statistical test**
+  (round-3 fix): the half-widths are predeclared sensitivity aggregates,
+  not confidence intervals, and NO coverage for c is claimed — outcomes
+  are therefore named **CONSISTENT / INCONSISTENT / INDETERMINATE**
+  (never "supported/refuted" in any claim text). A coverage-calibrated
+  version belongs to the CS-3 replication design, if built. GATES, in
+  order, each of which forces INDETERMINATE(<gate>) when failed: regime
+  (fast learning, §6), horizon (n̂*(P_top) ≤ T/4, §6), capacity
+  (adjudicated un-fired, §4). Then: CONSISTENT iff |c| + h ≤ M;
+  INCONSISTENT iff |c| − h > M; else INDETERMINATE. Predeclared
+  sensitivity refits that FAIL (a window refit failing the §6 gates, an
+  Ĥ_∞±step refit with too few rungs) WITHHOLD the result entirely —
+  failure never shrinks h (round-3 fix). Scaling collapse is **H3b**, a
   separate DESCRIPTIVE report (metric + sensitivity sweep, no acceptance
   threshold) — it is not a conjunct of H3.
 - **H2**: β̂_corr(lean pool) < β̂_corr(python pool), doc-block-bootstrap
@@ -118,11 +127,14 @@ Per corpus scope (pooled language mixture; per-repo strata >= 5 MB):
 - Scopes: pooled per language; per-repo strata ≥ 5 MB; matched-P
   sensitivity over {lean, python, cpp} ONLY (seeded whole-doc subsample,
   seed 13, to the smallest of the three; latex excluded per §1).
-- **Common-support sensitivity (review B7)**: all pair statistics
-  recomputed on the sub-corpus of documents ≥ 8192 B, so the document
-  mixture is IDENTICAL at every lag ≤ 4096; divergence between headline
-  and common-support β̂_corr is reported, and where they disagree beyond
-  the doc-block CI the common-support value is primary.
+- **Common-support sensitivity (review B7; round-3 demotion)**: all pair
+  statistics recomputed on the sub-corpus of documents ≥ 8192 B. This
+  keeps the document SET fixed across lags but not the pair WEIGHTS
+  (each doc contributes L_d − n pairs), so it is a SENSITIVITY, never a
+  primary: the primary β̂_corr always comes from the pooled scope — the
+  same mixture γ̂ and α̂_D are trained on (estimand pairing) — and
+  material pooled-vs-csupport divergence (beyond the doc-block CI
+  half-width) is REPORTED as `csupport_divergence`, not substituted.
 - **Nested-subset sensitivity (review C4)**: one independent rung ladder
   (rung seed 31 instead of 29) for lean; actual rung byte totals (from
   the manifest, not nominal fractions) enter every analysis.
@@ -182,11 +194,19 @@ Per corpus scope (pooled language mixture; per-repo strata >= 5 MB):
   H_cond_mm = H_cond + (m_k − m_prefix)/(2 N_k ln 2); UNRELIABLE iff the
   joint undersampling (m_k − 1)/(2 N_k ln 2) > 0.02 b/B or
   |correction| > 0.02. Corrected values are what the summary exports.
-- **Uncertainty (review B8)**: document-BLOCK bootstrap, 500 blocks (docs
-  hashed to blocks by seeded shuffle), 200 resamples with block-resample
-  indices fixed across lags (coherent curves), applied to pooled, matched,
-  AND per-repo scopes (100 resamples for strata); reported explicitly as
-  a block bootstrap. Lag-point bootstrap (1000) secondary.
+- **Uncertainty (review B8; round-3 exact-centered fix)**: document-BLOCK
+  bootstrap, 500 blocks (docs hashed to blocks by seeded shuffle), 200
+  resamples with block-resample indices fixed across lags (coherent
+  curves), applied to pooled, matched, AND per-repo scopes (100 for
+  strata); reported explicitly as a block bootstrap. The bootstrap acts
+  on the CENTERED estimand EXACTLY: within-document permutations preserve
+  each block's marginal counts, so the marginal outer-product terms of
+  data and permutation-mean cancel block-wise and the resampled centered
+  statistic is op((M·(J_data − J̄_perm))_r / N_r) — one matmul on the
+  centered block counts, no approximation. Lag-point bootstrap (1000)
+  secondary.
+- **β positivity gate**: β̂_corr ≤ 0.02 (indistinguishable from flat) →
+  "no reportable β_corr" for the scope.
 - **Provenance (review B4, hardened at round 2)**: every output records
   git commit + dirty flag + per-scope document-manifest SHA256 (over
   sorted doc SHA1s) + the estimator constants; quick-mode writes
@@ -237,6 +257,11 @@ Per corpus scope (pooled language mixture; per-repo strata >= 5 MB):
   ladder (all rungs, all seeds) and the 10m ladder is reported as the
   undersized arm — curves are never spliced (the analyzer filters by
   size everywhere; a mixed-size curve is impossible by construction).
+  ADJUDICATION IS AN ARTIFACT (round-3 fix): `cs2_launch --stage
+  capacity-verdict` writes results_cs/capacity_verdict.json ({lang:
+  {fired, best_30m, best_10m}}); the analyzer's envelope phase WITHHOLDS
+  H3 for any eligible language whose verdict is missing or fired (until
+  its 30m ladder exists and is analyzed as its own arm).
 - **Fail-closed execution (round-2 NB5 fix)**: `pick` refuses (nonzero
   exit, driver aborts) when a rung's candidate set is incomplete or
   contains non-doc-reset runs; `ladder` refuses on any missing
@@ -262,7 +287,10 @@ Per corpus scope (pooled language mixture; per-repo strata >= 5 MB):
    `analyze_cs.py --phase gamma` reads ONLY the top-two-rung artifacts
    (top rung for the estimate, second for the §6 convergence rule),
    writes the per-language {γ̂, Ĥ_∞, β̂_corr, α_pred} registration with
-   input hashes; the commit is pushed. `--phase envelope` refuses to run
+   input hashes; the commit is pushed. `--phase envelope` re-hashes the
+   registration's bound inputs and refuses on any mismatch, and refuses
+   to overwrite an existing analysis without `--force` (round-3 B4
+   fix); it also refuses to run
    unless that registration file is committed, clean, and byte-identical
    to HEAD's blob.
 4. Envelope + collapse (§6), comparison under §1's frozen criterion.
@@ -302,10 +330,16 @@ differ and are not attributed to it).
   DIAGNOSTIC, not an uncertainty component (~3× noisier by
   construction). hw_pred = α_pred·√((hw_γ/γ̂)² + (hw_β/β̂)²) with hw_β
   the doc-block CI half-width.
-- **Collapse = H3b, descriptive (review B5; round-2 NB2)**: the form is
-  the shifted one
-  (L_n(P) − Ĥ_∞)·n^γ̂ vs P/n^(2β̂_corr) over n ∈ [4, 64] × all rungs;
-  the raw published form (L_n·n^γ) is a labeled replication sensitivity
+- **Collapse = H3b, descriptive (review B5; round-2 NB2; round-3
+  window/outputs fix)**: the form is the shifted one
+  (L_n(P) − Ĥ_∞)·n^γ̂ vs P/n^(2β̂_corr) over n ∈ [4, 64] (frozen — the
+  code window equals this) × all rungs; outputs include the shifted
+  metric, the RAW published-form metric as a labeled replication
+  sensitivity, and a 3×3 (γ̂±0.1, β̂±0.1) sweep of the shifted metric
+  reproducing the paper's qualitative deterioration check; the metric is
+  evaluated POINTWISE over the union grid on points covered by ≥3 rung
+  curves (full common support is arithmetically empty at a 64× P range
+  with the frozen n window);
   only. Collapse quality metric: interpolate each rung's shifted curve
   onto a 20-point common log grid; metric = mean cross-rung variance ÷
   variance of the pooled master curve (smaller is better); reported as a
@@ -322,8 +356,13 @@ differ and are not attributed to it).
   reported: envelope across T;
   first-m sweep (m = 4..7); RAW (unshifted) slope as the replication
   sensitivity. If fewer than 4 rungs survive the shift rule, α̂_D is
-  "not reportable". The α_pred INTERVAL is γ-interval/(2·β-interval) by
-  interval arithmetic (β interval = the doc-block bootstrap CI).
+  "not reportable". If either Ĥ_∞±step refit cannot satisfy the shift
+  rule with ≥4 rungs, α̂_D is WITHHELD (sensitivity failure never
+  shrinks hw; §1). For an H3-eligible language, α̂_D and H3 are WITHHELD
+  outright if any primary-arm (T=4096) rung is missing, has an
+  incomplete seed set, or has duplicate (rung, seed) runs — fail-closed,
+  with the defect named (round-3 fix; descriptive-only scopes may
+  drop-with-note instead). hw_pred is defined in the γ̂ bullet above.
 - **Regime gates (review B6; round-2 NB2 fix — evaluated BEFORE H3)**:
   (a) fast-learning check — δ_n per the paper's §5 protocol (grid H_n
   along the P axis per n ∈ {1..12}; δ_n = −slope of log(L_n(P) − H_n)).
@@ -331,9 +370,9 @@ differ and are not attributed to it).
   γ̂/(2β̂_corr) with fit R² ≥ 0.9 each; if not established, H3 =
   INDETERMINATE(regime) — the zero-parameter test is simply not licensed
   — and the slow-regime comparison of α̂_D against min{δ̂, γ/2β} is
-  reported DESCRIPTIVELY (never as H3; the min of twelve noisy δ̂s is
-  not a zero-parameter prediction, and the δ = γ/2β boundary carries a
-  log P correction, paper Eq. 39). (b) horizon check —
+  reported DESCRIPTIVELY, never as H3 in any regime (the min of twelve
+  noisy δ̂s is not a zero-parameter prediction, and the δ = γ/2β
+  boundary carries a log P correction, paper Eq. 39). (b) horizon check —
   n̂*(P_top) = n_det · (P_top/P_corpus)^{1/(2β̂_corr)} with n_det the
   largest valid lag of the registered CS-1 scope and P_corpus its byte
   count; horizon-limited OK iff n̂*(P_top) ≤ T/4 (number reported
@@ -352,6 +391,11 @@ differ and are not attributed to it).
 - **CS-1b**: BPE sensitivity (cluster, CPU).
 - **CS-2**: HP walk + pilot ladder (lean) reviewed for optimizer health;
   then the full fan-out (§4). Runs under the CS source-clean rule.
+- Explicitly SCHEDULED (not pre-adoption) implementation items: the
+  lean rung-seed-31 nested-subset sensitivity ladder runs at CS-3; the
+  T=4096-model-at-512-windows positional sensitivity (a pure eval over
+  retained checkpoints) runs at CS-4. Neither blocks adoption; both
+  block their own gate's sign-off.
 - **CS-3**: replication/scale step — HUMAN GATE (named disjoint corpora
   with manifests; any 30m escalation ladders; any model-family widening).
 - **CS-4**: analysis per §6; figures; writeup integration.
@@ -370,9 +414,10 @@ differ and are not attributed to it).
 4. H_n non-power-law (log-log curvature) → γ̂ window sensitivities +
    collapse-metric deterioration; "code sits outside the paper's ansatz
    family" is a reportable outcome.
-5. Slow-learning regime (min δ_n < γ/2β) → H3 evaluated against
-   min{δ, γ/2β}; the regime label per language is itself a headline
-   result.
+5. Slow-learning regime (fast learning not established) → H3 =
+   INDETERMINATE(regime); the min{δ, γ/2β} comparison is reported
+   descriptively only (§1/§6); the regime label per language is itself
+   a headline result.
 6. UTF-8 harmonics (lean lags 2–4) → peaks reported; CS-1b BPE pass
    bounds tokenization-scale effects.
 7. Repo-composition confound → per-repo strata always shown; claims

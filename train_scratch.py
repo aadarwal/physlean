@@ -219,9 +219,8 @@ def main():
 
     run = f"scratch-{args.size}-{args.lang}-s{args.seed}{args.out_tag}"
     result_path = os.path.join(args.out_dir, run + ".json")
-    if os.path.exists(result_path) and not args.force:
-        print(f"[{run}] result exists, skipping (idempotent)", flush=True)
-        return
+    # validate CURRENT inputs BEFORE the idempotent skip (round-3 B4 fix:
+    # a stale result must not mask a broken manifest)
     man = None
     if args.val_manifest:
         man = json.load(open(args.val_manifest))
@@ -232,6 +231,9 @@ def main():
             "manifest offsets must be nonempty strictly increasing"
         assert offs[-1] == len(val), \
             f"manifest final offset {offs[-1]} != val bytes {len(val)}"
+    if os.path.exists(result_path) and not args.force:
+        print(f"[{run}] result exists, skipping (idempotent)", flush=True)
+        return
     model = ByteGPT(L, d, h, args.ctx,
                     grad_ckpt=(device == "mps")).to(device)
     n_params = sum(p.numel() for p in model.parameters())
