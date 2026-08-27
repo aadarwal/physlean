@@ -1863,6 +1863,44 @@ arxiv_manifest) must be committed before measurement.
   semantic failure is arm-independent ineligibility. Full detail:
   DESIGN_V2 §15.A21.
 
+- ADOPTED (2026-08-28, CS-0): the **ARM_CS arm** — corpus statistics +
+  from-scratch data-limited scaling, the out-of-domain test of Cagnetta,
+  Raventós, Ganguli & Wyart (ICML 2026, arXiv:2602.07488). Design frozen
+  in ARM_CS.md; rationale in THEORY.md. FULFILLS THE §10 G6 REDESIGN
+  REQUIREMENT (fixed small N in the data-limited multi-epoch regime;
+  seeds {0,1,2} at every rung; the explicit estimand statement of
+  ARM_CS §1) and formally unblocks G6 as CS-2/CS-3, preserving the human
+  GPU-scale gate at CS-3. Independent fresh-context adversarial review:
+  TEN ROUNDS (v0..v9 FIX-FIRST with executed counter-examples each
+  round; round-10 split its residue into three non-deferrables — all
+  fixed at commit 0d1dbaf: primary-ladder hash inventory at
+  registration, dump-tamper refusal, CS-1↔CS-2 corpus-snapshot equality
+  gate — and one deferrable). ACCEPTED OPEN DISAGREEMENT (reviewer
+  wording): "Trainer provenance is recorded but not pinned: any nonempty
+  commit and broad parameter band pass. Pinning trainer-source blobs and
+  exact (size, context) → n_params can reasonably wait until CS-3 only
+  if the exploratory run's post-adoption source freeze is manually
+  verified and recorded." MITIGATION RECORDED HERE — the adoption-time
+  instrument source blobs are: train_scratch.py 9955d7c3,
+  analyze_cs.py 33126bba, lang_stats.py 674fe88a, cs2_pools.py ef1cb258,
+  cs2_launch.py 253c930c; every exploratory CS artifact must trace to a
+  commit containing exactly these blobs, verified before the γ
+  registration; full pinning lands before CS-3. New standalone
+  instruments only; frozen G3/V2/DIRECT instruments and results_v2/
+  untouched; §12's source-clean definition extends for CS measurement
+  with ':(exclude)results_cs'. Notation β_corr/γ/α_D; no legacy G3
+  quantity reinterpreted; LaTeX remains a self-budgeted format
+  diagnostic outside all matching and formality contrasts; H3 is a
+  ROBUSTNESS verdict (CONSISTENT/INCONSISTENT/INDETERMINATE), never a
+  coverage-calibrated claim. Human compute authorization recorded
+  2026-08-27 (user: "do whatever you think is best; I will be hands off
+  … do not get stuck using little compute, feel free to parallelize on
+  the cluster and get this done as fast as possible"). Pre-adoption
+  exploratory exposure (instrument selftests, local stats passes
+  including a direction-flip on β_corr between estimator revisions, two
+  training smokes) disclosed in ARM_CS §0 — every CS-1 claim rests on
+  the canonical cluster run under the adopted estimator.
+
 ## 14. Known limitations (standing list)
 
 Model-relative estimand; single repo per cell (until G4+); proofs-vs-

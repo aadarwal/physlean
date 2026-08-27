@@ -1,13 +1,17 @@
 # ARM_CS — corpus-statistics & from-scratch scaling arm (Cagnetta test)
 
-Status: **DRAFT v2 — round-2 revision awaiting round-3 review.** Round 1
-(v0): FIX-FIRST, 10 blockers. Round 2 (v1, commits 5ad2da7+0627bf2):
-FIX-FIRST — B3/B10 resolved; B1/B2/B5–B9 partial (docs ahead of code
-enforcement); B4 unresolved; five NEW blockers, the sharpest being an
-empirically demonstrated γ-estimator identifiability failure and a
-statistically reversed H3 support rule. v2 addresses all of these
-(annotated per-section). Adoption = review verdict ADOPTABLE + adoption
-commit carrying the PREREG §13 registration entry and the §0 G6 statement.
+Status: **ADOPTED (2026-08-28, CS-0)** after a TEN-ROUND independent
+fresh-context adversarial review (v0..v9 each FIX-FIRST with executed
+counter-examples; the catches included the shifted collapse form, the
+same-population Miller–Madow correction, an empirically demonstrated
+γ-identifiability failure, a statistically reversed H3 rule, two
+bootstrap formula errors, and a chain of evidence-substitution attacks —
+all fixed and asserted in the selftests). Round-10 split its residue into
+three non-deferrables (fixed at 0d1dbaf) and one deferrable, recorded
+with its mitigation as an ACCEPTED OPEN DISAGREEMENT in the PREREG §13
+adoption entry, which also carries the G6-fulfillment statement and the
+adoption-time instrument source-blob pins. Section annotations below
+retain the round-by-round fix history for provenance.
 
 Rationale and the paper mapping live in THEORY.md; this file freezes the
 design. The paper: Cagnetta, Raventós, Ganguli, Wyart, ICML 2026,
