@@ -25,7 +25,10 @@ for i in 1 2 3 4 5 6; do
   T="data/cs2/tasks_walk_${f}.txt"
   [ -s "$T" ] || { echo "[driver] no tasks for $f; abort"; exit 1; }
   n=$(wc -l < "$T")
-  sbatch --array=0-$((n - 1))%24 slurm/cs2_rungs.sbatch "$T"
+  # wide preemptable pool: CS-2 tasks are minutes-long and idempotent
+  # (skip-if-done + request/hash verification), so requeue is safe
+  sbatch -p mit_preemptable --gres=gpu:1 --requeue \
+    --array=0-$((n - 1))%32 slurm/cs2_rungs.sbatch "$PWD/$T"
   sleep 30
   wait_drain
   $PY cs2_launch.py --stage pick --frac "$f" --expect-set walk \
