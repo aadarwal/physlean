@@ -44,6 +44,7 @@ H_STEP = 0.005
 MIN_R2 = 0.9
 PROFILE_R2_DROP = 0.001  # calibrated: good binned fits span ~0.10 in gamma
 PROFILE_WIDTH_MAX = 0.15
+REFIT_WIDTH_MAX = 0.3  # refits have less H-leverage; 0.3 = degenerate threshold
 GAMMA_MIN = 0.05
 SHIFT_MIN = 0.02
 MIN_RUNGS = 4
@@ -160,9 +161,14 @@ def gamma_fit(mids, vals, certify=True):
         return dict(reason=f"gate: gamma {g:.3f} <= {GAMMA_MIN}", **gates)
     if not gates["interior"]:
         return dict(reason="gate: H* at grid boundary", **gates)
-    if certify and width > PROFILE_WIDTH_MAX:
-        return dict(reason=f"gate: profile width {width:.3f}", **gates)
+    wmax = PROFILE_WIDTH_MAX if certify else REFIT_WIDTH_MAX
+    if width > wmax:
+        # identifiability is fatal for refits too (round-4 fix), at the
+        # refit-calibrated cap (narrow windows have less H-leverage)
+        return dict(reason=f"gate: profile width {width:.3f} > {wmax}",
+                    **gates)
     if certify and r2m < MIN_R2:
+        # R^2 alone is relaxed for narrow sensitivity windows
         return dict(reason=f"gate: r2 {r2m:.3f} < {MIN_R2}", **gates)
     return dict(gamma=g, H_inf=H,
                 profile_lo=min(prof), profile_hi=max(prof), **gates)
@@ -190,12 +196,17 @@ def seed_set(runs):
 def scope_beta(stats, lang):
     """Registered beta from the POOLED scope only (round-3 fix: csupport
     is a sensitivity, never promoted — it must stay paired with the same
-    mixture gamma/alpha are trained on); withhold rules enforced."""
+    mixture gamma/alpha are trained on); withhold rules enforced. The
+    doc-block interval is REQUIRED (round-4 fix: no lag-bootstrap or
+    zero-width fallback)."""
     scope = stats["scopes"].get(lang) or {}
     fit = scope.get("fit") or {}
-    ci = fit.get("ci_doc_block_boot") or fit.get("ci_lag_boot")
+    ci = fit.get("ci_doc_block_boot")
     if fit.get("beta_corr") is None:
         return None, None, None, lang, "no reportable beta_corr", None, None
+    if ci is None:
+        return (None, None, None, lang,
+                "no doc-block bootstrap interval", None, None)
     if fit.get("divergence_withhold"):
         return (None, None, None, lang, "beta withheld (op-vs-fro)",
                 None, None)
@@ -206,8 +217,17 @@ def scope_beta(stats, lang):
             scope.get("total_bytes"))
 
 
+def load_capacity(args):
+    p = os.path.join(BASE, getattr(args, "capacity", "") or
+                     os.path.join("results_cs", "capacity_verdict.json"))
+    if os.path.exists(p):
+        return json.load(open(p)), p
+    return {}, p
+
+
 def phase_gamma(args):
     stats = json.load(open(args.stats))
+    cap, cap_path = load_capacity(args)
     runs = load_runs(args.runs_dir)
     try:
         commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=BASE,
@@ -229,11 +249,26 @@ def phase_gamma(args):
         sec_runs = [r for r in lruns if rung_of(r, bounds) == second]
         entry = dict(seed_top=seed_set(top_runs),
                      seed_second=seed_set(sec_runs))
-        if set(entry["seed_top"]) != SEEDS or \
-                set(entry["seed_second"]) != SEEDS:
-            entry["reason"] = "seed sets incomplete (need exactly {0,1,2})"
+        # EXACTLY three artifacts per rung (round-4: {0,0,1,2} must fail)
+        if len(top_runs) != 3 or set(entry["seed_top"]) != SEEDS or \
+                len(sec_runs) != 3 or set(entry["seed_second"]) != SEEDS:
+            entry["reason"] = ("seed artifacts not exactly {0,1,2}: "
+                              f"top={len(top_runs)} sec={len(sec_runs)}")
             reg["langs"][lang] = entry
             continue
+        if lang in H3_ELIGIBLE:
+            # capacity must be adjudicated un-fired BEFORE gamma/H1 are
+            # registered from the 10m model (round-4 fix)
+            ce = cap.get(lang)
+            if not isinstance(ce, dict) or "fired" not in ce:
+                entry["reason"] = "capacity unadjudicated (no valid entry)"
+                reg["langs"][lang] = entry
+                continue
+            if ce["fired"]:
+                entry["reason"] = ("capacity fired: 10m undersized; "
+                                   "30m ladder required")
+                reg["langs"][lang] = entry
+                continue
         mt, vt, used_t = pooled_binned(top_runs, args.nll_dir)
         ms, vs, used_s = pooled_binned(sec_runs, args.nll_dir)
         if mt is None or ms is None:
@@ -249,6 +284,11 @@ def phase_gamma(args):
         inputs.update({os.path.relpath(r["_path"], BASE):
                        sha256_file(r["_path"])
                        for r in top_runs + sec_runs})
+        man_p = os.path.join(args.cs2_dir, f"{lang}_cs2.json")
+        inputs[os.path.relpath(man_p, BASE)] = sha256_file(man_p)
+        if os.path.exists(cap_path):
+            inputs[os.path.relpath(cap_path, BASE)] = \
+                sha256_file(cap_path)
         entry["input_sha256"] = inputs
         if gap > CONV_TOL:
             entry["reason"] = f"not converged: gap {gap:.4f} > {CONV_TOL}"
@@ -265,6 +305,11 @@ def phase_gamma(args):
         # clean synthetic). Per-seed single-run fits are a DIAGNOSTIC,
         # not an uncertainty component (they are 3x noisier by
         # construction).
+        # window component = POINT spread across identifiable refits (a
+        # refit's profile re-measures the H-uncertainty already carried
+        # by the primary profile component — including it double-counts);
+        # refit identifiability is separately enforced (REFIT_WIDTH_MAX,
+        # failure withholds)
         win_g = [fit["gamma"]]
         sens_fail = None
         for lo, hi in GAMMA_WINDOWS_SENS:
@@ -354,14 +399,15 @@ def phase_envelope(args):
                             "analysis_envelope.json")
     if os.path.exists(out_file) and not getattr(args, "force", False):
         sys.exit(f"refusing to overwrite {out_file} (use --force)")
-    cap_path = os.path.join(BASE, getattr(args, "capacity", "") or
-                            os.path.join("results_cs",
-                                         "capacity_verdict.json"))
-    cap = json.load(open(cap_path)) if os.path.exists(cap_path) else {}
+    cap, cap_path = load_capacity(args)
     runs = load_runs(args.runs_dir)
+    env_inputs = {}
+    if os.path.exists(cap_path):
+        env_inputs[os.path.relpath(cap_path, BASE)] = sha256_file(cap_path)
     out = dict(schema="cs_analysis_envelope_v2",
                registration_sha256=sha256_file(
-                   os.path.join(BASE, args.reg)), langs={})
+                   os.path.join(BASE, args.reg)),
+               input_sha256=env_inputs, langs={})
     for lang, rl in reg["langs"].items():
         if "gamma" not in rl:
             out["langs"][lang] = dict(reason="no registered gamma")
@@ -386,6 +432,16 @@ def phase_envelope(args):
         for ru in range(len(bounds)):
             if (4096, ru) not in groups:
                 defects.append(f"missing primary rung {ru}")
+        for (ctx, ru), v in sorted(groups.items()):
+            for r in v:
+                d = os.path.join(args.nll_dir,
+                                 f"{r['run']}__{r['lang']}__val.csv.gz")
+                if not os.path.exists(d):
+                    defects.append(f"missing dump for {r['run']}")
+                else:
+                    env_inputs[os.path.relpath(d, BASE)] = sha256_file(d)
+                env_inputs[os.path.relpath(r["_path"], BASE)] = \
+                    sha256_file(r["_path"])
         eligible = lang in H3_ELIGIBLE and not rl.get(
             "h3_ineligible_reason")
         if defects and eligible:
@@ -547,7 +603,8 @@ def phase_envelope(args):
                         note="descriptive only; never H3 (ARM_CS §6)")
             elif not (e.get("horizon") or {}).get("ok"):
                 e["H3"] = "INDETERMINATE(horizon)"
-            elif cap_entry is None:
+            elif not isinstance(cap_entry, dict) or "fired" not in \
+                    cap_entry:
                 e["H3"] = "WITHHELD (capacity unadjudicated)"
             elif cap_entry.get("fired"):
                 e["H3"] = "WITHHELD (capacity fired; 30m ladder pending)"
@@ -673,8 +730,11 @@ def selftest():
     stats_p = os.path.join(tmp, "lang_stats.json")
     json.dump(stats, open(stats_p, "w"))
     cap_p = os.path.join(tmp, "capacity_verdict.json")
-    json.dump({l: dict(fired=False) for l in ("lean", "python", "cpp")},
-              open(cap_p, "w"))
+    # capacity-fired must refuse at the GAMMA level (registration is
+    # sha-bound to the capacity state, so post-registration toggling is
+    # itself refused — tested at the end)
+    json.dump(dict(lean=dict(fired=True), python=dict(fired=False),
+                   cpp=dict(fired=False)), open(cap_p, "w"))
     ns = argparse.Namespace(stats=stats_p,
                             runs_dir=os.path.join(tmp, "runs"),
                             nll_dir=os.path.join(tmp, "nll"),
@@ -682,8 +742,17 @@ def selftest():
                             langs="lean,python,cpp",
                             reg=os.path.relpath(
                                 os.path.join(tmp, "reg.json"), BASE),
+                            capacity=os.path.relpath(cap_p, BASE),
                             force=False)
     phase_gamma(ns)
+    reg0 = json.load(open(os.path.join(tmp, "reg.json")))
+    assert "capacity fired" in reg0["langs"]["lean"].get("reason", ""), \
+        reg0["langs"]["lean"]
+    json.dump({l: dict(fired=False) for l in ("lean", "python", "cpp")},
+              open(cap_p, "w"))
+    ns.force = True
+    phase_gamma(ns)
+    ns.force = False
     reg = json.load(open(os.path.join(tmp, "reg.json")))
     for lang in ("lean", "python", "cpp"):
         e = reg["langs"][lang]
@@ -710,15 +779,17 @@ def selftest():
     assert el.get("H3b_collapse_metric") is not None
     assert el.get("H3b_raw_form_sens") is not None
     assert len(el.get("H3b_sweep") or {}) == 9
-    # capacity-fired withholding
+    # post-registration capacity tampering must be REFUSED by the
+    # input-sha binding (the gamma-level gate handles fired states)
+    orig_cap = open(cap_p).read()
     json.dump(dict(lean=dict(fired=True), python=dict(fired=False),
                    cpp=dict(fired=False)), open(cap_p, "w"))
-    phase_envelope(ns2)
-    env2 = json.load(open(os.path.join(tmp, "analysis_envelope.json")))
-    assert env2["langs"]["lean"]["H3"].startswith("WITHHELD (capacity"), \
-        env2["langs"]["lean"]["H3"]
-    json.dump({l: dict(fired=False) for l in ("lean", "python", "cpp")},
-              open(cap_p, "w"))
+    try:
+        phase_envelope(ns2)
+        raise AssertionError("envelope accepted a tampered capacity file")
+    except SystemExit as ex:
+        assert "registered input changed" in str(ex.code), ex.code
+    open(cap_p, "w").write(orig_cap)
     # LOWER-rung seed deletion must withhold H3 (round-3 adversarial)
     victim = os.path.join(tmp, "runs", "scratch-10m-python-s2-r0.json")
     hidden = victim + ".hidden"

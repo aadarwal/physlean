@@ -201,10 +201,16 @@ def main():
             if cur is None:
                 raise SystemExit(f"verdict refused: no incumbent {lang}")
             probes = scan_rung(lang, mb, size="30m")
-            if len(probes) < 6:
-                raise SystemExit(f"verdict refused: {lang} has "
-                                 f"{len(probes)}/6 30m probes")
-            best30 = probes[0][0]
+            lr0, ep0 = cur["lr"], cur["epochs"]
+            want = {(round(lr, 8), ep) for lr in (lr0 * 3, lr0, lr0 / 3)
+                    for ep in (ep0, ep0 * 2)} | {(lr0, ep0)}
+            have = {(round(p[1], 8), p[2]) for p in probes}
+            if not want <= have:
+                raise SystemExit(
+                    f"verdict refused: {lang} missing frozen 30m "
+                    f"neighbors {sorted(want - have)}")
+            best30 = min(p[0] for p in probes
+                         if (round(p[1], 8), p[2]) in want)
             best10 = cur["val_bpb"]
             verdict[lang] = dict(fired=bool(best30 < best10 - 0.01),
                                  best_30m=best30, best_10m=best10,
@@ -212,6 +218,9 @@ def main():
             print(f"[{lang}] 30m {best30:.4f} vs 10m {best10:.4f} "
                   f"fired={verdict[lang]['fired']}")
         out = os.path.join(BASE, "results_cs", "capacity_verdict.json")
+        if os.path.exists(out):
+            raise SystemExit(f"refusing to overwrite {out} (delete it "
+                             "deliberately if re-adjudicating)")
         json.dump(verdict, open(out, "w"), indent=1)
         print(f"wrote {out}")
         return

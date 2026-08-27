@@ -198,13 +198,15 @@ Per corpus scope (pooled language mixture; per-repo strata >= 5 MB):
   bootstrap, 500 blocks (docs hashed to blocks by seeded shuffle), 200
   resamples with block-resample indices fixed across lags (coherent
   curves), applied to pooled, matched, AND per-repo scopes (100 for
-  strata); reported explicitly as a block bootstrap. The bootstrap acts
-  on the CENTERED estimand EXACTLY: within-document permutations preserve
-  each block's marginal counts, so the marginal outer-product terms of
-  data and permutation-mean cancel block-wise and the resampled centered
-  statistic is op((M·(J_data − J̄_perm))_r / N_r) — one matmul on the
-  centered block counts, no approximation. Lag-point bootstrap (1000)
-  secondary.
+  strata); reported explicitly as a block bootstrap. The bootstrap is
+  the PLUG-IN of the point estimand on each resample (round-4 fix — the
+  earlier block-wise cancellation claim was FALSE: within-document
+  shuffles preserve whole-document histograms but not lag-masked
+  endpoint marginals): C_data^r and C_permmean^r are each rebuilt from
+  the resampled block joints with their own row/column-sum marginals,
+  and the statistic is op(C_data^r − C_permmean^r) — two matmuls per
+  lag, no identity assumed. Exercised with n_boot>0 in the selftest.
+  Lag-point bootstrap (1000) secondary.
 - **β positivity gate**: β̂_corr ≤ 0.02 (indistinguishable from flat) →
   "no reportable β_corr" for the scope.
 - **Provenance (review B4, hardened at round 2)**: every output records
@@ -282,7 +284,10 @@ Per corpus scope (pooled language mixture; per-repo strata >= 5 MB):
 1. CS-1 canonical run (cluster, full clones, v1 estimator) committed;
    **β̂_corr registration commit**: all languages simultaneously, binding
    the lang_stats artifact hash, code commit, and constants.
-2. CS-2 runs (HP walk + ladder + capacity guard).
+2. CS-2 runs (HP walk → capacity probes + `capacity-verdict` artifact →
+   ladder). The verdict must exist UN-FIRED before step 3: γ̂/Ĥ_∞ may
+   not be registered from a model the adjudication would declare
+   undersized (round-4 fix; the gamma phase enforces this).
 3. **γ̂ + prediction registration commit** BEFORE the envelope phase:
    `analyze_cs.py --phase gamma` reads ONLY the top-two-rung artifacts
    (top rung for the estimate, second for the §6 convergence rule),
@@ -403,11 +408,11 @@ differ and are not attributed to it).
 ## 8. Threats and predeclared readings
 
 1. C(n) non-power-law / oscillatory → hinge + peaks are findings;
-   β_corr_short/long enter H3's prediction as a sensitivity band; if no
-   adequate window exists (§3 gate), H3 is WITHHELD for that scope, never
-   patched from a band (review B7).
-2. Document-mixture drift across lags → common-support sensitivity is
-   primary on disagreement (§2).
+   β_corr_short/long are reported DESCRIPTIVELY — H3 uses the global
+   β̂_corr only, never a band (round-4 consistency fix); if no adequate
+   window exists (§3 gate), H3 is WITHHELD for that scope (review B7).
+2. Document-mixture drift across lags → the common-support sensitivity
+   is recorded (`csupport_divergence`); it is never primary (§2).
 3. Between-document composition covariance → excluded from β_corr by
    declaration, reported separately; large values flag corpus
    heterogeneity as its own result.

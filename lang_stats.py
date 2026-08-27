@@ -381,18 +381,21 @@ def analyze_stream(docs, lags, n_blocks, n_boot, tag):
         floors.append(float(max(loo)))
         floor_spread.append([float(min(loo)), float(max(loo))])
         if n_boot:
-            # EXACT centered bootstrap (ARM_CS §3): within-doc shuffles
-            # preserve each block's marginal counts, so the marginal
-            # outer-product terms cancel block-wise and the resampled
-            # centered statistic is just the resampled count difference
-            Jc = J.astype(np.float64) - Pm_blocks
-            R = boot_M @ Jc.reshape(nb, V * V)
-            Nr = boot_M @ J.reshape(nb, V * V).sum(axis=1).astype(
-                np.float64)
+            # PLUG-IN centered bootstrap (ARM_CS §3, round-4 fix): the
+            # resampled statistic is exactly the point estimand on the
+            # resample — C_data^r − C_permmean^r, each with its OWN
+            # marginals (lag-masked endpoint marginals are NOT preserved
+            # by within-doc shuffles, so no cancellation identity is
+            # assumed). Two matmuls per lag; marginals from row/col sums.
+            Rd = boot_M @ J.reshape(nb, V * V).astype(np.float64)
+            Rp = boot_M @ Pm_blocks.reshape(nb, V * V)
             row = []
             for r in range(n_boot):
-                row.append(op_norm(R[r].reshape(V, V) / Nr[r])
-                           if Nr[r] > 1000 else float("nan"))
+                Cd, Nd, _ = cov_matrix(Rd[r].reshape(V, V))
+                Cpb, Np2, _ = cov_matrix(Rp[r].reshape(V, V))
+                row.append(op_norm(Cd - Cpb)
+                           if Cd is not None and Cpb is not None
+                           else float("nan"))
             boot_ops.append(row)
         log(f"  [{tag}] lag {n}: op_seq={st['op']:.3e} "
             f"floor={floors[-1]:.3e}")
@@ -418,7 +421,7 @@ def analyze_stream(docs, lags, n_blocks, n_boot, tag):
                 continue
             b, _, _, _, _ = ols_loglog(fit_lags, col)
             bs.append(b)
-        if len(bs) > 30:
+        if len(bs) >= max(20, n_boot // 2):
             fit["ci_doc_block_boot"] = [float(np.percentile(bs, 2.5)),
                                         float(np.percentile(bs, 97.5))]
             fit["n_blocks"] = int(nb)
@@ -485,10 +488,16 @@ def selftest():
     xs[0] = jumps[0]
     for i in range(1, n):
         xs[i] = xs[i - 1] if stay[i] else jumps[i]
-    r = analyze_stream([xs.tobytes()], lag_set(64), 10, 0, "markov")
+    docs_mk = [xs[i:i + 200_000].tobytes() for i in range(0, n, 200_000)]
+    r = analyze_stream(docs_mk, lag_set(64), 10, 30, "markov")
     v = [o for o, ok in zip(r["op"], r["valid"]) if ok]
     assert len(v) >= 5 and v[0] > v[-1], "markov: op not decreasing"
     assert r["ngram"][1]["H_cond_mm"] < 2.0, "markov: H(next|1) not low"
+    # bootstrap path (n_boot > 0): finite doc-block CI bracketing beta
+    ci = r["fit"].get("ci_doc_block_boot")
+    b = r["fit"].get("beta_corr")
+    assert ci and ci[0] < ci[1] and b is not None, (ci, b)
+    assert ci[0] - 0.3 < b < ci[1] + 0.3, (ci, b)
     # (c) decaying signal with a lag-10 echo: peak at a multiple of 10
     n = 1_500_000
     u = rng.random(n)

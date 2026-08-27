@@ -232,7 +232,20 @@ def main():
         assert offs[-1] == len(val), \
             f"manifest final offset {offs[-1]} != val bytes {len(val)}"
     if os.path.exists(result_path) and not args.force:
-        print(f"[{run}] result exists, skipping (idempotent)", flush=True)
+        # the skip is only idempotent if the existing result matches the
+        # CURRENT request (round-4 fix: a stale result must not stand in
+        # for a different configuration)
+        prev = json.load(open(result_path))
+        want = dict(lang=args.lang, size=args.size, seed=args.seed,
+                    ctx=args.ctx, epochs=args.epochs,
+                    train_bytes=len(train))
+        got = {k: prev.get(k) for k in want}
+        if args.lr:
+            want["lr"], got["lr"] = args.lr, prev.get("lr")
+        if got != want:
+            sys.exit(f"[{run}] existing result mismatches request: "
+                     f"{got} != {want} (use --force to rerun)")
+        print(f"[{run}] result exists and matches, skipping", flush=True)
         return
     model = ByteGPT(L, d, h, args.ctx,
                     grad_ckpt=(device == "mps")).to(device)

@@ -186,7 +186,8 @@ Lean decaying as fast or faster than Python.
 
 H3 (NEW, the theory test): per language, the measured Phase 2 data exponent
 matches the zero-parameter prediction: **α̂_D ≈ γ/(2β)**, and the n-gram
-loss curves collapse under (γ, β) rescaling. Falsifiers, each informative:
+loss curves' shifted collapse (H3b, a SEPARATE descriptive report — never
+a conjunct of H3; ARM_CS §6) tracks it. Falsifiers, each informative:
 (a) collapse quality differs qualitatively between code and the LaTeX arm
 → suggestive of domain-specificity (the raw-TeX arm is a FORMAT DIAGNOSTIC
 only, per PREREG §2 — no prose/formality claim rides on it); (b) α̂_D = δ < γ/(2β) → code sits in the *slow-learning*
