@@ -527,6 +527,22 @@ def phase_gamma(args):
                        for r in top_runs + sec_runs})
         man_p = os.path.join(args.cs2_dir, f"{lang}_cs2.json")
         inputs[os.path.relpath(man_p, BASE)] = sha256_file(man_p)
+        # round-10 F2: hash-only inventory of the COMPLETE primary
+        # ladder (contents of lower rungs are NOT read here — §5's
+        # top-two-rung reading discipline is preserved; the envelope
+        # verifies this inventory so no post-registration lower-rung
+        # substitution or rerun can move alpha_D)
+        inv = {}
+        for r in lruns:
+            if rung_of(r, bounds) is None:
+                continue
+            inv[os.path.relpath(r["_path"], BASE)] = \
+                sha256_file(r["_path"])
+            dp = os.path.join(args.nll_dir,
+                              f"{r['run']}__{r['lang']}__val.csv.gz")
+            if os.path.exists(dp):
+                inv[os.path.relpath(dp, BASE)] = sha256_file(dp)
+        entry["ladder_inventory_sha256"] = inv
         if os.path.exists(cap_path):
             inputs[os.path.relpath(cap_path, BASE)] = \
                 sha256_file(cap_path)
@@ -589,6 +605,18 @@ def phase_gamma(args):
                                               window=win_hw),
                      gamma_seed_diagnostic=seed_g)
         beta, ci, bfit, src, why, n_det, p_corpus = scope_beta(stats, lang)
+        # round-10 F3: the same-mixture prediction requires CS-1 and
+        # CS-2 to describe the SAME corpus snapshot
+        cs1_sha = (stats["scopes"].get(lang) or {}).get(
+            "doc_manifest_sha256")
+        cs2_sha = json.load(open(man_p)).get("collection_sha256")
+        if not cs1_sha or cs1_sha != cs2_sha:
+            entry["reason"] = ("corpus snapshot mismatch: CS-1 "
+                               f"{str(cs1_sha)[:12]} != CS-2 "
+                               f"{str(cs2_sha)[:12]}")
+            reg["langs"][lang] = entry
+            continue
+        entry["corpus_snapshot_sha256"] = cs1_sha
         entry["beta_source"] = src
         entry["n_det"] = n_det
         entry["P_corpus"] = p_corpus
@@ -651,7 +679,9 @@ def phase_envelope(args):
                  f"({ev} != {mine})")
     # round-3 B4 fix: re-verify every input the registration bound
     for lang, rl in reg["langs"].items():
-        for rel, sha in (rl.get("input_sha256") or {}).items():
+        bound = dict(rl.get("input_sha256") or {})
+        bound.update(rl.get("ladder_inventory_sha256") or {})
+        for rel, sha in bound.items():
             p = os.path.join(BASE, rel)
             if not os.path.exists(p) or sha256_file(p) != sha:
                 sys.exit(f"REFUSED: registered input changed: {rel}")
@@ -720,7 +750,11 @@ def phase_envelope(args):
                     if ctx == 4096:  # primary-arm dumps are required
                         defects.append(f"missing dump for {r['run']}")
                 else:
-                    env_inputs[os.path.relpath(d, BASE)] = sha256_file(d)
+                    dsha = sha256_file(d)
+                    if ctx == 4096 and dsha != r.get("dump_sha256"):
+                        # round-10 F1: a mismatched primary dump WITHHOLDS
+                        defects.append(f"dump hash mismatch: {r['run']}")
+                    env_inputs[os.path.relpath(d, BASE)] = dsha
                 env_inputs[os.path.relpath(r["_path"], BASE)] = \
                     sha256_file(r["_path"])
         eligible = lang in H3_ELIGIBLE and not rl.get(
@@ -1020,9 +1054,12 @@ def selftest():
     bounds = [int(50e6 * f) for f in (1 / 64, 1 / 32, 1 / 16, 1 / 8,
                                       1 / 4, 1 / 2, 1)]
     pool_sha = {}
+    snap = {lang: hashlib.sha256(f"snap-{lang}".encode()).hexdigest()
+            for lang in ("lean", "python", "cpp")}
     for lang in ("lean", "python", "cpp"):
         json.dump(dict(rung_boundaries={str(i): b for i, b in
-                                        enumerate(bounds)}),
+                                        enumerate(bounds)},
+                       collection_sha256=snap[lang]),
                   open(os.path.join(tmp, "cs2", f"{lang}_cs2.json"), "w"))
         open(os.path.join(tmp, "cs2", f"{lang}_train.bin"), "wb").write(
             lang.encode() * 100)
@@ -1041,15 +1078,17 @@ def selftest():
                pool_sha=pool_sha["python"])
     _fake_lang(tmp, "cpp", bounds, g_true, H_true,
                g_true / (2 * beta), 0.6, pool_sha=pool_sha["cpp"])
-    def scope(n_det_lags):
+    def scope(n_det_lags, lang):
         return dict(fit=dict(beta_corr=beta,
                              ci_doc_block_boot=[beta - 0.02, beta + 0.02],
                              divergence_withhold=False),
                     lags=n_det_lags, valid=[True] * len(n_det_lags),
+                    doc_manifest_sha256=snap[lang],
                     total_bytes=120_000_000)
-    stats = dict(scopes=dict(lean=scope([1, 2, 4, 8, 16, 32]),
-                             python=scope([1, 2, 4, 8, 16, 32]),
-                             cpp=scope([1, 64, 512, 4096])))
+    stats = dict(scopes=dict(lean=scope([1, 2, 4, 8, 16, 32], "lean"),
+                             python=scope([1, 2, 4, 8, 16, 32],
+                                          "python"),
+                             cpp=scope([1, 64, 512, 4096], "cpp")))
     stats_p = os.path.join(tmp, "lang_stats.json")
     json.dump(stats, open(stats_p, "w"))
     cap_p = os.path.join(tmp, "capacity_verdict.json")
@@ -1184,14 +1223,16 @@ def selftest():
     except SystemExit as ex:
         assert "registered input changed" in str(ex.code), ex.code
     open(cap_p, "w").write(orig_cap)
-    # LOWER-rung seed deletion must withhold H3 (round-3 adversarial)
+    # LOWER-rung seed deletion: refused at the inventory door (round-10
+    # F2 supersedes the round-3 withhold — stronger, earlier)
     victim = os.path.join(tmp, "runs", "scratch-10m-python-s2-r0.json")
     hidden = victim + ".hidden"
     os.rename(victim, hidden)
-    phase_envelope(ns2)
-    env3 = json.load(open(os.path.join(tmp, "analysis_envelope.json")))
-    assert env3["langs"]["python"]["H3"].startswith("WITHHELD"), \
-        env3["langs"]["python"]["H3"]
+    try:
+        phase_envelope(ns2)
+        raise AssertionError("envelope accepted a deleted lower rung")
+    except SystemExit as ex:
+        assert "registered input changed" in str(ex.code), ex.code
     os.rename(hidden, victim)
     # a PARTIAL T=512 group must NOT affect the primary verdict (round-5)
     p512 = os.path.join(tmp, "runs", "scratch-10m-lean-s0-r0c512.json")
@@ -1234,12 +1275,54 @@ def selftest():
     hp2["lean"][f"{FRACS[-1]:.6f}"]["epochs"] = 2
     json.dump(hp2, open(hp_p, "w"))
     # TOP-rung seed incompleteness must fail closed at gamma
-    os.remove(os.path.join(tmp, "runs", "scratch-10m-lean-s2-r6.json"))
+    tr6 = os.path.join(tmp, "runs", "scratch-10m-lean-s2-r6.json")
+    tr6_content = open(tr6).read()
+    os.remove(tr6)
     ns.force = True
     phase_gamma(ns)
     reg2 = json.load(open(os.path.join(tmp, "reg.json")))
     assert "reason" in reg2["langs"]["lean"] and \
         "seed" in reg2["langs"]["lean"]["reason"], reg2["langs"]["lean"]
+    open(tr6, "w").write(tr6_content)
+    phase_gamma(ns)  # re-register the complete world for later tests
+    # a tampered lower-rung primary dump: refused at the inventory door
+    # (round-10 F2; the F1 hash-defect branch remains as depth behind it
+    # for dumps that were absent at registration time)
+    vd = os.path.join(tmp, "nll",
+                      "scratch-10m-python-s1-r1__python__val.csv.gz")
+    orig_dump = open(vd, "rb").read()
+    with gzip.open(vd, "wt") as f:
+        f.write("win,doc,ctxb,blen,tok,nll\n0,0,1,1,65,1.0\n")
+    try:
+        phase_envelope(ns2)
+        raise AssertionError("envelope accepted a tampered dump")
+    except SystemExit as ex:
+        assert "registered input changed" in str(ex.code), ex.code
+    open(vd, "wb").write(orig_dump)
+    # post-registration lower-rung substitution must REFUSE (round-10 F2)
+    vr = os.path.join(tmp, "runs", "scratch-10m-python-s1-r1.json")
+    orig_run = open(vr).read()
+    rj = json.loads(orig_run)
+    rj["final_val_bpb"] += 0.3
+    json.dump(rj, open(vr, "w"))
+    try:
+        phase_envelope(ns2)
+        raise AssertionError("envelope accepted a swapped lower rung")
+    except SystemExit as ex:
+        assert "registered input changed" in str(ex.code), ex.code
+    open(vr, "w").write(orig_run)
+    # CS-1/CS-2 snapshot mismatch must refuse at gamma (round-10 F3)
+    stats2 = json.loads(open(stats_p).read())
+    stats2["scopes"]["lean"]["doc_manifest_sha256"] = "0" * 64
+    json.dump(stats2, open(stats_p, "w"))
+    ns.force = True
+    phase_gamma(ns)
+    regs = json.load(open(os.path.join(tmp, "reg.json")))
+    assert "snapshot mismatch" in regs["langs"]["lean"].get("reason", ""), \
+        regs["langs"]["lean"]
+    json.dump(stats, open(stats_p, "w"))
+    phase_gamma(ns)
+    ns.force = False
     # evidence-source substitution must refuse (round-9)
     ns_sub = argparse.Namespace(runs_dir=os.path.join(tmp, "elsewhere"),
                                 nll_dir=ns.nll_dir, cs2_dir=ns.cs2_dir,
