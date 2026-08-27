@@ -246,6 +246,8 @@ def main():
         want = dict(lang=args.lang, size=args.size, seed=args.seed,
                     ctx=args.ctx, epochs=args.epochs,
                     train_bytes=len(train),
+                    device=device, micro_batch=mb,
+                    step_tokens=args.step_tokens,
                     doc_reset=bool(args.val_manifest),
                     train_sha256=fsha(os.path.join(
                         args.pool_dir, f"{args.lang}_train.bin")),
@@ -338,6 +340,8 @@ def main():
     result = dict(run=run, lang=args.lang, size=args.size, seed=args.seed,
                   n_params=n_params, ctx=args.ctx, lr=lr,
                   epochs=args.epochs, doc_reset=bool(args.val_manifest),
+                  device=device, micro_batch=mb,
+                  step_tokens=args.step_tokens,
                   train_sha256=fsha(os.path.join(
                       args.pool_dir, f"{args.lang}_train.bin")),
                   val_sha256=fsha(os.path.join(

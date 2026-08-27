@@ -217,6 +217,59 @@ def scope_beta(stats, lang):
             scope.get("total_bytes"))
 
 
+def validate_capacity_entry(ce, runs_dir):
+    """Round-6 fix: capacity evidence is VERIFIED, not shape-checked —
+    probe and incumbent result-jsons re-hashed, losses finite, and the
+    fired flag recomputed from the recorded losses."""
+    if not isinstance(ce, dict) or \
+            ce.get("schema") != "cs_capacity_verdict_v1":
+        return "no schema-complete entry"
+    for k in ("fired", "best_30m", "best_10m", "probe_run_sha256",
+              "incumbent_run", "incumbent_run_sha256"):
+        if k not in ce:
+            return f"missing key {k}"
+    probes = ce["probe_run_sha256"]
+    if not isinstance(probes, dict) or len(probes) < 6:
+        return "fewer than six hashed probes"
+    for name, sha in list(probes.items()) + \
+            [(ce["incumbent_run"], ce["incumbent_run_sha256"])]:
+        p = os.path.join(runs_dir, str(name) + ".json")
+        if not os.path.exists(p) or sha256_file(p) != sha:
+            return f"evidence mismatch: {name}"
+    b30, b10 = ce["best_30m"], ce["best_10m"]
+    if not (isinstance(b30, (int, float)) and isinstance(b10, (int, float))
+            and math.isfinite(b30) and math.isfinite(b10)):
+        return "non-finite losses"
+    if bool(ce["fired"]) != bool(b30 < b10 - 0.01):
+        return "fired flag inconsistent with recorded losses"
+    return None
+
+
+def load_hp(args):
+    p = os.path.join(BASE, getattr(args, "hp", "") or
+                     os.path.join("results_cs", "hp_incumbents.json"))
+    if os.path.exists(p):
+        return json.load(open(p)), p
+    return {}, p
+
+
+def hp_mismatch(r, hp, lang, frac):
+    """Does run r's (lr, epochs) disagree with the registered incumbent
+    for its rung? Returns a reason string or None."""
+    inc = (hp.get(lang) or {}).get(f"{frac:.6f}")
+    if inc is None:
+        return f"no registered incumbent at frac {frac:.6f}"
+    if round(r.get("lr", -1), 8) != round(inc["lr"], 8) or \
+            r.get("epochs") != inc["epochs"]:
+        return (f"hp mismatch at frac {frac:.6f}: run "
+                f"({r.get('lr')},{r.get('epochs')}) != incumbent "
+                f"({inc['lr']},{inc['epochs']})")
+    return None
+
+
+FRACS = [1 / 64, 1 / 32, 1 / 16, 1 / 8, 1 / 4, 1 / 2, 1.0]
+
+
 def load_capacity(args):
     p = os.path.join(BASE, getattr(args, "capacity", "") or
                      os.path.join("results_cs", "capacity_verdict.json"))
@@ -228,6 +281,7 @@ def load_capacity(args):
 def phase_gamma(args):
     stats = json.load(open(args.stats))
     cap, cap_path = load_capacity(args)
+    hp, hp_path = load_hp(args)
     runs = load_runs(args.runs_dir)
     try:
         commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=BASE,
@@ -260,17 +314,24 @@ def phase_gamma(args):
             # capacity must be adjudicated un-fired BEFORE gamma/H1 are
             # registered from the 10m model (round-4 fix)
             ce = cap.get(lang)
-            if not isinstance(ce, dict) or "fired" not in ce or \
-                    ce.get("schema") != "cs_capacity_verdict_v1" or \
-                    not all(k in ce for k in ("best_30m", "best_10m",
-                                              "probe_run_sha256")):
-                entry["reason"] = ("capacity unadjudicated (no valid "
-                                   "schema-complete entry)")
+            bad = validate_capacity_entry(ce, args.runs_dir)
+            if bad:
+                entry["reason"] = f"capacity unadjudicated ({bad})"
                 reg["langs"][lang] = entry
                 continue
             if ce["fired"]:
                 entry["reason"] = ("capacity fired: 10m undersized; "
                                    "30m ladder required")
+                reg["langs"][lang] = entry
+                continue
+            bad_hp = None
+            for r in top_runs + sec_runs:
+                ru = rung_of(r, bounds)
+                bad_hp = hp_mismatch(r, hp, lang, FRACS[ru])
+                if bad_hp:
+                    break
+            if bad_hp:
+                entry["reason"] = f"withheld — {bad_hp}"
                 reg["langs"][lang] = entry
                 continue
         mt, vt, used_t = pooled_binned(top_runs, args.nll_dir)
@@ -293,6 +354,8 @@ def phase_gamma(args):
         if os.path.exists(cap_path):
             inputs[os.path.relpath(cap_path, BASE)] = \
                 sha256_file(cap_path)
+        if os.path.exists(hp_path):
+            inputs[os.path.relpath(hp_path, BASE)] = sha256_file(hp_path)
         entry["input_sha256"] = inputs
         if gap > CONV_TOL:
             entry["reason"] = f"not converged: gap {gap:.4f} > {CONV_TOL}"
@@ -408,8 +471,11 @@ def phase_envelope(args):
     if os.path.exists(out_file) and not getattr(args, "force", False):
         sys.exit(f"refusing to overwrite {out_file} (use --force)")
     cap, cap_path = load_capacity(args)
+    hp, hp_path = load_hp(args)
     runs = load_runs(args.runs_dir)
     env_inputs = {}
+    if os.path.exists(hp_path):
+        env_inputs[os.path.relpath(hp_path, BASE)] = sha256_file(hp_path)
     if os.path.exists(cap_path):
         env_inputs[os.path.relpath(cap_path, BASE)] = sha256_file(cap_path)
     out = dict(schema="cs_analysis_envelope_v2",
@@ -442,6 +508,11 @@ def phase_envelope(args):
                 defects.append(f"duplicate runs at {k}")
             elif set(seeds) != SEEDS:
                 defects.append(f"incomplete seeds at {k}: {sorted(seeds)}")
+            for r in v:
+                bad_hp = hp_mismatch(r, hp, lang, FRACS[k[1]])
+                if bad_hp:
+                    defects.append(bad_hp)
+                    break
         for ru in range(len(bounds)):
             if (4096, ru) not in groups:
                 defects.append(f"missing primary rung {ru}")
@@ -584,15 +655,25 @@ def phase_envelope(args):
             e["alpha_D_raw_sens"] = ols_shift(Ps, Ls, 0.0)[0]
             e["m_sweep"] = {m: ols_shift(Ps[:m], Ls[:m], H)[0]
                             for m in range(MIN_RUNGS, len(Ps) + 1)}
-            env = {}
-            for ctx, d in curve.items():
-                for ru, v in d.items():
-                    env[ru] = min(env.get(ru, 9e9), v["mean"])
-            eP = [bounds[r] for r in sorted(env)
-                  if env[r] - H >= SHIFT_MIN]
-            eL = [env[r] for r in sorted(env) if env[r] - H >= SHIFT_MIN]
-            if len(eP) >= MIN_RUNGS:
-                e["alpha_D_envelopeT_sens"] = ols_shift(eP, eL, H)[0]
+            # T=512 sensitivity is ALL-OR-NOTHING (round-6 fix: a
+            # partially landed 512 ladder made this exponent depend on
+            # job completion order)
+            r512 = {ru for (c, ru) in groups if c == 512}
+            if r512 == set(range(len(bounds))):
+                env = {}
+                for ctx, d in curve.items():
+                    for ru, v in d.items():
+                        env[ru] = min(env.get(ru, 9e9), v["mean"])
+                eP = [bounds[r] for r in sorted(env)
+                      if env[r] - H >= SHIFT_MIN]
+                eL = [env[r] for r in sorted(env)
+                      if env[r] - H >= SHIFT_MIN]
+                if len(eP) >= MIN_RUNGS:
+                    e["alpha_D_envelopeT_sens"] = ols_shift(eP, eL, H)[0]
+            else:
+                e["envelopeT_note"] = (
+                    f"withheld: T=512 ladder incomplete "
+                    f"({len(r512)}/{len(bounds)} rungs)")
             # gates BEFORE H3: regime, horizon, capacity (ARM_CS §1)
             if beta and rl.get("n_det") and rl.get("P_corpus"):
                 n_star = rl["n_det"] * (bounds[-1] / rl["P_corpus"]) \
@@ -747,11 +828,29 @@ def selftest():
     # capacity-fired must refuse at the GAMMA level (registration is
     # sha-bound to the capacity state, so post-registration toggling is
     # itself refused — tested at the end)
-    def _cap(fired):
+    def _cap(fired, lang):
+        files = sorted(glob.glob(os.path.join(
+            tmp, "runs", f"scratch-10m-{lang}-*-r5.json"))) + sorted(
+            glob.glob(os.path.join(tmp, "runs",
+                                   f"scratch-10m-{lang}-*-r6.json")))
+        probes = {os.path.basename(p)[:-5]: sha256_file(p)
+                  for p in files[:6]}
+        inc = files[0]
+        b30 = 0.5 if fired else 1.5
         return dict(schema="cs_capacity_verdict_v1", fired=fired,
-                    best_30m=1.0, best_10m=1.0, probe_run_sha256={})
-    json.dump(dict(lean=_cap(True), python=_cap(False),
-                   cpp=_cap(False)), open(cap_p, "w"))
+                    best_30m=b30, best_10m=1.0,
+                    best_30m_run=os.path.basename(files[1])[:-5],
+                    incumbent_run=os.path.basename(inc)[:-5],
+                    incumbent_run_sha256=sha256_file(inc),
+                    probe_run_sha256=probes)
+    json.dump(dict(lean=_cap(True, "lean"),
+                   python=_cap(False, "python"),
+                   cpp=_cap(False, "cpp")), open(cap_p, "w"))
+    hp_p = os.path.join(tmp, "hp_incumbents.json")
+    json.dump({lang: {f"{f:.6f}": dict(lr=1e-3, epochs=2)
+                      for f in FRACS}
+               for lang in ("lean", "python", "cpp")}, open(hp_p, "w"))
+    hp_rel = os.path.relpath(hp_p, BASE)
     ns = argparse.Namespace(stats=stats_p,
                             runs_dir=os.path.join(tmp, "runs"),
                             nll_dir=os.path.join(tmp, "nll"),
@@ -760,12 +859,12 @@ def selftest():
                             reg=os.path.relpath(
                                 os.path.join(tmp, "reg.json"), BASE),
                             capacity=os.path.relpath(cap_p, BASE),
-                            force=False)
+                            hp=hp_rel, force=False)
     phase_gamma(ns)
     reg0 = json.load(open(os.path.join(tmp, "reg.json")))
     assert "capacity fired" in reg0["langs"]["lean"].get("reason", ""), \
         reg0["langs"]["lean"]
-    json.dump({l: _cap(False) for l in ("lean", "python", "cpp")},
+    json.dump({l: _cap(False, l) for l in ("lean", "python", "cpp")},
               open(cap_p, "w"))
     ns.force = True
     phase_gamma(ns)
@@ -781,7 +880,7 @@ def selftest():
     ns2 = argparse.Namespace(runs_dir=ns.runs_dir, nll_dir=ns.nll_dir,
                              cs2_dir=ns.cs2_dir, reg=ns.reg,
                              skip_git_check=True, force=True,
-                             capacity=cap_rel)
+                             capacity=cap_rel, hp=hp_rel)
     phase_envelope(ns2)
     env = json.load(open(os.path.join(tmp, "analysis_envelope.json")))
     el, ep = env["langs"]["lean"], env["langs"]["python"]
@@ -799,8 +898,9 @@ def selftest():
     # post-registration capacity tampering must be REFUSED by the
     # input-sha binding (the gamma-level gate handles fired states)
     orig_cap = open(cap_p).read()
-    json.dump(dict(lean=_cap(True), python=_cap(False),
-                   cpp=_cap(False)), open(cap_p, "w"))
+    json.dump(dict(lean=_cap(True, "lean"),
+                   python=_cap(False, "python"),
+                   cpp=_cap(False, "cpp")), open(cap_p, "w"))
     try:
         phase_envelope(ns2)
         raise AssertionError("envelope accepted a tampered capacity file")
@@ -827,6 +927,8 @@ def selftest():
     env5 = json.load(open(os.path.join(tmp, "analysis_envelope.json")))
     assert env5["langs"]["lean"]["H3"] == "CONSISTENT", \
         env5["langs"]["lean"]["H3"]
+    assert "envelopeT_note" in env5["langs"]["lean"], \
+        "partial T=512 must withhold the envelope sensitivity"
     os.remove(p512)
     # duplicate run must withhold H3
     dup = os.path.join(tmp, "runs", "scratch-10m-lean-s0-r3.json")
@@ -837,6 +939,17 @@ def selftest():
     assert env4["langs"]["lean"]["H3"].startswith("WITHHELD"), \
         env4["langs"]["lean"]["H3"]
     os.remove(dup.replace("-r3.json", "-r3dup.json"))
+    # HP-incumbent mismatch must refuse at gamma (round-6)
+    hp2 = json.load(open(hp_p))
+    hp2["lean"][f"{FRACS[-1]:.6f}"]["epochs"] = 4
+    json.dump(hp2, open(hp_p, "w"))
+    ns.force = True
+    phase_gamma(ns)
+    regh = json.load(open(os.path.join(tmp, "reg.json")))
+    assert "hp mismatch" in regh["langs"]["lean"].get("reason", ""), \
+        regh["langs"]["lean"]
+    hp2["lean"][f"{FRACS[-1]:.6f}"]["epochs"] = 2
+    json.dump(hp2, open(hp_p, "w"))
     # TOP-rung seed incompleteness must fail closed at gamma
     os.remove(os.path.join(tmp, "runs", "scratch-10m-lean-s2-r6.json"))
     ns.force = True
@@ -848,7 +961,7 @@ def selftest():
     ns3 = argparse.Namespace(runs_dir=ns.runs_dir, nll_dir=ns.nll_dir,
                              cs2_dir=ns.cs2_dir, reg=ns.reg,
                              skip_git_check=False, force=True,
-                             capacity=cap_rel)
+                             capacity=cap_rel, hp=hp_rel)
     try:
         phase_envelope(ns3)
         raise AssertionError("envelope did not refuse uncommitted reg")

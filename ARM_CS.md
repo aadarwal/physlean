@@ -267,11 +267,20 @@ Per corpus scope (pooled language mixture; per-repo strata >= 5 MB):
   frozen neighbor probes (no duplicates), refuses overwrites, and
   writes results_cs/capacity_verdict.json with schema
   cs_capacity_verdict_v1 carrying the selected run identities and
-  result-json SHA256s. The GAMMA phase refuses to register any eligible
-  language whose verdict is missing, schema-incomplete, or fired; the
-  registration sha-binds the verdict so post-registration tampering is
-  refused. HP `pick` likewise requires EXACTLY the frozen candidate set
-  (grid 9 / walk 6; extras, gaps, or duplicates fail-closed).
+  result-json SHA256s for all six probes AND the 10m incumbent. The
+  GAMMA phase VERIFIES the evidence, not the shape (round-6 fix): every
+  listed result-json is re-hashed, losses must be finite, and the fired
+  flag is RECOMPUTED from the recorded losses — mismatch, staleness, or
+  NaN refuses registration; the registration sha-binds the verdict so
+  post-registration tampering is refused. HP `pick` likewise requires
+  EXACTLY the frozen candidate set (grid 9 / walk 6; extras, gaps, or
+  duplicates fail-closed) and records the full candidate set with
+  result SHA256s in hp_incumbents.json; BOTH analyzer phases verify
+  every primary-arm run's (lr, epochs) against its rung's registered
+  incumbent and sha-bind the incumbents file. The trainer's identity
+  (recorded and skip-verified) includes device, effective micro-batch,
+  and step_tokens — a same-tag MPS smoke can never stand in for a
+  canonical CUDA run.
 - **Fail-closed execution (round-2 NB5 fix)**: `pick` refuses (nonzero
   exit, driver aborts) when a rung's candidate set is incomplete or
   contains non-doc-reset runs; `ladder` refuses on any missing
@@ -381,7 +390,11 @@ differ and are not attributed to it).
   sensitivity. If fewer than 4 rungs survive the shift rule, α̂_D is
   "not reportable". If either Ĥ_∞±step refit cannot satisfy the shift
   rule with ≥4 rungs, α̂_D is WITHHELD (sensitivity failure never
-  shrinks hw; §1). For an H3-eligible language, α̂_D and H3 are WITHHELD
+  shrinks hw; §1). The envelope-across-T sensitivity is ALL-OR-NOTHING:
+  reported only when the complete T=512 ladder exists, otherwise
+  withheld with a note (round-6: job completion order must not move
+  any reported exponent). For an H3-eligible language, α̂_D and H3 are
+  WITHHELD
   outright if any primary-arm (T=4096) rung is missing, has an
   incomplete seed set, missing dumps, or duplicate (rung, seed) runs —
   fail-closed, with the defect named (round-3 fix; descriptive-only

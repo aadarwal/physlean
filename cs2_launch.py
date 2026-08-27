@@ -135,9 +135,13 @@ def main():
                                f"({len(combos)}/{len(want)})")
                 continue
             best = min(combos.values())
+            candidate_sha = {name: _result_sha(name)
+                             for _, _, _, name in combos.values()}
             inc.setdefault(lang, {})[fkey(args.frac)] = dict(
                 lr=best[1], epochs=best[2], val_bpb=best[0], run=best[3],
-                n_candidates=len(runs))
+                run_sha256=candidate_sha[best[3]],
+                candidate_sha256=candidate_sha,
+                expect_set=args.expect_set)
             print(f"[{lang}] frac {args.frac}: lr={best[1]} ep={best[2]} "
                   f"val={best[0]:.4f} ({len(runs)} candidates)")
         os.makedirs(os.path.dirname(INCUMBENTS), exist_ok=True)
@@ -250,6 +254,7 @@ def main():
                 fired=bool(best30 < best10 - 0.01),
                 best_30m=best30, best_30m_run=best30_run,
                 best_10m=best10, incumbent_run=cur.get("run"),
+                incumbent_run_sha256=_result_sha(cur["run"]),
                 probe_run_sha256=run_shas)
             print(f"[{lang}] 30m {best30:.4f} vs 10m {best10:.4f} "
                   f"fired={verdict[lang]['fired']}")
