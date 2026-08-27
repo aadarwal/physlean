@@ -259,12 +259,26 @@ place (immutability is enforced by the envelope).
 
 ## 8. Verification state on this branch
 
-- Full suite: 565 passed before the new work; all new tests pass with it
-  (see final commit messages for exact counts).
+- Full suite at the branch head: **579 passed** (565 at the merge of the
+  salvaged WIP + 14 new S5 tests), on both the repo venv python 3.12 and a
+  clean 3.14; zero failures.
+- New coverage: `tests/test_v2b_s5_dryrun.py` (the four-phase envelope's
+  seven-way summary truth table, fresh-process/immutability/reuse, tamper
+  fail-closed, masked-suffix byte hygiene — all through the unmodified
+  runner) and `tests/test_run_v2b_s5_launcher.py` (spec/table fail-closed
+  validation, end-to-end dry-run demo with a frozen outcome mix, relaunch
+  idempotence, baseline- and spec-ineligibility, harness-invalid refusal,
+  run-evidence tampering, execution-mode/backend seam agreement, the
+  production bubblewrap gate).
+- One real WIP-adjacent bug found and fixed while building the producer:
+  harness-invalid cells carry no baseline bundle and initially poisoned the
+  cross-cell baseline-consistency gate, masking the intended
+  unresolved-cell refusal; they are now excluded from that gate and
+  reported as unresolved (commit c744977).
 - Silent-skip inventory (this host): 28 `[skip]` lines across the S5 chain,
-  all for missing pinned elan toolchains — eliminated as *coverage* holes by
-  the stub-driver tests, but the real-Lean legs still REQUIRE a
-  pinned-toolchain host (cluster smoke, §6 step 2).
+  all for missing pinned elan toolchains — eliminated as *envelope
+  coverage* holes by the stub-driver tests, but the real-Lean legs still
+  REQUIRE a pinned-toolchain host (cluster smoke, §6 step 2).
 - Nothing under `results_v2/`, no governance-frozen file
   (`eval_incontext.py`, `layout.py`, `analyze_v2.py`,
   `requirements-cluster.lock`), and no frozen DESIGN/PREREG text was
