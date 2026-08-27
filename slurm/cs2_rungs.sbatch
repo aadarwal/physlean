@@ -9,7 +9,9 @@
 # ARM_CS CS-2 rung runner: one array task = one training run.
 # TASKS file (arg 1): lines "lang max_bytes ctx seed lr epochs tag"
 set -uo pipefail
-cd "$(dirname "$0")/.."
+# Slurm executes a SPOOLED COPY of this script, so dirname "$0" points at
+# the spool dir; the submit directory is the repo root
+cd "${SLURM_SUBMIT_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
 TASKS="${1:?tasks file}"
 LINE=$(sed -n "$((SLURM_ARRAY_TASK_ID + 1))p" "$TASKS")
 [ -n "$LINE" ] || { echo "no task line $SLURM_ARRAY_TASK_ID"; exit 0; }
