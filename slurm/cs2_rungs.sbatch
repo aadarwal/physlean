@@ -18,5 +18,5 @@ echo "[cs2] task=$SLURM_ARRAY_TASK_ID $LINE"
 .venv/bin/python train_scratch.py --lang "$LANG_" --size "${CS2_SIZE:-10m}" \
   --pool-dir data/cs2 --out-dir results_cs/runs --dump-dir results_cs/nll \
   --max-train-bytes "$MB" --ctx "$CTX" --seed "$SEED" --lr "$LR" \
-  --epochs "$EP" --out-tag="$TAG" --device cuda --no-ckpt \
+  --epochs "$EP" --out-tag="$TAG" --device cuda \
   --val-manifest "data/cs2/${LANG_}_cs2.json"

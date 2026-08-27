@@ -7,7 +7,7 @@ prep_pools.py. Final eval writes a per-position NLL dump in the same CSV
 schema as eval_incontext.py, so analyze_v2.py fits the from-scratch
 in-context curves too (ctxb == position, 1 byte per token).
 """
-import argparse, gzip, json, math, os, sys, time
+import argparse, gzip, hashlib, json, math, os, sys, time
 
 import numpy as np
 import torch
@@ -193,6 +193,8 @@ def main():
     ap.add_argument("--no-ckpt", action="store_true")
     ap.add_argument("--val-manifest", default=None,
                     help="cs2 manifest json; final eval becomes doc-reset")
+    ap.add_argument("--force", action="store_true",
+                    help="rerun even if the result json already exists")
     args = ap.parse_args()
 
     device = args.device or ("cuda" if torch.cuda.is_available() else
@@ -215,10 +217,24 @@ def main():
     if args.max_train_bytes:
         train = train[:args.max_train_bytes]
 
+    run = f"scratch-{args.size}-{args.lang}-s{args.seed}{args.out_tag}"
+    result_path = os.path.join(args.out_dir, run + ".json")
+    if os.path.exists(result_path) and not args.force:
+        print(f"[{run}] result exists, skipping (idempotent)", flush=True)
+        return
+    man = None
+    if args.val_manifest:
+        man = json.load(open(args.val_manifest))
+        offs = man["val_doc_offsets"]
+        assert man.get("lang") == args.lang, \
+            f"manifest lang {man.get('lang')} != {args.lang}"
+        assert offs and all(b > a for a, b in zip(offs, offs[1:])), \
+            "manifest offsets must be nonempty strictly increasing"
+        assert offs[-1] == len(val), \
+            f"manifest final offset {offs[-1]} != val bytes {len(val)}"
     model = ByteGPT(L, d, h, args.ctx,
                     grad_ckpt=(device == "mps")).to(device)
     n_params = sum(p.numel() for p in model.parameters())
-    run = f"scratch-{args.size}-{args.lang}-s{args.seed}{args.out_tag}"
     print(f"[{run}] params={n_params/1e6:.1f}M train={len(train)/1e6:.1f}MB "
           f"val={len(val)/1e6:.1f}MB device={device}", flush=True)
 
@@ -276,10 +292,9 @@ def main():
     os.makedirs(args.dump_dir, exist_ok=True)
     os.makedirs(args.out_dir, exist_ok=True)
     dump = os.path.join(args.dump_dir, f"{run}__{args.lang}__val.csv.gz")
-    if args.val_manifest:
-        offs = json.load(open(args.val_manifest))["val_doc_offsets"]
-        final = val_bpb_docreset(model, val, offs, args.ctx, device,
-                                 dump=dump)
+    if man is not None:
+        final = val_bpb_docreset(model, val, man["val_doc_offsets"],
+                                 args.ctx, device, dump=dump)
     else:
         final = val_bpb(model, val, args.ctx, device,
                         max_bytes=len(val), dump=dump)
@@ -289,13 +304,26 @@ def main():
                 total_bytes=int(len(val)), n_tokens=int(len(val)),
                 vocab_size=256, overall_bpb=final)
     json.dump(meta, open(dump + ".meta.json", "w"), indent=1)
+    def fsha(p):
+        h = hashlib.sha256()
+        with open(p, "rb") as f:
+            for ch in iter(lambda: f.read(1 << 22), b""):
+                h.update(ch)
+        return h.hexdigest()
+
     result = dict(run=run, lang=args.lang, size=args.size, seed=args.seed,
                   n_params=n_params, ctx=args.ctx, lr=lr,
                   epochs=args.epochs, doc_reset=bool(args.val_manifest),
+                  train_sha256=fsha(os.path.join(
+                      args.pool_dir, f"{args.lang}_train.bin")),
+                  val_sha256=fsha(os.path.join(
+                      args.pool_dir, f"{args.lang}_val.bin")),
+                  manifest_sha256=fsha(args.val_manifest)
+                  if args.val_manifest else None,
                   train_bytes=int(len(train)), tokens_seen=tok_seen,
                   total_steps=total_steps, final_val_bpb=final,
                   history=history, wall_s=time.time() - t0)
-    with open(os.path.join(args.out_dir, run + ".json"), "w") as f:
+    with open(result_path, "w") as f:
         json.dump(result, f, indent=1)
     if not args.no_ckpt:
         os.makedirs(os.path.join(BASE, "ckpt"), exist_ok=True)

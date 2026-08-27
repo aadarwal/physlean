@@ -16,7 +16,8 @@ wait_drain() {
 
 echo "[driver] waiting for rung-1 HP grid to drain"
 wait_drain
-$PY cs2_launch.py --stage pick --frac "${FRACS[0]}"
+$PY cs2_launch.py --stage pick --frac "${FRACS[0]}" --expect 9 \
+  || { echo "[driver] pick failed (fail-closed); abort"; exit 1; }
 for i in 1 2 3 4 5 6; do
   f="${FRACS[$i]}"
   echo "[driver] walk rung $((i + 1)) (frac $f)"
@@ -27,7 +28,8 @@ for i in 1 2 3 4 5 6; do
   sbatch --array=0-$((n - 1))%24 slurm/cs2_rungs.sbatch "$T"
   sleep 30
   wait_drain
-  $PY cs2_launch.py --stage pick --frac "$f"
+  $PY cs2_launch.py --stage pick --frac "$f" --expect 6 \
+    || { echo "[driver] pick failed (fail-closed); abort"; exit 1; }
 done
 echo HP-WALK-COMPLETE
 git add results_cs/hp_incumbents.json

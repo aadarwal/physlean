@@ -63,6 +63,7 @@ def scan_rung(lang, mb, ctx=4096, seed=0):
         r = json.load(open(p))
         if (r.get("lang") == lang and r.get("seed") == seed
                 and r.get("ctx") == ctx and r.get("size") == "10m"
+                and r.get("doc_reset")
                 and abs(r.get("train_bytes", -1) - mb) <= 3):
             ep = r.get("epochs")
             if ep is None:
@@ -76,6 +77,9 @@ def main():
     ap.add_argument("--stage", required=True,
                     choices=["hp", "pick", "walk", "ladder", "capacity"])
     ap.add_argument("--frac", type=float, default=None)
+    ap.add_argument("--expect", type=int, default=0,
+                    help="pick: minimum finished candidates per language "
+                         "(fail-closed below this)")
     ap.add_argument("--langs", default=",".join(LANGS))
     args = ap.parse_args()
     langs = args.langs.split(",")
@@ -95,12 +99,13 @@ def main():
     if args.stage == "pick":
         assert args.frac is not None
         inc = load_incumbents()
+        deficit = []
         for lang in langs:
             b = boundaries(lang)
             mb = b[fkey_lookup(b, args.frac)]
             runs = scan_rung(lang, mb)
-            if not runs:
-                print(f"[{lang}] no finished runs at frac {args.frac}")
+            if len(runs) < max(args.expect, 1):
+                deficit.append(f"{lang}:{len(runs)}/{args.expect}")
                 continue
             best = runs[0]
             inc.setdefault(lang, {})[fkey(args.frac)] = dict(
@@ -110,6 +115,9 @@ def main():
                   f"val={best[0]:.4f} ({len(runs)} candidates)")
         os.makedirs(os.path.dirname(INCUMBENTS), exist_ok=True)
         json.dump(inc, open(INCUMBENTS, "w"), indent=1)
+        if deficit:  # fail-closed (round-2 NB5): drivers must abort
+            raise SystemExit(f"pick incomplete at frac {args.frac}: "
+                             + " ".join(deficit))
         return
 
     if args.stage == "walk":
@@ -142,9 +150,9 @@ def main():
             b = boundaries(lang)
             for f in FRACS:
                 cur = inc.get(lang, {}).get(fkey(f))
-                if cur is None:
-                    print(f"[{lang}] missing incumbent at {f}; skip rung")
-                    continue
+                if cur is None:  # fail-closed (round-2 NB5)
+                    raise SystemExit(
+                        f"ladder refused: missing incumbent {lang}@{f}")
                 mb = b[fkey_lookup(b, f)]
                 for ctx in (512, 4096):
                     for s in (0, 1, 2):
@@ -155,6 +163,8 @@ def main():
         return
 
     if args.stage == "capacity":
+        # tuned 30m probe = the full 6-run neighbor set around the 10m
+        # incumbent (ARM_CS §4, round-2 NB5 fix)
         inc = load_incumbents()
         tasks = []
         for lang in langs:
@@ -162,11 +172,19 @@ def main():
             f = FRACS[-1]
             cur = inc.get(lang, {}).get(fkey(f))
             if cur is None:
-                continue
-            tasks.append(f"{lang} {b[fkey_lookup(b, f)]} 4096 0 "
-                         f"{cur['lr']} {cur['epochs']} -cap30m")
+                raise SystemExit(f"capacity refused: no incumbent {lang}")
+            lr0, ep0 = cur["lr"], cur["epochs"]
+            combos = {(lr0, ep0)}
+            for lr in (lr0 * 3, lr0, lr0 / 3):
+                for ep in (ep0, ep0 * 2):
+                    combos.add((round(lr, 8), ep))
+            for lr, ep in sorted(combos):
+                tasks.append(f"{lang} {b[fkey_lookup(b, f)]} 4096 0 "
+                             f"{lr} {ep} -cap30m-lr{lr}-e{ep}")
         emit(tasks, "capacity")
-        print("submit with: sbatch --export=ALL,CS2_SIZE=30m ...")
+        print("submit with: sbatch --export=ALL,CS2_SIZE=30m "
+              "--array=... slurm/cs2_rungs.sbatch data/cs2/"
+              "tasks_capacity.txt")
         return
 
 

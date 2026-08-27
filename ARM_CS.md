@@ -1,11 +1,13 @@
 # ARM_CS — corpus-statistics & from-scratch scaling arm (Cagnetta test)
 
-Status: **DRAFT v1 — post-review revision awaiting re-review.** v0 received
-an independent fresh-context adversarial review (verdict FIX-FIRST: 10
-blockers, 6 concerns, 6 nits; reviewer transcript summarized in the v1
-commit). v1 addresses every blocker as recorded per-section below.
-Adoption = re-review verdict ADOPTABLE + adoption commit carrying the
-PREREG §13 registration entry and the §0 G6 statement.
+Status: **DRAFT v2 — round-2 revision awaiting round-3 review.** Round 1
+(v0): FIX-FIRST, 10 blockers. Round 2 (v1, commits 5ad2da7+0627bf2):
+FIX-FIRST — B3/B10 resolved; B1/B2/B5–B9 partial (docs ahead of code
+enforcement); B4 unresolved; five NEW blockers, the sharpest being an
+empirically demonstrated γ-estimator identifiability failure and a
+statistically reversed H3 support rule. v2 addresses all of these
+(annotated per-section). Adoption = review verdict ADOPTABLE + adoption
+commit carrying the PREREG §13 registration entry and the §0 G6 statement.
 
 Rationale and the paper mapping live in THEORY.md; this file freezes the
 design. The paper: Cagnetta, Raventós, Ganguli, Wyart, ICML 2026,
@@ -72,12 +74,21 @@ Per corpus scope (pooled language mixture; per-repo strata >= 5 MB):
   largest-rung from-scratch byte models under the frozen §6 estimator;
   reportable only if the §6 convergence rule passes.
 - **α̂_D** — data-limited exponent from the rung ladder (§6).
-- **The theory test (H3)**: per language mixture, compare α̂_D with
-  α_pred = γ̂/(2β̂_corr). Frozen criterion: SUPPORTED iff α̂_D's 95%
-  interval lies within [α_pred − Δ, α_pred + Δ], Δ = max(propagated 95%
-  half-width via THEORY.md Eq. 56 analog, 0.03); REFUTED iff the two 95%
-  intervals are disjoint AND the point gap exceeds Δ; else INDETERMINATE.
-  All three are real outcomes.
+- **The theory test (H3)** (round-2 NB2 fix — equivalence testing done
+  right): per H3-eligible language mixture ({lean, python, cpp}; never
+  latex), compare α̂_D with α_pred = γ̂/(2β̂_corr) under a FIXED scientific
+  equivalence margin **M = 0.05** (frozen; uncertainty can only make
+  support harder, never easier). Let c = α̂_D − α_pred and
+  h = √(hw_α² + hw_pred²), the quadrature of the §6 half-widths
+  (worst-case stacking of every sensitivity was shown to make M
+  unreachable even for a clean synthetic; quadrature of uncorrelated
+  components is the frozen combination rule). REGIME GATE FIRST (§6):
+  if fast learning is not established, H3 = INDETERMINATE(regime) and
+  the slow-regime comparison is reported descriptively. Otherwise:
+  SUPPORTED iff |c| + h ≤ M; REFUTED iff |c| − h > M; else
+  INDETERMINATE. Scaling collapse is **H3b**, a
+  separate DESCRIPTIVE report (metric + sensitivity sweep, no acceptance
+  threshold) — it is not a conjunct of H3.
 - **H2**: β̂_corr(lean pool) < β̂_corr(python pool), doc-block-bootstrap
   95% intervals disjoint. Registered as a claim about THESE locked corpus
   mixtures; any "language" phrasing is exploratory (review C6; cpp is
@@ -124,6 +135,14 @@ Per corpus scope (pooled language mixture; per-repo strata >= 5 MB):
 - Lag set: {1..32} ∪ round(logspace(33 → 8192, 20 points)), deduped.
 - C(n): doc-interior pairs; marginals from the masked left/right endpoint
   sets at that lag; op norm + Frobenius + top-10 singular values.
+- **Centered sequential estimator (round-2 B7 fix — PRIMARY)**: the
+  permutation-mean matrix estimates the composition + sampling structure
+  that survives within-document shuffling, so
+  C_seq(n) = Ĉ_data(n) − mean_perms(Ĉ_perm(n)) isolates sequential
+  structure as a MATRIX difference before any norm is taken. β̂_corr is
+  the slope of ‖C_seq(n)‖_op; the raw-op slope is a reported sensitivity.
+  Centered floors: leave-one-permutation-out —
+  floor_seq(n) = max_i ‖Ĉ_perm_i(n) − mean_{j≠i} Ĉ_perm_j(n)‖_op.
 - **Floors (review B7)**: FIVE within-document permutations (seeds
   4242..4246), identical masking and estimator; floor(n) = max of the
   five op-norms; a lag is VALID iff ‖C(n)‖_op ≥ 1.5 × floor(n). The
@@ -137,13 +156,15 @@ Per corpus scope (pooled language mixture; per-repo strata >= 5 MB):
 - **Adequacy gate**: no β̂_corr is reported unless n_max ≥ 10 (≥1 decade)
   AND window OLS R² ≥ 0.7; otherwise the scope reports "no reportable
   β_corr" with its curve (mirrors G3's fit discipline).
-- **Run-length diagnostic**: the Frobenius-norm slope β_corr_fro over the
-  SAME window is always reported next to the op-norm β̂_corr. The op norm
-  is a max statistic and can be dominated by long constant byte runs
-  (whitespace/heavy-tail segments — demonstrated on a Pareto renewal
-  synthetic in the selftest); op-vs-fro slope divergence beyond the
-  doc-block CI flags run-length domination, and the fro slope is then
-  primary for that scope (recorded, not silent).
+- **Run-length diagnostic (round-2 NB3 fix)**: the Frobenius slope of the
+  centered matrix over the SAME window is always reported next to
+  β̂_corr. The op norm is a max statistic dominated by long constant byte
+  runs (demonstrated on a Pareto renewal synthetic in the selftest). On
+  material divergence — |β̂_corr − β̂_fro| > max(0.1, the doc-block CI
+  half-width) — the scope's β̂_corr is **WITHHELD** (flag
+  `divergence_withhold`; the theory's β is the operator norm, so no
+  silent substitution is licensed) and any language relying on it drops
+  out of H3. Frobenius stays a sensitivity, never the primary.
 - **Broken law (review B8)**: continuous hinge
   y = a + b₁·min(x − x₀, 0) + b₂·max(x − x₀, 0), x = log n, knot x₀
   gridded over window lags; 4 parameters; adopted iff ΔBIC ≤ −6 vs the
@@ -153,22 +174,29 @@ Per corpus scope (pooled language mixture; per-repo strata >= 5 MB):
   GATE-INDEPENDENT diagnostic — reported even when the adequacy gate
   withholds β̂_corr (oscillation-dominated scopes are exactly where they
   matter).
-- **H_k (review B8)**: H_cond(k) = H_k − H_{k−1} (joint k-gram entropies,
-  doc-interior); Miller–Madow-corrected conditional
-  H_cond_mm(k) = H_cond(k) + (m_k − m_{k−1})/(2N ln 2) with m_k the
-  distinct joint k-gram count and m_{k−1} the distinct context count;
-  UNRELIABLE iff |(m_k − m_{k−1})/(2N ln 2)| > 0.02 b/B. Corrected values
-  are what the summary exports.
+- **H_k (round-2 B8 fix — same-population conditional)**: at each k, the
+  context entropy is computed over the (k−1)-prefixes OF THE SAME masked
+  k-gram positions (prefix = packed_kgram div V), so joint and context
+  statistics share one sample population exactly:
+  H_cond(k) = H_k(joint) − H_{k−1}(prefix); MM-corrected conditional
+  H_cond_mm = H_cond + (m_k − m_prefix)/(2 N_k ln 2); UNRELIABLE iff the
+  joint undersampling (m_k − 1)/(2 N_k ln 2) > 0.02 b/B or
+  |correction| > 0.02. Corrected values are what the summary exports.
 - **Uncertainty (review B8)**: document-BLOCK bootstrap, 500 blocks (docs
   hashed to blocks by seeded shuffle), 200 resamples with block-resample
   indices fixed across lags (coherent curves), applied to pooled, matched,
   AND per-repo scopes (100 resamples for strata); reported explicitly as
   a block bootstrap. Lag-point bootstrap (1000) secondary.
-- **Provenance (review B4)**: every output records git commit + dirty
-  flag + per-scope document-manifest SHA256 (over sorted doc SHA1s) +
-  the estimator constants; quick-mode writes `*.quick.json` (never the
-  canonical name); existing outputs are never overwritten without
-  `--force`.
+- **Provenance (review B4, hardened at round 2)**: every output records
+  git commit + dirty flag + per-scope document-manifest SHA256 (over
+  sorted doc SHA1s) + the estimator constants; quick-mode writes
+  `*.quick.json` (never the canonical name); existing outputs are never
+  overwritten without `--force`; non-quick runs REFUSE to start on a
+  dirty CS source tree (`--allow-dirty` overrides for local exploration
+  and records itself in the output). CS-2 side: pool manifests record
+  commit/dirty + collection SHA; run jsons record train/val/manifest
+  SHA256s; the γ registration binds the SHA256 of every dump and run
+  json it read.
 
 ## 4. CS-2 training freeze (v1)
 
@@ -182,24 +210,40 @@ Per corpus scope (pooled language mixture; per-repo strata >= 5 MB):
   fractions {1/64 … 1}; ACTUAL bytes recorded and used in fits.
 - **Seeds {0,1,2} at EVERY rung** (review B1); seed is the torch/np init
   and batch-order seed.
-- **Eval (review B9)**: the final per-position NLL dump uses DOC-RESET
-  windows from the val manifest (`--val-manifest`): every document scored
-  from its own start; positions are within-document context lengths; doc
-  id recorded. L_n and L(P) are therefore doc-interior, matching §1's
-  estimand declarations. (Training batches still cross concatenation
-  joins — a standard-practice model-side choice, disclosed, affecting
-  the model not the estimator.)
+- **Eval (review B9; round-2 NB4 fix)**: the final per-position NLL dump
+  uses DOC-RESET windows from the val manifest (`--val-manifest`): every
+  document scored from its own start; positions are within-document
+  context lengths; doc id recorded. L_n and L(P) are therefore
+  doc-interior, matching §1's estimand declarations. (Training batches
+  still cross concatenation joins — a standard-practice model-side
+  choice, disclosed, affecting the model not the estimator.) The VAL
+  SPLIT is drawn from the seeded-SHUFFLED doc order (every 10th shuffled
+  doc), so validation matches the pooled training mixture rather than
+  the collection order; VAL_CAP = 12 MB (γ's per-position noise scales
+  as 1/√windows — round-2 NB1 showed the estimator needs the larger
+  sample); the trainer validates the manifest fail-closed (language
+  match, strictly increasing offsets, exact final byte count) and skips
+  idempotently when its result exists.
 - **HP state machine (review B9, frozen)**: metric = final val b/B
   (doc-reset), seed 0, T = 4096. Rung 1: full grid lr ∈ {3e-4, 1e-3,
   3e-3} × epochs ∈ {1, 2, 4}. Rung r > 1: evaluate the incumbent plus the
   five neighbors {lr×3, lr, lr/3} × {epochs, epochs×2} \ {incumbent}
   (6 runs total); the winner is the new incumbent. Seeds 1–2 and the T=512 arm reuse the per-rung
   incumbent. All HP runs are recorded; none is deleted.
-- **Capacity guard (review B9)**: at the largest rung, a tuned 30m run
-  (seed 0, T=4096, incumbent HP with the rung-1-style neighbor check)
-  must not beat 10m by > 0.01 b/B; if it does, the language gets a
-  COMPLETE separate 30m ladder (all rungs, all seeds) and the 10m ladder
-  is reported as the undersized arm — curves are never spliced.
+- **Capacity guard (review B9; round-2 NB5 fix)**: at the largest rung,
+  a TUNED 30m probe — the full 6-run neighbor set around the 10m
+  incumbent HP (seed 0, T=4096) — must not beat the tuned 10m by
+  > 0.01 b/B; if it does, the language gets a COMPLETE separate 30m
+  ladder (all rungs, all seeds) and the 10m ladder is reported as the
+  undersized arm — curves are never spliced (the analyzer filters by
+  size everywhere; a mixed-size curve is impossible by construction).
+- **Fail-closed execution (round-2 NB5 fix)**: `pick` refuses (nonzero
+  exit, driver aborts) when a rung's candidate set is incomplete or
+  contains non-doc-reset runs; `ladder` refuses on any missing
+  incumbent; the analyzer requires exactly seeds {0,1,2} at the rungs it
+  reads and filters size=10m. Checkpoints are RETAINED on POOL (≈14 GB)
+  so the T=4096-model-at-512-windows sensitivity is a pure eval pass at
+  CS-4.
 - Grid arithmetic (review C5): per language ≈ 9 + 6×5 HP runs + 7×2×3
   ladder runs + 1 capacity run ≈ 82; × 3 matched languages + latex
   diagnostic ladder (seeds {0,1,2}, no formality claims) + the lean
@@ -241,14 +285,25 @@ differ and are not attributed to it).
 
 - **L_n**: mean doc-reset NLL at within-doc position n (1 tok = 1 B),
   averaged over seeds; per (language, T, rung).
-- **γ̂ / Ĥ_∞** (largest rung, T=4096): window n ∈ [4, 64]. Convergence
-  rule: seed-mean L_n of the top rung and of the second rung must agree
-  within 0.02 b/B over the window, else "γ̂ not reportable — curve still
-  data-limited". Estimator: grid H ∈ [0, min_n L_n] step 0.005; OLS of
-  log(L_n − H) on log n over the window; H* maximizes R²; γ̂ = −slope,
-  Ĥ_∞ = H*. Uncertainty: seed triplet spread × window sensitivity
-  ([4,32] and [8,128] refits); reported as an interval envelope.
-- **Collapse (review B5)**: PRIMARY is the shifted form
+- **γ̂ / Ĥ_∞** (largest rung, T=4096; round-2 NB1 fix): the L_n curve is
+  LOG-BINNED over n ∈ [4, 512] (24 log-spaced bins, byte-weighted bin
+  means) — binning plus the 12 MB val plus 3-seed pooling is what buys
+  the per-point noise the estimator needs. Requirements before any γ̂ is
+  reported: exactly seeds {0,1,2} present at the top two rungs;
+  convergence (top-two-rung binned curves agree within 0.02 b/B over the
+  window); and the IDENTIFIABILITY GATES on the H-grid fit (grid
+  H ∈ [0, min L_n] step 0.005, OLS of log(L_n − H) on log n): γ̂ > 0.05;
+  H* strictly interior to the grid; profile width — the γ range over
+  {H : R² ≥ R²_max − 0.001} — at most 0.15 (empirically calibrated: clean
+  binned fits span ≈0.10, degenerate profiles ≥0.3); R²_max ≥ 0.9. Any failure →
+  "γ̂ not reportable" with the failed gate named. Uncertainty half-width
+  hw_γ = quadrature of {profile-width/2, window-sensitivity spread/2
+  ([4,128] and [16,512] refits)}; per-seed single-run fits are a
+  DIAGNOSTIC, not an uncertainty component (~3× noisier by
+  construction). hw_pred = α_pred·√((hw_γ/γ̂)² + (hw_β/β̂)²) with hw_β
+  the doc-block CI half-width.
+- **Collapse = H3b, descriptive (review B5; round-2 NB2)**: the form is
+  the shifted one
   (L_n(P) − Ĥ_∞)·n^γ̂ vs P/n^(2β̂_corr) over n ∈ [4, 64] × all rungs;
   the raw published form (L_n·n^γ) is a labeled replication sensitivity
   only. Collapse quality metric: interpolate each rung's shifted curve
@@ -260,19 +315,30 @@ differ and are not attributed to it).
 - **α̂_D**: PRIMARY = OLS slope of log(L(P) − Ĥ_∞) vs log P, where L(P)
   = seed-mean overall doc-reset val b/B at T=4096, over rungs with
   L(P) − Ĥ_∞ ≥ 0.02 (asymptote-contaminated rungs excluded by this
-  frozen rule, not by eye). Sensitivities: envelope across T; first-m
-  sweep (m = 4..7); leave-one-rung-out spread; seed spread; RAW
-  (unshifted) envelope slope as the replication sensitivity. If fewer
-  than 4 rungs survive the shift rule, α̂_D is "not reportable".
-- **Regime gates (review B6)**: (a) fast-learning check — δ_n per the
-  paper's §5 protocol (grid H_n along the P axis per n ∈ {1..12}; δ_n =
-  −slope of log(L_n(P) − H_n)); report min_n δ_n against γ̂/(2β̂_corr);
-  if min δ_n < γ̂/(2β̂_corr), the operative prediction becomes
-  min{δ, γ/2β} (Eq. 40) and H3 is evaluated against it (with the
-  boundary-case log correction noted); (b) horizon check — verify
-  n*(P_max) ≪ T via the CS-1 floor-crossing constant (P*_n ≈ n^{2β̂}
-  scaled at the measured detectability point); (c) capacity check — §4's
-  guard. Each gate's failure reading is predeclared in §8.
+  frozen rule, not by eye). hw_α (used by H3) = quadrature of
+  {seed-slope spread/2, leave-one-rung-out spread/2, Ĥ_∞±grid-step
+  refit spread/2 — the last is the dominant systematic near the shift
+  floor and re-applies the shift rule at each H variant}. Sensitivities
+  reported: envelope across T;
+  first-m sweep (m = 4..7); RAW (unshifted) slope as the replication
+  sensitivity. If fewer than 4 rungs survive the shift rule, α̂_D is
+  "not reportable". The α_pred INTERVAL is γ-interval/(2·β-interval) by
+  interval arithmetic (β interval = the doc-block bootstrap CI).
+- **Regime gates (review B6; round-2 NB2 fix — evaluated BEFORE H3)**:
+  (a) fast-learning check — δ_n per the paper's §5 protocol (grid H_n
+  along the P axis per n ∈ {1..12}; δ_n = −slope of log(L_n(P) − H_n)).
+  FAST LEARNING IS ESTABLISHED iff at least 9 of the 12 δ_n exceed
+  γ̂/(2β̂_corr) with fit R² ≥ 0.9 each; if not established, H3 =
+  INDETERMINATE(regime) — the zero-parameter test is simply not licensed
+  — and the slow-regime comparison of α̂_D against min{δ̂, γ/2β} is
+  reported DESCRIPTIVELY (never as H3; the min of twelve noisy δ̂s is
+  not a zero-parameter prediction, and the δ = γ/2β boundary carries a
+  log P correction, paper Eq. 39). (b) horizon check —
+  n̂*(P_top) = n_det · (P_top/P_corpus)^{1/(2β̂_corr)} with n_det the
+  largest valid lag of the registered CS-1 scope and P_corpus its byte
+  count; horizon-limited OK iff n̂*(P_top) ≤ T/4 (number reported
+  either way). (c) capacity check — §4's guard. Each gate's failure
+  reading is predeclared in §8.
 - **δ-report**: δ_n values and their fit windows are part of the arm's
   outputs (they are the paper's second mechanism and diagnose WHERE code
   deviates, which is a finding either way).

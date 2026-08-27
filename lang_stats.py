@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-"""ARM_CS CS-1 instrument v1: model-free corpus statistics per language/repo.
+"""ARM_CS CS-1 instrument v2: model-free corpus statistics per language/repo.
 
-Implements ARM_CS.md §2–§3 (v1, post-adversarial-review):
-  - DOC-INTERIOR lag-n byte covariance C(n): estimand is sequential
-    structure net of document identity; the between-document composition
-    covariance is computed and reported separately, never folded in.
-  - Floors: FIVE within-document permutations (seeds 4242..4246), floor =
-    max of the five; a lag is VALID iff op >= 1.5x floor. The analytic
+Implements ARM_CS.md §2–§3 (v2, after two adversarial-review rounds):
+  - DOC-INTERIOR lag-n byte covariance. PRIMARY statistic: the CENTERED
+    sequential matrix C_seq(n) = C_data(n) - mean_perms(C_perm(n)) — the
+    permutation mean carries document-composition + sampling structure,
+    so the matrix difference isolates sequential dependence BEFORE any
+    norm. Raw op norms and the composition covariance are reported
+    alongside, never folded in.
+  - Floors: FIVE within-document permutations (seeds 4242..4246);
+    centered floor = max over leave-one-permutation-out differences; a
+    lag is VALID iff op_seq >= 1.5x that floor. The analytic
     random-matrix bound 2*sqrt(V)*sqrt(pmax*qmax/N) is diagnostic only.
   - Fit window: [1, n_max] with n_max = last lag before the first run of
     >=3 consecutive INVALID lags; ALL window lags enter the OLS (valid and
@@ -151,18 +155,25 @@ def lag_joint_blocks(x, doc_id, doc_block, n, n_blocks):
     return J.reshape(n_blocks, V, V)
 
 
-def cov_norms(J):
+def cov_matrix(J):
+    """Counts -> (centered covariance matrix, N, p_max*q_max) or None."""
     N = J.sum()
     if N < 1000:
-        return None
+        return None, 0, 0.0
     Jn = J.astype(np.float64) / N
     p = Jn.sum(axis=1)
     q = Jn.sum(axis=0)
-    C = Jn - np.outer(p, q)
+    return Jn - np.outer(p, q), int(N), float(p.max() * q.max())
+
+
+def op_norm(C):
+    return float(np.linalg.svd(C, compute_uv=False)[0])
+
+
+def mat_stats(C):
     sv = np.linalg.svd(C, compute_uv=False)
     return dict(op=float(sv[0]), fro=float(np.sqrt((C * C).sum())),
-                top10=[float(v) for v in sv[:10]], n_pairs=int(N),
-                s2max=float(p.max() * q.max()))
+                top10=[float(v) for v in sv[:10]])
 
 
 def composition_cov_op(docs):
@@ -272,6 +283,12 @@ def ngram_entropies(x, doc_id, max_k=MAX_K):
     out = []
     prev_H, prev_m = 0.0, 0
     packed = x.astype(np.int64)
+    def plug_in(arr):
+        _, counts = np.unique(arr, return_counts=True)
+        N = arr.shape[0]
+        H = math.log2(N) - float((counts * np.log2(counts)).sum()) / N
+        return H, counts.shape[0]
+
     for k in range(1, max_k + 1):
         if k > 1:
             packed = packed[:-1] * V + x[k - 1:].astype(np.int64)
@@ -279,19 +296,24 @@ def ngram_entropies(x, doc_id, max_k=MAX_K):
         N = arr.shape[0]
         if N < 1000:
             break
-        _, counts = np.unique(arr, return_counts=True)
-        m_k = counts.shape[0]
-        H = math.log2(N) - float((counts * np.log2(counts)).sum()) / N
-        corr = (m_k - prev_m) / (2.0 * N * LN2)  # conditional MM correction
+        H, m_k = plug_in(arr)
+        # SAME-POPULATION conditional (ARM_CS §3): the context entropy is
+        # computed over the (k-1)-prefixes of the SAME masked positions
+        if k == 1:
+            H_ctx, m_ctx = 0.0, 0
+        else:
+            H_ctx, m_ctx = plug_in(arr // V)
+        corr = (m_k - m_ctx) / (2.0 * N * LN2)
         # reliability keys on JOINT undersampling: in saturation (all
         # k-grams distinct) H_cond collapses to ~0 with a tiny correction
         # difference, so the difference alone cannot flag it
         mm_joint = (m_k - 1) / (2.0 * N * LN2)
-        out.append(dict(k=k, H_joint_bits=H, distinct_kgrams=int(m_k),
-                        distinct_contexts=int(prev_m), n=int(N),
-                        H_cond=H - prev_H, mm_cond_correction=corr,
+        out.append(dict(k=k, H_joint_bits=H, H_context_bits=H_ctx,
+                        distinct_kgrams=int(m_k),
+                        distinct_contexts=int(m_ctx), n=int(N),
+                        H_cond=H - H_ctx, mm_cond_correction=corr,
                         mm_joint=mm_joint,
-                        H_cond_mm=(H - prev_H) + corr,
+                        H_cond_mm=(H - H_ctx) + corr,
                         unreliable=bool(mm_joint > MAX_MM
                                         or abs(corr) > MAX_MM)))
         prev_H, prev_m = H, m_k
@@ -315,38 +337,55 @@ def analyze_stream(docs, lags, n_blocks, n_boot, tag):
     shufs = [within_doc_shuffle(x, doc_lens, s) for s in SEED_PERMS]
 
     ops, fros, top10s, npairs = [], [], [], []
+    ops_raw, floors_raw = [], []
     floors, floor_spread, floors_an = [], [], []
     boot_ops = [] if n_boot else None
     kept = []
     for n in lags:
         J = lag_joint_blocks(x, doc_id, doc_block, n, nb)
-        st = cov_norms(J.sum(axis=0))
-        if st is None:
+        C, N, s2max = cov_matrix(J.sum(axis=0))
+        if C is None:
             log(f"  [{tag}] lag {n}: <1000 pairs, stopping")
             break
+        Cp = []
+        for xs in shufs:
+            Js = lag_joint_blocks(xs, doc_id, doc_block, n, nb)
+            Cpi, Np, _ = cov_matrix(Js.sum(axis=0))
+            if Cpi is not None:
+                Cp.append(Cpi)
+        if len(Cp) < len(shufs):
+            log(f"  [{tag}] lag {n}: permutation deficit, stopping")
+            break
+        Cpm = np.mean(np.stack(Cp), axis=0)
+        # centered sequential estimator (ARM_CS §3): matrix difference
+        # BEFORE the norm; permutations carry composition + sampling
+        Cseq = C - Cpm
+        st = mat_stats(Cseq)
         kept.append(n)
         ops.append(st["op"])
         fros.append(st["fro"])
         top10s.append(st["top10"])
-        npairs.append(st["n_pairs"])
-        floors_an.append(2.0 * math.sqrt(V)
-                         * math.sqrt(st["s2max"] / st["n_pairs"]))
-        perm_ops = []
-        for xs in shufs:
-            Js = lag_joint_blocks(xs, doc_id, doc_block, n, nb)
-            ss = cov_norms(Js.sum(axis=0))
-            perm_ops.append(ss["op"] if ss else float("nan"))
-        floors.append(float(np.nanmax(perm_ops)))
-        floor_spread.append([float(np.nanmin(perm_ops)),
-                             float(np.nanmax(perm_ops))])
+        npairs.append(N)
+        ops_raw.append(op_norm(C))
+        floors_raw.append(max(op_norm(c) for c in Cp))
+        floors_an.append(2.0 * math.sqrt(V) * math.sqrt(s2max / N))
+        k = len(Cp)
+        loo = [op_norm(Cp[i] - (k * Cpm - Cp[i]) / (k - 1))
+               for i in range(k)]
+        floors.append(float(max(loo)))
+        floor_spread.append([float(min(loo)), float(max(loo))])
         if n_boot:
             R = boot_M @ J.reshape(nb, V * V).astype(np.float64)
             row = []
             for r in range(n_boot):
-                sb = cov_norms(R[r].reshape(V, V))
-                row.append(sb["op"] if sb else float("nan"))
+                Cb, Nb, _ = cov_matrix(R[r].reshape(V, V))
+                # full-data permutation mean (not resampled): conservative
+                # approximation, widens the bootstrap CI (ARM_CS §3)
+                row.append(op_norm(Cb - Cpm) if Cb is not None
+                           else float("nan"))
             boot_ops.append(row)
-        log(f"  [{tag}] lag {n}: op={st['op']:.3e} floor={floors[-1]:.3e}")
+        log(f"  [{tag}] lag {n}: op_seq={st['op']:.3e} "
+            f"floor={floors[-1]:.3e}")
 
     valid = [o >= FLOOR_MULT * f for o, f in zip(ops, floors)]
     fit = fit_beta(kept, ops, valid)
@@ -373,7 +412,15 @@ def analyze_stream(docs, lags, n_blocks, n_boot, tag):
             fit["ci_doc_block_boot"] = [float(np.percentile(bs, 2.5)),
                                         float(np.percentile(bs, 97.5))]
             fit["n_blocks"] = int(nb)
+    if fit.get("beta_corr") is not None \
+            and fit.get("beta_corr_fro") is not None:
+        ci = fit.get("ci_doc_block_boot") or fit.get("ci_lag_boot")
+        half = (ci[1] - ci[0]) / 2 if ci else 0.0
+        div = abs(fit["beta_corr"] - fit["beta_corr_fro"])
+        fit["fro_divergence"] = div
+        fit["divergence_withhold"] = bool(div > max(0.1, half))
     return dict(lags=kept, op=ops, fro=fros, top10=top10s, n_pairs=npairs,
+                op_raw=ops_raw, floor_raw_perm_max=floors_raw,
                 floor_perm_max=floors, floor_perm_range=floor_spread,
                 floor_analytic_diag=floors_an,
                 valid=[bool(v) for v in valid], fit=fit,
@@ -498,6 +545,8 @@ def main():
     ap.add_argument("--matched-bytes", type=int, default=0,
                     help="0 = auto (min over matched langs present); "
                          "-1 = skip matched scopes; >0 = explicit target")
+    ap.add_argument("--allow-dirty", action="store_true",
+                    help="local exploration only; recorded in the output")
     ap.add_argument("--selftest", action="store_true")
     args = ap.parse_args()
     if args.selftest:
@@ -509,6 +558,10 @@ def main():
     out_csv = os.path.join(args.out, f"lang_stats_summary{suffix}.csv")
     if os.path.exists(out_json) and not args.force:
         sys.exit(f"refusing to overwrite {out_json} (use --force)")
+    commit_pre, dirty_pre = git_identity()
+    if dirty_pre and not args.quick and not args.allow_dirty:
+        sys.exit("refusing a canonical run on a dirty CS source tree "
+                 "(ARM_CS §3; use --allow-dirty for local exploration)")
 
     langs = args.langs.split(",")
     max_lag = 512 if args.quick else args.max_lag
@@ -533,7 +586,8 @@ def main():
             f"repos={sorted({r for r, _ in docs})}")
 
     result = dict(
-        schema="cs1_lang_stats_v2", commit=commit, dirty=dirty,
+        schema="cs1_lang_stats_v3", commit=commit, dirty=dirty,
+        allow_dirty=bool(args.allow_dirty),
         constants=dict(seed_perms=SEED_PERMS, seed_blocks=SEED_BLOCKS,
                        seed_matched=SEED_MATCHED, n_blocks=N_BLOCKS,
                        n_doc_boot=N_DOC_BOOT, floor_mult=FLOOR_MULT,
@@ -606,6 +660,9 @@ def main():
             if broken else None,
             beta_long=round(broken["beta_corr_long"], 4) if broken else None,
             peaks=[p["lag"] for p in fit.get("peaks", [])] or None,
+            beta_fro=round(fit["beta_corr_fro"], 4)
+            if fit.get("beta_corr_fro") is not None else None,
+            withhold=fit.get("divergence_withhold"),
             comp_cov_op=f'{r["composition_cov_op"]:.3e}',
             H1=round(h.get(1, float("nan")), 4),
             H2=round(h.get(2, float("nan")), 4),

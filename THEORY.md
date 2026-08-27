@@ -177,10 +177,12 @@ pretrained in-context curves remains its own, unresolved, and is NOT
 co-opted): intrinsic γ̂(lean pool) > γ̂(python pool) and Ĥ_∞(lean pool) <
 Ĥ_∞(python pool), from CS-2 under ARM_CS §6.
 
-H2 (NEW, model-free): the correlation exponent orders languages by
-formality: **β_lean < β_python < β_prose** (formal code has slower-decaying
-long-range structure — imports, binders, theorem reuse). Falsifier: byte- and
-BPE-level C(n) both show Lean decaying as fast or faster than Python.
+H2 (NEW, model-free): the correlation exponent orders the code pools:
+**β_corr(lean) < β_corr(python)** (formal code has slower-decaying
+long-range structure — imports, binders, theorem reuse). No prose term:
+the raw-TeX arm is a format diagnostic outside all formality contrasts
+(PREREG §2; ARM_CS §1). Falsifier: byte- and BPE-level C(n) both show
+Lean decaying as fast or faster than Python.
 
 H3 (NEW, the theory test): per language, the measured Phase 2 data exponent
 matches the zero-parameter prediction: **α̂_D ≈ γ/(2β)**, and the n-gram
@@ -238,10 +240,11 @@ testable on synthetic curves and on the existing G3a dumps.**
   converged (their §4.1.1/App. C.1), and their §5 grid searches a separate
   H_n per fixed n ALONG THE P AXIS to extract δ_n; our along-n H_∞ grid is
   an adaptation, not their method.
-- Add the **collapse machinery**: given per-rung dumps, plot 𝓛_n·n^γ vs
-  P/n^(2β); a collapse-residual score scanned over (γ, β) gives an
-  independent joint estimate and reproduces their sensitivity analysis
-  (Figs. 8–12) per language.
+- Add the **collapse machinery** (H3b, descriptive): given per-rung
+  dumps, plot the SHIFTED (𝓛_n − Ĥ_∞)·n^γ vs P/n^(2β); the residual
+  score is reported with a (γ, β) sensitivity sweep reproducing their
+  qualitative deterioration figures — no joint estimator is claimed (the
+  paper defines none; ARM_CS §6).
 - Add the **envelope estimator of α̂_D** (their App. C.3): lower envelope of
   L(P) across context lengths T, fit first m points on log-log, bootstrap
   CIs, report the m-sweep table like theirs.
@@ -252,8 +255,9 @@ testable on synthetic curves and on the existing G3a dumps.**
 Current plan is a size ladder at full pools. Add the **data ladder**:
 - Fixed model size (start 10m; verify per their protocol that a bigger model
   at the largest rung doesn't improve val loss — if it does, move up a size),
-  P ∈ ~6 log-spaced rungs per language (e.g. pool × {1/64 … 1}), ≥2 context
-  lengths T (512 and 4096 bytes; 16k where cheap), ≥3 seeds at small rungs.
+  P ∈ 7 log-spaced rungs per language (pool × {1/64 … 1}), 2 context
+  lengths T (512 and 4096 bytes), seeds {0,1,2} at EVERY rung (PREREG §10
+  G6 requirement; ARM_CS §4).
 - Per-rung hyperparameter honesty: the paper grid-searches lr/wd/epochs/batch
   per (P, model) and warns undertuned rungs fake curvature; adopt at least
   the Kim-et-al local-optimality shortcut they use (tune at the smallest

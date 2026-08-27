@@ -17,50 +17,85 @@ NEW STANDALONE FILE (ARM_CS discipline; data/cs2 namespace).
 """
 import json
 import os
+import subprocess
 import sys
 
 import numpy as np
 
-from lang_stats import collect_labeled
+from lang_stats import collect_labeled, doc_manifest_sha
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(BASE, "data", "cs2")
 SEED_RUNGS = 29
 CAP = 120_000_000
-VAL_CAP = 3_000_000
+VAL_CAP = 12_000_000
 FRACS = [1 / 64, 1 / 32, 1 / 16, 1 / 8, 1 / 4, 1 / 2, 1.0]
 MATCHED = ("lean", "python", "cpp")
 
 
-def split(docs):
-    val = [d for i, d in enumerate(docs) if i % 10 == 7]
-    train = [d for i, d in enumerate(docs) if i % 10 != 7]
+def split_shuffled(docs, rng):
+    """Round-2 NB4 fix: split AFTER the seeded shuffle so validation is a
+    random draw from the pooled mixture, not the collection order."""
+    order = rng.permutation(len(docs))
+    val = [docs[order[i]] for i in range(len(order)) if i % 10 == 7]
+    train = [docs[order[i]] for i in range(len(order)) if i % 10 != 7]
     return train, val
 
 
 def main():
-    langs = sys.argv[1].split(",") if len(sys.argv) > 1 else \
+    force = "--force" in sys.argv
+    argv = [a for a in sys.argv[1:] if a != "--force"]
+    langs = argv[0].split(",") if argv else \
         ["lean", "python", "cpp", "latex"]
     os.makedirs(OUT, exist_ok=True)
+    try:
+        commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=BASE,
+                                capture_output=True,
+                                text=True).stdout.strip()
+        dirty = bool(subprocess.run(
+            ["git", "status", "--porcelain", "--", ".",
+             ":(exclude)results_cs", ":(exclude)results_v2"],
+            cwd=BASE, capture_output=True, text=True).stdout.strip())
+    except OSError:
+        commit, dirty = None, None
     pools = {}
+    shas = {}
     for lang in langs:
         docs = collect_labeled(lang)
-        train, val = split(docs)
+        rng = np.random.default_rng(SEED_RUNGS)
+        train, val = split_shuffled(docs, rng)
         pools[lang] = (train, val)
+        shas[lang] = doc_manifest_sha([b for _, b in docs])
         print(f"[{lang}] {len(docs)} docs, train "
               f"{sum(len(b) for _, b in train)/1e6:.1f}MB, val "
               f"{sum(len(b) for _, b in val)/1e6:.1f}MB", file=sys.stderr)
+    current = all(
+        os.path.exists(os.path.join(OUT, f"{lang}_cs2.json"))
+        and json.load(open(os.path.join(OUT, f"{lang}_cs2.json"))
+                      ).get("collection_sha256") == shas[lang]
+        and json.load(open(os.path.join(OUT, f"{lang}_cs2.json"))
+                      ).get("val_cap") == VAL_CAP
+        for lang in langs)
+    if current and not force:
+        print("[cs2_pools] all manifests current, skipping (idempotent)",
+              file=sys.stderr)
+        return
+    stale = [lang for lang in langs
+             if os.path.exists(os.path.join(OUT, f"{lang}_cs2.json"))]
+    if stale and not force:
+        sys.exit(f"manifests exist but are stale ({stale}); rerun with "
+                 "--force to rebuild (rung boundaries may change)")
 
     matched = min(min(sum(len(b) for _, b in pools[l][0])
                       for l in MATCHED if l in pools), CAP) \
         if any(l in pools for l in MATCHED) else CAP
 
     for lang, (train, val) in pools.items():
-        rng = np.random.default_rng(SEED_RUNGS)
-        order = rng.permutation(len(train))
+        # train is ALREADY in seeded-shuffled mixture order (split rule):
+        # filling in order keeps rungs = byte-prefixes of that order
         cap = matched if lang in MATCHED else CAP
         kept, s = [], 0
-        for i in order:
+        for i in range(len(train)):
             b = train[i][1]
             if s + len(b) > cap and s > 0:
                 continue  # skip docs that would overflow; keep filling small
@@ -100,6 +135,8 @@ def main():
             r = train[i][0]
             repo_hist[r] = repo_hist.get(r, 0) + len(train[i][1])
         man = dict(lang=lang, seed_rungs=SEED_RUNGS, matched_cap=int(cap),
+                   val_cap=VAL_CAP, commit=commit, dirty=dirty,
+                   collection_sha256=shas[lang],
                    train_bytes=int(total), n_train_docs=len(kept),
                    val_bytes=int(vs), n_val_docs=len(vkeep),
                    rung_boundaries=rungs, repos=repo_hist,
