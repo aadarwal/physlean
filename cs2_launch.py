@@ -61,13 +61,18 @@ def scan_rung(lang, mb, ctx=4096, seed=0, size="10m"):
     out = []
     for p in glob.glob(os.path.join(BASE, "results_cs", "runs", "*.json")):
         r = json.load(open(p))
+        import math as _m
         if (r.get("lang") == lang and r.get("seed") == seed
                 and r.get("ctx") == ctx and r.get("size") == size
                 and r.get("doc_reset")
+                and r.get("device") and r.get("micro_batch")
+                and r.get("step_tokens")
+                and isinstance(r.get("final_val_bpb"), (int, float))
+                and _m.isfinite(r["final_val_bpb"])
                 and abs(r.get("train_bytes", -1) - mb) <= 3):
             ep = r.get("epochs")
             if ep is None:
-                continue  # pre-v1 json without the epochs field
+                continue  # identity-incomplete artifacts are not evidence
             out.append((r["final_val_bpb"], r["lr"], ep, r["run"]))
     return sorted(out)
 

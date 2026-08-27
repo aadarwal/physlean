@@ -66,12 +66,21 @@ def sha256_file(p):
     return h.hexdigest()
 
 
+def run_identity_ok(r):
+    """Round-7: artifacts must carry the full v6 identity and a finite
+    loss — pre-v6 or NaN-bearing artifacts are not evidence."""
+    return bool(r.get("device")) and r.get("micro_batch") \
+        and r.get("step_tokens") \
+        and isinstance(r.get("final_val_bpb"), (int, float)) \
+        and math.isfinite(r["final_val_bpb"])
+
+
 def load_runs(runs_dir, size="10m"):
     out = []
     for p in sorted(glob.glob(os.path.join(runs_dir, "*.json"))):
         r = json.load(open(p))
         if r.get("size") != size or not r.get("doc_reset") \
-                or "-r" not in r.get("run", ""):
+                or "-r" not in r.get("run", "") or not run_identity_ok(r):
             continue
         r["_path"] = p
         out.append(r)
@@ -231,17 +240,28 @@ def validate_capacity_entry(ce, runs_dir):
     probes = ce["probe_run_sha256"]
     if not isinstance(probes, dict) or len(probes) < 6:
         return "fewer than six hashed probes"
-    for name, sha in list(probes.items()) + \
-            [(ce["incumbent_run"], ce["incumbent_run_sha256"])]:
+    vals30 = []
+    for name, sha in probes.items():
         p = os.path.join(runs_dir, str(name) + ".json")
         if not os.path.exists(p) or sha256_file(p) != sha:
             return f"evidence mismatch: {name}"
-    b30, b10 = ce["best_30m"], ce["best_10m"]
-    if not (isinstance(b30, (int, float)) and isinstance(b10, (int, float))
-            and math.isfinite(b30) and math.isfinite(b10)):
-        return "non-finite losses"
+        r = json.load(open(p))
+        if r.get("size") != "30m" or not run_identity_ok(r):
+            return f"probe {name} is not a valid 30m artifact"
+        vals30.append(r["final_val_bpb"])
+    ip = os.path.join(runs_dir, str(ce["incumbent_run"]) + ".json")
+    if not os.path.exists(ip) or sha256_file(ip) != \
+            ce["incumbent_run_sha256"]:
+        return f"evidence mismatch: {ce['incumbent_run']}"
+    ri = json.load(open(ip))
+    if ri.get("size") != "10m" or not run_identity_ok(ri):
+        return "incumbent is not a valid 10m artifact"
+    # round-7: DERIVE the losses from the evidence, never trust the record
+    b30, b10 = min(vals30), ri["final_val_bpb"]
+    if abs(b30 - ce["best_30m"]) > 1e-9 or abs(b10 - ce["best_10m"]) > 1e-9:
+        return "recorded losses disagree with the evidence files"
     if bool(ce["fired"]) != bool(b30 < b10 - 0.01):
-        return "fired flag inconsistent with recorded losses"
+        return "fired flag inconsistent with derived losses"
     return None
 
 
@@ -253,12 +273,60 @@ def load_hp(args):
     return {}, p
 
 
-def hp_mismatch(r, hp, lang, frac):
-    """Does run r's (lr, epochs) disagree with the registered incumbent
-    for its rung? Returns a reason string or None."""
+_HP_VERIFIED = {}
+
+
+def verify_incumbent(hp, lang, frac, runs_dir):
+    """Round-7: the incumbent record is re-DERIVED from its hashed
+    candidate evidence — cardinality (grid 9 / walk 6), file hashes,
+    finite 10m seed-0 ctx-4096 artifacts, and winner recomputation."""
+    key = (lang, f"{frac:.6f}")
+    if key in _HP_VERIFIED:
+        return _HP_VERIFIED[key]
     inc = (hp.get(lang) or {}).get(f"{frac:.6f}")
+    out = None
     if inc is None:
-        return f"no registered incumbent at frac {frac:.6f}"
+        out = f"no registered incumbent at frac {frac:.6f}"
+    elif not isinstance(inc.get("candidate_sha256"), dict):
+        out = f"incumbent at {frac:.6f} lacks candidate evidence"
+    else:
+        want_n = 9 if inc.get("expect_set") == "grid" else 6
+        cands = inc["candidate_sha256"]
+        if len(cands) != want_n:
+            out = (f"incumbent at {frac:.6f} has {len(cands)} candidates"
+                   f" != {want_n}")
+        else:
+            best = None
+            for name, sha in cands.items():
+                p = os.path.join(runs_dir, str(name) + ".json")
+                if not os.path.exists(p) or sha256_file(p) != sha:
+                    out = f"candidate evidence mismatch: {name}"
+                    break
+                r = json.load(open(p))
+                if r.get("size") != "10m" or r.get("seed") != 0 or \
+                        r.get("ctx") != 4096 or not run_identity_ok(r):
+                    out = f"candidate {name} is not a valid artifact"
+                    break
+                v = (r["final_val_bpb"], round(r["lr"], 8), r["epochs"])
+                if best is None or v < best:
+                    best = v
+            if out is None:
+                if best is None or \
+                        round(inc["lr"], 8) != best[1] or \
+                        inc["epochs"] != best[2] or \
+                        abs(inc.get("val_bpb", 9e9) - best[0]) > 1e-9:
+                    out = (f"incumbent at {frac:.6f} disagrees with the "
+                           f"recomputed winner")
+    _HP_VERIFIED[key] = out
+    return out
+
+
+def hp_mismatch(r, hp, lang, frac, runs_dir):
+    """Run-vs-incumbent conformity, on a VERIFIED incumbent only."""
+    bad = verify_incumbent(hp, lang, frac, runs_dir)
+    if bad:
+        return bad
+    inc = (hp.get(lang) or {}).get(f"{frac:.6f}")
     if round(r.get("lr", -1), 8) != round(inc["lr"], 8) or \
             r.get("epochs") != inc["epochs"]:
         return (f"hp mismatch at frac {frac:.6f}: run "
@@ -279,6 +347,7 @@ def load_capacity(args):
 
 
 def phase_gamma(args):
+    _HP_VERIFIED.clear()
     stats = json.load(open(args.stats))
     cap, cap_path = load_capacity(args)
     hp, hp_path = load_hp(args)
@@ -327,7 +396,8 @@ def phase_gamma(args):
             bad_hp = None
             for r in top_runs + sec_runs:
                 ru = rung_of(r, bounds)
-                bad_hp = hp_mismatch(r, hp, lang, FRACS[ru])
+                bad_hp = hp_mismatch(r, hp, lang, FRACS[ru],
+                                     args.runs_dir)
                 if bad_hp:
                     break
             if bad_hp:
@@ -456,6 +526,7 @@ def ols_shift(Ps, Ls, H):
 
 
 def phase_envelope(args):
+    _HP_VERIFIED.clear()
     if not args.skip_git_check and not git_blob_matches(args.reg):
         sys.exit("REFUSED: registration not committed-clean-identical to "
                  "HEAD (ARM_CS §5)")
@@ -492,10 +563,15 @@ def phase_envelope(args):
         lruns = [r for r in runs if r["lang"] == lang]
         # per-(ctx, rung) seed groups
         groups = {}
+        stray_ctx = set()
         for r in lruns:
             ru = rung_of(r, bounds)
-            if ru is not None:
-                groups.setdefault((r["ctx"], ru), []).append(r)
+            if ru is None:
+                continue
+            if r["ctx"] not in (512, 4096):  # round-7: strict contexts
+                stray_ctx.add(r["ctx"])
+                continue
+            groups.setdefault((r["ctx"], ru), []).append(r)
         # the PRIMARY gate covers the T=4096 arm ONLY (round-5 fix: a
         # partially landed T=512 group must not make H3 order-dependent);
         # T=512 is the envelope sensitivity and uses complete groups only
@@ -509,7 +585,8 @@ def phase_envelope(args):
             elif set(seeds) != SEEDS:
                 defects.append(f"incomplete seeds at {k}: {sorted(seeds)}")
             for r in v:
-                bad_hp = hp_mismatch(r, hp, lang, FRACS[k[1]])
+                bad_hp = hp_mismatch(r, hp, lang, FRACS[k[1]],
+                                     args.runs_dir)
                 if bad_hp:
                     defects.append(bad_hp)
                     break
@@ -538,7 +615,8 @@ def phase_envelope(args):
         groups = {k: v for k, v in groups.items()
                   if set(seed_set(v)) == SEEDS
                   and len(v) == len(SEEDS)}
-        e = dict(defects_noted=defects)
+        e = dict(defects_noted=defects,
+                 stray_contexts_excluded=sorted(stray_ctx))
         curve = {}
         for (ctx, ru), rs in groups.items():
             vals = [r["final_val_bpb"] for r in rs]
@@ -659,7 +737,20 @@ def phase_envelope(args):
             # partially landed 512 ladder made this exponent depend on
             # job completion order)
             r512 = {ru for (c, ru) in groups if c == 512}
-            if r512 == set(range(len(bounds))):
+            hp512_bad = None
+            for (c, ru), v in sorted(groups.items()):
+                if c != 512:
+                    continue
+                for r in v:
+                    hp512_bad = hp_mismatch(r, hp, lang, FRACS[ru],
+                                            args.runs_dir)
+                    if hp512_bad:
+                        break
+                if hp512_bad:
+                    break
+            if hp512_bad:
+                e["envelopeT_note"] = f"withheld: {hp512_bad}"
+            elif r512 == set(range(len(bounds))):
                 env = {}
                 for ctx, d in curve.items():
                     for ru, v in d.items():
@@ -670,7 +761,7 @@ def phase_envelope(args):
                       if env[r] - H >= SHIFT_MIN]
                 if len(eP) >= MIN_RUNGS:
                     e["alpha_D_envelopeT_sens"] = ols_shift(eP, eL, H)[0]
-            else:
+            elif "envelopeT_note" not in e:
                 e["envelopeT_note"] = (
                     f"withheld: T=512 ladder incomplete "
                     f"({len(r512)}/{len(bounds)} rungs)")
@@ -777,7 +868,8 @@ def _fake_lang(tmp, lang, bounds, g, H, a, delta, seeds=(0, 1, 2)):
             json.dump(dict(run=run, lang=lang, size="10m", seed=s,
                            ctx=4096, lr=1e-3, epochs=2, doc_reset=True,
                            train_bytes=P, final_val_bpb=LP,
-                           tokens_seen=P),
+                           device="cpu", micro_batch=16,
+                           step_tokens=49152, tokens_seen=P),
                       open(os.path.join(runs_d, run + ".json"), "w"))
             with gzip.open(os.path.join(nll_d,
                                         f"{run}__{lang}__val.csv.gz"),
@@ -828,28 +920,68 @@ def selftest():
     # capacity-fired must refuse at the GAMMA level (registration is
     # sha-bound to the capacity state, so post-registration toggling is
     # itself refused — tested at the end)
+    def _mk_run(name, size, lr, ep, val, ctx=4096, seed=0,
+                train_bytes=None):
+        p = os.path.join(tmp, "runs", name + ".json")
+        json.dump(dict(run=name, lang=name.split("-")[2], size=size,
+                       seed=seed, ctx=ctx, lr=lr, epochs=ep,
+                       doc_reset=True,
+                       train_bytes=train_bytes or bounds[-1],
+                       final_val_bpb=val, device="cpu", micro_batch=16,
+                       step_tokens=49152, tokens_seen=1), open(p, "w"))
+        return p
+
     def _cap(fired, lang):
-        files = sorted(glob.glob(os.path.join(
-            tmp, "runs", f"scratch-10m-{lang}-*-r5.json"))) + sorted(
-            glob.glob(os.path.join(tmp, "runs",
-                                   f"scratch-10m-{lang}-*-r6.json")))
-        probes = {os.path.basename(p)[:-5]: sha256_file(p)
-                  for p in files[:6]}
-        inc = files[0]
-        b30 = 0.5 if fired else 1.5
+        inc_p = os.path.join(tmp, "runs",
+                             f"scratch-10m-{lang}-s0-r6.json")
+        b10 = json.load(open(inc_p))["final_val_bpb"]
+        pv = (b10 - 0.5) if fired else (b10 + 0.5)
+        probes = {}
+        for j, (plr, pep) in enumerate([(3e-3, 2), (1e-3, 2),
+                                        (round(1e-3 / 3, 8), 2),
+                                        (3e-3, 4), (1e-3, 4),
+                                        (round(1e-3 / 3, 8), 4)]):
+            nm = f"scratch-30m-{lang}-s0-cap-lr{plr}-e{pep}"
+            pp = _mk_run(nm, "30m", plr, pep, pv + 0.01 * j)
+            probes[nm] = sha256_file(pp)
         return dict(schema="cs_capacity_verdict_v1", fired=fired,
-                    best_30m=b30, best_10m=1.0,
-                    best_30m_run=os.path.basename(files[1])[:-5],
-                    incumbent_run=os.path.basename(inc)[:-5],
-                    incumbent_run_sha256=sha256_file(inc),
+                    best_30m=pv, best_10m=b10,
+                    best_30m_run=sorted(probes)[0],
+                    incumbent_run=os.path.basename(inc_p)[:-5],
+                    incumbent_run_sha256=sha256_file(inc_p),
                     probe_run_sha256=probes)
     json.dump(dict(lean=_cap(True, "lean"),
                    python=_cap(False, "python"),
                    cpp=_cap(False, "cpp")), open(cap_p, "w"))
     hp_p = os.path.join(tmp, "hp_incumbents.json")
-    json.dump({lang: {f"{f:.6f}": dict(lr=1e-3, epochs=2)
-                      for f in FRACS}
-               for lang in ("lean", "python", "cpp")}, open(hp_p, "w"))
+    hp_fix = {}
+    for lang in ("lean", "python", "cpp"):
+        hp_fix[lang] = {}
+        for fi, f in enumerate(FRACS):
+            if fi == 0:
+                combos = [(round(lr, 8), ep) for lr in (3e-4, 1e-3, 3e-3)
+                          for ep in (1, 2, 4)]
+                eset = "grid"
+            else:
+                combos = sorted({(round(lr, 8), ep)
+                                 for lr in (3e-3, 1e-3, round(1e-3 / 3, 8))
+                                 for ep in (2, 4)})
+                eset = "walk"
+            cands = {}
+            for clr, cep in combos:
+                v = 2.0 if (clr, cep) == (1e-3, 2) else 2.5
+                nm = (f"scratch-10m-{lang}-s0-hp{f:.6f}"
+                      f"-lr{clr}-e{cep}")
+                pp = _mk_run(nm, "10m", clr, cep, v,
+                             train_bytes=bounds[fi])
+                cands[nm] = sha256_file(pp)
+            win = [n for n in cands
+                   if "-lr0.001-e2" in n][0]
+            hp_fix[lang][f"{f:.6f}"] = dict(
+                lr=1e-3, epochs=2, val_bpb=2.0, run=win,
+                run_sha256=cands[win], candidate_sha256=cands,
+                expect_set=eset)
+    json.dump(hp_fix, open(hp_p, "w"))
     hp_rel = os.path.relpath(hp_p, BASE)
     ns = argparse.Namespace(stats=stats_p,
                             runs_dir=os.path.join(tmp, "runs"),
@@ -898,9 +1030,9 @@ def selftest():
     # post-registration capacity tampering must be REFUSED by the
     # input-sha binding (the gamma-level gate handles fired states)
     orig_cap = open(cap_p).read()
-    json.dump(dict(lean=_cap(True, "lean"),
-                   python=_cap(False, "python"),
-                   cpp=_cap(False, "cpp")), open(cap_p, "w"))
+    tampered = json.loads(orig_cap)
+    tampered["lean"]["fired"] = True  # record-only flip; files untouched
+    json.dump(tampered, open(cap_p, "w"))
     try:
         phase_envelope(ns2)
         raise AssertionError("envelope accepted a tampered capacity file")
@@ -921,7 +1053,8 @@ def selftest():
     json.dump(dict(run="scratch-10m-lean-s0-r0c512", lang="lean",
                    size="10m", seed=0, ctx=512, lr=1e-3, epochs=2,
                    doc_reset=True, train_bytes=bounds[0],
-                   final_val_bpb=2.0, tokens_seen=bounds[0]),
+                   final_val_bpb=2.0, device="cpu", micro_batch=16,
+                   step_tokens=49152, tokens_seen=bounds[0]),
               open(p512, "w"))
     phase_envelope(ns2)
     env5 = json.load(open(os.path.join(tmp, "analysis_envelope.json")))
@@ -946,7 +1079,8 @@ def selftest():
     ns.force = True
     phase_gamma(ns)
     regh = json.load(open(os.path.join(tmp, "reg.json")))
-    assert "hp mismatch" in regh["langs"]["lean"].get("reason", ""), \
+    rh = regh["langs"]["lean"].get("reason", "")
+    assert "hp mismatch" in rh or "recomputed winner" in rh, \
         regh["langs"]["lean"]
     hp2["lean"][f"{FRACS[-1]:.6f}"]["epochs"] = 2
     json.dump(hp2, open(hp_p, "w"))
