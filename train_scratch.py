@@ -101,6 +101,47 @@ def batches(data, ctx, mb, seed, device):
 
 
 @torch.no_grad()
+def val_bpb_docreset(model, data, val_offsets, ctx, device, dump=None):
+    """ARM_CS doc-reset eval: windows never span document boundaries; every
+    document is scored from its own start; ctxb = within-window context
+    (window boundary = context reset, per eval_incontext --reset-per-doc
+    semantics); doc id recorded. Returns overall bits/byte."""
+    model.eval()
+    tot_nll, tot = 0.0, 0
+    fdump = gzip.open(dump, "wt") if dump is not None else None
+    if fdump:
+        fdump.write("win,doc,ctxb,blen,tok,nll\n")
+    win_id = 0
+    start = 0
+    for did, end in enumerate(val_offsets):
+        seg = data[start:end]
+        start = end
+        for ws in range(0, len(seg) - 1, ctx):
+            we = min(ws + ctx + 1, len(seg))
+            if we - ws < 2:
+                continue
+            x = torch.from_numpy(seg[ws:we - 1].astype(np.int64)
+                                 )[None].to(device)
+            y = torch.from_numpy(seg[ws + 1:we].astype(np.int64)
+                                 )[None].to(device)
+            logits = model(x)
+            nll = F.cross_entropy(logits[0].float(), y[0], reduction="none")
+            tot_nll += float(nll.sum())
+            tot += nll.numel()
+            if fdump:
+                nl = nll.cpu().numpy()
+                yl = y[0].cpu().numpy()
+                fdump.write("\n".join(
+                    f"{win_id},{did},{p + 1},1,{yl[p]},{nl[p]:.5f}"
+                    for p in range(len(nl))) + "\n")
+            win_id += 1
+    if fdump:
+        fdump.close()
+    model.train()
+    return tot_nll / math.log(2) / max(tot, 1)
+
+
+@torch.no_grad()
 def val_bpb(model, data, ctx, device, max_bytes=1_000_000, dump=None):
     model.eval()
     tot_nll, tot = 0.0, 0
@@ -150,6 +191,8 @@ def main():
     ap.add_argument("--lr", type=float, default=0.0,
                     help="override the per-size default lr")
     ap.add_argument("--no-ckpt", action="store_true")
+    ap.add_argument("--val-manifest", default=None,
+                    help="cs2 manifest json; final eval becomes doc-reset")
     args = ap.parse_args()
 
     device = args.device or ("cuda" if torch.cuda.is_available() else
@@ -233,16 +276,22 @@ def main():
     os.makedirs(args.dump_dir, exist_ok=True)
     os.makedirs(args.out_dir, exist_ok=True)
     dump = os.path.join(args.dump_dir, f"{run}__{args.lang}__val.csv.gz")
-    final = val_bpb(model, val, args.ctx, device,
-                    max_bytes=len(val), dump=dump)
+    if args.val_manifest:
+        offs = json.load(open(args.val_manifest))["val_doc_offsets"]
+        final = val_bpb_docreset(model, val, offs, args.ctx, device,
+                                 dump=dump)
+    else:
+        final = val_bpb(model, val, args.ctx, device,
+                        max_bytes=len(val), dump=dump)
     meta = dict(model=run, stream=f"pools/{args.lang}_val.bin",
                 ctx_tokens=args.ctx, dtype="bf16-autocast", device=device,
-                random_init=False, reset_per_doc=False,
+                random_init=False, reset_per_doc=bool(args.val_manifest),
                 total_bytes=int(len(val)), n_tokens=int(len(val)),
                 vocab_size=256, overall_bpb=final)
     json.dump(meta, open(dump + ".meta.json", "w"), indent=1)
     result = dict(run=run, lang=args.lang, size=args.size, seed=args.seed,
                   n_params=n_params, ctx=args.ctx, lr=lr,
+                  epochs=args.epochs, doc_reset=bool(args.val_manifest),
                   train_bytes=int(len(train)), tokens_seen=tok_seen,
                   total_steps=total_steps, final_val_bpb=final,
                   history=history, wall_s=time.time() - t0)

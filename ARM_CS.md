@@ -191,9 +191,9 @@ Per corpus scope (pooled language mixture; per-repo strata >= 5 MB):
   the model not the estimator.)
 - **HP state machine (review B9, frozen)**: metric = final val b/B
   (doc-reset), seed 0, T = 4096. Rung 1: full grid lr ∈ {3e-4, 1e-3,
-  3e-3} × epochs ∈ {1, 2, 4}. Rung r > 1: evaluate incumbent plus
-  neighbors {lr×3, lr/3} × {epochs, epochs×2} (5 runs); the winner is the
-  new incumbent. Seeds 1–2 and the T=512 arm reuse the per-rung
+  3e-3} × epochs ∈ {1, 2, 4}. Rung r > 1: evaluate the incumbent plus the
+  five neighbors {lr×3, lr, lr/3} × {epochs, epochs×2} \ {incumbent}
+  (6 runs total); the winner is the new incumbent. Seeds 1–2 and the T=512 arm reuse the per-rung
   incumbent. All HP runs are recorded; none is deleted.
 - **Capacity guard (review B9)**: at the largest rung, a tuned 30m run
   (seed 0, T=4096, incumbent HP with the rung-1-style neighbor check)

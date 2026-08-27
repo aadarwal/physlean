@@ -305,8 +305,13 @@ def analyze_stream(docs, lags, n_blocks, n_boot, tag):
     nb = min(n_blocks, n_docs)
     rng = np.random.default_rng(SEED_BLOCKS)
     doc_block = rng.integers(0, nb, n_docs).astype(np.int32)
-    boot_sel = (np.random.default_rng(17).integers(0, nb, (n_boot, nb))
-                if n_boot else None)
+    boot_M = None
+    if n_boot:
+        sel = np.random.default_rng(17).integers(0, nb, (n_boot, nb))
+        # resampling blocks = weighting blocks by multiplicity: one matmul
+        # per lag instead of n_boot gathers
+        boot_M = np.stack([np.bincount(sel[r], minlength=nb)
+                           for r in range(n_boot)]).astype(np.float64)
     shufs = [within_doc_shuffle(x, doc_lens, s) for s in SEED_PERMS]
 
     ops, fros, top10s, npairs = [], [], [], []
@@ -335,9 +340,10 @@ def analyze_stream(docs, lags, n_blocks, n_boot, tag):
         floor_spread.append([float(np.nanmin(perm_ops)),
                              float(np.nanmax(perm_ops))])
         if n_boot:
+            R = boot_M @ J.reshape(nb, V * V).astype(np.float64)
             row = []
             for r in range(n_boot):
-                sb = cov_norms(J[boot_sel[r]].sum(axis=0))
+                sb = cov_norms(R[r].reshape(V, V))
                 row.append(sb["op"] if sb else float("nan"))
             boot_ops.append(row)
         log(f"  [{tag}] lag {n}: op={st['op']:.3e} floor={floors[-1]:.3e}")
@@ -489,6 +495,9 @@ def main():
                     help="3MB/lang, max-lag 512, no bootstraps, *.quick.json")
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--no-strata", action="store_true")
+    ap.add_argument("--matched-bytes", type=int, default=0,
+                    help="0 = auto (min over matched langs present); "
+                         "-1 = skip matched scopes; >0 = explicit target")
     ap.add_argument("--selftest", action="store_true")
     args = ap.parse_args()
     if args.selftest:
@@ -534,9 +543,14 @@ def main():
                        max_lag=max_lag, quick=bool(args.quick)),
         scopes={})
 
-    matched_bytes = min((sum(len(b) for _, b in collected[l])
-                         for l in MATCHED_LANGS if l in collected),
-                        default=0)
+    if args.matched_bytes > 0:
+        matched_bytes = args.matched_bytes
+    elif args.matched_bytes < 0:
+        matched_bytes = 0
+    else:
+        matched_bytes = min((sum(len(b) for _, b in collected[l])
+                             for l in MATCHED_LANGS if l in collected),
+                            default=0)
     for lang in langs:
         docs = collected[lang]
         blobs = [b for _, b in docs]

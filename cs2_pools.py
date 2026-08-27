@@ -85,11 +85,13 @@ def main():
             for i in kept:
                 fo.write(train[i][1])
         vkeep, vs = [], 0
+        val_offs = []
         for r, b in val:
             if vs >= VAL_CAP:
                 break
             vkeep.append((r, b))
             vs += len(b)
+            val_offs.append(vs)  # cumulative end-offset per val doc
         with open(os.path.join(OUT, f"{lang}_val.bin"), "wb") as fo:
             for _, b in vkeep:
                 fo.write(b)
@@ -101,7 +103,8 @@ def main():
                    train_bytes=int(total), n_train_docs=len(kept),
                    val_bytes=int(vs), n_val_docs=len(vkeep),
                    rung_boundaries=rungs, repos=repo_hist,
-                   doc_offsets=[int(o) for o in offs])
+                   doc_offsets=[int(o) for o in offs],
+                   val_doc_offsets=[int(o) for o in val_offs])
         with open(os.path.join(OUT, f"{lang}_cs2.json"), "w") as fo:
             json.dump(man, fo, indent=1)
         print(f"[{lang}] train {total/1e6:.1f}MB val {vs/1e6:.1f}MB rungs "

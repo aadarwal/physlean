@@ -15,7 +15,8 @@ LINE=$(sed -n "$((SLURM_ARRAY_TASK_ID + 1))p" "$TASKS")
 [ -n "$LINE" ] || { echo "no task line $SLURM_ARRAY_TASK_ID"; exit 0; }
 read -r LANG_ MB CTX SEED LR EP TAG <<< "$LINE"
 echo "[cs2] task=$SLURM_ARRAY_TASK_ID $LINE"
-.venv/bin/python train_scratch.py --lang "$LANG_" --size 10m \
+.venv/bin/python train_scratch.py --lang "$LANG_" --size "${CS2_SIZE:-10m}" \
   --pool-dir data/cs2 --out-dir results_cs/runs --dump-dir results_cs/nll \
   --max-train-bytes "$MB" --ctx "$CTX" --seed "$SEED" --lr "$LR" \
-  --epochs "$EP" --out-tag="$TAG" --device cuda --no-ckpt
+  --epochs "$EP" --out-tag="$TAG" --device cuda --no-ckpt \
+  --val-manifest "data/cs2/${LANG_}_cs2.json"
