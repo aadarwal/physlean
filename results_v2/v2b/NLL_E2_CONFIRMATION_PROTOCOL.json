@@ -1,0 +1,439 @@
+{
+  "schema": "v2b_nll_e2_confirmation_protocol_v1",
+  "state": "frozen-before-confirmation-sample-and-score",
+  "study_id": "v2b-nll-e2-fresh-sympy-q25c-ladder-20260809",
+  "adoption_basis": {
+    "description": "Outcome-informed hypothesis confirmation on untouched targets from source modules absent from the pilot. The exploratory pilot selected the hypothesis; its blind governance supplies only an N=200 rationale, and pilot observations are never pooled into confirmation estimates or tests.",
+    "sealed_parent_commit": "d70f335388d3383604f7b6afa3ddc734df9ab9f4",
+    "pilot_analysis": {
+      "path": "results_v2/v2b/nll_exploratory_analysis/job20013803_nll_exploratory_analysis.json",
+      "schema": "v2b_nll_exploratory_analysis_v1",
+      "sha256": "2001e617c87a33c782a842340264bc565b06db78f465501955b4df96fbbc1e7c"
+    },
+    "pilot_sympy_governance": {
+      "path": "results_v2/v2b/governance/job20005942_3_sympy.json",
+      "schema": "v2b_n_governance_v1",
+      "sha256": "e8fbf801af3817259a277537ca16bedf4877e9d2041af413fdaeacba036672b2",
+      "verdict": "feasible",
+      "repo_n": 200,
+      "role": "outcome-blind N=200 rationale from the ungated candidate-pool projection; not a formal power or precision guarantee for the source-gated confirmation population"
+    },
+    "pilot_observation_used_to_select_primary": {
+      "repo": "sympy",
+      "model": "Qwen/Qwen2.5-Coder-1.5B",
+      "contrast": "E2",
+      "mean_bpb": 0.02175,
+      "two_sided_95_ci_bpb": [
+        0.00473,
+        0.03877
+      ],
+      "within_repo_holm_p": 0.02427,
+      "status": "exploratory-pilot-only"
+    }
+  },
+  "scope": {
+    "repo": "sympy",
+    "language": "python",
+    "corpus_git_sha": "c0a595d78fb2a2c4b0dfa7f2ee720fde84918c6c",
+    "metric": "bits-per-scored-body-byte",
+    "budget_bytes": 16384,
+    "claim_population": "fresh structurally E2-eligible SymPy targets from source modules absent from the pilot, selected by the frozen candidate-table design",
+    "no_language_pooling": true,
+    "no_cross_family_model_claim": true
+  },
+  "inputs": {
+    "candidates": {
+      "path": "results_v2/v2b/candidates/job19982184_3_sympy.json",
+      "schema": "v2b_candidates_v2",
+      "sha256": "7c7c01b7bdd15575cab20933e1937e475719e8d9af94059f4450bae33b9a9810"
+    },
+    "pilot_sample": {
+      "path": "results_v2/v2b/sample/job19989076_sample.json",
+      "schema": "v2b_bound_sample_v2",
+      "sha256": "86090b33389a2c78eabc924ce67ac71b6082c579256fd101c3e9fda69409db9b"
+    },
+    "pilot_sympy_target_count": 20,
+    "pilot_sympy_keys_sha256": "826674b637a196457415800d3609a39cd80c3b7aef316445137b0fab7edb7fd0",
+    "pilot_sympy_module_count": 19,
+    "pilot_sympy_modules_sha256": "af1a3a82cc227960d50ebe5b6ab6e411e40f7e220021e460fc4fb815e5046ee8"
+  },
+  "sample": {
+    "requested_n": 200,
+    "required_realized_primary_eligible_n": 200,
+    "pilot_targets_excluded": true,
+    "pilot_source_modules_excluded": true,
+    "pilot_and_confirmation_never_pooled": true,
+    "sampler": "build_sample_plan(full_candidates, 200, exclude_keys=source_ineligible_keys union every candidate key whose identity[0] is one of the 19 pilot modules union exact pilot keys); full-table cutpoints, strata, validation, and frozen priorities are retained",
+    "sampling_seed": "v2a:20260808",
+    "strata": "original full-table body-length tercile x module-in-degree tercile x cohort, 18 cells",
+    "allocation": "proportional Hamilton with frozen priority and no discretionary replacement",
+    "shortfall_rule": "abort-before-score",
+    "identical_target_cohort_across_models": true,
+    "analysis_weighting": "equal-target",
+    "governance_population_difference": "the blinded governance projected module sizes from the full candidate table excluding only pilot targets; this confirmation first restricts to the source-eligible E2 population and excludes every pilot source module, so N=200 is a fixed rationale and actual-plan cluster support plus realized halfwidth, not the old projection, controls claimability",
+    "pre_score_cluster_gate": "after the deterministic draw and before any model score, require at least 20 distinct identity[0] modules and N^2/sum(n_g^2) >= 10; otherwise abort the sealed study without replacement"
+  },
+  "source_eligibility_gate": {
+    "schema": "v2b_nll_e2_confirmation_source_gate_v1",
+    "candidate_universe_n": 19926,
+    "model_free_and_outcome_free": true,
+    "primary_cells": [
+      "k4:16384",
+      "k5:0:16384"
+    ],
+    "predicate": "both maximal renderer-equivalent byte strings have rendering_bytes >= 16384 and therefore assembly eligible=true; the UTF-8-valid suffix may contain up to three fewer bytes when the byte cut splits a scalar",
+    "computation": "sharded exact length-only reconstruction of the frozen k4 dependency and k5 seed-0 random-nondependency renderings; no BM25, unrelated arm, tokenizer, model, NLL, or outcome is evaluated",
+    "bindings": {
+      "candidates": {
+        "path": "results_v2/v2b/candidates/job19982184_3_sympy.json",
+        "schema": "v2b_candidates_v2",
+        "sha256": "7c7c01b7bdd15575cab20933e1937e475719e8d9af94059f4450bae33b9a9810"
+      },
+      "extraction": {
+        "path": "results_v2/v2a/job19915852_0_sympy/extraction.json",
+        "schema": "v2a_python_extract_v3",
+        "sha256": "f1789433999026ff538ffcb2117dc175000b8b21b6edc0663dc1e20c54301b98"
+      },
+      "k7_order": {
+        "path": "results_v2/v2b/k7/job19921318_3_sympy.json",
+        "schema": "v2b_k7_order_v1",
+        "sha256": "955d6d39d490dd6a82555816686749e675d482aa5015d417d99b0f673705f293"
+      },
+      "neardup": {
+        "path": "results_v2/v2b/neardup/job19929883_3_sympy.json",
+        "schema": "v2b_neardup_v1",
+        "sha256": "5fd6841598398361647b6aa3fac5fa0b05b1f71508b1dbc786805490a7823fdb"
+      },
+      "a6_outcome": {
+        "path": "results_v2/v2b/a6/a6_outcome_job19930941.json",
+        "schema": "v2b_a6_outcome_v2",
+        "sha256": "d7319822dcefffdd360ad0d6906b70d239f742afc81dad5e4f6f899a0b00cf68"
+      },
+      "corpus_root": "corpora/sympy",
+      "corpus_git_sha": "c0a595d78fb2a2c4b0dfa7f2ee720fde84918c6c",
+      "renderer_and_seed_code": "bound by the later confirmation implementation-freeze artifact before the census"
+    },
+    "cross_check": "the length-only decision and byte totals must equal the full assembly renderer on adversarial fixtures and a committed deterministic source-only audit sample",
+    "output": "sorted eligible identity keys, sorted ineligibility reasons, exact rendering byte totals, per-shard hashes, full eligible count/key hash, exact pilot-key intersection count/key hash, exact pilot-module candidate count/key hash, module-disjoint post-pilot eligible count/key hash, and a complete 19926-candidate coverage hash",
+    "shard_reducer": "every candidate appears in exactly one fragment; fragment ranges are disjoint and their union is the exact sorted 19926-key universe; any missing, overlapping, malformed, or unresolved row aborts the entire census",
+    "pilot_intersection_expected_from_sealed_pilot_evidence": {
+      "count": 15,
+      "keys_sha256": "33f932a4426a2c0f9979acef023b55ba66b2ddfca5adea242528b7855a86ca66",
+      "meaning": "audit expectation only; reducer recomputes and fail-closes on disagreement"
+    },
+    "pilot_exclusion_is_separate": true,
+    "pilot_module_exclusion": "exclude every candidate whose identity[0] occurs among the exact 19 pilot modules, so pilot and confirmation are disjoint at the modeled dependence unit",
+    "minimum_post_pilot_eligible_targets": 200,
+    "shortfall_rule": "abort-before-sample-and-score"
+  },
+  "models": [
+    {
+      "id": "q25c-0.5b",
+      "name": "Qwen/Qwen2.5-Coder-0.5B",
+      "revision": "8123ea2e9354afb7ffcc6c8641d1b2f5ecf18301",
+      "nominal_billions": 0.5,
+      "role": "gated-secondary"
+    },
+    {
+      "id": "q25c-1.5b",
+      "name": "Qwen/Qwen2.5-Coder-1.5B",
+      "revision": "df3ce67c0e24480f20468b6ef2894622d69eb73b",
+      "nominal_billions": 1.5,
+      "role": "sole-primary"
+    },
+    {
+      "id": "q25c-3b",
+      "name": "Qwen/Qwen2.5-Coder-3B",
+      "revision": "09d9bc5d376b0cfa0100a0694ea7de7232525803",
+      "nominal_billions": 3.0,
+      "role": "gated-secondary"
+    },
+    {
+      "id": "q25c-7b",
+      "name": "Qwen/Qwen2.5-Coder-7B",
+      "revision": "0396a76181e127dfc13e5c5ec48a8cee09938b02",
+      "nominal_billions": 7.0,
+      "role": "key-generalization-gated-secondary"
+    }
+  ],
+  "instrument_gate": {
+    "all_four_models_must_pass_before_any_confirmation_score": true,
+    "per_model_evidence": "write-once frozen production-path battery bound to exact model, revision, tokenizer files, numerical harness, environment, source tree, dtype, device, attention implementation, chunk size, context length, repeat determinism, causal masking, token-byte conservation, and peak memory",
+    "failure_rule": "no confirmation scoring and no model substitution"
+  },
+  "scored_cells": [
+    "k1",
+    "k3:16384",
+    "k4:16384",
+    "k5:0:16384",
+    "k5:1:16384",
+    "k5:2:16384"
+  ],
+  "primary": {
+    "id": "E2_q25c_1p5b_seed0",
+    "model_id": "q25c-1.5b",
+    "contrast": "BPB(k5:0:16384) - BPB(k4:16384)",
+    "positive_direction": "known dependency context has lower body BPB than equal-budget frozen random nondependency context",
+    "null": "mu_E2 <= 0",
+    "alternative": "mu_E2 > 0",
+    "alpha": 0.05,
+    "test": "one-sided module-MoM Student-t",
+    "success_requires": [
+      "all provenance, execution, cluster-support, degeneracy, and precision gates pass",
+      "one-sided p <= 0.05",
+      "one-sided 95% lower confidence bound > 0"
+    ]
+  },
+  "inference": {
+    "cluster": "identity[0] source module",
+    "estimator": "unequal-cluster one-way random-effects method-of-moments used by v2b_n_governance",
+    "variance_of_mean": "sigma_b2*sum(n_g^2)/N^2 + sigma_w2/N",
+    "degrees_of_freedom": "G-1",
+    "all_singleton_fallback": "sigma_b2=target sample variance; sigma_w2=0",
+    "upper_icc_clamp": false,
+    "minimum_modules": 20,
+    "minimum_effective_clusters": 10,
+    "effective_clusters": "N^2/sum(n_g^2)",
+    "degeneracy_tolerance": "tol=64*ulp(max(1,max_abs_delta)); inference is degenerate when delta range <= tol OR SE <= tol",
+    "maximum_realized_two_sided_95_halfwidth_bpb": 0.02,
+    "halfwidth_is_precision_not_effect_margin": true,
+    "student_t_implementation": "frozen and tested for every possible integer df 1..199; all means, SEs, Student-t CDFs, confidence bounds, p-values, Holm comparisons, and labels use unrounded binary64 values, with rounding only for display"
+  },
+  "secondary_gate": {
+    "opens_only_if_primary_confirmed": true,
+    "closed_gate_status": "descriptive-gate-closed",
+    "method": "Holm step-down FWER 0.05 with ties broken by exact endpoint id; an inferentially unavailable endpoint remains in the five-endpoint family with raw p=1",
+    "endpoint_labels": {
+      "descriptive-gate-closed": "primary was not confirmed, so no secondary confirmatory claim is evaluated",
+      "secondary-inference-unavailable": "endpoint remains in Holm with p=1 because its frozen inference or support gate is unavailable",
+      "secondary-precision-not-met": "inference is available but the realized two-sided 95% halfwidth exceeds 0.02",
+      "secondary-positive-supported": "one-sided endpoint passes support, degeneracy, precision, and Holm-adjusted p<=0.05",
+      "secondary-nonzero-supported": "two-sided slope endpoint passes support, degeneracy, precision, and Holm-adjusted p<=0.05",
+      "secondary-null-not-rejected": "available endpoint does not meet its applicable supported label"
+    },
+    "endpoints": [
+      {
+        "id": "E1a_1p5b",
+        "null": "mu_E1a <= 0",
+        "alternative": "mean(BPB(k1)-BPB(k4:16384)) > 0",
+        "tail": "one-sided",
+        "eligibility": "same fresh target has k1 and k4:16384 scores at q25c-1.5b",
+        "inference": "same module-MoM estimator and claimability gates as primary"
+      },
+      {
+        "id": "E2_0p5b",
+        "null": "mu_E2 <= 0",
+        "alternative": "mean(E2 seed0 at q25c-0.5b) > 0",
+        "tail": "one-sided",
+        "eligibility": "same fixed 200-target cohort has k4:16384 and k5:0:16384 scores at q25c-0.5b",
+        "inference": "same module-MoM estimator and claimability gates as primary"
+      },
+      {
+        "id": "E2_3b",
+        "null": "mu_E2 <= 0",
+        "alternative": "mean(E2 seed0 at q25c-3b) > 0",
+        "tail": "one-sided",
+        "eligibility": "same fixed 200-target cohort has k4:16384 and k5:0:16384 scores at q25c-3b",
+        "inference": "same module-MoM estimator and claimability gates as primary"
+      },
+      {
+        "id": "E2_7b",
+        "null": "mu_E2 <= 0",
+        "alternative": "mean(E2 seed0 at q25c-7b) > 0",
+        "tail": "one-sided",
+        "eligibility": "same fixed 200-target cohort has k4:16384 and k5:0:16384 scores at q25c-7b",
+        "inference": "same module-MoM estimator and claimability gates as primary"
+      },
+      {
+        "id": "E2_logsize_slope",
+        "null": "mu_slope = 0",
+        "alternative": "finite-ladder slope differs from zero",
+        "tail": "two-sided",
+        "eligibility": "same target has seed-0 E2 scores at all four checkpoints",
+        "inference": "one frozen OLS slope per target followed by the same module-MoM estimator and claimability gates"
+      }
+    ]
+  },
+  "model_size_trend": {
+    "complete_case_population": "targets E2-eligible and successfully scored at all four checkpoints",
+    "x": "log2 nominal parameter billions in fixed model order [0.5,1.5,3,7]",
+    "per_target_ols_coefficients": [
+      -0.25631165485344465,
+      -0.05261096221822387,
+      0.07590986558845116,
+      0.23301275148321737
+    ],
+    "unit": "E2 bits-per-byte per nominal model-size doubling",
+    "inference": "one slope per target, followed by the same module-MoM estimator",
+    "allowed_claim": "finite Qwen2.5-Coder ladder trend",
+    "forbidden_claim": "model scaling law"
+  },
+  "e1b_descriptive": {
+    "confirmatory_p_value": false,
+    "contrast": "BPB(k3:16384)-BPB(k4:16384)",
+    "margin_bpb": 0.02,
+    "reports": [
+      "mean and two-sided 95% interval at each checkpoint",
+      "one-sided 95% upper bound against +0.02",
+      "E1a one-sided lower bound on the exact E1a/E1b intersection"
+    ],
+    "labels": [
+      "descriptive-inference-unavailable",
+      "descriptive-noninferiority-not-established",
+      "descriptive-assay-insensitive",
+      "descriptive-interface-compatibility-pattern"
+    ],
+    "label_rules": {
+      "descriptive-inference-unavailable": "either E1b or intersection E1a inference is unavailable",
+      "descriptive-interface-compatibility-pattern": "on the exact common target intersection, one-sided U95(E1b) < 0.02 AND one-sided L95(E1a) > 0",
+      "descriptive-assay-insensitive": "U95(E1b) < 0.02 but L95(E1a) <= 0",
+      "descriptive-noninferiority-not-established": "U95(E1b) >= 0.02"
+    },
+    "prohibited_terms": [
+      "equivalent",
+      "interfaces suffice"
+    ]
+  },
+  "k5_seed_sensitivity": {
+    "primary_seed": 0,
+    "diagnostic_seeds": [
+      1,
+      2
+    ],
+    "common_case_requirement": "k4 and all three k5 seeds structurally eligible and successfully scored",
+    "reports": [
+      "mean E2 for seeds 0,1,2",
+      "target-level three-seed average",
+      "range across seed means",
+      "target-level seed standard deviation"
+    ],
+    "target_level_seed_standard_deviation": "ordinary sample standard deviation across the three per-target seed deltas with denominator 2",
+    "aggregation": "compute each seed mean and the mean target-level three-seed average with equal target weights on the exact common-case population; report the arithmetic range of the three seed means and the mean target-level sample standard deviation",
+    "direction_stable": "all three seed-specific means are positive",
+    "magnitude_sensitive": "max(abs(mu_seed1-mu_seed0),abs(mu_seed2-mu_seed0)) > max(0.005,0.5*abs(mu_seed0))",
+    "cannot_rescue_primary": true
+  },
+  "blinding_and_fixed_n_gate": {
+    "salt": "new confirmation-only 32-byte cryptographic random salt, stored once outside Git as a regular non-symlink mode-0600 file; the pilot salt is forbidden",
+    "public_commitment": "SHA256 of the exact 32 salt bytes, committed before scoring and proven an ancestor of every target-score artifact; no salt reroll is allowed",
+    "family_domain": "v2b-nll-e2-confirmation-family-v1",
+    "payload_domain": "v2b-nll-e2-confirmation-payload-v1",
+    "family_id": "fam- plus the first 16 lowercase hex characters of HMAC-SHA256(salt, canonical JSON [family_domain,study_id,model_id,contrast_id])",
+    "fixed_width_ciphertext": "for each model, contrast, and target, plaintext is the IEEE-754 binary64 delta encoded as exactly 8 big-endian bytes when structurally eligible and +0.0 encoded the same way when ineligible padding; XOR it with the first 8 bytes of HMAC-SHA256(salt, canonical JSON [payload_domain,study_id,model_id,contrast_id,target_key]) and publish exactly 16 lowercase hex characters",
+    "contrast_ids": [
+      "E1a",
+      "E1b",
+      "E2_seed0",
+      "E2_seed1",
+      "E2_seed2"
+    ],
+    "masked_coverage": "exactly 200 target keys x four model ids x five opaque contrast families, one fixed-width ciphertext per row; eligibility and padding status are absent from the masked row, so family sizes do not reveal the mapping",
+    "post_reveal_filter": "after authenticated decryption and family mapping, the analyzer includes all 200 E1a/E2_seed0 rows and includes E1b/E2_seed1/E2_seed2 rows iff the separately committed pre-score assembly eligibility ledger marks every required cell eligible; +0.0 padding is never an observation and never enters a mean, interval, p-value, or label",
+    "fixed_n_completeness_gate": "before reveal, verify exact same 200 targets x four models x six registered cell records and exactly 200 x four x five fixed-width masked ciphertext rows; k1, k4:16384, and k5:0:16384 must be eligible and scored for all 200, while k3:16384 and k5:1/2:16384 must be scored for every and only their frozen structurally eligible keys and explicitly recorded ineligible otherwise; also verify all target/model/study completion evidence, deterministic replay, batteries, protocol/freeze/source bindings, and zero extra/missing files without inspecting ciphertext, salt, eligibility-to-family mapping, or numerical values",
+    "failure_rule": "any missing target/model/cell record, missing score for a structurally eligible cell, score for an ineligible cell, or binding failure makes the whole confirmation execution-incomplete-not-analyzed; structural ineligibility of a diagnostic cell is registered missing-by-design rather than an execution failure; no partial-N primary, redraw, replacement, variance reprojection, or alternate salt",
+    "one_reveal": "after the fixed-N gate and committed analyzer/freeze, exactly one registered reveal maps opaque families and signs"
+  },
+  "execution_schema_contracts": {
+    "implementation_freeze": "v2b_nll_e2_confirmation_implementation_freeze_v1",
+    "salt_commitment": "v2b_nll_e2_confirmation_salt_commitment_v1",
+    "source_gate_fragment": "v2b_nll_e2_confirmation_source_gate_fragment_v1",
+    "source_gate_reduced": "v2b_nll_e2_confirmation_source_gate_v1",
+    "bound_sample": "v2b_nll_e2_confirmation_sample_v1",
+    "assembly": "v2b_nll_e2_confirmation_assembly_v1",
+    "model_battery": "v2b_nll_e2_confirmation_model_battery_v1",
+    "target_score": "v2b_nll_e2_confirmation_target_score_v1",
+    "model_complete": "v2b_nll_e2_confirmation_model_complete_v1",
+    "study_complete": "v2b_nll_e2_confirmation_study_complete_v1",
+    "masked": "v2b_nll_e2_confirmation_masked_v1",
+    "fixed_n_gate": "v2b_nll_e2_confirmation_fixed_n_gate_v1",
+    "reveal": "v2b_nll_e2_confirmation_reveal_v1",
+    "analysis": "v2b_nll_e2_confirmation_analysis_v1",
+    "cell_enumerator": "exact ordered cells [k1,k3:16384,k4:16384,k5:0:16384,k5:1:16384,k5:2:16384]; the pilot 23-cell enumerator is forbidden",
+    "producer_binding": "every artifact binds study id, exact protocol raw and semantic hashes, implementation-freeze hash, producer source commit/tree/file hashes, exact input artifacts, corpus revision, model/revision when applicable, environment, ordered target-key hash, and its complete predecessor evidence; every score/model/study completion additionally binds the committed salt-commitment path/schema/SHA and proves its generator commit descends from the salt-commitment adoption commit",
+    "write_and_resume": "write-once target-atomic scores; deterministic compatible resume only; one model-complete reducer per model and one exact four-model study reducer; shard support is frozen but production shard_count is selected before scoring from a target-free dry benchmark",
+    "same_cohort_rule": "all four model-complete artifacts contain the exact same ordered 200 target keys and six cell records; required E1a/E2_seed0 cells score all 200, diagnostic contrasts use the identical model-independent structural-eligibility key sets, and no model-specific omission or replacement is allowed"
+  },
+  "eligibility_and_missingness": {
+    "frozen_before_scores": true,
+    "primary_requires_cells": [
+      "k4:16384",
+      "k5:0:16384"
+    ],
+    "no_imputation": true,
+    "no_available_cell_substitution": true,
+    "no_model_specific_target_replacement": true,
+    "persistent_infrastructure_failure": "execution-incomplete-not-analyzed",
+    "all_model_tokenizer_fit_gate": "after exact assembly and before any NLL, tokenize every registered prompt with all four pinned tokenizers; any model-position overflow aborts the sealed sample and never triggers redraw or replacement",
+    "required_reporting": [
+      "selected N",
+      "eligible N",
+      "source-module G",
+      "effective G",
+      "cluster sizes",
+      "every exclusion reason",
+      "all cross-model and seed intersections",
+      "static dependency reference resolution coverage"
+    ],
+    "python_dependency_claim": "known static dependency context, not complete or optimal dependency context",
+    "static_reference_coverage": {
+      "source": "exact extraction graph.target_coverage row joined by target identity",
+      "target_denominator": "n_refs = n_resolved_decl + n_module_fallback + n_external + n_unresolved",
+      "target_numerator": "n_resolved_decl",
+      "target_fraction": "n_resolved_decl/n_refs when n_refs>0, otherwise null and counted separately as no-references",
+      "frozen_bins": [
+        "no-references",
+        "[0,0.25)",
+        "[0.25,0.5)",
+        "[0.5,0.75)",
+        "[0.75,1)",
+        "1.0"
+      ],
+      "aggregate_reporting": "report selected-target counts in every bin plus sums of n_refs, n_resolved_decl, n_module_fallback, n_external, and n_unresolved; coverage never changes or replaces the frozen target cohort"
+    },
+    "budget_scope_qualifier": "16KiB-only dependency-versus-random confirmation; truncation robustness is unassessed"
+  },
+  "decision_labels_in_precedence_order": [
+    "invalid-provenance-not-analyzed",
+    "cluster-support-inadequate",
+    "execution-incomplete-not-analyzed",
+    "inference-unavailable-degenerate",
+    "positive-direction-precision-not-met",
+    "e2-positive-confirmed-fresh-sympy-1p5b",
+    "e2-opposite-direction-descriptive",
+    "e2-inconclusive"
+  ],
+  "decision_rule_conditions": {
+    "invalid-provenance-not-analyzed": "any protocol, freeze, source, artifact, salt-commitment, model, environment, replay, or ledger binding fails",
+    "cluster-support-inadequate": "provenance and the exact sealed sample plan are valid but the pre-score plan has G < 20 or effective G < 10; no score is launched",
+    "execution-incomplete-not-analyzed": "provenance and pre-score cluster support pass but exact fixed-N four-model six-cell completion fails",
+    "inference-unavailable-degenerate": "primary deltas or SE meet the frozen 64*ulp degeneracy rule or inference is nonfinite",
+    "positive-direction-precision-not-met": "primary mean is positive but its realized two-sided 95% halfwidth exceeds 0.02",
+    "e2-positive-confirmed-fresh-sympy-1p5b": "all earlier gates pass, one-sided p <= 0.05, and one-sided 95% lower bound > 0",
+    "e2-opposite-direction-descriptive": "provenance, exact execution, cluster support, and nondegenerate inference gates pass and the primary point estimate is < 0; the positive-direction 0.02 halfwidth claimability gate does not suppress this descriptive label, and this is not an unregistered negative-direction test",
+    "e2-inconclusive": "valid and complete primary not assigned an earlier label"
+  },
+  "prohibited_claims": [
+    "pilot plus confirmation treated as N=220",
+    "best checkpoint selected after scoring",
+    "best k5 seed selected after scoring",
+    "four checkpoints treated as independent replications",
+    "model-specific target replacement",
+    "E1b non-significance interpreted as equivalence",
+    "0.02 precision threshold interpreted as an E2 relevance margin",
+    "finite four-checkpoint trend called a model scaling law",
+    "language-wide or model-family-population inference"
+  ],
+  "sequencing": {
+    "protocol_commit_before_sample": true,
+    "source_gate_and_reducer_before_sample": true,
+    "implementation_freeze_before_sample": true,
+    "confirmation_salt_commitment_before_scoring": true,
+    "all_batteries_before_scoring": true,
+    "all_model_tokenizer_fit_before_scoring": true,
+    "sample_and_scores_write_once": true,
+    "analysis_implementation_committed_before_scoring": true,
+    "fixed_n_blind_gate_before_reveal": true,
+    "one_registered_reveal": true,
+    "no_confirmation_score_exists_at_adoption": true
+  }
+}
