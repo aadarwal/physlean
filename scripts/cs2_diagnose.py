@@ -68,8 +68,8 @@ for fn in os.listdir(RUNS):
     if ctx != "4096":
         continue
     r = load(os.path.join(RUNS, fn))
-    if r and isinstance(r.get("val_bpb"), (int, float)):
-        by[lang][frac].append(r["val_bpb"])
+    if r and isinstance(r.get("final_val_bpb"), (int, float)):
+        by[lang][frac].append(r["final_val_bpb"])
 
 for lang in LANGS:
     fracs = sorted(by[lang])
