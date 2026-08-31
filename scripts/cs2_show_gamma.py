@@ -18,7 +18,6 @@ for k, v in langs.items():
     flat = {a: (round(b, 4) if isinstance(b, float) else b)
             for a, b in v.items()
             if not isinstance(b, (dict, list)) and "sha" not in a}
-    print(f"\n{k}: {flat}")
-    for a, b in v.items():
-        if isinstance(b, dict) and "sha" not in a and len(b) <= 12:
-            print(f"   {a}: { {x: (round(y,4) if isinstance(y,float) else y) for x,y in b.items()} }")
+    print(f"\n{k}:")
+    for a, b in sorted(flat.items()):
+        print(f"   {a} = {b}")
