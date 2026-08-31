@@ -11,7 +11,7 @@ top = {k: v for k, v in d.items()
        if not isinstance(v, (dict, list)) and "sha" not in k}
 print("top-level:", top)
 
-langs = d.get("languages", d)
+langs = d.get("langs") or d.get("languages") or d
 for k, v in langs.items():
     if not isinstance(v, dict):
         continue
