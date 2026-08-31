@@ -31,10 +31,8 @@ stats = json.load(open("results_cs/lang_stats.json"))
 
 
 def beta_of(lang):
-    for row in (stats if isinstance(stats, list) else stats.get("scopes", [])):
-        if row.get("scope") == lang:
-            return row.get("beta_corr")
-    return None
+    scope = stats.get("scopes", {}).get(lang) or {}
+    return (scope.get("fit") or {}).get("beta_corr")
 
 
 runs = A.load_runs(RUNS, cs2_dir=CS2)
