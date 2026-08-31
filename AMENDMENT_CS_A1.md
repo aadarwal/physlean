@@ -87,6 +87,74 @@ predeclared rule. A is tempting and cheap but silently redefines the
 measured quantity; B is the cleanest science but the most expensive, and
 is the natural CS-3 design rather than a mid-pass patch.
 
+## 4b. Second defect: the convergence gate is out of reach at this scale
+
+Found 2026-08-31, when the gamma phase refused **every** language:
+
+```
+lean    convergence_gap = 0.1945   not converged (> 0.02)
+latex   convergence_gap = 0.8925   not converged
+python  capacity fired: 10m undersized; 30m ladder required
+cpp     capacity fired: 10m undersized; 30m ladder required
+```
+
+γ is a property of the language (H_n − H_∞ ∝ n^−γ), but only a model's
+L_n is observable, and L_n = H_n + KL_n. The design's guard for that gap
+is CONV_TOL: the pooled per-position curve must move by ≤ 0.02 b/B when
+the data doubles, evidencing that L_n tracks H_n rather than the model's
+remaining ignorance. It refused correctly — this is not a bug.
+
+Gap per adjacent rung pair (`scripts/cs2_conv_trend.py`, using the frozen
+analyzer's own helpers):
+
+| pair | lean | cpp |
+|---|---|---|
+| 0→1 | 1.0056 | 0.8439 |
+| 1→2 | 0.5629 | 0.7640 |
+| 2→3 | 2.8237 | 2.1533 |
+| 3→4 | 0.5108 | 0.4197 |
+| 4→5 | 0.3626 | 0.1859 |
+| 5→6 | **0.1945** | **0.7631** |
+
+- **lean**: the gap halves per doubling (recent factor ≈ 0.476), so
+  CONV_TOL is ≈ **3.1 further doublings ≈ 8× the current top rung**
+  (~50 MB → ~400 MB). `cs2_pools.py` capped the matched languages to the
+  smallest pool, so lean trained on ~50 MB of the 134 MB collected;
+  unmatched, lean gains ≈ 1.3 doublings (gap → ≈ 0.07), still short.
+  Reaching 0.02 needs roughly all extant Lean 4 source and then some.
+- **cpp**: the gap GROWS at the top pair (0.186 → 0.763), which is the
+  §1 instability showing up in the curve, not a data-scale statement.
+
+**Structural tension.** lean passes the capacity guard *because* it is
+data-limited (30m overfits ~50 MB and loses to 10m) and fails convergence
+for the same reason. The two gates pull in opposite directions: one wants
+a model small enough not to be capacity-bound, the other wants data
+plentiful enough that the curve has saturated. At byte level, with formal
+corpora this size, the admissible window may be empty.
+
+Options beyond §4:
+
+- **E. Unmatched lean pool.** Drop the cross-language byte cap for a
+  lean-only run (~134 MB). Cheap (one re-run of the ladder for one
+  language), narrows the gap to ≈ 0.07, and does not by itself pass.
+- **F. Smaller model.** A 3m arm saturates sooner; risks tripping the
+  capacity guard from the other side, so it must be paired with its own
+  guard probes.
+- **G. Extrapolated-curve γ (recommended for CS-3).** Estimate, per
+  context position n, the P→∞ limit of L_n from the ladder, then fit γ on
+  the extrapolated curve — the same move the design already makes for
+  H_∞, applied one level up. Turns "the curve has stopped moving" from a
+  precondition into something modelled, and is the only listed option
+  that fits inside the corpora that exist. Requires a bias analysis and
+  its own predeclared gates; it is a CS-3 design, not a mid-pass patch.
+
+**Reportable now, independent of all this**: β_corr for four languages
+(registered), the H2 direction result (registered prediction was
+β_lean < β_python; measured is the reverse with disjoint intervals),
+the instability finding of §1, and this scale finding — that a strict
+saturation criterion is unreachable for formal languages at byte level
+with existing corpora, quantified at ≈ 8× for lean.
+
 ## 5. What adoption would require
 
 1. Human decision recorded, with the option chosen and the reason.
